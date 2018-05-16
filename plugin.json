@@ -1,0 +1,20 @@
+{
+  "type": "renderer",
+  "name": "Backend Renderer",
+  "id": "grafana-image-renderer",
+
+  "info": {
+    "description": "Grafana Backend Image Renderer that uses headless chrome to capture images.",
+    "author": {
+      "name": "Grafana Labs",
+      "url": "https://grafana.com"
+    },
+    "keywords": ["test"],
+    "logos": {
+    },
+    "links": [
+    ],
+    "version": "1.0.0",
+    "updated": "2018-02-10"
+  }
+}

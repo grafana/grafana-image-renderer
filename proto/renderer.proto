@@ -1,0 +1,16 @@
+syntax = "proto3";
+option go_package = "renderer";
+
+package models;
+
+message RenderRequest {
+  string url = 1;
+}
+
+message RenderResponse {
+  string filePath = 1;
+}
+
+service Renderer {
+  rpc Render(RenderRequest) returns (RenderResponse);
+}

@@ -1,0 +1,20 @@
+{
+  "name": "renderer",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "tsc && node build/app.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@types/node": "^10.0.9",
+    "google-protobuf": "3.5.2",
+    "grpc": "^1.11.3",
+    "minimist": "^1.2.0",
+    "puppeteer": "^1.4.0",
+    "typescript": "^2.8.3"
+  }
+}
