@@ -5,16 +5,24 @@
   "main": "index.js",
   "scripts": {
     "build": "tsc",
-    "start": "tsc && node build/app.js"
+    "start": "node build/app.js",
+    "dev": "tsc-watch --onSuccess \"node build/app.js server --port=3050\""
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@types/express": "^4.11.1",
     "@types/node": "^10.0.9",
-    "google-protobuf": "3.5.2",
+    "express": "^4.16.3",
+    "google-protobuf": "3.5.0",
     "grpc": "^1.11.3",
     "minimist": "^1.2.0",
+    "mz": "^2.7.0",
     "puppeteer": "^1.4.0",
-    "typescript": "^2.8.3"
+    "typescript": "^2.8.3",
+    "unique-filename": "^1.1.0"
+  },
+  "devDependencies": {
+    "tsc-watch": "^1.0.21"
   }
 }

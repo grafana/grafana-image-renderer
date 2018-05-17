@@ -1,39 +1,38 @@
-import * as grpc from 'grpc';
+import { startGrpcPlugin } from './grpc-plugin';
+import { HttpServer } from './http-server';
+import { Logger } from './logger';
+import { Browser } from './browser';
+import * as minimist from 'minimist';
 
-const SERVER_ADDRESS = '127.0.0.1:50051';
-const RENDERER_PROTO_PATH = __dirname + '/../proto/renderer.proto';
-const GRPC_HEALTH_PROTO_PATH = __dirname + '/../proto/health.proto';
 
-export const RENDERER_PROTO = grpc.load(RENDERER_PROTO_PATH).models;
-export const GRPC_HEALTH_PROTO = grpc.load(GRPC_HEALTH_PROTO_PATH).grpc.health.v1;
+async function main() {
+  let argv = minimist(process.argv.slice(2));
+  let command = argv._[0];
 
-/**
- * Implements the Health Check RPC method.
- */
-function check(call, callback) {
-  callback(null, {status: 'SERVING'});
-}
+  if (command === undefined) {
+    startGrpcPlugin();
+  }
 
-function render(call, callback) {
-  console.log('render', call.request);
-  callback(null, {filePath: call.request.url + 'resp'});
-}
+  if (command === 'server') {
+    if (!argv.port) {
+      console.log('Specify http port using --port=5000');
+      return;
+    }
 
-/**
- * Starts an RPC server that receives requests for the Greeter service at the
- * sample server port
- */
-function main() {
-  var server = new grpc.Server();
-  server.addService(GRPC_HEALTH_PROTO.Health.service, {check: check});
-  server.addService(RENDERER_PROTO.Renderer.service, {render: render});
-  server.bind(SERVER_ADDRESS, grpc.ServerCredentials.createInsecure());
-  server.start();
-  console.log(`1|1|tcp|${SERVER_ADDRESS}|grpc`);
-  console.error('Renderer plugin started');
+    let logger = new Logger();
+    let browser = new Browser(logger);
+    await browser.start();
+
+    let server = new HttpServer({port: argv.port}, logger, browser);
+    server.start();
+
+  } else {
+    console.log('Unknown command');
+  }
 }
 
 main();
+
 
 // const puppeteer = require('puppeteer');
 //

@@ -1,9 +1,12 @@
 {
   "compilerOptions": {
+    "moduleResolution": "node",
     "target": "es6",
     "module": "commonjs",
     "outDir": "build",
     "sourceMap": true,
+    "strictNullChecks": true,
+    "allowSyntheticDefaultImports": true,
     "rootDir": "src"
   },
   "include": [
