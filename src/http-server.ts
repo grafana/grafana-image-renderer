@@ -20,17 +20,28 @@ export class HttpServer {
     });
 
     this.app.get('/render', asyncMiddleware(this.render));
+    this.app.use((err, req, res, next) => {
+      return res.status(err.output.statusCode).json(err.output.payload);
+    });
 
     this.app.listen(this.options.port);
     this.log.info(`HTTP Server started, listening on ${this.options.port}`);
   }
 
   render = async (req: express.Request, res: express.Response) => {
-    let result = await this.browser.render();
+    if (!req.query.url) {
+      throw boom.badRequest('Missing url parameter');
+    }
 
-    res.sendFile(result.imagePath);
+    let options = {
+      url: req.query.url,
+      width: req.query.width,
+      height: req.query.height,
+    };
 
-    this.log.info(req.query);
+    let result = await this.browser.render(options);
+
+    res.sendFile(result.filePath);
   }
 }
 

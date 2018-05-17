@@ -23,6 +23,27 @@
     "unique-filename": "^1.1.0"
   },
   "devDependencies": {
-    "tsc-watch": "^1.0.21"
+    "tsc-watch": "^1.0.21",
+    "lint-staged": "^6.0.0",
+    "prettier": "1.9.2"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "prettier --write",
+      "git add"
+    ],
+    "*.scss": [
+      "prettier --write",
+      "git add"
+    ],
+    "*pkg/**/*.go": [
+      "gofmt -w -s",
+      "git add"
+    ]
+  },
+  "prettier": {
+    "trailingComma": "es5",
+    "singleQuote": true,
+    "printWidth": 120
   }
 }

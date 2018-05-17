@@ -1,16 +1,21 @@
-import { startGrpcPlugin } from './grpc-plugin';
+import { GrpcPlugin } from './grpc-plugin';
 import { HttpServer } from './http-server';
-import { Logger } from './logger';
+import { Logger, ConsoleLogger, PluginLogger } from './logger';
 import { Browser } from './browser';
 import * as minimist from 'minimist';
 
 
 async function main() {
-  let argv = minimist(process.argv.slice(2));
-  let command = argv._[0];
+  const argv = minimist(process.argv.slice(2));
+  const command = argv._[0];
 
   if (command === undefined) {
-    startGrpcPlugin();
+    const logger = new PluginLogger();
+    const browser = new Browser(logger);
+    await browser.start();
+
+    const plugin = new GrpcPlugin(logger, browser);
+    plugin.start();
   }
 
   if (command === 'server') {
@@ -19,11 +24,11 @@ async function main() {
       return;
     }
 
-    let logger = new Logger();
-    let browser = new Browser(logger);
+    const logger = new ConsoleLogger();
+    const browser = new Browser(logger);
     await browser.start();
 
-    let server = new HttpServer({port: argv.port}, logger, browser);
+    const server = new HttpServer({port: argv.port}, logger, browser);
     server.start();
 
   } else {
