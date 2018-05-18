@@ -22,6 +22,7 @@ export class Browser {
   validateOptions(options) {
     options.width = parseInt(options.width) || 1000;
     options.height = parseInt(options.height) || 500;
+    options.timeout = parseInt(options.timeout) || 30;
 
     if (options.width > 3000 || options.width < 10) {
       options.width = 2500;
@@ -50,6 +51,14 @@ export class Browser {
     });
 
     await page.goto(options.url);
+
+    // wait for all panels to render
+    await page.waitForFunction(() => {
+      var panelCount = document.querySelectorAll('.panel').length;
+      return (<any>window).panelsRendered >= panelCount;
+    }, {
+      timeout: options.timeout * 1000
+    });
 
     if (!options.filePath) {
       options.filePath = uniqueFilename(os.tmpdir()) + '.png';
