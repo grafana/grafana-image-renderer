@@ -1,22 +1,11 @@
 import * as os from 'os';
 import * as puppeteer from 'puppeteer';
 import { Logger } from './logger';
-import { registerExitCleanUp } from './exit';
 import uniqueFilename = require('unique-filename');
 
 export class Browser {
-  private instance;
 
   constructor(private log: Logger) {
-  }
-
-  async start() {
-    this.log.info("Starting chrome");
-    this.instance = await puppeteer.launch();
-
-    registerExitCleanUp(() => {
-      this.instance.close();
-    });
   }
 
   validateOptions(options) {
@@ -34,40 +23,57 @@ export class Browser {
   }
 
   async render(options) {
-    const page = await this.instance.newPage();
+    let browser;
+    let page;
+    let env = Object.assign({}, process.env);
 
-    this.validateOptions(options);
+    try {
+      this.validateOptions(options);
 
-    await page.setViewport({
-      width: options.width,
-      height: options.height,
-      deviceScaleFactor: 1,
-    });
+      // set env timezone
+      env.TZ = options.timezone || process.env.TZ;
 
-    await page.setCookie({
-      'name': 'renderKey',
-      'value': options.renderKey,
-      'domain': options.domain,
-    });
+      browser = await puppeteer.launch({env: env});
+      page = await browser.newPage();
 
-    await page.goto(options.url);
+      await page.setViewport({
+        width: options.width,
+        height: options.height,
+        deviceScaleFactor: 1,
+      });
 
-    // wait for all panels to render
-    await page.waitForFunction(() => {
-      var panelCount = document.querySelectorAll('.panel').length;
-      return (<any>window).panelsRendered >= panelCount;
-    }, {
-      timeout: options.timeout * 1000
-    });
+      await page.setCookie({
+        'name': 'renderKey',
+        'value': options.renderKey,
+        'domain': options.domain,
+      });
 
-    if (!options.filePath) {
-      options.filePath = uniqueFilename(os.tmpdir()) + '.png';
+      await page.goto(options.url);
+
+      // wait for all panels to render
+      await page.waitForFunction(() => {
+        var panelCount = document.querySelectorAll('.panel').length;
+        return (<any>window).panelsRendered >= panelCount;
+      }, {
+        timeout: options.timeout * 1000
+      });
+
+      if (!options.filePath) {
+        options.filePath = uniqueFilename(os.tmpdir()) + '.png';
+      }
+
+      await page.screenshot({path: options.filePath});
+
+      return { filePath: options.filePath };
+
+    } finally {
+      if (page) {
+        await page.close();
+      }
+      if (browser) {
+        await browser.close();
+      }
     }
-
-    await page.screenshot({path: options.filePath});
-    page.close();
-
-    return { filePath: options.filePath };
   }
 }
 

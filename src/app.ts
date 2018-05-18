@@ -12,8 +12,6 @@ async function main() {
   if (command === undefined) {
     const logger = new PluginLogger();
     const browser = new Browser(logger);
-    await browser.start();
-
     const plugin = new GrpcPlugin(logger, browser);
     plugin.start();
   }
@@ -26,9 +24,8 @@ async function main() {
 
     const logger = new ConsoleLogger();
     const browser = new Browser(logger);
-    await browser.start();
-
     const server = new HttpServer({port: argv.port}, logger, browser);
+
     server.start();
 
   } else {
