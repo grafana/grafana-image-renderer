@@ -40,11 +40,14 @@ export class Browser {
     await page.setViewport({
       width: options.width,
       height: options.height,
+      deviceScaleFactor: 1,
     });
 
-    if (!options.url) {
-      options.url = "http://localhost:3000/d-solo/000000088/testdata-graph-panel-last-1h?orgId=1&panelId=4&from=1526537735449&to=1526541335449&width=1000&height=500&tz=UTC%2B02:00";
-    }
+    await page.setCookie({
+      'name': 'renderKey',
+      'value': options.renderKey,
+      'domain': options.domain,
+    });
 
     await page.goto(options.url);
 

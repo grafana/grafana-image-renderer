@@ -2,7 +2,7 @@ import * as grpc from 'grpc';
 import { Logger } from './logger';
 import { Browser } from './browser';
 
-const SERVER_ADDRESS = '127.0.0.1:50051';
+const SERVER_ADDRESS = '127.0.0.1:50059';
 const RENDERER_PROTO_PATH = __dirname + '/../proto/renderer.proto';
 const GRPC_HEALTH_PROTO_PATH = __dirname + '/../proto/health.proto';
 
@@ -39,13 +39,16 @@ export class GrpcPlugin {
   async render(call, callback) {
     let req = call.request;
 
-    this.log.info('render req', req);
-
     let options = {
       url: req.url,
       width: req.width,
       height: req.height,
       filePath: req.filePath,
+      timeout: req.timeout,
+      renderKey: req.renderKey,
+      domain: req.domain,
+      timezone: req.timezone,
+      encoding: req.encoding,
     };
 
     try {
