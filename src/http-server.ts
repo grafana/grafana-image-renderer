@@ -37,6 +37,12 @@ export class HttpServer {
       url: req.query.url,
       width: req.query.width,
       height: req.query.height,
+      filePath: req.query.filePath,
+      timeout: req.query.timeout,
+      renderKey: req.query.renderKey,
+      domain: req.query.domain,
+      timezone: req.query.timezone,
+      encoding: req.query.encoding,
     };
 
     let result = await this.browser.render(options);
