@@ -1,0 +1,17 @@
+version: '2'
+
+services:
+  grafana:
+    hostname: grafana
+    image: grafana:dev
+    ports:
+     - "3000:3000"
+     - "2003:2003"
+    volumes:
+      - ./grafana.ini:/etc/grafana/grafana.ini
+  renderer:
+    hostname: renderer
+    image: grafana-image-renderer:latest
+    ports:
+      - "8081:8081"
+
