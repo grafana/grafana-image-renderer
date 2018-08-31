@@ -33,7 +33,7 @@ export class Browser {
       // set env timezone
       env.TZ = options.timezone || process.env.TZ;
 
-      browser = await puppeteer.launch({env: env});
+      browser = await puppeteer.launch({env: env, args: ['--no-sandbox']});
       page = await browser.newPage();
 
       await page.setViewport({
