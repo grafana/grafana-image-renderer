@@ -3,6 +3,7 @@ import express = require('express');
 import { Logger } from './logger';
 import { Browser } from './browser';
 import * as boom from 'boom';
+import morgan = require('morgan');
 
 export class HttpServer {
   app: express.Express;
@@ -14,7 +15,7 @@ export class HttpServer {
 
   start() {
     this.app = express();
-
+    this.app.use(morgan('combined'));
     this.app.get('/', (req: express.Request, res: express.Response) => {
       res.send('Grafana Image Renderer');
     });
@@ -44,7 +45,7 @@ export class HttpServer {
       timezone: req.query.timezone,
       encoding: req.query.encoding,
     };
-
+    this.log.info(`render request recieved for ${options.url}`);
     let result = await this.browser.render(options);
 
     res.sendFile(result.filePath);
