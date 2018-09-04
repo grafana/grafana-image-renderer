@@ -25,7 +25,7 @@ export class Browser {
   async render(options) {
     let browser;
     let page;
-    let env = Object.assign({}, process.env);
+    const env = Object.assign({}, process.env);
 
     try {
       this.validateOptions(options);
@@ -52,7 +52,7 @@ export class Browser {
 
       // wait for all panels to render
       await page.waitForFunction(() => {
-        var panelCount = document.querySelectorAll('.panel').length;
+        const panelCount = document.querySelectorAll('.panel').length;
         return (<any>window).panelsRendered >= panelCount;
       }, {
         timeout: options.timeout * 1000

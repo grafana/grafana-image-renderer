@@ -14,9 +14,7 @@ async function main() {
     const browser = new Browser(logger);
     const plugin = new GrpcPlugin(logger, browser);
     plugin.start();
-  }
-
-  if (command === 'server') {
+  } else if (command === 'server') {
     if (!argv.port) {
       console.log('Specify http port using --port=5000');
       return;
