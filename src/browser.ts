@@ -25,6 +25,7 @@ export class Browser {
   async render(options) {
     let browser;
     let page;
+    let exploreHandle;
     const env = Object.assign({}, process.env);
 
     try {
@@ -53,7 +54,8 @@ export class Browser {
       // wait for all panels to render
       await page.waitForFunction(() => {
         const panelCount = document.querySelectorAll('.panel').length;
-        return (<any>window).panelsRendered >= panelCount;
+        const exploreCount = document.querySelectorAll('.explore-graph > canvas').length;
+        return exploreCount > 0 || ((<any>window).panelsRendered >= panelCount);
       }, {
         timeout: options.timeout * 1000
       });
@@ -62,7 +64,12 @@ export class Browser {
         options.filePath = uniqueFilename(os.tmpdir()) + '.png';
       }
 
-      await page.screenshot({path: options.filePath});
+      exploreHandle = await page.$('.explore-container .panel-container:first-of-type');
+      if (exploreHandle != null) {
+        await exploreHandle.screenshot({path: options.filePath});
+      } else {
+        await page.screenshot({path: options.filePath});
+      }
 
       return { filePath: options.filePath };
 
