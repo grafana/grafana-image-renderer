@@ -4,9 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "tsc",
+    "build": "yarn run tsc",
     "start": "node build/app.js",
-    "dev": "tsc-watch --onSuccess \"node build/app.js server --port=3050\""
+    "dev": "yarn run tsc-watch --onSuccess \"node build/app.js server --port=3050\""
   },
   "author": "",
   "license": "ISC",
