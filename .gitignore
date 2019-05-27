@@ -37,3 +37,6 @@ dist/**/*
 
 # Ignore output from coverage report
 coverage
+
+plugin
+plugin.zip
