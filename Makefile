@@ -8,11 +8,10 @@ build:
 
 package:
 	rm -rf ./plugin
-	rm ./plugin.zip
+	rm -f ./plugin.tar.gz
 	./node_modules/.bin/pkg -t node10 . --out-path plugin
-	mkdir -p plugin/puppeteer
-	cp -R ./node_modules/puppeteer/.local-chromium plugin/puppeteer
-	cp node_modules/grpc/src/node/extension_binary/node-v64-darwin-x64-unknown/grpc_node.node plugin/
+	node download_chromium.js mac
+	node download_grpc.js darwin-x64-unknown
 	cp plugin.json plugin/
 	mv plugin/renderer plugin/plugin_start_darwin_amd64
-	zip -rq plugin plugin
+	tar -czf plugin.tar.gz plugin
