@@ -26,6 +26,8 @@ const node_abi = 'node-v64';
 const name = grpcPackageJson.name;
 const version = grpcPackageJson.version;
 
+const archString = process.argv[2];
+const pluginDir =  `plugin-${archString}`;
 // See https://console.cloud.google.com/storage/browser/node-precompiled-binaries.grpc.io/grpc/?project=grpc-testing
 // for existing prebuild binaries (though there are only ones for newer version).
 const [
@@ -35,7 +37,7 @@ const [
   arch,
   // unknown, glibc, musl
   libc,
-] = process.argv[2].split('-');
+] = archString.split('-');
 
 const host = grpcPackageJson.binary.host;
 const remote_path = eval_template(grpcPackageJson.binary.remote_path, { name, version });
@@ -44,7 +46,7 @@ const url = host + path.join(remote_path, package_name);
 
 console.log(`Getting ${url}`);
 new Promise((resolve, reject) => {
-  const file = fs.createWriteStream('plugin/grpc_node.tar.gz');
+  const file = fs.createWriteStream(`plugin-${archString}/grpc_node.tar.gz`);
   https
     .get(url, function(response) {
       if (response.statusCode !== 200) {
@@ -61,10 +63,10 @@ new Promise((resolve, reject) => {
   .then(() => {
     console.log(`Grpc module downloaded`);
     const dirName = package_name.split('.')[0];
-    childProcess.execSync(`tar -xzf plugin/grpc_node.tar.gz --directory plugin`);
-    childProcess.execSync(`mv plugin/${dirName}/grpc_node.node plugin/`);
-    childProcess.execSync(`rm -rf plugin/${dirName}`);
-    childProcess.execSync(`rm -rf plugin/grpc_node.tar.gz`);
+    childProcess.execSync(`tar -xzf ${pluginDir}/grpc_node.tar.gz --directory ${pluginDir}`);
+    childProcess.execSync(`mv ${pluginDir}/${dirName}/grpc_node.node ${pluginDir}/`);
+    childProcess.execSync(`rm -rf ${pluginDir}/${dirName}`);
+    childProcess.execSync(`rm -rf ${pluginDir}/grpc_node.tar.gz`);
     process.exit(0);
   })
   .catch(err => {
