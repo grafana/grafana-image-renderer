@@ -31,7 +31,10 @@ async function main() {
   }
 }
 
-main();
+main().catch(err => {
+  console.error(err);
+  process.exit(1);
+});
 
 
 // const puppeteer = require('puppeteer');

@@ -15,13 +15,12 @@ const platformTransform = {
 
 const archTransform = {
   ia32: 'x84',
-  // I only assume this is correct
   arm: 'armv6',
-  arm64: 'armv7',
+  // I only assume this is correct
+  arm64: 'armv6',
 };
 
 platform = platformTransform[platform] || platform;
 arch = archTransform[arch] || arch;
 
 childProcess.execSync(`./node_modules/.bin/pkg -t node10-${platform}-${arch} . --out-path plugin-${archArg}`);
-

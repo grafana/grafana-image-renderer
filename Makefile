@@ -16,9 +16,8 @@ package:
 	node scripts/pkg.js ${ARCH}
 	node scripts/download_chromium.js ${ARCH}
 	node scripts/download_grpc.js ${ARCH}
+	node scripts/rename_executable.js ${ARCH}
 	cp plugin.json plugin-${ARCH}/
-	cp plugin-${ARCH}/renderer plugin-${ARCH}/plugin_start_linux_amd64
-	mv plugin-${ARCH}/renderer plugin-${ARCH}/plugin_start_darwin_amd64
 	tar -czf plugin-${ARCH}.tar.gz plugin-${ARCH}
 
 build_package: clean clean_package build package
