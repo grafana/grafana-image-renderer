@@ -10,7 +10,7 @@ build:
 
 clean_package:
 	rm -rf ./plugin-${ARCH}
-	rm -f ./plugin-${ARCH}.tar.gz
+	rm -f ./plugin-${ARCH}.zip
 
 package:
 	node scripts/pkg.js ${ARCH}
