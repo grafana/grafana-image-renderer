@@ -18,6 +18,6 @@ package:
 	node scripts/download_grpc.js ${ARCH}
 	node scripts/rename_executable.js ${ARCH}
 	cp plugin.json plugin-${ARCH}/
-	tar -czf plugin-${ARCH}.tar.gz plugin-${ARCH}
+	zip -yqr plugin-${ARCH}.zip plugin-${ARCH}
 
 build_package: clean clean_package build package
