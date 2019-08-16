@@ -27,6 +27,7 @@
   "devDependencies": {
     "husky": "^0.14.3",
     "lint-staged": "^6.0.0",
+    "pkg": "4.3.8",
     "prettier": "1.9.2",
     "tsc-watch": "^1.0.21"
   },
@@ -48,5 +49,9 @@
     "trailingComma": "es5",
     "singleQuote": true,
     "printWidth": 120
-  }
+  },
+  "pkg": {
+    "assets": "proto/*"
+  },
+  "bin": "build/app.js"
 }

@@ -22,6 +22,7 @@ export class HttpServer {
 
     this.app.get('/render', asyncMiddleware(this.render));
     this.app.use((err, req, res, next) => {
+      console.error(err);
       return res.status(err.output.statusCode).json(err.output.payload);
     });
 

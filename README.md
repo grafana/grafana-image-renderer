@@ -33,4 +33,21 @@ cd docker
 docker-compose up
 ```
 
+# Packaging
+This plugin can be packaged into single archive without dependencies.
+```bash
+make build_package ARCH=<arch_string>
+``` 
+
+Where <arch_string> is a combination of 
+- linux, darwin, win32
+- ia32, x64, arm, arm64
+- unknown, glibc, musl
+
+This follows combinations allowed for grpc plugin and you can see options [here](https://console.cloud.google.com/storage/browser/node-precompiled-binaries.grpc.io/grpc/?project=grpc-testing) 
+So far these builds were tested from Mac:
+- darwin-x64-unknown
+- linux-x64-glibc
+- win32-x64-unknown
+
 

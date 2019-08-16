@@ -1,3 +1,4 @@
+import * as path from 'path';
 import * as os from 'os';
 import * as puppeteer from 'puppeteer';
 import { Logger } from './logger';
@@ -33,7 +34,24 @@ export class Browser {
       // set env timezone
       env.TZ = options.timezone || process.env.TZ;
 
-      browser = await puppeteer.launch({env: env, args: ['--no-sandbox']});
+      if ((process as any).pkg) {
+        const parts = puppeteer.executablePath().split(path.sep);
+        while(!parts[0].startsWith('chrome-')) {
+          parts.shift();
+        }
+        const executablePath = [path.dirname(process.execPath), ...parts].join(path.sep);
+        console.log('executablePath', executablePath);
+        browser = await puppeteer.launch({
+          executablePath,
+          env: env,
+          args: ['--no-sandbox'],
+        });
+      } else {
+        browser = await puppeteer.launch({
+          env: env,
+          args: ['--no-sandbox'],
+        });
+      }
       page = await browser.newPage();
 
       await page.setViewport({
