@@ -66,7 +66,8 @@ export class Browser {
         'domain': options.domain,
       });
 
-      await page.goto(options.url);
+      // wait until all data was loaded
+      await page.goto(options.url, { waitUntil: 'networkidle0' });
 
       // wait for all panels to render
       await page.waitForFunction(() => {
