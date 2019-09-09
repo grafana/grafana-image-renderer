@@ -117,6 +117,28 @@ jobs:
       - store_artifacts:
           path: artifacts
 
+  publish-release:
+    working_directory: ~/grafana-piechart-panel
+    docker:
+      - image: cibuilds/github:0.12
+    steps:
+      - checkout
+      - attach_workspace:
+          at: .
+      - run:
+          name: "Install dependencies"
+          command: 'apk add --update --no-cache jq'
+      - run:
+          name: "Publish Release on GitHub"
+          command: |
+            PLUGIN_NAME=grafana-image-renderer
+            RELEASE_NOTES=`awk 'BEGIN {FS="##"; RS=""} FNR==3 {print; exit}' CHANGELOG.md`
+            echo $RELEASE_NOTES
+            VERSION=`cat plugin.json|jq '.info.version'| sed s/\"//g`
+            echo $VERSION
+            ls -al
+            ls -al ./artifacts
+
 workflows:
   version: 2
   build-master:
@@ -139,8 +161,11 @@ workflows:
           type: approval
           requires:
             - build
+            - package_linux_x64
+            - package_darwin_x64
+            - package_windows_x64
           filters: *filter-only-master
-      - publish-github-release:
+      - publish-release:
           requires:
             - approve-release
           filters: *filter-only-master
@@ -160,4 +185,11 @@ workflows:
       - package_windows_x64:
           requires:
             - build
+          filters: *filter-not-release-or-master
+      - public-release:
+          requires:
+            - build
+            - package_linux_x64
+            - package_darwin_x64
+            - package_windows_x64
           filters: *filter-not-release-or-master
