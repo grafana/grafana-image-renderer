@@ -22,18 +22,18 @@ jobs:
       - checkout
       - restore_cache:
           keys:
-            - yarn-packages-{{ checksum "yarn.lock" }}
+            - dependency-cache-{{ checksum "yarn.lock" }}
       - run:
-          name: Install dependencies
-          command: 'yarn install --pure-lockfile --no-progress'
+          name: Yarn Install
+          command: 'yarn install --frozen-lockfile --no-progress'
+      - save_cache:
+          name: Save Yarn Package Cache
+          key: dependency-cache-{{ checksum "yarn.lock" }}
+          paths:
+            - node_modules
       - run:
           name: Build
           command: 'yarn build'
-      - save_cache:
-          name: Save Yarn Package Cache
-          key: yarn-packages-{{ checksum "yarn.lock" }}
-          paths:
-            - ~/.cache/yarn
       - persist_to_workspace:
           root: .
           paths:
@@ -46,16 +46,16 @@ jobs:
       - checkout
       - restore_cache:
           keys:
-            - yarn-packages-{{ checksum "yarn.lock" }}
+            - dependency-cache-{{ checksum "yarn.lock" }}
       - run:
           name: Install dependencies
           command: 'yarn install --pure-lockfile --no-progress'
       - run:
           name: Package
-          command: './scripts/package_target linux-x64-glibc'
+          command: './scripts/package_target.sh linux-x64-glibc'
       - run:
           name: Archive
-          command: './scripts/archive_target linux-x64-glibc'
+          command: './scripts/archive_target.sh linux-x64-glibc'
       - persist_to_workspace:
           root: .
           paths:
