@@ -48,14 +48,14 @@ jobs:
           keys:
             - yarn-packages-{{ checksum "yarn.lock" }}
       - run:
-        name: Install dependencies
-        command: 'yarn install --pure-lockfile --no-progress'
+          name: Install dependencies
+          command: 'yarn install --pure-lockfile --no-progress'
       - run:
-        name: Package
-        command: './scripts/package_target linux-x64-glibc'
+          name: Package
+          command: './scripts/package_target linux-x64-glibc'
       - run:
-        name: Archive
-        command: './scripts/archive_target linux-x64-glibc'
+          name: Archive
+          command: './scripts/archive_target linux-x64-glibc'
       - persist_to_workspace:
           root: .
           paths:
