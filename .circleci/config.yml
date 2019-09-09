@@ -61,8 +61,9 @@ jobs:
           root: .
           paths:
             - dist/*
+            - artifacts/*
       - store_artifacts:
-          path: dist/artifacts
+          path: artifacts
 
   package_darwin_x64:
     <<: *defaults
@@ -86,8 +87,9 @@ jobs:
           root: .
           paths:
             - dist/*
+            - artifacts/*
       - store_artifacts:
-          path: dist/artifacts
+          path: artifacts
 
   package_windows_x64:
     <<: *defaults
@@ -111,8 +113,9 @@ jobs:
           root: .
           paths:
             - dist/*
+            - artifacts/*
       - store_artifacts:
-          path: dist/artifacts
+          path: artifacts
 
 workflows:
   version: 2

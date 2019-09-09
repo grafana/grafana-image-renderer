@@ -7,5 +7,5 @@ if [ -z "$ARCH" ]; then
     exit 1
 fi
 
-mkdir -p dist/artifacts
-zip -yqr dist/artifacts/plugin-${ARCH}.zip dist/plugin-${ARCH}
+mkdir -p artifacts
+zip -yqr artifacts/plugin-${ARCH}.zip dist/plugin-${ARCH}

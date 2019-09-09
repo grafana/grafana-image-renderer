@@ -16,7 +16,7 @@ build:
 
 clean_package:
 	rm -rf .dist/plugin-${ARCH}
-	rm -f ./dist/artifacts/plugin-${ARCH}.zip
+	rm -f ./artifacts/plugin-${ARCH}.zip
 
 package:
 	./scripts/package_target.sh ${ARCH}
@@ -24,4 +24,4 @@ package:
 archive:
 	./scripts/archive_target.sh ${ARCH}
 
-build_package: clean clean_package build package
+build_package: clean clean_package build package archive
