@@ -33,3 +33,4 @@ fi
 
 cp plugin.json dist/plugin-${ARCH}/
 cp README.md dist/plugin-${ARCH}/
+cp LICENSE dist/plugin-${ARCH}/
