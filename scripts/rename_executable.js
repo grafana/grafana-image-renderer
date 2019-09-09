@@ -21,5 +21,5 @@ const archTransform = {
 let ext = platform === 'win32' ? '.exe' : '';
 
 const execFileName = `plugin_start_${platformTransform[platform] || platform}_${archTransform[arch] || arch}${ext}`;
-childProcess.execSync(`mv plugin-${archArg}/renderer${ext} plugin-${archArg}/${execFileName}`);
+childProcess.execSync(`mv dist/plugin-${archArg}/renderer${ext} dist/plugin-${archArg}/${execFileName}`);
 

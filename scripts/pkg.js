@@ -23,4 +23,4 @@ const archTransform = {
 platform = platformTransform[platform] || platform;
 arch = archTransform[arch] || arch;
 
-childProcess.execSync(`./node_modules/.bin/pkg -t node10-${platform}-${arch} . --out-path plugin-${archArg}`);
+childProcess.execSync(`./node_modules/.bin/pkg -t node10-${platform}-${arch} . --out-path dist/plugin-${archArg}`);

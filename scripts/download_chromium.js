@@ -4,7 +4,7 @@ const Puppeteer = require('puppeteer');
 const puppeteerPackageJson = require('puppeteer/package.json');
 
 const archArg = process.argv[2];
-const pluginDir = `plugin-${archArg}`;
+const pluginDir = `dist/plugin-${archArg}`;
 let [
   // Should be one of linux, mac, win32, win64 as per options in BrowserFetcher but we reuse the same arch string
   // as for grpc download (ie darwin-x64-unknown) so we need to transform it a bit
