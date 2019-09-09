@@ -7,6 +7,7 @@ if [ -z "$ARCH" ]; then
     exit 1
 fi
 
+mkdir -p dist
 node scripts/pkg.js ${ARCH}
 node scripts/download_chromium.js ${ARCH}
 node scripts/download_grpc.js ${ARCH}
