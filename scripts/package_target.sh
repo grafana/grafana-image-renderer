@@ -9,6 +9,9 @@ fi
 
 mkdir -p dist
 node scripts/pkg.js ${ARCH}
+if [ $? != 0 ]; then
+   echo "${?}\n". 1>&2 && exit 1
+fi
 node scripts/download_chromium.js ${ARCH}
 node scripts/download_grpc.js ${ARCH}
 node scripts/rename_executable.js ${ARCH}
