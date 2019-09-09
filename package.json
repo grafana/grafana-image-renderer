@@ -31,6 +31,9 @@
     "prettier": "1.9.2",
     "tsc-watch": "^1.0.21"
   },
+  "resolutions": {
+    "set-value": "2.0.1"
+  },
   "lint-staged": {
     "*.{ts,tsx}": [
       "prettier --write",
