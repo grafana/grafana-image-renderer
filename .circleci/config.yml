@@ -174,22 +174,3 @@ workflows:
     jobs:
       - build:
           filters: *filter-not-release-or-master
-      - package_linux_x64:
-          requires:
-            - build
-          filters: *filter-not-release-or-master
-      - package_darwin_x64:
-          requires:
-            - build
-          filters: *filter-not-release-or-master
-      - package_windows_x64:
-          requires:
-            - build
-          filters: *filter-not-release-or-master
-      - publish-release:
-          requires:
-            - build
-            - package_linux_x64
-            - package_darwin_x64
-            - package_windows_x64
-          filters: *filter-not-release-or-master
