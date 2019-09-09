@@ -186,7 +186,7 @@ workflows:
           requires:
             - build
           filters: *filter-not-release-or-master
-      - public-release:
+      - publish-release:
           requires:
             - build
             - package_linux_x64
