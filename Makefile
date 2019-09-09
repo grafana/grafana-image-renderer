@@ -5,6 +5,12 @@ all: clean build
 clean:
 	rm -rf build
 
+deps: node_modules
+
+node_modules: package.json yarn.lock
+	@echo "install frontend dependencies"
+	yarn install --pure-lockfile --no-progress
+
 build:
 	./node_modules/.bin/tsc
 
