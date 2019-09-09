@@ -9,10 +9,12 @@
       "name": "Grafana Labs",
       "url": "https://grafana.com"
     },
-    "keywords": ["test"],
+    "keywords": ["renderer", "png", "backend", "image"],
     "logos": {
     },
     "links": [
+      {"name": "Project site", "url": "https://github.com/grafana/grafana-image-renderer"},
+      {"name": "Apache License", "url": "https://github.com/grafana/grafana-image-renderer/blob/master/LICENSE"}
     ],
     "version": "1.0.0",
     "updated": "2018-02-10"
