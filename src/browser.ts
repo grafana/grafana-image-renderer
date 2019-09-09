@@ -70,7 +70,7 @@ export class Browser {
 
       // wait for all panels to render
       await page.waitForFunction(() => {
-        const panelCount = document.querySelectorAll('.panel').length;
+        const panelCount = document.querySelectorAll('.panel').length || document.querySelectorAll('.panel-container').length;
         return (<any>window).panelsRendered >= panelCount;
       }, {
         timeout: options.timeout * 1000
