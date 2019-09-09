@@ -117,12 +117,15 @@ jobs:
       - store_artifacts:
           path: artifacts
 
-  publish-release:
-    working_directory: ~/grafana-piechart-panel
+  publish-github-release:
+    working_directory: ~/grafana-image-renderer
     docker:
       - image: cibuilds/github:0.12
     steps:
       - checkout
+      - add_ssh_keys:
+          fingerprints:
+            - "0b:66:0c:56:98:dc:ea:69:79:f1:56:22:3f:c1:22:99"
       - attach_workspace:
           at: .
       - run:
@@ -130,14 +133,24 @@ jobs:
           command: 'apk add --update --no-cache jq'
       - run:
           name: "Publish Release on GitHub"
-          command: |
-            PLUGIN_NAME=grafana-image-renderer
-            RELEASE_NOTES=`awk 'BEGIN {FS="##"; RS=""} FNR==3 {print; exit}' CHANGELOG.md`
-            echo $RELEASE_NOTES
-            VERSION=`cat plugin.json|jq '.info.version'| sed s/\"//g`
-            echo $VERSION
-            ls -al
-            ls -al ./artifacts
+          command: './scripts/publish_github_release.sh'
+
+  publish-docker-release:
+    working_directory: ~/grafana-image-renderer
+    environment:
+      IMAGE_NAME: "${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}"
+    docker:
+      - image: circleci/buildpack-deps:stretch
+    steps:
+      - checkout
+      - setup_remote_docker
+      - run: |
+          TAG=$(git describe --tags --abbrev=0)
+          docker build -t ${IMAGE_NAME}:${TAG} .
+          docker tag IMAGE_NAME:${TAG} IMAGE_NAME:latest .
+          docker login -u "$DOCKER_USER" -p "$DOCKER_PASS"
+          docker push IMAGE_NAME:${TAG}
+          docker push IMAGE_NAME:latest
 
 workflows:
   version: 2
@@ -165,9 +178,13 @@ workflows:
             - package_darwin_x64
             - package_windows_x64
           filters: *filter-only-master
-      - publish-release:
+      - publish-github-release:
           requires:
             - approve-release
+          filters: *filter-only-master
+      - publish-docker-release:
+          requires:
+            - publish-github-release
           filters: *filter-only-master
 
   build-branches-and-prs:
