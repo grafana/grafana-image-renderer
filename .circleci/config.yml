@@ -38,6 +38,7 @@ jobs:
           root: .
           paths:
             - build/*
+
   package_linux_x64:
     <<: *defaults
     steps:
@@ -59,7 +60,60 @@ jobs:
       - persist_to_workspace:
           root: .
           paths:
-            - artifacts
+            - artifacts/*
+      - store_artifacts:
+          path: artifacts
+
+  package_darwin_x64:
+    <<: *defaults
+    steps:
+      - checkout
+      - attach_workspace:
+          at: .
+      - restore_cache:
+          keys:
+            - dependency-cache-{{ checksum "yarn.lock" }}
+      - run:
+          name: Install dependencies
+          command: 'yarn install --pure-lockfile --no-progress'
+      - run:
+          name: Package
+          command: './scripts/package_target.sh darwin-x64-unknown'
+      - run:
+          name: Archive
+          command: './scripts/archive_target.sh darwin-x64-unknown'
+      - persist_to_workspace:
+          root: .
+          paths:
+            - artifacts/*
+      - store_artifacts:
+          path: artifacts
+
+  package_windows_x64:
+    <<: *defaults
+    steps:
+      - checkout
+      - attach_workspace:
+          at: .
+      - restore_cache:
+          keys:
+            - dependency-cache-{{ checksum "yarn.lock" }}
+      - run:
+          name: Install dependencies
+          command: 'yarn install --pure-lockfile --no-progress'
+      - run:
+          name: Package
+          command: './scripts/package_target.sh win32-x64-unknown'
+      - run:
+          name: Archive
+          command: './scripts/archive_target.sh win32-x64-unknown'
+      - persist_to_workspace:
+          root: .
+          paths:
+            - artifacts/*
+      - store_artifacts:
+          path: artifacts
+
 workflows:
   version: 2
   build-master:
@@ -67,6 +121,14 @@ workflows:
       - build:
           filters: *filter-only-master
       - package_linux_x64:
+          requires:
+            - build
+          filters: *filter-only-master
+      - package_darwin_x64:
+          requires:
+            - build
+          filters: *filter-only-master
+      - package_windows_x64:
           requires:
             - build
           filters: *filter-only-master
@@ -85,6 +147,14 @@ workflows:
       - build:
           filters: *filter-not-release-or-master
       - package_linux_x64:
+          requires:
+            - build
+          filters: *filter-not-release-or-master
+      - package_darwin_x64:
+          requires:
+            - build
+          filters: *filter-not-release-or-master
+      - package_windows_x64:
           requires:
             - build
           filters: *filter-not-release-or-master
