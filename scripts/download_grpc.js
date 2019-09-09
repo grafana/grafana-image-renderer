@@ -27,7 +27,7 @@ const name = grpcPackageJson.name;
 const version = grpcPackageJson.version;
 
 const archString = process.argv[2];
-const pluginDir =  `plugin-${archString}`;
+const pluginDir =  `./dist/plugin-${archString}`;
 // See https://console.cloud.google.com/storage/browser/node-precompiled-binaries.grpc.io/grpc/?project=grpc-testing
 // for existing prebuild binaries (though there are only ones for newer version).
 const [
@@ -46,7 +46,7 @@ const url = host + path.join(remote_path, package_name);
 
 console.log(`Getting ${url}`);
 new Promise((resolve, reject) => {
-  const file = fs.createWriteStream(`plugin-${archString}/grpc_node.tar.gz`);
+  const file = fs.createWriteStream(`${pluginDir}/grpc_node.tar.gz`);
   https
     .get(url, function(response) {
       if (response.statusCode !== 200) {
