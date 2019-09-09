@@ -5,9 +5,7 @@ import { Logger } from './logger';
 import uniqueFilename = require('unique-filename');
 
 export class Browser {
-
-  constructor(private log: Logger) {
-  }
+  constructor(private log: Logger) {}
 
   validateOptions(options) {
     options.width = parseInt(options.width) || 1000;
@@ -36,7 +34,7 @@ export class Browser {
 
       if ((process as any).pkg) {
         const parts = puppeteer.executablePath().split(path.sep);
-        while(!parts[0].startsWith('chrome-')) {
+        while (!parts[0].startsWith('chrome-')) {
           parts.shift();
         }
         const executablePath = [path.dirname(process.execPath), ...parts].join(path.sep);
@@ -47,10 +45,18 @@ export class Browser {
           args: ['--no-sandbox'],
         });
       } else {
-        browser = await puppeteer.launch({
-          env: env,
-          args: ['--no-sandbox'],
-        });
+        if (env['CHROME_BIN']) {
+          browser = await puppeteer.launch({
+            executablePath: env['CHROME_BIN'],
+            env: env,
+            args: ['--no-sandbox'],
+          });
+        } else {
+          browser = await puppeteer.launch({
+            env: env,
+            args: ['--no-sandbox'],
+          });
+        }
       }
       page = await browser.newPage();
 
@@ -61,29 +67,32 @@ export class Browser {
       });
 
       await page.setCookie({
-        'name': 'renderKey',
-        'value': options.renderKey,
-        'domain': options.domain,
+        name: 'renderKey',
+        value: options.renderKey,
+        domain: options.domain,
       });
 
       await page.goto(options.url);
 
       // wait for all panels to render
-      await page.waitForFunction(() => {
-        const panelCount = document.querySelectorAll('.panel').length || document.querySelectorAll('.panel-container').length;
-        return (<any>window).panelsRendered >= panelCount;
-      }, {
-        timeout: options.timeout * 1000
-      });
+      await page.waitForFunction(
+        () => {
+          const panelCount =
+            document.querySelectorAll('.panel').length || document.querySelectorAll('.panel-container').length;
+          return (<any>window).panelsRendered >= panelCount;
+        },
+        {
+          timeout: options.timeout * 1000,
+        }
+      );
 
       if (!options.filePath) {
         options.filePath = uniqueFilename(os.tmpdir()) + '.png';
       }
 
-      await page.screenshot({path: options.filePath});
+      await page.screenshot({ path: options.filePath });
 
       return { filePath: options.filePath };
-
     } finally {
       if (page) {
         await page.close();
@@ -94,4 +103,3 @@ export class Browser {
     }
   }
 }
-
