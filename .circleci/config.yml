@@ -60,9 +60,9 @@ jobs:
       - persist_to_workspace:
           root: .
           paths:
-            - artifacts/*
+            - dist/*
       - store_artifacts:
-          path: artifacts
+          path: dist/artifacts
 
   package_darwin_x64:
     <<: *defaults
@@ -85,9 +85,9 @@ jobs:
       - persist_to_workspace:
           root: .
           paths:
-            - artifacts/*
+            - dist/*
       - store_artifacts:
-          path: artifacts
+          path: dist/artifacts
 
   package_windows_x64:
     <<: *defaults
@@ -110,9 +110,9 @@ jobs:
       - persist_to_workspace:
           root: .
           paths:
-            - artifacts/*
+            - dist/*
       - store_artifacts:
-          path: artifacts
+          path: dist/artifacts
 
 workflows:
   version: 2
