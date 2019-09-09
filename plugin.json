@@ -1,6 +1,6 @@
 {
   "type": "renderer",
-  "name": "Backend Renderer",
+  "name": "Grafana Image Renderer",
   "id": "grafana-image-renderer",
 
   "info": {
