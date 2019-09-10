@@ -138,7 +138,7 @@ jobs:
   publish-docker-release:
     working_directory: ~/grafana-image-renderer
     environment:
-      IMAGE_NAME: "${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}"
+      IMAGE_NAME: grafana/grafana-image-renderer
     docker:
       - image: circleci/buildpack-deps:stretch
     steps:
