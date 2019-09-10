@@ -1,5 +1,9 @@
 # Change Log
 
+## v1.0.3 - 2019-09-10
+
+- Automate docker release
+
 ## v1.0.2 - 2019-09-10
 
 - Don't include dist directory in archive (zip) files
