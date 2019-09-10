@@ -145,12 +145,13 @@ jobs:
       - checkout
       - setup_remote_docker
       - run: |
-          TAG=$(git describe --tags --abbrev=0)
+          TAG=$(git describe --tags --abbrev=0 | cut -d "v" -f 2)
+          echo "building ${TAG}"
           docker build -t ${IMAGE_NAME}:${TAG} .
           docker tag ${IMAGE_NAME}:${TAG} ${IMAGE_NAME}:latest
-          docker login -u "$DOCKER_USER" -p "$DOCKER_PASS"
-          docker push IMAGE_NAME:${TAG}
-          docker push IMAGE_NAME:latest
+          echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+          docker push ${IMAGE_NAME}:${TAG}
+          docker push ${IMAGE_NAME}:latest
 
 workflows:
   version: 2
