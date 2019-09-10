@@ -8,4 +8,4 @@ if [ -z "$ARCH" ]; then
 fi
 
 mkdir -p artifacts
-zip -yqr artifacts/plugin-${ARCH}.zip dist/plugin-${ARCH}
+(cd dist && zip -yqr ../artifacts/plugin-${ARCH}.zip plugin-${ARCH})
