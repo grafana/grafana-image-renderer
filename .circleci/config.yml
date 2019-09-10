@@ -147,7 +147,7 @@ jobs:
       - run: |
           TAG=$(git describe --tags --abbrev=0)
           docker build -t ${IMAGE_NAME}:${TAG} .
-          docker tag ${IMAGE_NAME}:${TAG} ${IMAGE_NAME}:latest .
+          docker tag ${IMAGE_NAME}:${TAG} ${IMAGE_NAME}:latest
           docker login -u "$DOCKER_USER" -p "$DOCKER_PASS"
           docker push IMAGE_NAME:${TAG}
           docker push IMAGE_NAME:latest
