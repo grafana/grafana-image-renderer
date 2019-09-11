@@ -18,8 +18,7 @@
 
 ## Publish plugin to Grafana.com
 
-1. Download all plugin binaries from the GitHub release of the version you want to publish.
-2. Run `md5sum` for each of them.
+1. Download `md5sums.txt` from the GitHub release of the version you want to publish.
 
 ### Alternative 1 - Open a PR in grafana-plugin-repository
 
