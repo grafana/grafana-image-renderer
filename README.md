@@ -2,52 +2,53 @@
 
 A Grafana Backend Plugin that handles rendering panels &amp; dashboards to PNGs using headless chrome.
 
-# Dependencies
+## Requirements
 
-Nodejs v8+ installed.
+### Supported operating systems
 
-# Installation
+- Linux (x64)
+- Windows (x64)
+- Mac OS X (x64)
 
-- git clone into Grafana external plugins folder.
-- yarn install --pure-lockfile
-- yarn run build
-- restart grafana-server , it should log output that the renderer plugin was found and started.
-- To get more logging info update grafana.ini section [log] , key filters = rendering:debug
+### No dependencies
 
+This plugin have been packaged into a single executable together with [Node.js](https://nodejs.org/) runtime and [Chromium](https://www.chromium.org/Home) so it doesn't require any additional dependencies to be installed on the Grafana server.
 
-# Remote Rendering Docker image
+## Installation
 
-A dockerfile is provided for deploying the remote-image-renderer in a container.
-You can then configure your Grafana server to use the container via the
-```
-[rendering]
-server_url=http://renderer:8081/render
-```
-config setting in grafana.ini
+### Using grafana-cli
 
-A docker-compose example is provided in docker/
-to launch
+NOTE: Installing this plugin using grafana-cli is supported from Grafana v6.4.
 
 ```
-cd docker
-docker-compose up
+grafana-cli plugins install grafana-image-renderer
 ```
 
-# Packaging
-This plugin can be packaged into single archive without dependencies.
-```bash
-make build_package ARCH=<arch_string>
+### Clone into plugins folder
+
+1. git clone into Grafana external plugins folder.
+2. Install dependencies and build
+
+    ```
+    yarn install --pure-lockfile
+    yarn run build
+    ```
+
+3. Restart Grafana
+
+## Remote Rendering Using Docker
+
+As an alternative to installing and running the image renderer as a plugin you can run it as a remote image rendering service using Docker. Read more [here](https://github.com/grafana/grafana-image-renderer/blob/master/docs/remote_rendering.md).
+
+## Troubleshooting
+
+To get more logging information, update Grafana configuration:
+
+```
+[log]
+filters = rendering:debug
 ```
 
-Where <arch_string> is a combination of
-- linux, darwin, win32
-- ia32, x64, arm, arm64
-- unknown, glibc, musl
+## Additional information
 
-This follows combinations allowed for grpc plugin and you can see options [here](https://console.cloud.google.com/storage/browser/node-precompiled-binaries.grpc.io/grpc/?project=grpc-testing)
-So far these builds were tested from Mac:
-- darwin-x64-unknown
-- linux-x64-glibc
-- win32-x64-unknown
-
-
+See [docs](https://github.com/grafana/grafana-image-renderer/blob/master/docs/index.md).

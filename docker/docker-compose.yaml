@@ -2,16 +2,14 @@ version: '2'
 
 services:
   grafana:
-    hostname: grafana
-    image: grafana:dev
+    image: grafana/grafana:master
     ports:
      - "3000:3000"
-     - "2003:2003"
-    volumes:
-      - ./grafana.ini:/etc/grafana/grafana.ini
+    environment:
+      GF_RENDERING_SERVER_URL: http://renderer:8081/render
+      GF_RENDERING_CALLBACK_URL: http://grafana:3000/
+      GF_LOG_FILTERS: rendering:debug
   renderer:
-    hostname: renderer
-    image: grafana-image-renderer:latest
+    image: grafana/grafana-image-renderer:latest
     ports:
-      - "8081:8081"
-
+      - 8081

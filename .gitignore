@@ -16,6 +16,7 @@ tmp
 # Build
 dist
 build
+artifacts
 
 # API keys and secrets
 .env
@@ -37,6 +38,3 @@ dist/**/*
 
 # Ignore output from coverage report
 coverage
-
-# Dirs and tar.gz files generated from build
-plugin-*
