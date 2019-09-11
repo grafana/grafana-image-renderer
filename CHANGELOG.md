@@ -1,3 +1,7 @@
+## 1.0.4 (2019-09-11)
+
+- Update readme and docs
+
 ## 1.0.3 (2019-09-10)
 
 - Automate docker release
