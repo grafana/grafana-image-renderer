@@ -1,3 +1,7 @@
+## 1.0.5 (2019-09-11)
+
+- Include md5 checksums in release artifacts
+
 ## 1.0.4 (2019-09-11)
 
 - Update readme and docs
