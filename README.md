@@ -38,7 +38,7 @@ grafana-cli plugins install grafana-image-renderer
 
 ## Remote Rendering Using Docker
 
-As an alternative to installing and running the image renderer as a plugin you can run it as a remote image rendering service using Docker. Read more [here](https://github.com/grafana/grafana-image-renderer/blob/master/docs/remote_rendering.md).
+As an alternative to installing and running the image renderer as a plugin you can run it as a remote image rendering service using Docker. Read more [here](https://github.com/grafana/grafana-image-renderer/blob/master/docs/remote_rendering_using_docker.md).
 
 ## Troubleshooting
 
