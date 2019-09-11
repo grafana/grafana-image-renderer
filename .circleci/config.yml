@@ -132,6 +132,9 @@ jobs:
           name: "Install dependencies"
           command: 'apk add --update --no-cache jq'
       - run:
+          name: "Generate MD5 checksums"
+          command: './scripts/generate_md5sum.sh'
+      - run:
           name: "Publish Release on GitHub"
           command: './scripts/publish_github_release.sh'
 
