@@ -2,7 +2,7 @@
 
 set -e
 
-RELEASE_NOTES=`awk 'BEGIN {FS="##"; RS=""} FNR==3 {print; exit}' CHANGELOG.md`
+RELEASE_NOTES=`awk 'BEGIN {FS="##"; RS=""} FNR==2 {print; exit}' CHANGELOG.md`
 VERSION=`cat plugin.json|jq '.info.version'| sed s/\"//g`
 LATEST_TAG=$(git describe --tags --abbrev=0)
 
