@@ -20,13 +20,15 @@
 
 1. Download `md5sums.txt` from the GitHub release of the version you want to publish.
 
-### Alternative 1 - Open a PR in grafana-plugin-repository
+### Alternative 1 - Open a PR in grafana-plugin-repository (preferred way for now)
 
 1. Checkout [grafana-plugin-repository](https://github.com/grafana/grafana-plugin-repository)
-2. Update repo.json with new plugin version JSON payload
+2. Update repo.json with new plugin version JSON payload providing `version`, `commit`, `url` and `download` payload with download URL's and MD5 checksums. See [PR](https://github.com/grafana/grafana-plugin-repository/pull/480) for an example.
 3. Commit, push and open a PR
-
-See [PR](https://github.com/grafana/grafana-plugin-repository/pull/479) for an example.
+4. Wait for the PR to be merged and then push version to grafana.com
+    ```bash
+    gcom /plugins -d slug=grafana-image-renderer -d version=1.0.5
+    ```
 
 ### Alternative 2 - Push directly to grafana.com
 
@@ -53,6 +55,7 @@ plugin_version.json:
 }
 ```
 
+Push to grafana.com:
 ```bash
 JSON=$(cat plugin_version.json) gcom /plugins -X POST -H "Content-Type: application/json" -d $JSON
 ```
