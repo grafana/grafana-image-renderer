@@ -28,7 +28,6 @@ grafana-cli plugins install grafana-image-renderer
 
 1. Git clone this repo into the Grafana external plugins folder.
 2. Install dependencies and build.
-<!--- Wait, what? You said in the No dependencies section that there were no dependencies. --->
 
     ```
     yarn install --pure-lockfile
