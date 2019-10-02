@@ -26,8 +26,9 @@ export class HttpServer {
       return res.status(err.output.statusCode).json(err.output.payload);
     });
 
-    this.app.listen(this.options.port);
-    this.log.info(`HTTP Server started, listening on ${this.options.port}`);
+    this.app.listen(this.options.port, this.options.host);
+    const hostlabel = this.options.host ? this.options.host : '';
+    this.log.info(`HTTP Server started, listening on ${hostlabel}:${this.options.port}`);
   }
 
   render = async (req: express.Request, res: express.Response) => {

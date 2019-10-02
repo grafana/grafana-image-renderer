@@ -22,7 +22,7 @@ async function main() {
 
     const logger = new ConsoleLogger();
     const browser = new Browser(logger);
-    const server = new HttpServer({port: argv.port}, logger, browser);
+    const server = new HttpServer({port: argv.port, host: argv.host}, logger, browser);
 
     server.start();
 
