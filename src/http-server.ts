@@ -46,7 +46,7 @@ export class HttpServer {
       timezone: req.query.timezone,
       encoding: req.query.encoding,
     };
-    this.log.info(`render request recieved for ${options.url}`);
+    this.log.info(`render request received for ${options.url}`);
     let result = await this.browser.render(options);
 
     res.sendFile(result.filePath);
