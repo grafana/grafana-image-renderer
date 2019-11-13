@@ -1,40 +1,44 @@
-FROM node:10-alpine AS base
+FROM node:10-buster-slim AS base
 
-ENV CHROME_BIN="/usr/bin/chromium-browser"
+RUN apt-get update \
+    && apt-get install -y chromium fonts-open-sans ca-certificates --no-install-recommends \
+    && rm -rf /var/lib/apt/lists/* \
+    && rm -rf /src/*.deb
+
+ADD https://github.com/Yelp/dumb-init/releases/download/v1.2.2/dumb-init_1.2.2_amd64 /usr/local/bin/dumb-init
+RUN chmod +x /usr/local/bin/dumb-init
+
+
+FROM base as build
+
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD="true"
 
 WORKDIR /usr/src/app
 
-RUN \
-  echo "http://dl-cdn.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories \
-  && echo "http://dl-cdn.alpinelinux.org/alpine/edge/main" >> /etc/apk/repositories \
-  && echo "http://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories \
-  && apk --no-cache  update \
-  && apk --no-cache  upgrade \
-  && apk add --no-cache --virtual .build-deps \
-    udev ttf-opensans chromium \
-		ca-certificates dumb-init \
-  && rm -rf /var/cache/apk/* /tmp/*
-
-FROM base as build
-
-COPY . ./
+COPY . .
 
 RUN yarn install --pure-lockfile
 RUN yarn run build
 
-EXPOSE 8081
-
-CMD [ "yarn", "run", "dev" ]
 
 FROM base
+
+ENV CHROME_BIN="/usr/bin/chromium"
 
 COPY --from=build /usr/src/app/node_modules node_modules
 COPY --from=build /usr/src/app/build build
 COPY --from=build /usr/src/app/proto proto
+
+RUN groupadd --system chrome && \
+    useradd --system --create-home --gid chrome --groups audio,video chrome && \
+    mkdir --parents /home/chrome/reports && \
+    chown --recursive chrome:chrome /home/chrome
+
+USER chrome
 
 EXPOSE 8081
 
 ENTRYPOINT ["dumb-init", "--"]
 
 CMD ["node", "build/app.js", "server", "--port=8081"]
+
