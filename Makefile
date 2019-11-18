@@ -1,4 +1,6 @@
 ARCH = darwin-x64-unknown
+SKIP_CHROMIUM =
+OUT =
 
 all: clean build
 
@@ -15,13 +17,12 @@ build:
 	./node_modules/.bin/tsc
 
 clean_package:
-	rm -rf .dist/plugin-${ARCH}
-	rm -f ./artifacts/plugin-${ARCH}.zip
+	./scripts/clean_target.sh ${ARCH} ${OUT}
 
 package:
-	./scripts/package_target.sh ${ARCH}
+	./scripts/package_target.sh ${ARCH} ${SKIP_CHROMIUM} ${OUT}
 
 archive:
-	./scripts/archive_target.sh ${ARCH}
+	./scripts/archive_target.sh ${ARCH} ${OUT}
 
 build_package: clean clean_package build package archive

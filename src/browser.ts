@@ -4,8 +4,41 @@ import * as puppeteer from 'puppeteer';
 import { Logger } from './logger';
 import uniqueFilename = require('unique-filename');
 
+export function newPluginBrowser(log: Logger): Browser {
+  const env = Object.assign({}, process.env);
+  let chromeBin: any;
+
+  if (env['GF_RENDERER_PLUGIN_CHROME_BIN']) {
+    chromeBin = env['GF_RENDERER_PLUGIN_CHROME_BIN'];
+  } else if ((process as any).pkg) {
+    const parts = puppeteer.executablePath().split(path.sep);
+    while (!parts[0].startsWith('chrome-')) {
+      parts.shift();
+    }
+
+    chromeBin = [path.dirname(process.execPath), ...parts].join(path.sep);
+  }
+
+  return new Browser(log, chromeBin);
+}
+
+export function newServerBrowser(log: Logger): Browser {
+  const env = Object.assign({}, process.env);
+  let chromeBin: any;
+
+  if (env['CHROME_BIN']) {
+    chromeBin = env['CHROME_BIN'];
+  }
+
+  return new Browser(log, chromeBin);
+}
+
 export class Browser {
-  constructor(private log: Logger) {}
+  chromeBin?: string;
+
+  constructor(private log: Logger, chromeBin?: string) {
+    this.chromeBin = chromeBin;
+  }
 
   validateOptions(options) {
     options.width = parseInt(options.width) || 1000;
@@ -32,32 +65,16 @@ export class Browser {
       // set env timezone
       env.TZ = options.timezone || process.env.TZ;
 
-      if ((process as any).pkg) {
-        const parts = puppeteer.executablePath().split(path.sep);
-        while (!parts[0].startsWith('chrome-')) {
-          parts.shift();
-        }
-        const executablePath = [path.dirname(process.execPath), ...parts].join(path.sep);
-        console.log('executablePath', executablePath);
-        browser = await puppeteer.launch({
-          executablePath,
-          env: env,
-          args: ['--no-sandbox'],
-        });
-      } else {
-        if (env['CHROME_BIN']) {
-          browser = await puppeteer.launch({
-            executablePath: env['CHROME_BIN'],
-            env: env,
-            args: ['--no-sandbox'],
-          });
-        } else {
-          browser = await puppeteer.launch({
-            env: env,
-            args: ['--no-sandbox'],
-          });
-        }
+      let launcherOptions: any = {
+        env: env,
+        args: ['--no-sandbox'],
+      };
+
+      if (this.chromeBin) {
+        launcherOptions.executablePath = this.chromeBin;
       }
+
+      browser = await puppeteer.launch(launcherOptions);
       page = await browser.newPage();
 
       await page.setViewport({
