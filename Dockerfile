@@ -13,7 +13,7 @@ RUN \
   && apk --no-cache  upgrade \
   && apk add --no-cache --virtual .build-deps \
     udev ttf-opensans chromium \
-		ca-certificates dumb-init \
+		ca-certificates dumb-init curl nghttp2 openldap \
   && rm -rf /var/cache/apk/* /tmp/*
 
 FROM base as build
