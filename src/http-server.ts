@@ -8,10 +8,7 @@ import morgan = require('morgan');
 export class HttpServer {
   app: express.Express;
 
-  constructor(private options,
-              private log: Logger,
-              private browser: Browser) {
-  }
+  constructor(private options, private log: Logger, private browser: Browser) {}
 
   start() {
     this.app = express();
@@ -25,6 +22,10 @@ export class HttpServer {
       console.error(err);
       return res.status(err.output.statusCode).json(err.output.payload);
     });
+
+    if (this.browser.chromeBin) {
+      this.log.info(`Using chromeBin ${this.browser.chromeBin}`);
+    }
 
     this.app.listen(this.options.port);
     this.log.info(`HTTP Server started, listening on ${this.options.port}`);
@@ -50,13 +51,13 @@ export class HttpServer {
     let result = await this.browser.render(options);
 
     res.sendFile(result.filePath);
-  }
+  };
 }
 
 // wrapper for our async route handlers
 // probably you want to move it to a new file
 const asyncMiddleware = fn => (req, res, next) => {
-  Promise.resolve(fn(req, res, next)).catch((err) => {
+  Promise.resolve(fn(req, res, next)).catch(err => {
     if (!err.isBoom) {
       return next(boom.badImplementation(err));
     }

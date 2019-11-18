@@ -9,11 +9,8 @@ const GRPC_HEALTH_PROTO_PATH = __dirname + '/../proto/health.proto';
 export const RENDERER_PROTO = grpc.load(RENDERER_PROTO_PATH).models;
 export const GRPC_HEALTH_PROTO = grpc.load(GRPC_HEALTH_PROTO_PATH).grpc.health.v1;
 
-
 export class GrpcPlugin {
-
-  constructor(private log: Logger, private browser: Browser) {
-  }
+  constructor(private log: Logger, private browser: Browser) {}
 
   start() {
     var server = new grpc.Server();
@@ -29,11 +26,16 @@ export class GrpcPlugin {
     server.start();
 
     console.log(`1|1|tcp|${SERVER_ADDRESS}|grpc`);
-    this.log.info('Renderer plugin started');
+
+    if (this.browser.chromeBin) {
+      this.log.info('Renderer plugin started', 'chromeBin', this.browser.chromeBin);
+    } else {
+      this.log.info('Renderer plugin started');
+    }
   }
 
   check(call, callback) {
-    callback(null, {status: 'SERVING'});
+    callback(null, { status: 'SERVING' });
   }
 
   async render(call, callback) {
@@ -52,12 +54,12 @@ export class GrpcPlugin {
     };
 
     try {
+      this.log.debug('Render request received', 'url', options.url);
       let result = await this.browser.render(options);
-      callback(null, {error: ''});
+      callback(null, { error: '' });
     } catch (err) {
-      this.log.info("Error", err);
-      callback(null, {error: err.toString()});
+      this.log.error('Render request failed', 'url', options.url, 'error', err);
+      callback(null, { error: err.toString() });
     }
   }
 }
-

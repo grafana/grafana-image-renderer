@@ -4,7 +4,6 @@ const Puppeteer = require('puppeteer');
 const puppeteerPackageJson = require('puppeteer/package.json');
 
 const archArg = process.argv[2];
-const pluginDir = `dist/plugin-${archArg}`;
 let [
   // Should be one of linux, mac, win32, win64 as per options in BrowserFetcher but we reuse the same arch string
   // as for grpc download (ie darwin-x64-unknown) so we need to transform it a bit
@@ -19,6 +18,8 @@ if (platform === 'win32' && arch === 'x64') {
 if (platform === 'darwin') {
   platform = 'mac'
 }
+
+const outputPath = "dist/" + (process.argv[3] || `plugin-${archArg}`);
 
 const browserFetcher = Puppeteer.createBrowserFetcher({ platform });
 const revision = puppeteerPackageJson.puppeteer.chromium_revision;
@@ -36,9 +37,9 @@ browserFetcher
 
     let execPath = parts.join(path.sep);
 
-    child_process.execSync(`cp -RP ${execPath} ${pluginDir}`);
+    child_process.execSync(`cp -RP ${execPath} ${outputPath}`);
 
-    console.log(`Chromium moved from ${execPath} to ${pluginDir}/`);
+    console.log(`Chromium moved from ${execPath} to ${outputPath}/`);
     process.exit(0);
   })
   .catch((err) => {
