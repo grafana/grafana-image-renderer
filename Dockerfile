@@ -9,7 +9,6 @@ RUN \
   echo "http://dl-cdn.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories && \
   echo "http://dl-cdn.alpinelinux.org/alpine/edge/main" >> /etc/apk/repositories && \
   echo "http://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories && \
-  apk --no-cache update && \
   apk --no-cache upgrade && \
   apk add --no-cache udev ttf-opensans chromium ca-certificates dumb-init nghttp2 openldap curl && \
   apk del nghttp2 openldap curl && \
