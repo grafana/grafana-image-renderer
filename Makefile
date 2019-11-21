@@ -9,11 +9,11 @@ clean:
 
 deps: node_modules
 
-node_modules: package.json yarn.lock
+node_modules: yarn.lock
 	@echo "install frontend dependencies"
 	yarn install --pure-lockfile --no-progress
 
-build:
+build: clean
 	./node_modules/.bin/tsc
 
 clean_package:

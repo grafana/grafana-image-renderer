@@ -1,4 +1,4 @@
-FROM node:10-alpine AS base
+FROM node:12-alpine AS base
 
 ENV CHROME_BIN="/usr/bin/chromium-browser"
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD="true"
@@ -10,8 +10,7 @@ RUN \
   echo "http://dl-cdn.alpinelinux.org/alpine/edge/main" >> /etc/apk/repositories && \
   echo "http://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories && \
   apk --no-cache upgrade && \
-  apk add --no-cache udev ttf-opensans chromium ca-certificates dumb-init nghttp2 openldap curl && \
-  apk del nghttp2 openldap curl && \
+  apk add --no-cache udev ttf-opensans chromium ca-certificates dumb-init && \
   rm -rf /tmp/*
 
 FROM base as build

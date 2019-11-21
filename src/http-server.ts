@@ -1,4 +1,3 @@
-import * as fs from 'fs';
 import express = require('express');
 import { Logger } from './logger';
 import { Browser } from './browser';
@@ -62,17 +61,5 @@ const asyncMiddleware = fn => (req, res, next) => {
       return next(boom.badImplementation(err));
     }
     next(err);
-  });
-};
-
-const readFile = (path, opts = 'utf8') => {
-  return new Promise((res, rej) => {
-    fs.readFile(path, opts, (err, data) => {
-      if (err) {
-        rej(err);
-      } else {
-        res(data);
-      }
-    });
   });
 };
