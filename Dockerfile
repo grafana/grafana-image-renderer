@@ -6,15 +6,14 @@ ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD="true"
 WORKDIR /usr/src/app
 
 RUN \
-  echo "http://dl-cdn.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories \
-  && echo "http://dl-cdn.alpinelinux.org/alpine/edge/main" >> /etc/apk/repositories \
-  && echo "http://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories \
-  && apk --no-cache  update \
-  && apk --no-cache  upgrade \
-  && apk add --no-cache --virtual .build-deps \
-    udev ttf-opensans chromium \
-		ca-certificates dumb-init curl nghttp2 openldap \
-  && rm -rf /var/cache/apk/* /tmp/*
+  echo "http://dl-cdn.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories && \
+  echo "http://dl-cdn.alpinelinux.org/alpine/edge/main" >> /etc/apk/repositories && \
+  echo "http://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories && \
+  apk --no-cache update && \
+  apk --no-cache upgrade && \
+  apk add --no-cache udev ttf-opensans chromium ca-certificates dumb-init nghttp2 openldap curl && \
+  apk del nghttp2 openldap curl && \
+  rm -rf /tmp/*
 
 FROM base as build
 
