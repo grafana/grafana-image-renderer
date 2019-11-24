@@ -17,16 +17,6 @@ Due to the security risk it's not recommended to ignore HTTPS errors.
 export IGNORE_HTTPS_ERRORS=true
 ```
 
-**Custom Chrome/Chromium path:**
-
-if you already have Chrome or Chromium installed on your system you can configure Grafana Image renderer plugin to use this instead of the pre-packaged version of Chromium.
-
-Please note that this is not recommended since you may encounter problems if the installed version of Chrome/Chromium is not is compatible with the Grafana Image renderer plugin.
-
-```bash
-export CHROME_BIN=/some/custom/chrome/bin
-```
-
 ## Docker Compose example
 
 The following docker-compose example can also be found in [docker/](https://github.com/grafana/grafana-image-renderer/tree/master/docker).
