@@ -36,7 +36,7 @@ If you still want to install the plugin in the Grafana docker image we provide i
 
 ### Environment variables
 
-You can override certain settings by using environment variables and make sure that those are available for the Grafana process.
+You can override certain settings by using environment variables and making sure that those are available for the Grafana process.
 
 **Ignore HTTPS errors:**
 

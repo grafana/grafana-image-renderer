@@ -6,7 +6,7 @@ The docker image are published at [Docker Hub](https://hub.docker.com/r/grafana/
 
 ## Environment variables
 
-You can override certain settings by using environment variables and make sure that those are available for the Grafana process.
+You can override certain settings by using environment variables and making sure that those are available for the Grafana process.
 
 **Ignore HTTPS errors:**
 
