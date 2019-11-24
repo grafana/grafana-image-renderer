@@ -34,6 +34,29 @@ for rendering and using remote rendering, see [Remote Rendering Using Docker](#r
 
 If you still want to install the plugin in the Grafana docker image we provide instructions for how to build a custom Grafana image, see [Grafana Docker documentation](https://grafana.com/docs/installation/docker/#custom-image-with-grafana-image-renderer-plugin-pre-installed) for further instructions.
 
+### Environment variables
+
+You can override certain settings by using environment variables and make sure that those are available for the Grafana process.
+
+**Ignore HTTPS errors:**
+
+Instruct headless Chrome Whether to ignore HTTPS errors during navigation. Per default HTTPS errors is not ignored.
+Due to the security risk it's not recommended to ignore HTTPS errors.
+
+```bash
+export GF_RENDERER_PLUGIN_IGNORE_HTTPS_ERRORS=true
+```
+
+**Custom Chrome/Chromium path:**
+
+if you already have Chrome or Chromium installed on your system you can configure Grafana Image renderer plugin to use this instead of the pre-packaged version of Chromium.
+
+Please note that this is not recommended since you may encounter problems if the installed version of Chrome/Chromium is not is compatible with the Grafana Image renderer plugin.
+
+```bash
+export GF_RENDERER_PLUGIN_CHROME_BIN=/some/custom/chrome/bin
+```
+
 ## Remote Rendering Using Docker
 
 Instead of installing and running the image renderer as a plugin, you can run it as a remote image rendering service using Docker. Read more about [remote rendering using Docker](https://github.com/grafana/grafana-image-renderer/blob/master/docs/remote_rendering_using_docker.md).

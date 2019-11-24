@@ -27,6 +27,10 @@ export class HttpServer {
       this.log.info(`Using chromeBin ${this.browser.chromeBin}`);
     }
 
+    if (this.browser.ignoreHttpsErrors) {
+      this.log.info(`Ignoring HTTPS errors`);
+    }
+
     this.app.listen(this.options.port);
     this.log.info(`HTTP Server started, listening on ${this.options.port}`);
   }
