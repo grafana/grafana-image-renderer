@@ -7,7 +7,7 @@ git clone https://github.com/grafana/grafana-image-renderer.git
 cd grafana-image-renderer
 ```
 
-### Plugin
+## Plugin
 
 1. Install [Node.js](https://nodejs.org/) and [Yarn](https://yarnpkg.com/en/).
 2. Install dependencies and build:
@@ -30,7 +30,7 @@ cd grafana-image-renderer
 
 3. Built artifacts can be found in ./artifacts directory
 
-### Docker image
+## Docker image
 
 1. Install Docker
 2. Build Docker image:
@@ -39,7 +39,7 @@ cd grafana-image-renderer
     docker build -t custom-grafana-image-renderer .
     ```
 
-### Local Node.js application using local Chrome/Chromium
+## Local Node.js application using local Chrome/Chromium
 
 1. Install [Node.js](https://nodejs.org/) and [Yarn](https://yarnpkg.com/en/).
 2. Install dependencies and build:
