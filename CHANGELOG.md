@@ -2,8 +2,8 @@
 
 - Wait until all network connections to be idle before rendering [#24](https://github.com/grafana/grafana-image-renderer/pull/24), [d1ff](https://github.com/d1ff)
 - Support ignoring https errors using environment variable [#59](https://github.com/grafana/grafana-image-renderer/pull/59), [marefr](https://github.com/marefr)
-- Docker: Update dependencies to remove vulnerabilities (#53)(https://github.com/grafana/grafana-image-renderer/pull/53), [marefr](https://github.com/marefr)
-- Fix typo in log statement (#39)(https://github.com/grafana/grafana-image-renderer/pull/39), [ankon](https://github.com/ankon)
+- Docker: Update dependencies to remove vulnerabilities [53](https://github.com/grafana/grafana-image-renderer/pull/53), [marefr](https://github.com/marefr)
+- Fix typo in log statement [#39](https://github.com/grafana/grafana-image-renderer/pull/39), [ankon](https://github.com/ankon)
 - Updated documentation
 
 ## 1.0.5 (2019-09-11)
