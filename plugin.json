@@ -16,8 +16,8 @@
       {"name": "Project site", "url": "https://github.com/grafana/grafana-image-renderer"},
       {"name": "Apache License", "url": "https://github.com/grafana/grafana-image-renderer/blob/master/LICENSE"}
     ],
-    "version": "1.0.5",
-    "updated": "2019-09-11",
+    "version": "1.0.6",
+    "updated": "2019-11-25",
     "dependencies": {
       "grafanaVersion": "5.2"
     }
