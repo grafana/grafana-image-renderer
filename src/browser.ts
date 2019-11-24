@@ -6,8 +6,13 @@ import uniqueFilename = require('unique-filename');
 
 export function newPluginBrowser(log: Logger): Browser {
   const env = Object.assign({}, process.env);
-  let chromeBin: any;
+  let ignoreHttpsErrors = false;
 
+  if (env['GF_RENDERER_PLUGIN_IGNORE_HTTPS_ERRORS']) {
+    ignoreHttpsErrors = env['GF_RENDERER_PLUGIN_IGNORE_HTTPS_ERRORS'] === 'true';
+  }
+
+  let chromeBin: any;
   if (env['GF_RENDERER_PLUGIN_CHROME_BIN']) {
     chromeBin = env['GF_RENDERER_PLUGIN_CHROME_BIN'];
   } else if ((process as any).pkg) {
@@ -19,24 +24,31 @@ export function newPluginBrowser(log: Logger): Browser {
     chromeBin = [path.dirname(process.execPath), ...parts].join(path.sep);
   }
 
-  return new Browser(log, chromeBin);
+  return new Browser(log, ignoreHttpsErrors, chromeBin);
 }
 
 export function newServerBrowser(log: Logger): Browser {
   const env = Object.assign({}, process.env);
-  let chromeBin: any;
+  let ignoreHttpsErrors = false;
 
+  if (env['IGNORE_HTTPS_ERRORS']) {
+    ignoreHttpsErrors = env['IGNORE_HTTPS_ERRORS'] === 'true';
+  }
+
+  let chromeBin: any;
   if (env['CHROME_BIN']) {
     chromeBin = env['CHROME_BIN'];
   }
 
-  return new Browser(log, chromeBin);
+  return new Browser(log, ignoreHttpsErrors, chromeBin);
 }
 
 export class Browser {
   chromeBin?: string;
+  ignoreHttpsErrors: boolean;
 
-  constructor(private log: Logger, chromeBin?: string) {
+  constructor(private log: Logger, ignoreHttpsErrors: boolean, chromeBin?: string) {
+    this.ignoreHttpsErrors = ignoreHttpsErrors;
     this.chromeBin = chromeBin;
   }
 
@@ -67,6 +79,7 @@ export class Browser {
 
       let launcherOptions: any = {
         env: env,
+        ignoreHttpsErrors: this.ignoreHttpsErrors,
         args: ['--no-sandbox'],
       };
 

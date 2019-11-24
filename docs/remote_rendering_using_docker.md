@@ -4,6 +4,19 @@ As an alternative to installing and running the image renderer as a plugin you c
 
 The docker image are published at [Docker Hub](https://hub.docker.com/r/grafana/grafana-image-renderer).
 
+## Environment variables
+
+You can override certain settings by using environment variables and making sure that those are available for the Grafana process.
+
+**Ignore HTTPS errors:**
+
+Instruct headless Chrome Whether to ignore HTTPS errors during navigation. Per default HTTPS errors is not ignored.
+Due to the security risk it's not recommended to ignore HTTPS errors.
+
+```bash
+export IGNORE_HTTPS_ERRORS=true
+```
+
 ## Docker Compose example
 
 The following docker-compose example can also be found in [docker/](https://github.com/grafana/grafana-image-renderer/tree/master/docker).
