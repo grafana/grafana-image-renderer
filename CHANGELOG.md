@@ -1,3 +1,7 @@
+## 1.0.7 (2019-12-03)
+
+- Provide correctly named config parameter to Chromium when overriding to skip https errors using environment variable `GF_RENDERER_PLUGIN_IGNORE_HTTPS_ERRORS` and/or `IGNORE_HTTPS_ERRORS`.
+
 ## 1.0.6 (2019-11-25)
 
 - Wait until all network connections to be idle before rendering [#24](https://github.com/grafana/grafana-image-renderer/pull/24), [d1ff](https://github.com/d1ff)
