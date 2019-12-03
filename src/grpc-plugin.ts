@@ -32,11 +32,11 @@ export class GrpcPlugin {
         'Renderer plugin started',
         'chromeBin',
         this.browser.chromeBin,
-        'ignoreHttpsErrors',
-        this.browser.ignoreHttpsErrors
+        'ignoreHTTPSErrors',
+        this.browser.ignoreHTTPSErrors
       );
     } else {
-      this.log.info('Renderer plugin started', 'ignoreHttpsErrors', this.browser.ignoreHttpsErrors);
+      this.log.info('Renderer plugin started', 'ignoreHttpsErrors', this.browser.ignoreHTTPSErrors);
     }
   }
 

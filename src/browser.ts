@@ -6,10 +6,10 @@ import uniqueFilename = require('unique-filename');
 
 export function newPluginBrowser(log: Logger): Browser {
   const env = Object.assign({}, process.env);
-  let ignoreHttpsErrors = false;
+  let ignoreHTTPSErrors = false;
 
   if (env['GF_RENDERER_PLUGIN_IGNORE_HTTPS_ERRORS']) {
-    ignoreHttpsErrors = env['GF_RENDERER_PLUGIN_IGNORE_HTTPS_ERRORS'] === 'true';
+    ignoreHTTPSErrors = env['GF_RENDERER_PLUGIN_IGNORE_HTTPS_ERRORS'] === 'true';
   }
 
   let chromeBin: any;
@@ -24,15 +24,15 @@ export function newPluginBrowser(log: Logger): Browser {
     chromeBin = [path.dirname(process.execPath), ...parts].join(path.sep);
   }
 
-  return new Browser(log, ignoreHttpsErrors, chromeBin);
+  return new Browser(log, ignoreHTTPSErrors, chromeBin);
 }
 
 export function newServerBrowser(log: Logger): Browser {
   const env = Object.assign({}, process.env);
-  let ignoreHttpsErrors = false;
+  let ignoreHTTPSErrors = false;
 
   if (env['IGNORE_HTTPS_ERRORS']) {
-    ignoreHttpsErrors = env['IGNORE_HTTPS_ERRORS'] === 'true';
+    ignoreHTTPSErrors = env['IGNORE_HTTPS_ERRORS'] === 'true';
   }
 
   let chromeBin: any;
@@ -40,15 +40,15 @@ export function newServerBrowser(log: Logger): Browser {
     chromeBin = env['CHROME_BIN'];
   }
 
-  return new Browser(log, ignoreHttpsErrors, chromeBin);
+  return new Browser(log, ignoreHTTPSErrors, chromeBin);
 }
 
 export class Browser {
   chromeBin?: string;
-  ignoreHttpsErrors: boolean;
+  ignoreHTTPSErrors: boolean;
 
-  constructor(private log: Logger, ignoreHttpsErrors: boolean, chromeBin?: string) {
-    this.ignoreHttpsErrors = ignoreHttpsErrors;
+  constructor(private log: Logger, ignoreHTTPSErrors: boolean, chromeBin?: string) {
+    this.ignoreHTTPSErrors = ignoreHTTPSErrors;
     this.chromeBin = chromeBin;
   }
 
@@ -79,7 +79,7 @@ export class Browser {
 
       let launcherOptions: any = {
         env: env,
-        ignoreHttpsErrors: this.ignoreHttpsErrors,
+        ignoreHTTPSErrors: this.ignoreHTTPSErrors,
         args: ['--no-sandbox'],
       };
 
