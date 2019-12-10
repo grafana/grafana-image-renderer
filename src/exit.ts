@@ -9,7 +9,7 @@ export function registerExitCleanUp(fn) {
 
 export class ExitManager {
   constructor(private log: Logger) {
-    process.stdin.resume();//so the program will not close instantly
+    process.stdin.resume(); //so the program will not close instantly
 
     //do something when app is closing
     process.on('exit', this.exitHandler.bind(this));
@@ -26,11 +26,11 @@ export class ExitManager {
   }
 
   exitHandler(options, err) {
-    for (let fn of cleanUpHandlers) {
+    for (const fn of cleanUpHandlers) {
       try {
         fn();
       } catch (err) {
-        this.log.info("Failed to call cleanup function " + err);
+        this.log.info('Failed to call cleanup function ' + err);
       }
     }
     if (err) {
@@ -39,5 +39,3 @@ export class ExitManager {
     process.exit();
   }
 }
-
-

@@ -1,4 +1,3 @@
-import * as fs from 'fs';
 import express = require('express');
 import { Logger } from './logger';
 import { Browser } from './browser';
@@ -40,7 +39,7 @@ export class HttpServer {
       throw boom.badRequest('Missing url parameter');
     }
 
-    let options = {
+    const options = {
       url: req.query.url,
       width: req.query.width,
       height: req.query.height,
@@ -52,7 +51,7 @@ export class HttpServer {
       encoding: req.query.encoding,
     };
     this.log.info(`render request received for ${options.url}`);
-    let result = await this.browser.render(options);
+    const result = await this.browser.render(options);
 
     res.sendFile(result.filePath);
   };
@@ -66,17 +65,5 @@ const asyncMiddleware = fn => (req, res, next) => {
       return next(boom.badImplementation(err));
     }
     next(err);
-  });
-};
-
-const readFile = (path, opts = 'utf8') => {
-  return new Promise((res, rej) => {
-    fs.readFile(path, opts, (err, data) => {
-      if (err) {
-        rej(err);
-      } else {
-        res(data);
-      }
-    });
   });
 };

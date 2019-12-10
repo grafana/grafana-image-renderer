@@ -1,0 +1,10 @@
+.git
+.github
+artifacts
+build
+dist
+docker
+docs
+node_modules
+proto
+scripts

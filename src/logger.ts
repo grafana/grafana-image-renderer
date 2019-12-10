@@ -25,7 +25,7 @@ export class ConsoleLogger {
 
 export class PluginLogger {
   private logEntry(level: string, message?: string, ...optionalParams: any[]) {
-    let logEntry = {
+    const logEntry = {
       '@level': level,
     };
 
