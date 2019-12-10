@@ -5,6 +5,7 @@ import { Browser } from './browser';
 
 const SERVER_ADDRESS = '127.0.0.1:50059';
 const RENDERER_PROTO_PATH = __dirname + '/../proto/renderer.proto';
+const HEALTH_PROTO_PATH = __dirname + '/../proto/health.proto';
 
 export const renderPackageDef = protoLoader.loadSync(RENDERER_PROTO_PATH, {
   keepCase: true,
@@ -14,7 +15,16 @@ export const renderPackageDef = protoLoader.loadSync(RENDERER_PROTO_PATH, {
   oneofs: true,
 });
 
+export const healthPackageDef = protoLoader.loadSync(HEALTH_PROTO_PATH, {
+  keepCase: true,
+  longs: String,
+  enums: String,
+  defaults: true,
+  oneofs: true,
+});
+
 export const rendererProtoDescriptor = grpc.loadPackageDefinition(renderPackageDef);
+export const healthProtoDescriptor = grpc.loadPackageDefinition(healthPackageDef);
 
 export class GrpcPlugin {
   constructor(private log: Logger, private browser: Browser) {}
@@ -22,6 +32,10 @@ export class GrpcPlugin {
   start() {
     const server = new grpc.Server();
 
+    const grpcHealthV1: any = healthProtoDescriptor['grpc']['health']['v1'];
+    server.addService(grpcHealthV1.Health.service, {
+      check: this.check.bind(this),
+    });
     const models: any = rendererProtoDescriptor.models;
     server.addService(models.Renderer.service, {
       render: this.render.bind(this),
@@ -33,13 +47,7 @@ export class GrpcPlugin {
     console.log(`1|1|tcp|${SERVER_ADDRESS}|grpc`);
 
     if (this.browser.chromeBin) {
-      this.log.info(
-        'Renderer plugin started',
-        'chromeBin',
-        this.browser.chromeBin,
-        'ignoreHTTPSErrors',
-        this.browser.ignoreHTTPSErrors
-      );
+      this.log.info('Renderer plugin started', 'chromeBin', this.browser.chromeBin, 'ignoreHTTPSErrors', this.browser.ignoreHTTPSErrors);
     } else {
       this.log.info('Renderer plugin started', 'ignoreHttpsErrors', this.browser.ignoreHTTPSErrors);
     }
