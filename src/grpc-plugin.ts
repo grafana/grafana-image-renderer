@@ -33,9 +33,15 @@ export class GrpcPlugin {
     console.log(`1|1|tcp|${SERVER_ADDRESS}|grpc`);
 
     if (this.browser.chromeBin) {
-      this.log.info('Renderer plugin started', 'chromeBin', this.browser.chromeBin);
+      this.log.info(
+        'Renderer plugin started',
+        'chromeBin',
+        this.browser.chromeBin,
+        'ignoreHTTPSErrors',
+        this.browser.ignoreHTTPSErrors
+      );
     } else {
-      this.log.info('Renderer plugin started');
+      this.log.info('Renderer plugin started', 'ignoreHttpsErrors', this.browser.ignoreHTTPSErrors);
     }
   }
 

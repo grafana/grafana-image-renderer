@@ -6,8 +6,13 @@ import uniqueFilename = require('unique-filename');
 
 export function newPluginBrowser(log: Logger): Browser {
   const env = Object.assign({}, process.env);
-  let chromeBin: any;
+  let ignoreHTTPSErrors = false;
 
+  if (env['GF_RENDERER_PLUGIN_IGNORE_HTTPS_ERRORS']) {
+    ignoreHTTPSErrors = env['GF_RENDERER_PLUGIN_IGNORE_HTTPS_ERRORS'] === 'true';
+  }
+
+  let chromeBin: any;
   if (env['GF_RENDERER_PLUGIN_CHROME_BIN']) {
     chromeBin = env['GF_RENDERER_PLUGIN_CHROME_BIN'];
   } else if ((process as any).pkg) {
@@ -19,24 +24,31 @@ export function newPluginBrowser(log: Logger): Browser {
     chromeBin = [path.dirname(process.execPath), ...parts].join(path.sep);
   }
 
-  return new Browser(log, chromeBin);
+  return new Browser(log, ignoreHTTPSErrors, chromeBin);
 }
 
 export function newServerBrowser(log: Logger): Browser {
   const env = Object.assign({}, process.env);
-  let chromeBin: any;
+  let ignoreHTTPSErrors = false;
 
+  if (env['IGNORE_HTTPS_ERRORS']) {
+    ignoreHTTPSErrors = env['IGNORE_HTTPS_ERRORS'] === 'true';
+  }
+
+  let chromeBin: any;
   if (env['CHROME_BIN']) {
     chromeBin = env['CHROME_BIN'];
   }
 
-  return new Browser(log, chromeBin);
+  return new Browser(log, ignoreHTTPSErrors, chromeBin);
 }
 
 export class Browser {
   chromeBin?: string;
+  ignoreHTTPSErrors: boolean;
 
-  constructor(private log: Logger, chromeBin?: string) {
+  constructor(private log: Logger, ignoreHTTPSErrors: boolean, chromeBin?: string) {
+    this.ignoreHTTPSErrors = ignoreHTTPSErrors;
     this.chromeBin = chromeBin;
   }
 
@@ -67,6 +79,7 @@ export class Browser {
 
       const launcherOptions: any = {
         env: env,
+        ignoreHTTPSErrors: this.ignoreHTTPSErrors,
         args: ['--no-sandbox'],
       };
 
@@ -89,7 +102,8 @@ export class Browser {
         domain: options.domain,
       });
 
-      await page.goto(options.url);
+      // wait until all data was loaded
+      await page.goto(options.url, { waitUntil: 'networkidle0' });
 
       // wait for all panels to render
       await page.waitForFunction(

@@ -34,11 +34,11 @@ export class PluginLogger {
     }
 
     if (optionalParams) {
-      for (let n = 0; n < optionalParams.length; n = n + 2) {
+      for (let n = 0; n < optionalParams.length; n += 2) {
         const key = optionalParams[n];
         const value = optionalParams[n + 1];
 
-        if (key && value) {
+        if (key !== null && value !== null) {
           logEntry[key] = value;
         }
       }
