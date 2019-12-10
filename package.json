@@ -1,5 +1,5 @@
 {
-  "name": "grafana-image-renderer",
+  "name": "renderer",
   "version": "1.0.0",
   "author": "Grafana Labs",
   "license": "Apache-2.0",
