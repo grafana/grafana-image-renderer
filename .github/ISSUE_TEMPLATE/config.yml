@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Documentation
+    url: https://grafana.com/docs/grafana/latest/administration/image_rendering
+    about: For help, please read documentation and troubleshooting guide first.
+  - name: Questions & Help
+    url: https://community.grafana.com
+    about: Please ask and answer questions here.
