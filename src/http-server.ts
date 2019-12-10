@@ -35,7 +35,7 @@ export class HttpServer {
       throw boom.badRequest('Missing url parameter');
     }
 
-    let options = {
+    const options = {
       url: req.query.url,
       width: req.query.width,
       height: req.query.height,
@@ -47,7 +47,7 @@ export class HttpServer {
       encoding: req.query.encoding,
     };
     this.log.info(`render request received for ${options.url}`);
-    let result = await this.browser.render(options);
+    const result = await this.browser.render(options);
 
     res.sendFile(result.filePath);
   };

@@ -1,3 +1,5 @@
+.PHONY: all clean deps build clean_package package archive build_package
+
 ARCH = darwin-x64-unknown
 SKIP_CHROMIUM =
 OUT =
@@ -9,12 +11,12 @@ clean:
 
 deps: node_modules
 
-node_modules: yarn.lock
+node_modules: package.json yarn.lock ## Install node modules.
 	@echo "install frontend dependencies"
 	yarn install --pure-lockfile --no-progress
 
-build: clean
-	./node_modules/.bin/tsc
+build:
+	yarn build
 
 clean_package:
 	./scripts/clean_target.sh ${ARCH} ${OUT}

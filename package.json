@@ -1,19 +1,25 @@
 {
-  "name": "renderer",
+  "name": "grafana-image-renderer",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "build": "yarn run tsc",
-    "start": "node build/app.js",
-    "dev": "yarn run tsc-watch --onSuccess \"node build/app.js server --port=3050\""
+  "author": "Grafana Labs",
+  "license": "Apache-2.0",
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "http://github.com/grafana/grafana-image-renderer.git"
   },
-  "author": "",
-  "license": "ISC",
+  "scripts": {
+    "tslint": "tslint -c tslint.json --project tsconfig.json",
+    "typecheck": "tsc --noEmit",
+    "prettier:check": "prettier --list-different \"**/*.ts\"",
+    "prettier:write": "prettier --list-different \"**/*.ts\" --write",
+    "precommit": "npm run tslint & npm run typecheck",
+    "watch": "tsc-watch --onSuccess \"node build/app.js server --port=8080\"",
+    "build": "tsc",
+    "start": "node build/app.js --port=8080"
+  },
   "dependencies": {
     "@grpc/proto-loader": "^0.5.3",
-    "@types/express": "^4.11.1",
-    "@types/node": "^10.0.9",
     "boom": "^7.2.0",
     "express": "^4.16.3",
     "google-protobuf": "3.5.0",
@@ -22,37 +28,29 @@
     "morgan": "^1.9.0",
     "mz": "^2.7.0",
     "puppeteer": "^1.7.0",
-    "typescript": "^2.8.3",
     "unique-filename": "^1.1.0"
   },
   "devDependencies": {
-    "husky": "^0.14.3",
-    "lint-staged": "^6.0.0",
+    "@types/express": "^4.11.1",
+    "@types/node": "^10.0.9",
+    "husky": "^3.1.0",
+    "lint-staged": "^9.5.0",
     "pkg": "4.3.8",
-    "prettier": "1.9.2",
-    "tsc-watch": "^1.0.21"
+    "prettier": "^1.19.1",
+    "tsc-watch": "^1.0.21",
+    "tslint": "^5.20.1",
+    "typescript": "^2.8.3"
   },
-  "resolutions": {
-    "set-value": "2.0.1"
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged && npm run precommit"
+    }
   },
   "lint-staged": {
-    "*.{ts,tsx}": [
+    "*.ts": [
       "prettier --write",
-      "git add"
-    ],
-    "*.scss": [
-      "prettier --write",
-      "git add"
-    ],
-    "*pkg/**/*.go": [
-      "gofmt -w -s",
       "git add"
     ]
-  },
-  "prettier": {
-    "trailingComma": "es5",
-    "singleQuote": true,
-    "printWidth": 120
   },
   "pkg": {
     "assets": "proto/*"

@@ -20,7 +20,7 @@ export class GrpcPlugin {
   constructor(private log: Logger, private browser: Browser) {}
 
   start() {
-    var server = new grpc.Server();
+    const server = new grpc.Server();
 
     const models: any = rendererProtoDescriptor.models;
     server.addService(models.Renderer.service, {
@@ -44,9 +44,8 @@ export class GrpcPlugin {
   }
 
   async render(call, callback) {
-    let req = call.request;
-
-    let options = {
+    const req = call.request;
+    const options = {
       url: req.url,
       width: req.width,
       height: req.height,
@@ -60,7 +59,7 @@ export class GrpcPlugin {
 
     try {
       this.log.debug('Render request received', 'url', options.url);
-      let result = await this.browser.render(options);
+      const result = await this.browser.render(options);
       callback(null, { error: '' });
     } catch (err) {
       this.log.error('Render request failed', 'url', options.url, 'error', err);

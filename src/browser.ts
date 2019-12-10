@@ -41,9 +41,9 @@ export class Browser {
   }
 
   validateOptions(options) {
-    options.width = parseInt(options.width) || 1000;
-    options.height = parseInt(options.height) || 500;
-    options.timeout = parseInt(options.timeout) || 30;
+    options.width = parseInt(options.width, 10) || 1000;
+    options.height = parseInt(options.height, 10) || 500;
+    options.timeout = parseInt(options.timeout, 10) || 30;
 
     if (options.width > 3000 || options.width < 10) {
       options.width = 2500;
@@ -65,7 +65,7 @@ export class Browser {
       // set env timezone
       env.TZ = options.timezone || process.env.TZ;
 
-      let launcherOptions: any = {
+      const launcherOptions: any = {
         env: env,
         args: ['--no-sandbox'],
       };
@@ -94,9 +94,8 @@ export class Browser {
       // wait for all panels to render
       await page.waitForFunction(
         () => {
-          const panelCount =
-            document.querySelectorAll('.panel').length || document.querySelectorAll('.panel-container').length;
-          return (<any>window).panelsRendered >= panelCount;
+          const panelCount = document.querySelectorAll('.panel').length || document.querySelectorAll('.panel-container').length;
+          return (window as any).panelsRendered >= panelCount;
         },
         {
           timeout: options.timeout * 1000,
