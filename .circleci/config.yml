@@ -173,14 +173,9 @@ jobs:
     steps:
       - checkout
       - setup_remote_docker
-      - run: |
-          TAG=$(git describe --tags --abbrev=0 | cut -d "v" -f 2)
-          echo "building ${TAG}"
-          docker build -t ${IMAGE_NAME}:${TAG} .
-          docker tag ${IMAGE_NAME}:${TAG} ${IMAGE_NAME}:latest
-          echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
-          docker push ${IMAGE_NAME}:${TAG}
-          docker push ${IMAGE_NAME}:latest
+      - run:
+        name: "Build and push Docker image"
+        command: ./scripts/build_push_docker.sh
 
 workflows:
   version: 2
