@@ -13,9 +13,9 @@
     "prettier:check": "prettier --list-different \"**/*.ts\"",
     "prettier:write": "prettier --list-different \"**/*.ts\" --write",
     "precommit": "npm run tslint & npm run typecheck",
-    "watch": "ENABLE_METRICS=true tsc-watch --onSuccess \"node build/app.js server --port=8080\"",
+    "watch": "tsc-watch --onSuccess \"node build/app.js server --config=dev.json\"",
     "build": "tsc",
-    "start": "ENABLE_METRICS=true node build/app.js --port=8080"
+    "start": "node build/app.js --config=dev.json"
   },
   "dependencies": {
     "@grpc/proto-loader": "^0.5.3",
@@ -24,6 +24,7 @@
     "express-prom-bundle": "^5.1.5",
     "google-protobuf": "3.5.0",
     "grpc": "^1.24.2",
+    "lodash": "^4.17.15",
     "minimist": "^1.2.0",
     "morgan": "^1.9.0",
     "mz": "^2.7.0",

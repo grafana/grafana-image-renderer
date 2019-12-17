@@ -1,56 +1,14 @@
-import * as path from 'path';
 import * as os from 'os';
 import * as puppeteer from 'puppeteer';
 import { Logger } from './logger';
 import uniqueFilename = require('unique-filename');
-
-export function newPluginBrowser(log: Logger): Browser {
-  const env = Object.assign({}, process.env);
-  let ignoreHTTPSErrors = false;
-
-  if (env['GF_RENDERER_PLUGIN_IGNORE_HTTPS_ERRORS']) {
-    ignoreHTTPSErrors = env['GF_RENDERER_PLUGIN_IGNORE_HTTPS_ERRORS'] === 'true';
-  }
-
-  let chromeBin: any;
-  if (env['GF_RENDERER_PLUGIN_CHROME_BIN']) {
-    chromeBin = env['GF_RENDERER_PLUGIN_CHROME_BIN'];
-  } else if ((process as any).pkg) {
-    const parts = puppeteer.executablePath().split(path.sep);
-    while (!parts[0].startsWith('chrome-')) {
-      parts.shift();
-    }
-
-    chromeBin = [path.dirname(process.execPath), ...parts].join(path.sep);
-  }
-
-  return new Browser(log, ignoreHTTPSErrors, chromeBin);
-}
-
-export function newServerBrowser(log: Logger): Browser {
-  const env = Object.assign({}, process.env);
-  let ignoreHTTPSErrors = false;
-
-  if (env['IGNORE_HTTPS_ERRORS']) {
-    ignoreHTTPSErrors = env['IGNORE_HTTPS_ERRORS'] === 'true';
-  }
-
-  let chromeBin: any;
-  if (env['CHROME_BIN']) {
-    chromeBin = env['CHROME_BIN'];
-  }
-
-  return new Browser(log, ignoreHTTPSErrors, chromeBin);
-}
+import { RenderingConfig } from './config';
 
 export class Browser {
   chromeBin?: string;
   ignoreHTTPSErrors: boolean;
 
-  constructor(private log: Logger, ignoreHTTPSErrors: boolean, chromeBin?: string) {
-    this.ignoreHTTPSErrors = ignoreHTTPSErrors;
-    this.chromeBin = chromeBin;
-  }
+  constructor(private config: RenderingConfig, private log: Logger) {}
 
   validateOptions(options) {
     options.width = parseInt(options.width, 10) || 1000;
@@ -79,12 +37,12 @@ export class Browser {
 
       const launcherOptions: any = {
         env: env,
-        ignoreHTTPSErrors: this.ignoreHTTPSErrors,
+        ignoreHTTPSErrors: this.config.ignoresHttpsErrors,
         args: ['--no-sandbox'],
       };
 
-      if (this.chromeBin) {
-        launcherOptions.executablePath = this.chromeBin;
+      if (this.config.chromeBin) {
+        launcherOptions.executablePath = this.config.chromeBin;
       }
 
       browser = await puppeteer.launch(launcherOptions);

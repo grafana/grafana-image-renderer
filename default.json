@@ -1,0 +1,14 @@
+{
+  "service": {
+    "port": 8081,
+    "metrics": {
+      "enabled": false,
+      "collectDefaultMetrics": true,
+      "buckets": [0.5, 1, 3, 5, 7, 10, 20, 30, 60]
+    },
+    "rendering": {
+      "chromeBin": null,
+      "ignoresHttpsErrors": false
+    }
+  }
+}
