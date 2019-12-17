@@ -3,6 +3,7 @@ import { Logger } from './logger';
 import { Browser } from './browser';
 import * as boom from 'boom';
 import morgan = require('morgan');
+import * as promBundle from 'express-prom-bundle';
 
 export class HttpServer {
   app: express.Express;
@@ -12,6 +13,7 @@ export class HttpServer {
   start() {
     this.app = express();
     this.app.use(morgan('combined'));
+    this.registerMetricsMiddleware();
     this.app.get('/', (req: express.Request, res: express.Response) => {
       res.send('Grafana Image Renderer');
     });
@@ -55,6 +57,32 @@ export class HttpServer {
 
     res.sendFile(result.filePath);
   };
+
+  registerMetricsMiddleware() {
+    const env = Object.assign({}, process.env);
+    let enableMetrics = false;
+
+    if (env['ENABLE_METRICS']) {
+      enableMetrics = env['ENABLE_METRICS'] === 'true';
+    }
+
+    if (!enableMetrics) {
+      return;
+    }
+
+    this.log.info('Metrics enabled');
+
+    const bundle = promBundle({
+      metricType: 'histogram',
+      buckets: [0.5, 1, 3, 5, 7, 10, 20, 30, 60],
+      excludeRoutes: [/^((?!(render)).)*$/],
+      promClient: {
+        collectDefaultMetrics: {},
+      },
+    } as any);
+
+    this.app.use(bundle);
+  }
 }
 
 // wrapper for our async route handlers

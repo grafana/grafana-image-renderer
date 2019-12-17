@@ -14,19 +14,21 @@
     "prettier:check": "prettier --list-different \"**/*.ts\"",
     "prettier:write": "prettier --list-different \"**/*.ts\" --write",
     "precommit": "npm run tslint & npm run typecheck",
-    "watch": "tsc-watch --onSuccess \"node build/app.js server --port=8080\"",
+    "watch": "ENABLE_METRICS=true tsc-watch --onSuccess \"node build/app.js server --port=8080\"",
     "build": "tsc",
-    "start": "node build/app.js --port=8080"
+    "start": "ENABLE_METRICS=true node build/app.js --port=8080"
   },
   "dependencies": {
     "@grpc/proto-loader": "^0.5.3",
     "boom": "^7.2.0",
     "express": "^4.16.3",
+    "express-prom-bundle": "^5.1.5",
     "google-protobuf": "3.5.0",
     "grpc": "^1.24.2",
     "minimist": "^1.2.0",
     "morgan": "^1.9.0",
     "mz": "^2.7.0",
+    "prom-client": "^11.5.3",
     "puppeteer": "^1.7.0",
     "unique-filename": "^1.1.0"
   },

@@ -1,11 +1,15 @@
 .circleci
+.github
 artifacts
 build
+devenv
 dist
-docker
 docs
 node_modules
 scripts
+.prettierignore
+.prettierrc.json
 Dockerfile
 Makefile
 plugin_start*
+tslint.json
