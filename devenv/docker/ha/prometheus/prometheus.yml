@@ -1,0 +1,42 @@
+# my global config
+global:
+  scrape_interval:     10s # By default, scrape targets every 15 seconds.
+  evaluation_interval: 10s # By default, scrape targets every 15 seconds.
+  # scrape_timeout is set to the global default (10s).
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  - job_name: 'grafana'
+    dns_sd_configs:
+      - names:
+        - 'grafana'
+        type: 'A'
+        port: 3000
+        refresh_interval: 10s
+
+  - job_name: 'renderer'
+    dns_sd_configs:
+      - names:
+        - 'renderer'
+        type: 'A'
+        port: 8081
+        refresh_interval: 10s
+
+  - job_name: 'mysql'
+    dns_sd_configs:
+      - names:
+        - 'mysqld-exporter'
+        type: 'A'
+        port: 9104
+        refresh_interval: 10s
+
+  - job_name: 'cadvisor'
+    dns_sd_configs:
+      - names:
+        - 'cadvisor'
+        type: 'A'
+        port: 8080
+        refresh_interval: 10s
