@@ -29,9 +29,10 @@ FROM base
 COPY --from=build /usr/src/app/node_modules node_modules
 COPY --from=build /usr/src/app/build build
 COPY --from=build /usr/src/app/proto proto
+COPY --from=build /usr/src/app/default.json config.json
 
 EXPOSE 8081
 
 ENTRYPOINT ["dumb-init", "--"]
 
-CMD ["node", "build/app.js", "server", "--port=8081"]
+CMD ["node", "build/app.js", "server", "--config=config.json"]

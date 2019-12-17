@@ -9,6 +9,7 @@ node_modules
 scripts
 .prettierignore
 .prettierrc.json
+dev.json
 Dockerfile
 Makefile
 plugin_start*

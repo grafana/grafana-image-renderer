@@ -1,11 +1,11 @@
 import * as grpc from 'grpc';
 import * as protoLoader from '@grpc/proto-loader';
-import { Logger } from './logger';
-import { Browser } from './browser';
+import { Logger } from '../logger';
+import { Browser } from '../browser';
+import { PluginConfig } from '../config';
 
-const SERVER_ADDRESS = '127.0.0.1:50059';
-const RENDERER_PROTO_PATH = __dirname + '/../proto/renderer.proto';
-const HEALTH_PROTO_PATH = __dirname + '/../proto/health.proto';
+const RENDERER_PROTO_PATH = __dirname + '/../../proto/renderer.proto';
+const HEALTH_PROTO_PATH = __dirname + '/../../proto/health.proto';
 
 export const renderPackageDef = protoLoader.loadSync(RENDERER_PROTO_PATH, {
   keepCase: true,
@@ -27,11 +27,10 @@ export const rendererProtoDescriptor = grpc.loadPackageDefinition(renderPackageD
 export const healthProtoDescriptor = grpc.loadPackageDefinition(healthPackageDef);
 
 export class GrpcPlugin {
-  constructor(private log: Logger, private browser: Browser) {}
+  constructor(private config: PluginConfig, private log: Logger, private browser: Browser) {}
 
   start() {
     const server = new grpc.Server();
-
     const grpcHealthV1: any = healthProtoDescriptor['grpc']['health']['v1'];
     server.addService(grpcHealthV1.Health.service, {
       check: this.check.bind(this),
@@ -41,15 +40,25 @@ export class GrpcPlugin {
       render: this.render.bind(this),
     });
 
-    server.bind(SERVER_ADDRESS, grpc.ServerCredentials.createInsecure());
+    const address = `${this.config.plugin.grpc.host}:${this.config.plugin.grpc.port}`;
+    const boundPortNumber = server.bind(address, grpc.ServerCredentials.createInsecure());
+    if (boundPortNumber === 0) {
+      throw new Error(`failed to bind address=${address}, boundPortNumber=${boundPortNumber}`);
+    }
     server.start();
 
-    console.log(`1|1|tcp|${SERVER_ADDRESS}|grpc`);
+    console.log(`1|1|tcp|${this.config.plugin.grpc.host}:${boundPortNumber}|grpc`);
 
     if (this.browser.chromeBin) {
-      this.log.info('Renderer plugin started', 'chromeBin', this.browser.chromeBin, 'ignoreHTTPSErrors', this.browser.ignoreHTTPSErrors);
+      this.log.info(
+        'Renderer plugin started',
+        'chromeBin',
+        this.config.rendering.chromeBin,
+        'ignoreHTTPSErrors',
+        this.config.rendering.ignoresHttpsErrors
+      );
     } else {
-      this.log.info('Renderer plugin started', 'ignoreHttpsErrors', this.browser.ignoreHTTPSErrors);
+      this.log.info('Renderer plugin started', 'ignoreHttpsErrors', this.config.rendering.ignoresHttpsErrors);
     }
   }
 

@@ -1,14 +1,15 @@
 import express = require('express');
-import { Logger } from './logger';
-import { Browser } from './browser';
+import { Logger } from '../logger';
+import { Browser } from '../browser';
 import * as boom from 'boom';
 import morgan = require('morgan');
 import * as promBundle from 'express-prom-bundle';
+import { ServiceConfig } from '../config';
 
 export class HttpServer {
   app: express.Express;
 
-  constructor(private options, private log: Logger, private browser: Browser) {}
+  constructor(private config: ServiceConfig, private log: Logger, private browser: Browser) {}
 
   start() {
     this.app = express();
@@ -24,16 +25,16 @@ export class HttpServer {
       return res.status(err.output.statusCode).json(err.output.payload);
     });
 
-    if (this.browser.chromeBin) {
-      this.log.info(`Using chromeBin ${this.browser.chromeBin}`);
+    if (this.config.rendering.chromeBin) {
+      this.log.info(`Using chromeBin ${this.config.rendering.chromeBin}`);
     }
 
-    if (this.browser.ignoreHTTPSErrors) {
+    if (this.config.rendering.ignoresHttpsErrors) {
       this.log.info(`Ignoring HTTPS errors`);
     }
 
-    this.app.listen(this.options.port);
-    this.log.info(`HTTP Server started, listening on ${this.options.port}`);
+    this.app.listen(this.config.service.port);
+    this.log.info(`HTTP Server started, listening on ${this.config.service.port}`);
   }
 
   render = async (req: express.Request, res: express.Response) => {
@@ -59,27 +60,24 @@ export class HttpServer {
   };
 
   registerMetricsMiddleware() {
-    const env = Object.assign({}, process.env);
-    let enableMetrics = false;
-
-    if (env['ENABLE_METRICS']) {
-      enableMetrics = env['ENABLE_METRICS'] === 'true';
-    }
-
-    if (!enableMetrics) {
+    if (!this.config.service.metrics.enabled) {
       return;
     }
 
     this.log.info('Metrics enabled');
 
-    const bundle = promBundle({
+    const opts = {
       metricType: 'histogram',
       buckets: [0.5, 1, 3, 5, 7, 10, 20, 30, 60],
       excludeRoutes: [/^((?!(render)).)*$/],
-      promClient: {
-        collectDefaultMetrics: {},
-      },
-    } as any);
+      promClient: {},
+    } as any;
+
+    if (this.config.service.metrics.collectDefaultMetrics) {
+      opts.promClient.collectDefaultMetrics = {};
+    }
+
+    const bundle = promBundle(opts);
 
     this.app.use(bundle);
   }
