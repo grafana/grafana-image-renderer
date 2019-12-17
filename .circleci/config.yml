@@ -174,8 +174,8 @@ jobs:
       - checkout
       - setup_remote_docker
       - run:
-        name: "Build and push Docker image"
-        command: ./scripts/build_push_docker.sh
+          name: "Build and push Docker image"
+          command: ./scripts/build_push_docker.sh
 
 workflows:
   version: 2
