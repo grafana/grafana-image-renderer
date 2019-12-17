@@ -3,7 +3,6 @@
   "version": "1.0.0",
   "author": "Grafana Labs",
   "license": "Apache-2.0",
-  "private": true,
   "repository": {
     "type": "git",
     "url": "http://github.com/grafana/grafana-image-renderer.git"
