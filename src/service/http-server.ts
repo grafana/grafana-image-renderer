@@ -52,6 +52,7 @@ export class HttpServer {
       domain: req.query.domain,
       timezone: req.query.timezone,
       encoding: req.query.encoding,
+      jsonData: req.query.jsonData,
     };
     this.log.info(`render request received for ${options.url}`);
     const result = await this.browser.render(options);

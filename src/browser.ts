@@ -1,8 +1,11 @@
 import * as os from 'os';
 import * as puppeteer from 'puppeteer';
+import * as boom from 'boom';
 import { Logger } from './logger';
 import uniqueFilename = require('unique-filename');
 import { RenderingConfig } from './config';
+
+const allowedFormats: string[] = ['png', 'jpeg', 'pdf'];
 
 export class Browser {
   chromeBin?: string;
@@ -22,6 +25,20 @@ export class Browser {
     if (options.height > 3000 || options.height < 10) {
       options.height = 1500;
     }
+
+    if (options.encoding === '') {
+      options.encoding = 'png';
+    }
+
+    if (allowedFormats.indexOf(options.encoding) === -1) {
+      throw boom.badRequest('Unsupported encoding ' + options.encoding);
+    }
+
+    if (options.jsonData) {
+      options.jsonData = JSON.parse(options.jsonData);
+    } else {
+      options.jsonData = {};
+    }
   }
 
   async render(options) {
@@ -32,6 +49,8 @@ export class Browser {
     try {
       this.validateOptions(options);
 
+      this.log.debug('JSON data: %j', options.jsonData);
+
       // set env timezone
       env.TZ = options.timezone || process.env.TZ;
 
@@ -39,6 +58,7 @@ export class Browser {
         env: env,
         ignoreHTTPSErrors: this.config.ignoresHttpsErrors,
         args: ['--no-sandbox'],
+        ...options.jsonData.launchOptions,
       };
 
       if (this.config.chromeBin) {
@@ -51,8 +71,16 @@ export class Browser {
       await page.setViewport({
         width: options.width,
         height: options.height,
-        deviceScaleFactor: 1,
+        ...options.jsonData.viewport,
       });
+
+      if (options.jsonData.emulateMedia) {
+        await page.emulateMedia(options.jsonData.emulateMedia);
+      }
+
+      if (options.jsonData.defaultNavigationTimeout) {
+        await page.setDefaultNavigationTimeout(options.jsonData.defaultNavigationTimeout);
+      }
 
       await page.setCookie({
         name: 'renderKey',
@@ -60,8 +88,26 @@ export class Browser {
         domain: options.domain,
       });
 
+      // build url
+      let url = options.url + (options.jsonData.extraUrlParams ? options.jsonData.extraUrlParams : '');
+
       // wait until all data was loaded
-      await page.goto(options.url, { waitUntil: 'networkidle0' });
+      this.log.debug('Goto url: %j', url);
+      await page.goto(url, { waitUntil: 'networkidle0' });
+
+      // extra javascript
+      if (options.jsonData.scriptTags instanceof Array) {
+        for (let val of options.jsonData.scriptTags) {
+          await page.addScriptTag(val);
+        }
+      }
+
+      // extra style tags
+      if (options.jsonData.styleTags instanceof Array) {
+        for (let val of options.jsonData.styleTags) {
+          await page.addStyleTag(val);
+        }
+      }
 
       // wait for all panels to render
       await page.waitForFunction(
@@ -74,11 +120,20 @@ export class Browser {
         }
       );
 
-      if (!options.filePath) {
-        options.filePath = uniqueFilename(os.tmpdir()) + '.png';
+      // extra wait
+      if (options.jsonData.waitFor) {
+        await page.waitFor(options.jsonData.waitFor);
       }
 
-      await page.screenshot({ path: options.filePath });
+      if (!options.filePath) {
+        options.filePath = uniqueFilename(os.tmpdir()) + '.' + options.encoding;
+      }
+
+      if (options.encoding === 'pdf') {
+        await page.pdf({ path: options.filePath, ...options.jsonData.pdf });
+      } else {
+        await page.screenshot({ path: options.filePath, type: options.encoding, ...options.jsonData.screenshot });
+      }
 
       return { filePath: options.filePath };
     } finally {
