@@ -3,6 +3,7 @@
 ARCH = darwin-x64-unknown
 SKIP_CHROMIUM =
 OUT =
+SKIP_GRPC =
 
 all: clean build
 
@@ -22,7 +23,7 @@ clean_package:
 	./scripts/clean_target.sh ${ARCH} ${OUT}
 
 package:
-	./scripts/package_target.sh ${ARCH} ${SKIP_CHROMIUM} ${OUT}
+	./scripts/package_target.sh ${ARCH} ${SKIP_CHROMIUM} ${OUT} ${SKIP_GRPC}
 
 archive:
 	./scripts/archive_target.sh ${ARCH} ${OUT}

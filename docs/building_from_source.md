@@ -26,6 +26,9 @@ cd grafana-image-renderer
 
     # build and package without including Chromium
     make build_package ARCH=<ARCH> SKIP_CHROMIUM=true OUT=plugin-<ARCH>-no-chromium
+
+    # build and package without including Chromium and with local copy of grpc
+    make build_package ARCH=<ARCH> SKIP_CHROMIUM=true OUT=plugin-<ARCH>-no-chromium SKIP_GRPC=true
     ```
 
 3. Built artifacts can be found in ./artifacts directory
