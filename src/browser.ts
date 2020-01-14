@@ -63,11 +63,11 @@ export class Browser {
       // wait until all data was loaded
       await page.goto(options.url, { waitUntil: 'networkidle0' });
 
-      // wait for all panels to render
+      // wait for all panels (or any alert panel) to render
       await page.waitForFunction(
         () => {
           const panelCount = document.querySelectorAll('.panel').length || document.querySelectorAll('.panel-container').length;
-          return (window as any).panelsRendered >= panelCount;
+          return ((window as any).panelsRendered >= panelCount) || (document.querySelectorAll('.alert').length > 0);
         },
         {
           timeout: options.timeout * 1000,
