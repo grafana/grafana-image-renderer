@@ -73,9 +73,9 @@ You can also provide environment variables for Grafana and Grafana image rendere
 $ GRAFANA_VERSION=6.5.0 RENDERER_VERSION=1.0.7 docker-compose up -d
 ```
 
-### Scale Grafana instances up/down
+### Scale renderer instances up/down
 
-Scale number of Grafana image renderer instances to `<instances>`
+Scale number of image renderer instances to `<instances>`
 
 ```bash
 $ docker-compose up --scale renderer=<instances> -d

@@ -69,8 +69,8 @@ services:
       - ENABLE_METRICS=true
     ports:
       - 8081
-    mem_limit: 500mb
-    memswap_limit: 1gb
+    # mem_limit: 500mb
+    # memswap_limit: 1gb
 
   prometheus:
     image: prom/prometheus:v2.14.0
