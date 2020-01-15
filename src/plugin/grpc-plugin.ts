@@ -1,7 +1,7 @@
 import * as grpc from 'grpc';
 import * as protoLoader from '@grpc/proto-loader';
 import { Logger } from '../logger';
-import { Browser } from '../browser';
+import { Browser } from '../browser/browser';
 import { PluginConfig } from '../config';
 
 const RENDERER_PROTO_PATH = __dirname + '/../../proto/renderer.proto';
@@ -29,7 +29,7 @@ export const healthProtoDescriptor = grpc.loadPackageDefinition(healthPackageDef
 export class GrpcPlugin {
   constructor(private config: PluginConfig, private log: Logger, private browser: Browser) {}
 
-  start() {
+  async start() {
     const server = new grpc.Server();
     const grpcHealthV1: any = healthProtoDescriptor['grpc']['health']['v1'];
     server.addService(grpcHealthV1.Health.service, {
@@ -45,11 +45,14 @@ export class GrpcPlugin {
     if (boundPortNumber === 0) {
       throw new Error(`failed to bind address=${address}, boundPortNumber=${boundPortNumber}`);
     }
+
     server.start();
 
     console.log(`1|1|tcp|${this.config.plugin.grpc.host}:${boundPortNumber}|grpc`);
 
-    if (this.browser.chromeBin) {
+    await this.browser.start();
+
+    if (this.config.rendering.chromeBin) {
       this.log.info(
         'Renderer plugin started',
         'chromeBin',

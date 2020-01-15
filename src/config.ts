@@ -1,19 +1,27 @@
 import * as fs from 'fs';
 
+export interface ClusteringConfig {
+  mode: string;
+  maxConcurrency: number;
+}
+
 export interface RenderingConfig {
   chromeBin?: string;
   ignoresHttpsErrors: boolean;
+  mode: string;
+  clustering: ClusteringConfig;
+}
+
+export interface MetricsConfig {
+  enabled: boolean;
+  collectDefaultMetrics: boolean;
+  requestDurationBuckets: number[];
 }
 
 export interface ServiceConfig {
   service: {
     port: number;
-
-    metrics: {
-      enabled: boolean;
-      collectDefaultMetrics: boolean;
-      buckets: number[];
-    };
+    metrics: MetricsConfig;
   };
   rendering: RenderingConfig;
 }
@@ -31,6 +39,11 @@ export interface PluginConfig {
 const defaultRenderingConfig: RenderingConfig = {
   chromeBin: undefined,
   ignoresHttpsErrors: false,
+  mode: 'default',
+  clustering: {
+    mode: 'browser',
+    maxConcurrency: 5,
+  },
 };
 
 export const defaultServiceConfig: ServiceConfig = {
@@ -39,7 +52,7 @@ export const defaultServiceConfig: ServiceConfig = {
     metrics: {
       enabled: false,
       collectDefaultMetrics: true,
-      buckets: [0.5, 1, 3, 5, 7, 10, 20, 30, 60],
+      requestDurationBuckets: [0.5, 1, 3, 5, 7, 10, 20, 30, 60],
     },
   },
   rendering: defaultRenderingConfig,

@@ -4,17 +4,19 @@ import * as _ from 'lodash';
 import { GrpcPlugin } from './plugin/grpc-plugin';
 import { HttpServer } from './service/http-server';
 import { ConsoleLogger, PluginLogger } from './logger';
-import { Browser } from './browser';
+import { NoOpBrowserTiming, createBrowser } from './browser';
 import * as minimist from 'minimist';
-import { defaultPluginConfig, defaultServiceConfig, readJSONFileSync } from './config';
+import { defaultPluginConfig, defaultServiceConfig, readJSONFileSync, PluginConfig, ServiceConfig } from './config';
+import { MetricsBrowserTimings } from './metrics_browser_timings';
 
 async function main() {
   const argv = minimist(process.argv.slice(2));
   const env = Object.assign({}, process.env);
   const command = argv._[0];
+  let timings = new NoOpBrowserTiming();
 
   if (command === undefined) {
-    const config = defaultPluginConfig;
+    const config: PluginConfig = defaultPluginConfig;
 
     if (env['GF_RENDERER_PLUGIN_IGNORE_HTTPS_ERRORS']) {
       config.rendering.ignoresHttpsErrors = env['GF_RENDERER_PLUGIN_IGNORE_HTTPS_ERRORS'] === 'true';
@@ -32,11 +34,11 @@ async function main() {
     }
 
     const logger = new PluginLogger();
-    const browser = new Browser(config.rendering, logger);
+    const browser = createBrowser(config.rendering, logger, timings);
     const plugin = new GrpcPlugin(config, logger, browser);
     plugin.start();
   } else if (command === 'server') {
-    let config = defaultServiceConfig;
+    let config: ServiceConfig = defaultServiceConfig;
     const logger = new ConsoleLogger();
 
     if (argv.config) {
@@ -61,10 +63,26 @@ async function main() {
       config.service.metrics.enabled = env['ENABLE_METRICS'] === 'true';
     }
 
-    const browser = new Browser(config.rendering, logger);
+    if (config.service.metrics.enabled) {
+      timings = new MetricsBrowserTimings();
+    }
+
+    if (env['RENDERING_MODE']) {
+      config.rendering.mode = env['RENDERING_MODE'] as string;
+    }
+
+    if (env['RENDERING_CLUSTERING_MODE']) {
+      config.rendering.clustering.mode = env['RENDERING_CLUSTERING_MODE'] as string;
+    }
+
+    if (env['RENDERING_CLUSTERING_MAX_CONCURRENCY']) {
+      config.rendering.clustering.maxConcurrency = parseInt(env['RENDERING_CLUSTERING_MAX_CONCURRENCY'] as string, 10);
+    }
+
+    const browser = createBrowser(config.rendering, logger, timings);
     const server = new HttpServer(config, logger, browser);
 
-    server.start();
+    await server.start();
   } else {
     console.log('Unknown command');
   }

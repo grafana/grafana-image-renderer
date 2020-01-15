@@ -19,7 +19,7 @@
   },
   "dependencies": {
     "@grpc/proto-loader": "^0.5.3",
-    "boom": "^7.2.0",
+    "@hapi/boom": "^8.0.1",
     "express": "^4.16.3",
     "express-prom-bundle": "^5.1.5",
     "google-protobuf": "3.5.0",
@@ -29,7 +29,8 @@
     "morgan": "^1.9.0",
     "mz": "^2.7.0",
     "prom-client": "^11.5.3",
-    "puppeteer": "^1.7.0",
+    "puppeteer": "^2.0.0",
+    "puppeteer-cluster": "^0.18.0",
     "unique-filename": "^1.1.0"
   },
   "devDependencies": {
@@ -37,7 +38,7 @@
     "@types/node": "^10.0.9",
     "husky": "^3.1.0",
     "lint-staged": "^9.5.0",
-    "pkg": "4.3.8",
+    "pkg": "^4.4.2",
     "prettier": "^1.19.1",
     "tsc-watch": "^1.0.21",
     "tslint": "^5.20.1",

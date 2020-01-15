@@ -1,20 +1,21 @@
 import express = require('express');
 import { Logger } from '../logger';
 import { Browser } from '../browser';
-import * as boom from 'boom';
+import * as boom from '@hapi/boom';
 import morgan = require('morgan');
-import * as promBundle from 'express-prom-bundle';
 import { ServiceConfig } from '../config';
+import { metricsMiddleware } from './metrics_middleware';
+import * as promClient from 'prom-client';
 
 export class HttpServer {
   app: express.Express;
 
   constructor(private config: ServiceConfig, private log: Logger, private browser: Browser) {}
 
-  start() {
+  async start() {
     this.app = express();
     this.app.use(morgan('combined'));
-    this.registerMetricsMiddleware();
+    this.app.use(metricsMiddleware(this.config.service.metrics, this.log));
     this.app.get('/', (req: express.Request, res: express.Response) => {
       res.send('Grafana Image Renderer');
     });
@@ -35,6 +36,21 @@ export class HttpServer {
 
     this.app.listen(this.config.service.port);
     this.log.info(`HTTP Server started, listening on ${this.config.service.port}`);
+
+    const browserInfo = new promClient.Gauge({
+      name: 'grafana_image_renderer_browser_info',
+      help: "A metric with a constant '1 value labeled by version of the browser in use",
+      labelNames: ['version'],
+    });
+
+    try {
+      const browserVersion = await this.browser.getBrowserVersion();
+      browserInfo.labels(browserVersion).set(1);
+    } catch {
+      this.log.error('Failed to get browser version');
+      browserInfo.labels('unknown').set(19);
+    }
+    await this.browser.start();
   }
 
   render = async (req: express.Request, res: express.Response) => {
@@ -55,32 +71,8 @@ export class HttpServer {
     };
     this.log.info(`render request received for ${options.url}`);
     const result = await this.browser.render(options);
-
     res.sendFile(result.filePath);
   };
-
-  registerMetricsMiddleware() {
-    if (!this.config.service.metrics.enabled) {
-      return;
-    }
-
-    this.log.info('Metrics enabled');
-
-    const opts = {
-      metricType: 'histogram',
-      buckets: [0.5, 1, 3, 5, 7, 10, 20, 30, 60],
-      excludeRoutes: [/^((?!(render)).)*$/],
-      promClient: {},
-    } as any;
-
-    if (this.config.service.metrics.collectDefaultMetrics) {
-      opts.promClient.collectDefaultMetrics = {};
-    }
-
-    const bundle = promBundle(opts);
-
-    this.app.use(bundle);
-  }
 }
 
 // wrapper for our async route handlers
