@@ -73,6 +73,10 @@ function populatePluginConfigFromEnv(config: PluginConfig, env: NodeJS.ProcessEn
     config.rendering.timezone = env['TZ'];
   }
 
+  if (env['GF_RENDERER_PLUGIN_GRPC_PORT']) {
+    config.plugin.grpc.port = parseInt(env['GF_RENDERER_PLUGIN_GRPC_PORT'] as string, 10);
+  }
+
   if (env['GF_RENDERER_PLUGIN_IGNORE_HTTPS_ERRORS']) {
     config.rendering.ignoresHttpsErrors = env['GF_RENDERER_PLUGIN_IGNORE_HTTPS_ERRORS'] === 'true';
   }
