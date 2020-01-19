@@ -64,6 +64,8 @@ services:
 
   renderer:
     image: grafana/grafana-image-renderer:${RENDERER_VERSION}
+    volumes:
+      - ./config.json:/usr/src/app/config.json
     environment:
       - VIRTUAL_HOST=renderer.loc
       - ENABLE_METRICS=true
