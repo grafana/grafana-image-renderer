@@ -33,6 +33,7 @@ export class ClusteredBrowser extends Browser {
       }
 
       try {
+        this.addPageListeners(page);
         return await this.takeScreenshot(page, data);
       } finally {
         this.removePageListeners(page);
