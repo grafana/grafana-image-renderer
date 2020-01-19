@@ -11,6 +11,7 @@ scripts
 .prettierrc.json
 dev.json
 Dockerfile
+debian.Dockerfile
 Makefile
 plugin_start*
 tslint.json
