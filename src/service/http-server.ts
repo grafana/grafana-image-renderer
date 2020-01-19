@@ -1,3 +1,5 @@
+import * as http from 'http';
+import * as net from 'net';
 import express = require('express');
 import { Logger } from '../logger';
 import { Browser } from '../browser';
@@ -35,8 +37,17 @@ export class HttpServer {
       this.log.info(`Ignoring HTTPS errors`);
     }
 
-    this.app.listen(this.config.service.port);
-    this.log.info(`HTTP Server started, listening on ${this.config.service.port}`);
+    if (this.config.service.host) {
+      const server = this.app.listen(this.config.service.port, this.config.service.host, () => {
+        const info = server.address() as net.AddressInfo;
+        this.log.info(`HTTP Server started, listening at http://${this.config.service.host}:${info.port}`);
+      });
+    } else {
+      const server = this.app.listen(this.config.service.port, () => {
+        const info = server.address() as net.AddressInfo;
+        this.log.info(`HTTP Server started, listening at http://localhost:${info.port}`);
+      });
+    }
 
     const browserInfo = new promClient.Gauge({
       name: 'grafana_image_renderer_browser_info',

@@ -1,5 +1,6 @@
 {
   "service": {
+    "host": "localhost",
     "port": 8081,
     "metrics": {
       "enabled": true,

@@ -85,6 +85,14 @@ function populateServiceConfigFromEnv(config: ServiceConfig, env: NodeJS.Process
     config.rendering.timezone = env['TZ'];
   }
 
+  if (env['HTTP_HOST']) {
+    config.service.host = env['HTTP_HOST'];
+  }
+
+  if (env['HTTP_PORT']) {
+    config.service.port = parseInt(env['HTTP_PORT'] as string, 10);
+  }
+
   if (env['IGNORE_HTTPS_ERRORS']) {
     config.rendering.ignoresHttpsErrors = env['IGNORE_HTTPS_ERRORS'] === 'true';
   }

@@ -1,5 +1,6 @@
 {
   "service": {
+    "host": null,
     "port": 8081,
     "metrics": {
       "enabled": false,

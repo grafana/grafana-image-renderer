@@ -8,6 +8,22 @@ The docker image are published at [Docker Hub](https://hub.docker.com/r/grafana/
 
 You can override certain settings by using environment variables.
 
+**HTTP host:**
+
+Change the listening host of the HTTP server. Default is unset and will use the local host.
+
+```bash
+export HTTP_HOST=localhost
+```
+
+**HTTP port:**
+
+Change the listening port of the HTTP server. Default is `8081`. Setting `0` will automatically assign a port not in use.
+
+```bash
+export HTTP_PORT=0
+```
+
 **Default timezone:**
 
 Instruct headless Chrome to use a default timezone when not provided by Grafana, .e.g. when rendering panel image of alert. See [ICU’s metaZones.txt](https://cs.chromium.org/chromium/src/third_party/icu/source/data/misc/metaZones.txt?rcl=faee8bc70570192d82d2978a71e2a615788597d1) for a list of supported timezone IDs.
