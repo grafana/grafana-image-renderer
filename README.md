@@ -17,6 +17,10 @@ However, [Chromium browser](https://www.chromium.org/) depends on certain librar
 system you may encounter errors when trying to render an image. For further details and troubleshooting help, please refer to
 [Grafana Image Rendering documentation](https://grafana.com/docs/administration/image_rendering/).
 
+### Known issue having IPv6 disabled
+
+We've got reports regarding the plugin doesn't work if IPv6 is disabled. The current workaround is to use [Remote Rendering Using Docker](#remote-rendering-using-docker) instead. Refer to [issue](https://github.com/grafana/grafana-image-renderer/issues/48) for more information.
+
 ## Installation
 
 ### Using grafana-cli
