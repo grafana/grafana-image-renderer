@@ -33,13 +33,6 @@ COPY --from=build /usr/src/app/build build
 COPY --from=build /usr/src/app/proto proto
 COPY --from=build /usr/src/app/default.json config.json
 
-RUN groupadd -r pptruser && useradd -r -g pptruser -G audio,video pptruser \
-    && mkdir -p /home/pptruser/Downloads \
-    && chown -R pptruser:pptruser /home/pptruser \
-    && chown -R pptruser:pptruser .
-
-USER pptruser
-
 EXPOSE 8081
 
 ENTRYPOINT ["dumb-init", "--"]
