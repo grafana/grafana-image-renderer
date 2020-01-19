@@ -12,6 +12,7 @@ export const metricsMiddleware = (config: MetricsConfig, log: Logger) => {
   log.info('Metrics enabled');
 
   const opts = {
+    httpDurationMetricName: 'grafana_image_renderer_service_http_request_duration_seconds',
     metricType: 'histogram',
     buckets: config.requestDurationBuckets,
     excludeRoutes: [/^((?!(render)).)*$/],

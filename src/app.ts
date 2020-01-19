@@ -48,7 +48,7 @@ async function main() {
 
     populateServiceConfigFromEnv(config, env);
 
-    if (config.service.metrics.enabled) {
+    if (config.service.metrics.enabled && config.rendering.timingMetrics) {
       timings = new MetricsBrowserTimings();
     }
 
