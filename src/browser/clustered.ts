@@ -1,5 +1,5 @@
 import { Cluster } from 'puppeteer-cluster';
-import { Browser, RenderResponse, BrowserTimings } from './browser';
+import { Browser, RenderResponse, BrowserTimings, RenderOptions } from './browser';
 import { Logger } from '../logger';
 import { RenderingConfig, ClusteringConfig } from '../config';
 
@@ -27,11 +27,15 @@ export class ClusteredBrowser extends Browser {
       puppeteerOptions: launcherOptions,
     });
     await this.cluster.task(async ({ page, data }) => {
+      if (data.timezone) {
+        // set timezone
+        await page.emulateTimezone(data.timezone);
+      }
       return await this.takeScreenshot(page, data);
     });
   }
 
-  async render(options): Promise<RenderResponse> {
+  async render(options: RenderOptions): Promise<RenderResponse> {
     this.validateOptions(options);
     return await this.cluster.execute(options);
   }

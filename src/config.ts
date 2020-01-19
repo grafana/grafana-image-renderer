@@ -6,6 +6,7 @@ export interface ClusteringConfig {
 }
 
 export interface RenderingConfig {
+  timezone?: string;
   chromeBin?: string;
   ignoresHttpsErrors: boolean;
   mode: string;
@@ -37,6 +38,7 @@ export interface PluginConfig {
 }
 
 const defaultRenderingConfig: RenderingConfig = {
+  timezone: undefined,
   chromeBin: undefined,
   ignoresHttpsErrors: false,
   mode: 'default',

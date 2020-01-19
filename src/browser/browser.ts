@@ -5,6 +5,18 @@ import uniqueFilename = require('unique-filename');
 import { Logger } from '../logger';
 import { RenderingConfig } from '../config';
 
+export interface RenderOptions {
+  url: string;
+  width: string | number;
+  height: string | number;
+  filePath: string;
+  timeout: string | number;
+  renderKey: string;
+  domain: string;
+  timezone?: string;
+  encoding?: string;
+}
+
 export interface RenderResponse {
   filePath: string;
 }
@@ -50,10 +62,10 @@ export class Browser {
 
   async start(): Promise<void> {}
 
-  validateOptions(options) {
-    options.width = parseInt(options.width, 10) || 1000;
-    options.height = parseInt(options.height, 10) || 500;
-    options.timeout = parseInt(options.timeout, 10) || 30;
+  validateOptions(options: RenderOptions) {
+    options.width = parseInt(options.width as string, 10) || 1000;
+    options.height = parseInt(options.height as string, 10) || 500;
+    options.timeout = parseInt(options.timeout as string, 10) || 30;
 
     if (options.width > 3000 || options.width < 10) {
       options.width = 2500;
@@ -67,7 +79,7 @@ export class Browser {
   getLauncherOptions(options) {
     const env = Object.assign({}, process.env);
     // set env timezone
-    env.TZ = options.timezone || process.env.TZ;
+    env.TZ = options.timezone || this.config.timezone;
 
     const launcherOptions: any = {
       env: env,
@@ -82,7 +94,7 @@ export class Browser {
     return launcherOptions;
   }
 
-  async render(options): Promise<RenderResponse> {
+  async render(options: RenderOptions): Promise<RenderResponse> {
     let browser;
     let page: any;
 

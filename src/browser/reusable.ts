@@ -1,5 +1,5 @@
 import * as puppeteer from 'puppeteer';
-import { Browser, RenderResponse, BrowserTimings } from './browser';
+import { Browser, RenderResponse, BrowserTimings, RenderOptions } from './browser';
 import { Logger } from '../logger';
 import { RenderingConfig } from '../config';
 
@@ -20,7 +20,7 @@ export class ReusableBrowser extends Browser {
     );
   }
 
-  async render(options): Promise<RenderResponse> {
+  async render(options: RenderOptions): Promise<RenderResponse> {
     let context: puppeteer.BrowserContext;
     let page: puppeteer.Page;
 
@@ -33,6 +33,11 @@ export class ReusableBrowser extends Browser {
           // open a new page
           await context.newPage()
       );
+
+      if (options.timezone) {
+        // set timezone
+        await page.emulateTimezone(options.timezone);
+      }
 
       return await this.takeScreenshot(page, options);
     } finally {

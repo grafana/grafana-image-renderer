@@ -1,7 +1,7 @@
 import * as grpc from 'grpc';
 import * as protoLoader from '@grpc/proto-loader';
 import { Logger } from '../logger';
-import { Browser } from '../browser/browser';
+import { Browser, RenderOptions } from '../browser/browser';
 import { PluginConfig } from '../config';
 
 const RENDERER_PROTO_PATH = __dirname + '/../../proto/renderer.proto';
@@ -71,7 +71,7 @@ export class GrpcPlugin {
 
   async render(call, callback) {
     const req = call.request;
-    const options = {
+    const options: RenderOptions = {
       url: req.url,
       width: req.width,
       height: req.height,

@@ -6,6 +6,7 @@ import morgan = require('morgan');
 import { ServiceConfig } from '../config';
 import { metricsMiddleware } from './metrics_middleware';
 import * as promClient from 'prom-client';
+import { RenderOptions } from '../browser/browser';
 
 export class HttpServer {
   app: express.Express;
@@ -58,7 +59,7 @@ export class HttpServer {
       throw boom.badRequest('Missing url parameter');
     }
 
-    const options = {
+    const options: RenderOptions = {
       url: req.query.url,
       width: req.query.width,
       height: req.query.height,

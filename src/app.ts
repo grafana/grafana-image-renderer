@@ -17,14 +17,9 @@ async function main() {
 
   if (command === undefined) {
     const config: PluginConfig = defaultPluginConfig;
+    populatePluginConfigFromEnv(config, env);
 
-    if (env['GF_RENDERER_PLUGIN_IGNORE_HTTPS_ERRORS']) {
-      config.rendering.ignoresHttpsErrors = env['GF_RENDERER_PLUGIN_IGNORE_HTTPS_ERRORS'] === 'true';
-    }
-
-    if (env['GF_RENDERER_PLUGIN_CHROME_BIN']) {
-      config.rendering.chromeBin = env['GF_RENDERER_PLUGIN_CHROME_BIN'];
-    } else if ((process as any).pkg) {
+    if (!config.rendering.chromeBin && (process as any).pkg) {
       const parts = puppeteer.executablePath().split(path.sep);
       while (!parts[0].startsWith('chrome-')) {
         parts.shift();
@@ -51,32 +46,10 @@ async function main() {
       }
     }
 
-    if (env['IGNORE_HTTPS_ERRORS']) {
-      config.rendering.ignoresHttpsErrors = env['IGNORE_HTTPS_ERRORS'] === 'true';
-    }
-
-    if (env['CHROME_BIN']) {
-      config.rendering.chromeBin = env['CHROME_BIN'];
-    }
-
-    if (env['ENABLE_METRICS']) {
-      config.service.metrics.enabled = env['ENABLE_METRICS'] === 'true';
-    }
+    populateServiceConfigFromEnv(config, env);
 
     if (config.service.metrics.enabled) {
       timings = new MetricsBrowserTimings();
-    }
-
-    if (env['RENDERING_MODE']) {
-      config.rendering.mode = env['RENDERING_MODE'] as string;
-    }
-
-    if (env['RENDERING_CLUSTERING_MODE']) {
-      config.rendering.clustering.mode = env['RENDERING_CLUSTERING_MODE'] as string;
-    }
-
-    if (env['RENDERING_CLUSTERING_MAX_CONCURRENCY']) {
-      config.rendering.clustering.maxConcurrency = parseInt(env['RENDERING_CLUSTERING_MAX_CONCURRENCY'] as string, 10);
     }
 
     const browser = createBrowser(config.rendering, logger, timings);
@@ -92,3 +65,47 @@ main().catch(err => {
   console.error(err);
   process.exit(1);
 });
+
+function populatePluginConfigFromEnv(config: PluginConfig, env: NodeJS.ProcessEnv) {
+  if (env['TZ']) {
+    config.rendering.timezone = env['TZ'];
+  }
+
+  if (env['GF_RENDERER_PLUGIN_IGNORE_HTTPS_ERRORS']) {
+    config.rendering.ignoresHttpsErrors = env['GF_RENDERER_PLUGIN_IGNORE_HTTPS_ERRORS'] === 'true';
+  }
+
+  if (env['GF_RENDERER_PLUGIN_CHROME_BIN']) {
+    config.rendering.chromeBin = env['GF_RENDERER_PLUGIN_CHROME_BIN'];
+  }
+}
+
+function populateServiceConfigFromEnv(config: ServiceConfig, env: NodeJS.ProcessEnv) {
+  if (env['TZ']) {
+    config.rendering.timezone = env['TZ'];
+  }
+
+  if (env['IGNORE_HTTPS_ERRORS']) {
+    config.rendering.ignoresHttpsErrors = env['IGNORE_HTTPS_ERRORS'] === 'true';
+  }
+
+  if (env['CHROME_BIN']) {
+    config.rendering.chromeBin = env['CHROME_BIN'];
+  }
+
+  if (env['ENABLE_METRICS']) {
+    config.service.metrics.enabled = env['ENABLE_METRICS'] === 'true';
+  }
+
+  if (env['RENDERING_MODE']) {
+    config.rendering.mode = env['RENDERING_MODE'] as string;
+  }
+
+  if (env['RENDERING_CLUSTERING_MODE']) {
+    config.rendering.clustering.mode = env['RENDERING_CLUSTERING_MODE'] as string;
+  }
+
+  if (env['RENDERING_CLUSTERING_MAX_CONCURRENCY']) {
+    config.rendering.clustering.maxConcurrency = parseInt(env['RENDERING_CLUSTERING_MAX_CONCURRENCY'] as string, 10);
+  }
+}
