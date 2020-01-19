@@ -1,4 +1,3 @@
-import * as http from 'http';
 import * as net from 'net';
 import express = require('express');
 import { Logger } from '../logger';
@@ -17,7 +16,7 @@ export class HttpServer {
 
   async start() {
     this.app = express();
-    this.app.use(morgan('combined'));
+    this.app.use(morgan('combined', { stream: this.log.writer }));
     this.app.use(metricsMiddleware(this.config.service.metrics, this.log));
     this.app.get('/', (req: express.Request, res: express.Response) => {
       res.send('Grafana Image Renderer');
@@ -81,9 +80,13 @@ export class HttpServer {
       timezone: req.query.timezone,
       encoding: req.query.encoding,
     };
-    this.log.info(`render request received for ${options.url}`);
-    const result = await this.browser.render(options);
-    res.sendFile(result.filePath);
+    try {
+      this.log.info(`Render request received', 'url', ${options.url}`);
+      const result = await this.browser.render(options);
+      res.sendFile(result.filePath);
+    } catch (err) {
+      this.log.error('Render request failed', 'url', options.url, 'error', err);
+    }
   };
 }
 

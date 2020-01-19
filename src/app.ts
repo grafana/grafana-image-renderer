@@ -34,14 +34,13 @@ async function main() {
     plugin.start();
   } else if (command === 'server') {
     let config: ServiceConfig = defaultServiceConfig;
-    const logger = new ConsoleLogger();
 
     if (argv.config) {
       try {
         const fileConfig = readJSONFileSync(argv.config);
         config = _.merge(config, fileConfig);
       } catch (e) {
-        logger.error('failed to read config from path', argv.config, 'error', e);
+        console.error('failed to read config from path', argv.config, 'error', e);
         return;
       }
     }
@@ -52,6 +51,7 @@ async function main() {
       timings = new MetricsBrowserTimings();
     }
 
+    const logger = new ConsoleLogger(config.service.logging);
     const browser = createBrowser(config.rendering, logger, timings);
     const server = new HttpServer(config, logger, browser);
 
@@ -99,6 +99,10 @@ function populateServiceConfigFromEnv(config: ServiceConfig, env: NodeJS.Process
 
   if (env['HTTP_PORT']) {
     config.service.port = parseInt(env['HTTP_PORT'] as string, 10);
+  }
+
+  if (env['LOG_LEVEL']) {
+    config.service.logging.level = env['LOG_LEVEL'] as string;
   }
 
   if (env['IGNORE_HTTPS_ERRORS']) {

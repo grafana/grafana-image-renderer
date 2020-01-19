@@ -49,6 +49,15 @@ You can enable [Prometheus](https://prometheus.io/) metrics endpoint `/metrics` 
 export ENABLE_METRICS=true
 ```
 
+**Log level:**
+
+Change the log level. Default is `info` and will include log messages with level `error`, `warning` and info.
+
+
+```bash
+export LOG_LEVEL=info
+```
+
 ## Configuration file
 
 You can override certain settings by using a configuration file, see [default.json](https://github.com/grafana/grafana-image-renderer/tree/master/default.json) for defaults. Note that any configured environment variable takes precedence over configuration file settings.

@@ -12,6 +12,7 @@ export interface RenderingConfig {
   timingMetrics: boolean;
   mode: string;
   clustering: ClusteringConfig;
+  verboseLogging: boolean;
 }
 
 export interface MetricsConfig {
@@ -20,11 +21,23 @@ export interface MetricsConfig {
   requestDurationBuckets: number[];
 }
 
+export interface ConsoleLoggerConfig {
+  level?: string;
+  json: boolean;
+  colorize: boolean;
+}
+
+export interface LoggingConfig {
+  level: string;
+  console?: ConsoleLoggerConfig;
+}
+
 export interface ServiceConfig {
   service: {
     host?: string;
     port: number;
     metrics: MetricsConfig;
+    logging: LoggingConfig;
   };
   rendering: RenderingConfig;
 }
@@ -49,6 +62,7 @@ const defaultRenderingConfig: RenderingConfig = {
     mode: 'browser',
     maxConcurrency: 5,
   },
+  verboseLogging: false,
 };
 
 export const defaultServiceConfig: ServiceConfig = {
@@ -59,6 +73,13 @@ export const defaultServiceConfig: ServiceConfig = {
       enabled: false,
       collectDefaultMetrics: true,
       requestDurationBuckets: [0.5, 1, 3, 5, 7, 10, 20, 30, 60],
+    },
+    logging: {
+      level: 'info',
+      console: {
+        json: true,
+        colorize: false,
+      },
     },
   },
   rendering: defaultRenderingConfig,
