@@ -67,7 +67,9 @@ main().catch(err => {
 });
 
 function populatePluginConfigFromEnv(config: PluginConfig, env: NodeJS.ProcessEnv) {
-  if (env['TZ']) {
+  if (env['GF_RENDERER_PLUGIN_TZ']) {
+    config.rendering.timezone = env['GF_RENDERER_PLUGIN_TZ'];
+  } else {
     config.rendering.timezone = env['TZ'];
   }
 
@@ -81,7 +83,9 @@ function populatePluginConfigFromEnv(config: PluginConfig, env: NodeJS.ProcessEn
 }
 
 function populateServiceConfigFromEnv(config: ServiceConfig, env: NodeJS.ProcessEnv) {
-  if (env['TZ']) {
+  if (env['BROWSER_TZ']) {
+    config.rendering.timezone = env['BROWSER_TZ'];
+  } else {
     config.rendering.timezone = env['TZ'];
   }
 

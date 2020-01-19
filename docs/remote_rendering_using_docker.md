@@ -26,10 +26,10 @@ export HTTP_PORT=0
 
 **Default timezone:**
 
-Instruct headless Chrome to use a default timezone when not provided by Grafana, .e.g. when rendering panel image of alert. See [ICU’s metaZones.txt](https://cs.chromium.org/chromium/src/third_party/icu/source/data/misc/metaZones.txt?rcl=faee8bc70570192d82d2978a71e2a615788597d1) for a list of supported timezone IDs.
+Instruct headless Chrome to use a default timezone when not provided by Grafana, .e.g. when rendering panel image of alert. See [ICU’s metaZones.txt](https://cs.chromium.org/chromium/src/third_party/icu/source/data/misc/metaZones.txt?rcl=faee8bc70570192d82d2978a71e2a615788597d1) for a list of supported timezone IDs. Fallbacks to `TZ` environment variable if not set.
 
 ```bash
-export TZ=Europe/Stockholm
+export BROWSER_TZ=Europe/Stockholm
 ```
 
 **Ignore HTTPS errors:**
