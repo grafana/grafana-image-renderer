@@ -68,7 +68,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum by (status) (label_replace(label_replace(rate(http_request_duration_seconds_count{job=\"renderer\"}[$__interval]), \"status\", \"${1}xx\", \"status_code\", \"([0-9])..\"), \"status\", \"${1}\",   \"status_code\", \"([a-z]+)\"))",
+          "expr": "sum by (status) (label_replace(label_replace(rate(grafana_image_renderer_service_http_request_duration_seconds_count{job=\"renderer\"}[$__interval]), \"status\", \"${1}xx\", \"status_code\", \"([0-9])..\"), \"status\", \"${1}\",   \"status_code\", \"([a-z]+)\"))",
           "format": "time_series",
           "interval": "1m",
           "intervalFactor": 2,
@@ -161,7 +161,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "histogram_quantile(0.99, \n  sum without(instance,status_code)(\n    rate(http_request_duration_seconds_bucket{job=\"renderer\"}[$__interval])\n  )\n)",
+          "expr": "histogram_quantile(0.99, \n  sum without(instance,status_code)(\n    rate(grafana_image_renderer_service_http_request_duration_seconds_bucket{job=\"renderer\"}[$__interval])\n  )\n)",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -170,7 +170,7 @@
           "step": 10
         },
         {
-          "expr": "histogram_quantile(0.5, \n  sum without(instance,status_code)(\n    rate(http_request_duration_seconds_bucket{job=\"renderer\"}[$__interval])\n  )\n)",
+          "expr": "histogram_quantile(0.5, \n  sum without(instance,status_code)(\n    rate(grafana_image_renderer_service_http_request_duration_seconds_bucket{job=\"renderer\"}[$__interval])\n  )\n)",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -179,7 +179,7 @@
           "step": 10
         },
         {
-          "expr": "sum without(instance,status_code) (rate(http_request_duration_seconds_sum{job=\"renderer\"}[$__interval])) \n/ \nsum without(instance,status_code) (rate(http_request_duration_seconds_count{job=\"renderer\"}[$__interval]))",
+          "expr": "sum without(instance,status_code) (rate(grafana_image_renderer_service_http_request_duration_seconds_sum{job=\"renderer\"}[$__interval])) \n/ \nsum without(instance,status_code) (rate(grafana_image_renderer_service_http_request_duration_seconds_count{job=\"renderer\"}[$__interval]))",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -280,7 +280,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum by (instance) (rate(http_request_duration_seconds_count{job=\"renderer\"}[$__interval]))",
+          "expr": "sum by (instance) (rate(grafana_image_renderer_service_http_request_duration_seconds_count{job=\"renderer\"}[$__interval]))",
           "format": "time_series",
           "interval": "1m",
           "intervalFactor": 2,
@@ -362,7 +362,7 @@
       "reverseYBuckets": false,
       "targets": [
         {
-          "expr": "sum(rate(http_request_duration_seconds_bucket[$__interval])) by (le)",
+          "expr": "sum(rate(grafana_image_renderer_service_http_request_duration_seconds_bucket[$__interval])) by (le)",
           "format": "heatmap",
           "interval": "1m",
           "intervalFactor": 2,
