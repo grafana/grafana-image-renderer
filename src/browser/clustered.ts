@@ -31,7 +31,12 @@ export class ClusteredBrowser extends Browser {
         // set timezone
         await page.emulateTimezone(data.timezone);
       }
-      return await this.takeScreenshot(page, data);
+
+      try {
+        return await this.takeScreenshot(page, data);
+      } finally {
+        this.removePageListeners(page);
+      }
     });
   }
 

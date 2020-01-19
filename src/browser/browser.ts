@@ -113,9 +113,12 @@ export class Browser {
           await browser.newPage()
       );
 
+      this.addPageListeners(page);
+
       return await this.takeScreenshot(page, options);
     } finally {
       if (page) {
+        this.removePageListeners(page);
         await page.close();
       }
       if (browser) {
@@ -164,4 +167,69 @@ export class Browser {
 
     return { filePath: options.filePath };
   }
+
+  addPageListeners(page: any) {
+    page.on('error', this.logError.bind);
+    page.on('pageerror', this.logPageError);
+    page.on('requestfailed', this.logRequestFailed);
+    page.on('console', this.logConsoleMessage);
+
+    if (this.config.verboseLogging) {
+      page.on('request', this.logRequest);
+      page.on('requestfinished', this.logRequestFinished);
+      page.on('close', this.logPageClosed);
+    }
+  }
+
+  removePageListeners(page: any) {
+    page.removeListener('error', this.logError);
+    page.removeListener('pageerror', this.logPageError);
+    page.removeListener('requestfailed', this.logRequestFailed);
+    page.removeListener('console', this.logConsoleMessage);
+
+    if (this.config.verboseLogging) {
+      page.removeListener('request', this.logRequest);
+      page.removeListener('requestfinished', this.logRequestFinished);
+      page.removeListener('close', this.logPageClosed);
+    }
+  }
+
+  logError = (err: Error) => {
+    this.log.error('Browser page crashed', 'error', err.toString());
+  };
+
+  logPageError = (err: Error) => {
+    this.log.error('Browser uncaught exception', 'error', err.toString());
+  };
+
+  logConsoleMessage = (msg: any) => {
+    const msgType = msg.type();
+    if (!this.config.verboseLogging && msgType !== 'error') {
+      return;
+    }
+
+    const loc = msg.location();
+    if (msgType === 'error') {
+      this.log.error('Browser console error', 'msg', msg.text(), 'url', loc.url, 'line', loc.lineNumber, 'column', loc.columnNumber);
+      return;
+    }
+
+    this.log.debug(`Browser console ${msgType}`, 'msg', msg.text(), 'url', loc.url, 'line', loc.lineNumber, 'column', loc.columnNumber);
+  };
+
+  logRequest = (req: any) => {
+    this.log.debug('Browser request', 'url', req._url, 'method', req._url);
+  };
+
+  logRequestFailed = (req: any) => {
+    this.log.error('Browser request failed', 'url', req._url, 'method', req._method);
+  };
+
+  logRequestFinished = (req: any) => {
+    this.log.debug('Browser request finished', 'url', req._url, 'method', req._method);
+  };
+
+  logPageClosed = () => {
+    this.log.debug('Browser page closed');
+  };
 }

@@ -39,9 +39,12 @@ export class ReusableBrowser extends Browser {
         await page.emulateTimezone(options.timezone);
       }
 
+      this.addPageListeners(page);
+
       return await this.takeScreenshot(page, options);
     } finally {
       if (page) {
+        this.removePageListeners(page);
         await page.close();
       }
       if (context) {
