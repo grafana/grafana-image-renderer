@@ -22,6 +22,7 @@ export interface MetricsConfig {
 
 export interface ServiceConfig {
   service: {
+    host?: string;
     port: number;
     metrics: MetricsConfig;
   };
@@ -52,6 +53,7 @@ const defaultRenderingConfig: RenderingConfig = {
 
 export const defaultServiceConfig: ServiceConfig = {
   service: {
+    host: undefined,
     port: 8081,
     metrics: {
       enabled: false,
