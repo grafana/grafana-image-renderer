@@ -55,6 +55,10 @@ export class GrpcPlugin {
     if (this.config.rendering.chromeBin) {
       this.log.info(
         'Renderer plugin started',
+        'grpcHost',
+        this.config.plugin.grpc.host,
+        'grpcPort',
+        boundPortNumber,
         'chromeBin',
         this.config.rendering.chromeBin,
         'ignoreHTTPSErrors',

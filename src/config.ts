@@ -68,7 +68,7 @@ export const defaultPluginConfig: PluginConfig = {
   plugin: {
     grpc: {
       host: '127.0.0.1',
-      port: 50059,
+      port: 0,
     },
   },
   rendering: defaultRenderingConfig,

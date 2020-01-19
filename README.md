@@ -55,6 +55,14 @@ Due to the security risk it's not recommended to ignore HTTPS errors.
 GF_RENDERER_PLUGIN_IGNORE_HTTPS_ERRORS=true
 ```
 
+**gRPC port:**
+
+Change the listening port of the gRPC server. Default is `0` and will automatically assign a port not in use.
+
+```bash
+GF_RENDERER_PLUGIN_GRPC_PORT=50059
+```
+
 ## Remote Rendering Using Docker
 
 Instead of installing and running the image renderer as a plugin, you can run it as a remote image rendering service using Docker. Read more about [remote rendering using Docker](https://github.com/grafana/grafana-image-renderer/blob/master/docs/remote_rendering_using_docker.md).
