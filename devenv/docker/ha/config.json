@@ -11,7 +11,7 @@
     "timezone": null,
     "chromeBin": null,
     "ignoresHttpsErrors": false,
-    "timingMetrics": false,
+    "timingMetrics": true,
     "mode": "default",
     "clustering": {
       "mode": "browser",

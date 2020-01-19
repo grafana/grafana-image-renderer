@@ -68,7 +68,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum by (status) (label_replace(label_replace(rate(http_request_duration_seconds_count{job=\"renderer\"}[$__interval]), \"status\", \"${1}xx\", \"status_code\", \"([0-9])..\"), \"status\", \"${1}\",   \"status_code\", \"([a-z]+)\"))",
+          "expr": "sum by (status) (label_replace(label_replace(rate(grafana_image_renderer_service_http_request_duration_seconds_count{job=\"renderer\"}[$__interval]), \"status\", \"${1}xx\", \"status_code\", \"([0-9])..\"), \"status\", \"${1}\",   \"status_code\", \"([a-z]+)\"))",
           "format": "time_series",
           "interval": "1m",
           "intervalFactor": 2,
@@ -161,27 +161,27 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "histogram_quantile(0.99, \n  sum without(instance,status_code)(\n    rate(http_request_duration_seconds_bucket{job=\"renderer\"}[$__interval])\n  )\n)",
+          "expr": "histogram_quantile(0.99, \n  sum without(instance,status_code)(\n    rate(grafana_image_renderer_service_http_request_duration_seconds_bucket{job=\"renderer\"}[$__interval])\n  )\n)",
           "format": "time_series",
-          "interval": "1m",
+          "interval": "",
           "intervalFactor": 2,
           "legendFormat": "99th percentile",
           "refId": "B",
           "step": 10
         },
         {
-          "expr": "histogram_quantile(0.5, \n  sum without(instance,status_code)(\n    rate(http_request_duration_seconds_bucket{job=\"renderer\"}[$__interval])\n  )\n)",
+          "expr": "histogram_quantile(0.5, \n  sum without(instance,status_code)(\n    rate(grafana_image_renderer_service_http_request_duration_seconds_bucket{job=\"renderer\"}[$__interval])\n  )\n)",
           "format": "time_series",
-          "interval": "1m",
+          "interval": "",
           "intervalFactor": 2,
           "legendFormat": "50th percentile",
           "refId": "A",
           "step": 10
         },
         {
-          "expr": "sum without(instance,status_code) (rate(http_request_duration_seconds_sum{job=\"renderer\"}[$__interval])) \n/ \nsum without(instance,status_code) (rate(http_request_duration_seconds_count{job=\"renderer\"}[$__interval]))",
+          "expr": "sum without(instance,status_code) (rate(grafana_image_renderer_service_http_request_duration_seconds_sum{job=\"renderer\"}[$__interval])) \n/ \nsum without(instance,status_code) (rate(grafana_image_renderer_service_http_request_duration_seconds_count{job=\"renderer\"}[$__interval]))",
           "format": "time_series",
-          "interval": "1m",
+          "interval": "",
           "intervalFactor": 2,
           "legendFormat": "Average",
           "refId": "C",
@@ -280,7 +280,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum by (instance) (rate(http_request_duration_seconds_count{job=\"renderer\"}[$__interval]))",
+          "expr": "sum by (instance) (rate(grafana_image_renderer_service_http_request_duration_seconds_count{job=\"renderer\"}[$__interval]))",
           "format": "time_series",
           "interval": "1m",
           "intervalFactor": 2,
@@ -362,7 +362,8 @@
       "reverseYBuckets": false,
       "targets": [
         {
-          "expr": "sum(rate(http_request_duration_seconds_bucket[$__interval])) by (le)",
+          "expr": "sum(rate(grafana_image_renderer_service_http_request_duration_seconds_bucket[$__interval])) by (le)",
+          "format": "heatmap",
           "interval": "1m",
           "intervalFactor": 2,
           "legendFormat": "{{le}}",
@@ -371,7 +372,7 @@
       ],
       "timeFrom": null,
       "timeShift": null,
-      "title": "Latency distribution",
+      "title": "Request latency distribution",
       "tooltip": {
         "show": true,
         "showHistogram": false
@@ -394,6 +395,561 @@
       "yBucketBound": "auto",
       "yBucketNumber": null,
       "yBucketSize": null
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "Prometheus",
+      "description": "",
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 9,
+        "w": 8,
+        "x": 0,
+        "y": 18
+      },
+      "hiddenSeries": false,
+      "id": 12,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null as zero",
+      "options": {
+        "dataLinks": []
+      },
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.99, \n  sum without(instance)(\n    rate(grafana_image_renderer_step_duration_seconds_bucket{job=\"renderer\",step=\"launch\"}[$__interval])\n  )\n)",
+          "format": "time_series",
+          "interval": "1m",
+          "intervalFactor": 2,
+          "legendFormat": "99th percentile",
+          "refId": "B",
+          "step": 10
+        },
+        {
+          "expr": "histogram_quantile(0.5, \n  sum without(instance)(\n    rate(grafana_image_renderer_step_duration_seconds_bucket{job=\"renderer\",step=\"launch\"}[$__interval])\n  )\n)",
+          "format": "time_series",
+          "interval": "1m",
+          "intervalFactor": 2,
+          "legendFormat": "50th percentile",
+          "refId": "A",
+          "step": 10
+        },
+        {
+          "expr": "sum without(instance) (rate(grafana_image_renderer_step_duration_seconds_sum{job=\"renderer\",step=\"launch\"}[$__interval])) \n/ \nsum without(instance) (rate(grafana_image_renderer_step_duration_seconds_count{job=\"renderer\",step=\"launch\"}[$__interval]))",
+          "format": "time_series",
+          "interval": "1m",
+          "intervalFactor": 2,
+          "legendFormat": "Average",
+          "refId": "C",
+          "step": 10
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "Launch latency",
+      "tooltip": {
+        "shared": true,
+        "sort": 2,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "s",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": 0,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": false
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "Prometheus",
+      "description": "",
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 9,
+        "w": 8,
+        "x": 8,
+        "y": 18
+      },
+      "hiddenSeries": false,
+      "id": 14,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null as zero",
+      "options": {
+        "dataLinks": []
+      },
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.99, \n  sum without(instance)(\n    rate(grafana_image_renderer_step_duration_seconds_bucket{job=\"renderer\",step=\"navigate\"}[$__interval])\n  )\n)",
+          "format": "time_series",
+          "interval": "1m",
+          "intervalFactor": 2,
+          "legendFormat": "99th percentile",
+          "refId": "B",
+          "step": 10
+        },
+        {
+          "expr": "histogram_quantile(0.5, \n  sum without(instance)(\n    rate(grafana_image_renderer_step_duration_seconds_bucket{job=\"renderer\",step=\"navigate\"}[$__interval])\n  )\n)",
+          "format": "time_series",
+          "interval": "1m",
+          "intervalFactor": 2,
+          "legendFormat": "50th percentile",
+          "refId": "A",
+          "step": 10
+        },
+        {
+          "expr": "sum without(instance) (rate(grafana_image_renderer_step_duration_seconds_sum{job=\"renderer\",step=\"navigate\"}[$__interval])) \n/ \nsum without(instance) (rate(grafana_image_renderer_step_duration_seconds_count{job=\"renderer\",step=\"navigate\"}[$__interval]))",
+          "format": "time_series",
+          "interval": "1m",
+          "intervalFactor": 2,
+          "legendFormat": "Average",
+          "refId": "C",
+          "step": 10
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "Navigate latency",
+      "tooltip": {
+        "shared": true,
+        "sort": 2,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "s",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": 0,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": false
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "Prometheus",
+      "description": "",
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 9,
+        "w": 8,
+        "x": 16,
+        "y": 18
+      },
+      "hiddenSeries": false,
+      "id": 16,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null as zero",
+      "options": {
+        "dataLinks": []
+      },
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.99, \n  sum without(instance)(\n    rate(grafana_image_renderer_step_duration_seconds_bucket{job=\"renderer\",step=\"screenshot\"}[$__interval])\n  )\n)",
+          "format": "time_series",
+          "interval": "1m",
+          "intervalFactor": 2,
+          "legendFormat": "99th percentile",
+          "refId": "B",
+          "step": 10
+        },
+        {
+          "expr": "histogram_quantile(0.5, \n  sum without(instance)(\n    rate(grafana_image_renderer_step_duration_seconds_bucket{job=\"renderer\",step=\"screenshot\"}[$__interval])\n  )\n)",
+          "format": "time_series",
+          "interval": "1m",
+          "intervalFactor": 2,
+          "legendFormat": "50th percentile",
+          "refId": "A",
+          "step": 10
+        },
+        {
+          "expr": "sum without(instance) (rate(grafana_image_renderer_step_duration_seconds_sum{job=\"renderer\",step=\"screenshot\"}[$__interval])) \n/ \nsum without(instance) (rate(grafana_image_renderer_step_duration_seconds_count{job=\"renderer\",step=\"screenshot\"}[$__interval]))",
+          "format": "time_series",
+          "interval": "1m",
+          "intervalFactor": 2,
+          "legendFormat": "Average",
+          "refId": "C",
+          "step": 10
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "Screenshot latency",
+      "tooltip": {
+        "shared": true,
+        "sort": 2,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "s",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": 0,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": false
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "Prometheus",
+      "description": "",
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 27
+      },
+      "hiddenSeries": false,
+      "id": 13,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null as zero",
+      "options": {
+        "dataLinks": []
+      },
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.99, \n  sum without(instance)(\n    rate(grafana_image_renderer_step_duration_seconds_bucket{job=\"renderer\",step=\"newPage\"}[$__interval])\n  )\n)",
+          "format": "time_series",
+          "interval": "1m",
+          "intervalFactor": 2,
+          "legendFormat": "99th percentile",
+          "refId": "B",
+          "step": 10
+        },
+        {
+          "expr": "histogram_quantile(0.5, \n  sum without(instance)(\n    rate(grafana_image_renderer_step_duration_seconds_bucket{job=\"renderer\",step=\"newPage\"}[$__interval])\n  )\n)",
+          "format": "time_series",
+          "interval": "1m",
+          "intervalFactor": 2,
+          "legendFormat": "50th percentile",
+          "refId": "A",
+          "step": 10
+        },
+        {
+          "expr": "sum without(instance) (rate(grafana_image_renderer_step_duration_seconds_sum{job=\"renderer\",step=\"newPage\"}[$__interval])) \n/ \nsum without(instance) (rate(grafana_image_renderer_step_duration_seconds_count{job=\"renderer\",step=\"newPage\"}[$__interval]))",
+          "format": "time_series",
+          "interval": "1m",
+          "intervalFactor": 2,
+          "legendFormat": "Average",
+          "refId": "C",
+          "step": 10
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "New page latency",
+      "tooltip": {
+        "shared": true,
+        "sort": 2,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "s",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": 0,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": false
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "Prometheus",
+      "description": "",
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 27
+      },
+      "hiddenSeries": false,
+      "id": 15,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null as zero",
+      "options": {
+        "dataLinks": []
+      },
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.99, \n  sum without(instance)(\n    rate(grafana_image_renderer_step_duration_seconds_bucket{job=\"renderer\",step=\"panelsRendered\"}[$__interval])\n  )\n)",
+          "format": "time_series",
+          "interval": "1m",
+          "intervalFactor": 2,
+          "legendFormat": "99th percentile",
+          "refId": "B",
+          "step": 10
+        },
+        {
+          "expr": "histogram_quantile(0.5, \n  sum without(instance)(\n    rate(grafana_image_renderer_step_duration_seconds_bucket{job=\"renderer\",step=\"panelsRendered\"}[$__interval])\n  )\n)",
+          "format": "time_series",
+          "interval": "1m",
+          "intervalFactor": 2,
+          "legendFormat": "50th percentile",
+          "refId": "A",
+          "step": 10
+        },
+        {
+          "expr": "sum without(instance) (rate(grafana_image_renderer_step_duration_seconds_sum{job=\"renderer\",step=\"panelsRendered\"}[$__interval])) \n/ \nsum without(instance) (rate(grafana_image_renderer_step_duration_seconds_count{job=\"renderer\",step=\"panelsRendered\"}[$__interval]))",
+          "format": "time_series",
+          "interval": "1m",
+          "intervalFactor": 2,
+          "legendFormat": "Average",
+          "refId": "C",
+          "step": 10
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "Panels rendered latency",
+      "tooltip": {
+        "shared": true,
+        "sort": 2,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "s",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": 0,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": false
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
     }
   ],
   "refresh": "10s",
@@ -404,7 +960,7 @@
     "list": []
   },
   "time": {
-    "from": "now-30m",
+    "from": "now-15m",
     "to": "now"
   },
   "timepicker": {
@@ -435,5 +991,5 @@
   "timezone": "",
   "title": "Image Rendering Service",
   "uid": "zhudqj-Zk",
-  "version": 3
+  "version": 2
 }
