@@ -13,7 +13,7 @@ aliases:
 defaults: &defaults
   working_directory: ~/grafana-image-renderer
   docker:
-    - image: circleci/node:10.15.3-stretch
+    - image: circleci/node:12.13.1-stretch
 
 jobs:
   build:
@@ -117,6 +117,32 @@ jobs:
       - store_artifacts:
           path: artifacts
 
+  package_linux_x64_no_chromium:
+    <<: *defaults
+    steps:
+      - checkout
+      - attach_workspace:
+          at: .
+      - restore_cache:
+          keys:
+            - dependency-cache-{{ checksum "yarn.lock" }}
+      - run:
+          name: Install dependencies
+          command: 'yarn install --pure-lockfile --no-progress'
+      - run:
+          name: Package
+          command: './scripts/package_target.sh linux-x64-glibc true plugin-linux-x64-glibc-no-chromium'
+      - run:
+          name: Archive
+          command: './scripts/archive_target.sh linux-x64-glibc plugin-linux-x64-glibc-no-chromium'
+      - persist_to_workspace:
+          root: .
+          paths:
+            - dist/*
+            - artifacts/*
+      - store_artifacts:
+          path: artifacts
+
   publish-github-release:
     working_directory: ~/grafana-image-renderer
     docker:
@@ -147,14 +173,9 @@ jobs:
     steps:
       - checkout
       - setup_remote_docker
-      - run: |
-          TAG=$(git describe --tags --abbrev=0 | cut -d "v" -f 2)
-          echo "building ${TAG}"
-          docker build -t ${IMAGE_NAME}:${TAG} .
-          docker tag ${IMAGE_NAME}:${TAG} ${IMAGE_NAME}:latest
-          echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
-          docker push ${IMAGE_NAME}:${TAG}
-          docker push ${IMAGE_NAME}:latest
+      - run:
+          name: "Build and push Docker image"
+          command: ./scripts/build_push_docker.sh
 
 workflows:
   version: 2
@@ -174,6 +195,10 @@ workflows:
           requires:
             - build
           filters: *filter-only-master
+      - package_linux_x64_no_chromium:
+          requires:
+            - build
+          filters: *filter-only-master
       - approve-release:
           type: approval
           requires:
@@ -181,6 +206,7 @@ workflows:
             - package_linux_x64
             - package_darwin_x64
             - package_windows_x64
+            - package_linux_x64_no_chromium
           filters: *filter-only-master
       - publish-github-release:
           requires:

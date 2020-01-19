@@ -1,4 +1,9 @@
+.PHONY: all clean deps build clean_package package archive build_package docker-alpine docker-debian
+
 ARCH = darwin-x64-unknown
+SKIP_CHROMIUM =
+OUT =
+DOCKER_TAG = dev
 
 all: clean build
 
@@ -7,21 +12,26 @@ clean:
 
 deps: node_modules
 
-node_modules: package.json yarn.lock
+node_modules: package.json yarn.lock ## Install node modules.
 	@echo "install frontend dependencies"
 	yarn install --pure-lockfile --no-progress
 
 build:
-	./node_modules/.bin/tsc
+	yarn build
 
 clean_package:
-	rm -rf .dist/plugin-${ARCH}
-	rm -f ./artifacts/plugin-${ARCH}.zip
+	./scripts/clean_target.sh ${ARCH} ${OUT}
 
 package:
-	./scripts/package_target.sh ${ARCH}
+	./scripts/package_target.sh ${ARCH} ${SKIP_CHROMIUM} ${OUT}
 
 archive:
-	./scripts/archive_target.sh ${ARCH}
+	./scripts/archive_target.sh ${ARCH} ${OUT}
 
 build_package: clean clean_package build package archive
+
+docker-alpine:
+	docker build -t grafana/grafana-image-renderer:${DOCKER_TAG} .
+
+docker-debian:
+	docker build -t grafana/grafana-image-renderer:${DOCKER_TAG}-debian -f debian.Dockerfile .

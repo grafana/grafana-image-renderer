@@ -1,0 +1,100 @@
+version: "2.1"
+
+services:
+  nginx-proxy:
+    image: jwilder/nginx-proxy
+    ports:
+      - "80:80"
+    volumes:
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: mysql:5.6
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_DATABASE: grafana
+      MYSQL_USER: grafana
+      MYSQL_PASSWORD: password
+    command: [mysqld, --character-set-server=utf8mb4, --collation-server=utf8mb4_unicode_ci, --innodb_monitor_enable=all, --max-connections=1001]
+    ports:
+      - 3306
+    healthcheck:
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+      timeout: 10s
+      retries: 10
+
+  mysqld-exporter:
+    image: prom/mysqld-exporter
+    environment:
+      - DATA_SOURCE_NAME=root:rootpass@(db:3306)/
+    ports:
+      - 9104
+    depends_on:
+      db:
+        condition: service_healthy
+
+  grafana:
+    image: grafana/grafana:${GRAFANA_VERSION}-ubuntu
+    volumes:
+      - ./grafana/provisioning/:/etc/grafana/provisioning/
+    environment:
+      - VIRTUAL_HOST=grafana.loc
+      - GF_SERVER_ROOT_URL=http://grafana.loc
+      - GF_DATABASE_NAME=grafana
+      - GF_DATABASE_USER=grafana
+      - GF_DATABASE_PASSWORD=password
+      - GF_DATABASE_TYPE=mysql
+      - GF_DATABASE_HOST=db:3306
+      - GF_DATABASE_MAX_OPEN_CONN=300
+      - GF_SERVER_ROUTER_LOGGING=true
+      - GF_LOG_CONSOLE_FORMAT=json
+      - GF_LOG_FILTERS=rendering:debug
+      - GF_RENDERING_SERVER_URL=http://renderer:8081/render
+      - GF_RENDERING_CALLBACK_URL=http://grafana:3000
+    ports:
+      - 3000
+    links:
+      - nginx-proxy
+    depends_on:
+      db:
+        condition: service_healthy
+
+  renderer:
+    image: grafana/grafana-image-renderer:${RENDERER_VERSION}
+    volumes:
+      - ./config.json:/usr/src/app/config.json
+    environment:
+      - VIRTUAL_HOST=renderer.loc
+      - ENABLE_METRICS=true
+      - RENDERING_MODE=${RENDERING_MODE}
+      - RENDERING_CLUSTERING_MODE=${RENDERING_CLUSTERING_MODE}
+      - RENDERING_CLUSTERING_MAX_CONCURRENCY=${RENDERING_CLUSTERING_MAX_CONCURRENCY}
+    ports:
+      - 8081
+    # mem_limit: 500mb
+    # memswap_limit: 1gb
+
+  prometheus:
+    image: prom/prometheus:v2.14.0
+    volumes:
+      - ./prometheus/:/etc/prometheus/
+    environment:
+      - VIRTUAL_HOST=prometheus.loc
+    ports:
+      - 9090
+
+  cadvisor:
+    image: google/cadvisor:latest
+    environment:
+      - VIRTUAL_HOST=cadvisor.loc
+    ports:
+    - 8080
+    volumes:
+    - /:/rootfs:ro
+    - /var/run:/var/run:ro
+    - /sys:/sys:ro
+    - /var/lib/docker/:/var/lib/docker:ro
+    - /dev/disk:/dev/disk/:ro

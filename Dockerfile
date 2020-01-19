@@ -1,4 +1,4 @@
-FROM node:10-alpine AS base
+FROM node:12-alpine AS base
 
 ENV CHROME_BIN="/usr/bin/chromium-browser"
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD="true"
@@ -6,15 +6,12 @@ ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD="true"
 WORKDIR /usr/src/app
 
 RUN \
-  echo "http://dl-cdn.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories \
-  && echo "http://dl-cdn.alpinelinux.org/alpine/edge/main" >> /etc/apk/repositories \
-  && echo "http://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories \
-  && apk --no-cache  update \
-  && apk --no-cache  upgrade \
-  && apk add --no-cache --virtual .build-deps \
-    udev ttf-opensans chromium \
-		ca-certificates dumb-init \
-  && rm -rf /var/cache/apk/* /tmp/*
+  echo "http://dl-cdn.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories && \
+  echo "http://dl-cdn.alpinelinux.org/alpine/edge/main" >> /etc/apk/repositories && \
+  echo "http://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories && \
+  apk --no-cache upgrade && \
+  apk add --no-cache udev ttf-opensans unifont chromium ca-certificates dumb-init && \
+  rm -rf /tmp/*
 
 FROM base as build
 
@@ -32,9 +29,10 @@ FROM base
 COPY --from=build /usr/src/app/node_modules node_modules
 COPY --from=build /usr/src/app/build build
 COPY --from=build /usr/src/app/proto proto
+COPY --from=build /usr/src/app/default.json config.json
 
 EXPOSE 8081
 
 ENTRYPOINT ["dumb-init", "--"]
 
-CMD ["node", "build/app.js", "server", "--port=8081"]
+CMD ["node", "build/app.js", "server", "--config=config.json"]

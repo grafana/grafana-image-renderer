@@ -4,11 +4,16 @@ set -e
 
 RELEASE_NOTES=`awk 'BEGIN {FS="##"; RS=""} FNR==2 {print; exit}' CHANGELOG.md`
 VERSION=`cat plugin.json|jq '.info.version'| sed s/\"//g`
+PRERELEASE=''
 LATEST_TAG=$(git describe --tags --abbrev=0)
 
 if [ v${VERSION} == ${LATEST_TAG} ]; then
   echo "Tag ${LATEST_TAG} have already been pushed. Exiting..."
   exit 1
+fi
+
+if [[ $VERSION == *"beta"* ]]; then
+  PRERELEASE='-prerelease'
 fi
 
 git config user.email "eng@grafana.com"
@@ -22,5 +27,4 @@ ghr \
   -c ${CIRCLE_SHA1} \
   -n "v${VERSION}" \
   -b "${RELEASE_NOTES}" \
-  v${VERSION} \
-  ./artifacts/
+  ${PRERELEASE} v${VERSION} ./artifacts/

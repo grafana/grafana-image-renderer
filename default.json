@@ -1,0 +1,21 @@
+{
+  "service": {
+    "port": 8081,
+    "metrics": {
+      "enabled": false,
+      "collectDefaultMetrics": true,
+      "requestDurationBuckets": [1, 5, 7, 9, 11, 13, 15, 20, 30]
+    }
+  },
+  "rendering": {
+    "timezone": null,
+    "chromeBin": null,
+    "ignoresHttpsErrors": false,
+    "timingMetrics": false,
+    "mode": "default",
+    "clustering": {
+      "mode": "browser",
+      "maxConcurrency": 5
+    }
+  }
+}
