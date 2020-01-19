@@ -6,11 +6,19 @@ The docker image are published at [Docker Hub](https://hub.docker.com/r/grafana/
 
 ## Environment variables
 
-You can override certain settings by using environment variables and making sure that those are available for the Grafana process.
+You can override certain settings by using environment variables.
+
+**Default timezone:**
+
+Instruct headless Chrome to use a default timezone when not provided by Grafana, .e.g. when rendering panel image of alert. See [ICU’s metaZones.txt](https://cs.chromium.org/chromium/src/third_party/icu/source/data/misc/metaZones.txt?rcl=faee8bc70570192d82d2978a71e2a615788597d1) for a list of supported timezone IDs.
+
+```bash
+export TZ=Europe/Stockholm
+```
 
 **Ignore HTTPS errors:**
 
-Instruct headless Chrome Whether to ignore HTTPS errors during navigation. Per default HTTPS errors is not ignored.
+Instruct headless Chrome whether to ignore HTTPS errors during navigation. Per default HTTPS errors is not ignored.
 Due to the security risk it's not recommended to ignore HTTPS errors.
 
 ```bash
@@ -23,6 +31,16 @@ You can enable [Prometheus](https://prometheus.io/) metrics endpoint `/metrics` 
 
 ```bash
 export ENABLE_METRICS=true
+```
+
+## Configuration file
+
+You can override certain settings by using a configuration file, see [default.json](https://github.com/grafana/grafana-image-renderer/tree/master/default.json) for defaults. Note that any configured environment variable takes precedence over configuration file settings.
+
+You can volume mount your custom configuration file when starting the docker container:
+
+```bash
+docker run -d --name=renderer --network=host -v /some/path/config.json:/usr/src/app/config.json grafana/grafana-image-renderer:latest
 ```
 
 ## Docker Compose example

@@ -38,13 +38,21 @@ If you still want to install the plugin in the Grafana docker image we provide i
 
 You can override certain settings by using environment variables and making sure that those are available for the Grafana process.
 
+**Default timezone:**
+
+Instruct headless Chrome to use a default timezone when not provided by Grafana, .e.g. when rendering panel image of alert. See [ICU’s metaZones.txt](https://cs.chromium.org/chromium/src/third_party/icu/source/data/misc/metaZones.txt?rcl=faee8bc70570192d82d2978a71e2a615788597d1) for a list of supported timezone IDs.
+
+```bash
+TZ=Europe/Stockholm
+```
+
 **Ignore HTTPS errors:**
 
-Instruct headless Chrome Whether to ignore HTTPS errors during navigation. Per default HTTPS errors is not ignored.
+Instruct headless Chrome whether to ignore HTTPS errors during navigation. Per default HTTPS errors is not ignored.
 Due to the security risk it's not recommended to ignore HTTPS errors.
 
 ```bash
-export GF_RENDERER_PLUGIN_IGNORE_HTTPS_ERRORS=true
+GF_RENDERER_PLUGIN_IGNORE_HTTPS_ERRORS=true
 ```
 
 ## Remote Rendering Using Docker
