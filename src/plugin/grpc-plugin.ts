@@ -89,7 +89,7 @@ export class GrpcPlugin {
 
     try {
       this.log.debug('Render request received', 'url', options.url);
-      const result = await this.browser.render(options);
+      await this.browser.render(options);
       callback(null, { error: '' });
     } catch (err) {
       this.log.error('Render request failed', 'url', options.url, 'error', err.toString());
