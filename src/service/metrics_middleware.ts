@@ -17,6 +17,16 @@ export const metricsMiddleware = (config: MetricsConfig, log: Logger) => {
     buckets: config.requestDurationBuckets,
     excludeRoutes: [/^((?!(render)).)*$/],
     promClient: {},
+    formatStatusCode: res => {
+      if (res && res.req && res.req.aborted) {
+        // Nginx non-standard code 499 Client Closed Request
+        // Used when the client has closed the request before
+        // the server could send a response.
+        return 499;
+      }
+
+      return res.status_code || res.statusCode;
+    },
   } as any;
 
   if (config.collectDefaultMetrics) {
