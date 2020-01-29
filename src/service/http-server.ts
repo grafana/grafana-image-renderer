@@ -16,7 +16,22 @@ export class HttpServer {
 
   async start() {
     this.app = express();
-    this.app.use(morgan('combined', { stream: this.log.writer }));
+    this.app.use(
+      morgan('combined', {
+        skip: (req, res) => {
+          return res.statusCode >= 400;
+        },
+        stream: this.log.debugWriter,
+      })
+    );
+    this.app.use(
+      morgan('combined', {
+        skip: (req, res) => {
+          return res.statusCode < 400;
+        },
+        stream: this.log.errorWriter,
+      })
+    );
     this.app.use(metricsMiddleware(this.config.service.metrics, this.log));
     this.app.get('/', (req: express.Request, res: express.Response) => {
       res.send('Grafana Image Renderer');
@@ -24,7 +39,12 @@ export class HttpServer {
 
     this.app.get('/render', asyncMiddleware(this.render));
     this.app.use((err, req, res, next) => {
-      console.error(err);
+      if (err.stack) {
+        this.log.error('Request failed', 'url', req.url, 'stack', err.stack);
+      } else {
+        this.log.error('Request failed', 'url', req.url, 'error', err);
+      }
+
       return res.status(err.output.statusCode).json(err.output.payload);
     });
 
@@ -80,13 +100,12 @@ export class HttpServer {
       timezone: req.query.timezone,
       encoding: req.query.encoding,
     };
-    try {
-      this.log.info(`Render request received', 'url', ${options.url}`);
-      const result = await this.browser.render(options);
-      res.sendFile(result.filePath);
-    } catch (err) {
-      this.log.error('Render request failed', 'url', options.url, 'error', err);
-    }
+    this.log.debug('Render request received', 'url', options.url);
+    req.on('close', err => {
+      this.log.debug('Connection closed', 'url', options.url, 'error', err);
+    });
+    const result = await this.browser.render(options);
+    res.sendFile(result.filePath);
   };
 }
 

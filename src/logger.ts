@@ -6,7 +6,8 @@ export interface LogWriter {
 }
 
 export interface Logger {
-  writer: LogWriter;
+  errorWriter: LogWriter;
+  debugWriter: LogWriter;
   debug(message?: string, ...optionalParams: any[]);
   info(message?: string, ...optionalParams: any[]);
   warn(message?: string, ...optionalParams: any[]);
@@ -14,18 +15,11 @@ export interface Logger {
 }
 
 export class ConsoleLogger implements Logger {
-  writer: LogWriter;
+  errorWriter: LogWriter;
+  debugWriter: LogWriter;
   logger: winston.Logger;
 
   constructor(config: LoggingConfig) {
-    const options2 = {
-      console: {
-        level: 'debug',
-        handleExceptions: true,
-        colorize: true,
-      },
-    };
-
     const transports: any[] = [];
 
     if (config.console) {
@@ -57,32 +51,54 @@ export class ConsoleLogger implements Logger {
       transports: transports,
     });
 
-    this.writer = {
+    this.errorWriter = {
       write: message => {
-        this.logger.info(message);
+        this.logger.error(message);
+      },
+    };
+    this.debugWriter = {
+      write: message => {
+        this.logger.debug(message);
       },
     };
   }
 
+  private logEntry(level: string, message: string, ...optionalParams: any[]) {
+    const meta: any = {};
+    if (optionalParams) {
+      for (let n = 0; n < optionalParams.length; n += 2) {
+        const key = optionalParams[n];
+        const value = optionalParams[n + 1];
+
+        if (key !== null && value !== null) {
+          meta[key] = value;
+        }
+      }
+    }
+
+    this.logger.log(level, message, meta);
+  }
+
   debug(message: string, ...optionalParams: any[]) {
-    this.logger.debug(message, optionalParams);
+    this.logEntry('debug', message, ...optionalParams);
   }
 
   info(message: string, ...optionalParams: any[]) {
-    this.logger.info(message, optionalParams);
+    this.logEntry('info', message, ...optionalParams);
   }
 
   warn(message: string, ...optionalParams: any[]) {
-    this.logger.warn(message, optionalParams);
+    this.logEntry('warn', message, ...optionalParams);
   }
 
   error(message: string, ...optionalParams: any[]) {
-    this.logger.error(message, optionalParams);
+    this.logEntry('error', message, ...optionalParams);
   }
 }
 
 export class PluginLogger implements Logger {
-  writer: LogWriter;
+  errorWriter: LogWriter;
+  debugWriter: LogWriter;
 
   private logEntry(level: string, message?: string, ...optionalParams: any[]) {
     const logEntry = {

@@ -26,6 +26,8 @@ CMD [ "yarn", "run", "dev" ]
 
 FROM base
 
+ENV NODE_ENV=production
+
 COPY --from=build /usr/src/app/node_modules node_modules
 COPY --from=build /usr/src/app/build build
 COPY --from=build /usr/src/app/proto proto
