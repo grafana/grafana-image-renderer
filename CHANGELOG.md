@@ -1,11 +1,11 @@
 ## 1.0.9 (2020-01-30)
 
-- Plugin: Adds icon [#95](https://github.com/grafana/grafana-image-renderer/pull/95), [marefr](https://github.com/marefr)
 - Remote rendering: Improve error handling, logging and metrics [#92](https://github.com/grafana/grafana-image-renderer/pull/92), [marefr](https://github.com/marefr)
   - Service: Don't swallow exceptions and fix logging of parameters
   - Metrics: Use status 499 when client close the connection
   - Docker: Set NODE_ENV=production
   - Changed request logging to use debug level if status < 400 and error if >= 400
+- Plugin: Adds icon [#95](https://github.com/grafana/grafana-image-renderer/pull/95), [marefr](https://github.com/marefr)
 
 ## 1.0.8 (2020-01-20)
 
