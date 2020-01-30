@@ -1,4 +1,13 @@
-## 1.0.8 (2019-01-20)
+## 1.0.9 (2020-01-30)
+
+- Plugin: Adds icon [#95](https://github.com/grafana/grafana-image-renderer/pull/95), [marefr](https://github.com/marefr)
+- Remote rendering: Improve error handling, logging and metrics [#92](https://github.com/grafana/grafana-image-renderer/pull/92), [marefr](https://github.com/marefr)
+  - Service: Don't swallow exceptions and fix logging of parameters
+  - Metrics: Use status 499 when client close the connection
+  - Docker: Set NODE_ENV=production
+  - Changed request logging to use debug level if status < 400 and error if >= 400
+
+## 1.0.8 (2020-01-20)
 
 - Build: Upgrade Node.js requirement to LTS (v12) [#57](https://github.com/grafana/grafana-image-renderer/pull/57), [marefr](https://github.com/marefr)
 - Docker: Add unifont font to support rendering other language, like Chinese/Japanese [#75](https://github.com/grafana/grafana-image-renderer/pull/75), [okhowang](https://github.com/okhowang)
