@@ -5,6 +5,7 @@ build
 devenv
 dist
 docs
+img
 node_modules
 scripts
 .prettierignore

@@ -11,6 +11,8 @@
     },
     "keywords": ["renderer", "png", "backend", "image"],
     "logos": {
+      "small": "img/icon.png",
+      "large": "img/icon.png"
     },
     "links": [
       {"name": "Project site", "url": "https://github.com/grafana/grafana-image-renderer"},
