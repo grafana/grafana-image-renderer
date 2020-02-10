@@ -75,10 +75,6 @@ Instead of installing and running the image renderer as a plugin, you can run it
 
 For troubleshooting help, please refer to [Grafana Image Rendering documentation](https://grafana.com/docs/administration/image_rendering/#troubleshooting).
 
-## Building from source
-
-See [Building from source](https://github.com/grafana/grafana-image-renderer/blob/master/docs/building_from_source.md).
-
 ## Additional information
 
 See [docs](https://github.com/grafana/grafana-image-renderer/blob/master/docs/index.md).
