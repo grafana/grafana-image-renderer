@@ -169,7 +169,7 @@ export class Browser {
   }
 
   addPageListeners(page: any) {
-    page.on('error', this.logError.bind);
+    page.on('error', this.logError);
     page.on('pageerror', this.logPageError);
     page.on('requestfailed', this.logRequestFailed);
     page.on('console', this.logConsoleMessage);
