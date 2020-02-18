@@ -1,3 +1,7 @@
+## 1.0.10 (2020-02-18)
+
+- Plugin: Fix unable to start Grafana (Windows) with version 1.0.8 and 1.0.9 [#103](https://github.com/grafana/grafana-image-renderer/pull/103), [marefr](https://github.com/marefr)
+
 ## 1.0.9 (2020-01-30)
 
 - Remote rendering: Improve error handling, logging and metrics [#92](https://github.com/grafana/grafana-image-renderer/pull/92), [marefr](https://github.com/marefr)
