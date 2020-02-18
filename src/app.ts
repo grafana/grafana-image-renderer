@@ -84,6 +84,10 @@ function populatePluginConfigFromEnv(config: PluginConfig, env: NodeJS.ProcessEn
   if (env['GF_RENDERER_PLUGIN_CHROME_BIN']) {
     config.rendering.chromeBin = env['GF_RENDERER_PLUGIN_CHROME_BIN'];
   }
+
+  if (env['GF_RENDERER_PLUGIN_VERBOSE_LOGGING']) {
+    config.rendering.verboseLogging = env['GF_RENDERER_PLUGIN_VERBOSE_LOGGING'] === 'true';
+  }
 }
 
 function populateServiceConfigFromEnv(config: ServiceConfig, env: NodeJS.ProcessEnv) {
@@ -127,5 +131,9 @@ function populateServiceConfigFromEnv(config: ServiceConfig, env: NodeJS.Process
 
   if (env['RENDERING_CLUSTERING_MAX_CONCURRENCY']) {
     config.rendering.clustering.maxConcurrency = parseInt(env['RENDERING_CLUSTERING_MAX_CONCURRENCY'] as string, 10);
+  }
+
+  if (env['RENDERING_VERBOSE_LOGGING']) {
+    config.rendering.verboseLogging = env['RENDERING_VERBOSE_LOGGING'] === 'true';
   }
 }

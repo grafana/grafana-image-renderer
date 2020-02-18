@@ -13,7 +13,7 @@ You can override certain settings by using environment variables.
 Change the listening host of the HTTP server. Default is unset and will use the local host.
 
 ```bash
-export HTTP_HOST=localhost
+HTTP_HOST=localhost
 ```
 
 **HTTP port:**
@@ -21,7 +21,7 @@ export HTTP_HOST=localhost
 Change the listening port of the HTTP server. Default is `8081`. Setting `0` will automatically assign a port not in use.
 
 ```bash
-export HTTP_PORT=0
+HTTP_PORT=0
 ```
 
 **Default timezone:**
@@ -29,7 +29,7 @@ export HTTP_PORT=0
 Instruct headless Chrome to use a default timezone when not provided by Grafana, .e.g. when rendering panel image of alert. See [ICU’s metaZones.txt](https://cs.chromium.org/chromium/src/third_party/icu/source/data/misc/metaZones.txt?rcl=faee8bc70570192d82d2978a71e2a615788597d1) for a list of supported timezone IDs. Fallbacks to `TZ` environment variable if not set.
 
 ```bash
-export BROWSER_TZ=Europe/Stockholm
+BROWSER_TZ=Europe/Stockholm
 ```
 
 **Ignore HTTPS errors:**
@@ -38,7 +38,7 @@ Instruct headless Chrome whether to ignore HTTPS errors during navigation. Per d
 Due to the security risk it's not recommended to ignore HTTPS errors.
 
 ```bash
-export IGNORE_HTTPS_ERRORS=true
+IGNORE_HTTPS_ERRORS=true
 ```
 
 **Enable Prometheus metrics:**
@@ -46,16 +46,25 @@ export IGNORE_HTTPS_ERRORS=true
 You can enable [Prometheus](https://prometheus.io/) metrics endpoint `/metrics` using the environment variable `ENABLE_METRICS`. Node.js and render request duration metrics are included, see [output example](#prometheus-metrics-endpoint-output-example) for details.
 
 ```bash
-export ENABLE_METRICS=true
+ENABLE_METRICS=true
 ```
 
 **Log level:**
 
 Change the log level. Default is `info` and will include log messages with level `error`, `warning` and info.
 
+```bash
+LOG_LEVEL=debug
+```
+
+**Verbose logging:**
+
+Enable capturing verbose information when headless Chrome browses a page and takes a screenshot of it. It will capture all requests initiated and finished, when page is closed and any non-error logged to the console. These are logged as debug messages. Default is `false` and will only capture  errors when page crashes, uncaught exception thrown in page, page request fails or error logged to the console.
+
+Note that you need to change log level to `debug` for the verbose output to be seen in the logs.
 
 ```bash
-export LOG_LEVEL=info
+RENDERING_VERBOSE_LOGGING=true
 ```
 
 ## Configuration file
