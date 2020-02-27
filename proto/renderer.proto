@@ -14,6 +14,7 @@ message RenderRequest {
   string renderKey = 8;
   string domain = 9;
   bool debug = 10;
+  float scale = 11;
 }
 
 message RenderResponse {

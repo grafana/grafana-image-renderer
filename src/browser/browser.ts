@@ -9,6 +9,7 @@ export interface RenderOptions {
   url: string;
   width: string | number;
   height: string | number;
+  scale: string | number;
   filePath: string;
   timeout: string | number;
   renderKey: string;
@@ -65,6 +66,7 @@ export class Browser {
   validateOptions(options: RenderOptions) {
     options.width = parseInt(options.width as string, 10) || 1000;
     options.height = parseInt(options.height as string, 10) || 500;
+    options.scale = parseFloat(options.scale as string) || 1;
     options.timeout = parseInt(options.timeout as string, 10) || 30;
 
     if (options.width > 3000 || options.width < 10) {
@@ -73,6 +75,10 @@ export class Browser {
 
     if (options.height > 3000 || options.height < 10) {
       options.height = 1500;
+    }
+
+    if (options.scale <= 0 || isNaN(options.scale) || options.scale == Infinity) {
+      options.scale = 1;
     }
   }
 
@@ -131,7 +137,7 @@ export class Browser {
     await page.setViewport({
       width: options.width,
       height: options.height,
-      deviceScaleFactor: 1,
+      deviceScaleFactor: options.scale,
     });
     await page.setCookie({
       name: 'renderKey',

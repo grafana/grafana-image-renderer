@@ -93,6 +93,7 @@ export class HttpServer {
       url: req.query.url,
       width: req.query.width,
       height: req.query.height,
+      scale: req.query.scale,
       filePath: req.query.filePath,
       timeout: req.query.timeout,
       renderKey: req.query.renderKey,
