@@ -79,7 +79,7 @@ export class GrpcPlugin {
       url: req.url,
       width: req.width,
       height: req.height,
-      scale: (req.scale > 0 && req.scale != Infinity) ? req.scale : 1,
+      scale: req.scale,
       filePath: req.filePath,
       timeout: req.timeout,
       renderKey: req.renderKey,
