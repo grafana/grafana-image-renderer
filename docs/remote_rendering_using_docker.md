@@ -59,9 +59,9 @@ LOG_LEVEL=debug
 
 **Verbose logging:**
 
-Enable capturing verbose information when headless Chrome browses a page and takes a screenshot of it. It will capture all requests initiated and finished, when page is closed and any non-error logged to the console. These are logged as debug messages. Default is `false` and will only capture  errors when page crashes, uncaught exception thrown in page, page request fails or error logged to the console.
+Instruct headless Chrome whether to capture and log verbose information when rendering an image. Default is `false` and will only capture and log error messages. When enabled (`true`) debug messages are captured and logged as well.
 
-Note that you need to change log level to `debug` for the verbose output to be seen in the logs.
+Note that you need to change log level to `debug`, see above, for the verbose information to be included in the logs.
 
 ```bash
 RENDERING_VERBOSE_LOGGING=true

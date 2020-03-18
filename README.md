@@ -69,7 +69,9 @@ GF_RENDERER_PLUGIN_GRPC_PORT=50059
 
 **Verbose logging:**
 
-Enable capturing verbose information when headless Chrome browses a page and takes a screenshot of it. It will capture all requests initiated and finished, when page is closed and any non-error logged to the console. These are logged as debug messages. Default is `false` and will only capture  errors when page crashes, uncaught exception thrown in page, page request fails or error logged to the console.
+Instruct headless Chrome whether to capture and log verbose information when rendering an image. Default is `false` and will only capture and log error messages. When enabled, `true`, debug messages are captured and logged as well.
+
+For the verbose information to be included in the Grafana server log you have to adjust the rendering log level to `debug`, see [Troubleshoot image rendering](https://grafana.com/docs/grafana/latest/administration/image_rendering/#troubleshoot-image-rendering) for instructions.
 
 ```bash
 GF_RENDERER_PLUGIN_VERBOSE_LOGGING=true
