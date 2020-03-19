@@ -67,6 +67,16 @@ Change the listening port of the gRPC server. Default is `0` and will automatica
 GF_RENDERER_PLUGIN_GRPC_PORT=50059
 ```
 
+**Verbose logging:**
+
+Instruct headless Chrome whether to capture and log verbose information when rendering an image. Default is `false` and will only capture and log error messages. When enabled, `true`, debug messages are captured and logged as well.
+
+For the verbose information to be included in the Grafana server log you have to adjust the rendering log level to `debug`, see [Troubleshoot image rendering](https://grafana.com/docs/grafana/latest/administration/image_rendering/#troubleshoot-image-rendering) for instructions.
+
+```bash
+GF_RENDERER_PLUGIN_VERBOSE_LOGGING=true
+```
+
 ## Remote Rendering Using Docker
 
 Instead of installing and running the image renderer as a plugin, you can run it as a remote image rendering service using Docker. Read more about [remote rendering using Docker](https://github.com/grafana/grafana-image-renderer/blob/master/docs/remote_rendering_using_docker.md).
