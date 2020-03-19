@@ -138,6 +138,7 @@ export class Browser {
       value: options.renderKey,
       domain: options.domain,
     });
+    await page.mouse.move(options.width, options.height);
 
     await this.timings.navigate(async () => {
       // wait until all data was loaded
