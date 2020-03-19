@@ -45,6 +45,9 @@
     "tslint": "^5.20.1",
     "typescript": "^2.8.3"
   },
+  "resolutions": {
+    "minimist": "1.2.5"
+  },
   "husky": {
     "hooks": {
       "pre-commit": "lint-staged && npm run precommit"
