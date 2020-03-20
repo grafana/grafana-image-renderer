@@ -1,3 +1,4 @@
+import * as os from 'os';
 import * as fs from 'fs';
 
 export interface ClusteringConfig {
@@ -32,12 +33,20 @@ export interface LoggingConfig {
   console?: ConsoleLoggerConfig;
 }
 
+export interface FileRetentionConfig {
+  enabled: boolean;
+  cronSchedule: string;
+  retentionSeconds: number;
+  tempDir: string;
+}
+
 export interface ServiceConfig {
   service: {
     host?: string;
     port: number;
     metrics: MetricsConfig;
     logging: LoggingConfig;
+    fileRetention: FileRetentionConfig;
   };
   rendering: RenderingConfig;
 }
@@ -80,6 +89,12 @@ export const defaultServiceConfig: ServiceConfig = {
         json: true,
         colorize: false,
       },
+    },
+    fileRetention: {
+      enabled: true,
+      cronSchedule: '0 0 * * *',
+      retentionSeconds: 3600,
+      tempDir: os.tmpdir(),
     },
   },
   rendering: defaultRenderingConfig,

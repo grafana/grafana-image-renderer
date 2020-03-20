@@ -1,13 +1,14 @@
 import * as net from 'net';
 import express = require('express');
-import { Logger } from '../logger';
-import { Browser } from '../browser';
 import * as boom from '@hapi/boom';
 import morgan = require('morgan');
+import * as promClient from 'prom-client';
+import { Logger } from '../logger';
+import { Browser } from '../browser';
 import { ServiceConfig } from '../config';
 import { metricsMiddleware } from './metrics_middleware';
-import * as promClient from 'prom-client';
 import { RenderOptions } from '../browser/browser';
+import { CleanupJob } from './cleanup_job';
 
 export class HttpServer {
   app: express.Express;
@@ -15,6 +16,9 @@ export class HttpServer {
   constructor(private config: ServiceConfig, private log: Logger, private browser: Browser) {}
 
   async start() {
+    const cleanupJob = new CleanupJob(this.log, this.config.service.fileRetention);
+    cleanupJob.run();
+
     this.app = express();
     this.app.use(
       morgan('combined', {

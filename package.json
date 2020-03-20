@@ -28,6 +28,7 @@
     "minimist": "^1.2.0",
     "morgan": "^1.9.0",
     "mz": "^2.7.0",
+    "node-cron": "^2.0.3",
     "prom-client": "^11.5.3",
     "puppeteer": "^2.0.0",
     "puppeteer-cluster": "^0.18.0",
