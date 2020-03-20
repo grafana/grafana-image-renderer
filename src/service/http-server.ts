@@ -3,6 +3,7 @@ import express = require('express');
 import * as boom from '@hapi/boom';
 import morgan = require('morgan');
 import * as promClient from 'prom-client';
+import * as uniqueFilename from 'unique-filename';
 import { Logger } from '../logger';
 import { Browser } from '../browser';
 import { ServiceConfig } from '../config';
@@ -104,6 +105,11 @@ export class HttpServer {
       timezone: req.query.timezone,
       encoding: req.query.encoding,
     };
+
+    if (!options.filePath) {
+      options.filePath = uniqueFilename(this.config.service.fileRetention.tempDir) + '.png';
+    }
+
     this.log.debug('Render request received', 'url', options.url);
     req.on('close', err => {
       this.log.debug('Connection closed', 'url', options.url, 'error', err);
