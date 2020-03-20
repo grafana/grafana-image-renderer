@@ -1,3 +1,9 @@
+## 1.0.11 (2020-03-20)
+
+- Render: Add support for enabling verbose logging using environment variable [#105](https://github.com/grafana/grafana-image-renderer/pull/105), [marefr](https://github.com/marefr)
+- Render: Fix panel titles should not be focused when rendering [#114](https://github.com/grafana/grafana-image-renderer/pull/114), [AgnesToulet](https://github.com/AgnesToulet)
+- Security: Upgrade minimist dependency to v1.2.5 [#118](https://github.com/grafana/grafana-image-renderer/pull/118), [marefr](https://github.com/marefr)
+
 ## 1.0.10 (2020-02-18)
 
 - Plugin: Fix unable to start Grafana (Windows) with version 1.0.8 and 1.0.9 [#103](https://github.com/grafana/grafana-image-renderer/pull/103), [marefr](https://github.com/marefr)
