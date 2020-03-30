@@ -48,14 +48,6 @@ export class HttpServer {
       return res.status(err.output.statusCode).json(err.output.payload);
     });
 
-    if (this.config.rendering.chromeBin) {
-      this.log.info(`Using chromeBin ${this.config.rendering.chromeBin}`);
-    }
-
-    if (this.config.rendering.ignoresHttpsErrors) {
-      this.log.info(`Ignoring HTTPS errors`);
-    }
-
     if (this.config.service.host) {
       const server = this.app.listen(this.config.service.port, this.config.service.host, () => {
         const info = server.address() as net.AddressInfo;
@@ -68,19 +60,22 @@ export class HttpServer {
       });
     }
 
-    const browserInfo = new promClient.Gauge({
-      name: 'grafana_image_renderer_browser_info',
-      help: "A metric with a constant '1 value labeled by version of the browser in use",
-      labelNames: ['version'],
-    });
+    if (this.config.service.metrics.enabled) {
+      const browserInfo = new promClient.Gauge({
+        name: 'grafana_image_renderer_browser_info',
+        help: "A metric with a constant '1 value labeled by version of the browser in use",
+        labelNames: ['version'],
+      });
 
-    try {
-      const browserVersion = await this.browser.getBrowserVersion();
-      browserInfo.labels(browserVersion).set(1);
-    } catch {
-      this.log.error('Failed to get browser version');
-      browserInfo.labels('unknown').set(19);
+      try {
+        const browserVersion = await this.browser.getBrowserVersion();
+        browserInfo.labels(browserVersion).set(1);
+      } catch {
+        this.log.error('Failed to get browser version');
+        browserInfo.labels('unknown').set(0);
+      }
     }
+
     await this.browser.start();
   }
 

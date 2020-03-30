@@ -4,16 +4,14 @@ import * as _ from 'lodash';
 import { GrpcPlugin } from './plugin/grpc-plugin';
 import { HttpServer } from './service/http-server';
 import { ConsoleLogger, PluginLogger } from './logger';
-import { NoOpBrowserTiming, createBrowser } from './browser';
+import { createBrowser } from './browser';
 import * as minimist from 'minimist';
 import { defaultPluginConfig, defaultServiceConfig, readJSONFileSync, PluginConfig, ServiceConfig } from './config';
-import { MetricsBrowserTimings } from './metrics_browser_timings';
 
 async function main() {
   const argv = minimist(process.argv.slice(2));
   const env = Object.assign({}, process.env);
   const command = argv._[0];
-  let timings = new NoOpBrowserTiming();
 
   if (command === undefined) {
     const config: PluginConfig = defaultPluginConfig;
@@ -29,7 +27,7 @@ async function main() {
     }
 
     const logger = new PluginLogger();
-    const browser = createBrowser(config.rendering, logger, timings);
+    const browser = createBrowser(config.rendering, logger);
     const plugin = new GrpcPlugin(config, logger, browser);
     plugin.start();
   } else if (command === 'server') {
@@ -47,12 +45,8 @@ async function main() {
 
     populateServiceConfigFromEnv(config, env);
 
-    if (config.service.metrics.enabled && config.rendering.timingMetrics) {
-      timings = new MetricsBrowserTimings();
-    }
-
     const logger = new ConsoleLogger(config.service.logging);
-    const browser = createBrowser(config.rendering, logger, timings);
+    const browser = createBrowser(config.rendering, logger);
     const server = new HttpServer(config, logger, browser);
 
     await server.start();
@@ -135,5 +129,19 @@ function populateServiceConfigFromEnv(config: ServiceConfig, env: NodeJS.Process
 
   if (env['RENDERING_VERBOSE_LOGGING']) {
     config.rendering.verboseLogging = env['RENDERING_VERBOSE_LOGGING'] === 'true';
+  }
+
+  if (env['RENDERING_DUMPIO']) {
+    config.rendering.dumpio = env['RENDERING_DUMPIO'] === 'true';
+  }
+
+  if (env['RENDERING_ARGS']) {
+    const args = env['RENDERING_ARGS'] as string;
+    if (args.length > 0) {
+      const argsList = args.split(',');
+      if (argsList.length > 0) {
+        config.rendering.args = argsList;
+      }
+    }
   }
 }

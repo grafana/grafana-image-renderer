@@ -51,22 +51,7 @@ export class GrpcPlugin {
     console.log(`1|1|tcp|${this.config.plugin.grpc.host}:${boundPortNumber}|grpc`);
 
     await this.browser.start();
-
-    if (this.config.rendering.chromeBin) {
-      this.log.info(
-        'Renderer plugin started',
-        'grpcHost',
-        this.config.plugin.grpc.host,
-        'grpcPort',
-        boundPortNumber,
-        'chromeBin',
-        this.config.rendering.chromeBin,
-        'ignoreHTTPSErrors',
-        this.config.rendering.ignoresHttpsErrors
-      );
-    } else {
-      this.log.info('Renderer plugin started', 'ignoreHttpsErrors', this.config.rendering.ignoresHttpsErrors);
-    }
+    this.log.info('Renderer plugin started', 'grpcHost', this.config.plugin.grpc.host, 'grpcPort', boundPortNumber);
   }
 
   check(call, callback) {
