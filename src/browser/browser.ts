@@ -21,43 +21,37 @@ export interface RenderResponse {
   filePath: string;
 }
 
-export interface BrowserTimings {
-  launch(callback: () => Promise<PuppeteerBrowser>): Promise<PuppeteerBrowser>;
-  newPage(callback: () => Promise<Page>): Promise<Page>;
-  navigate(callback: () => Promise<void>): Promise<void>;
-  panelsRendered(callback: () => Promise<void>): Promise<void>;
-  screenshot(callback: () => Promise<void>): Promise<void>;
-}
-
-export class NoOpBrowserTiming {
-  async launch(callback: () => Promise<PuppeteerBrowser>) {
-    return await callback();
-  }
-
-  async newPage(callback: () => Promise<void>) {
-    return await callback();
-  }
-
-  async navigate(callback: () => Promise<void>) {
-    return await callback();
-  }
-
-  async panelsRendered(callback: () => Promise<void>) {
-    return await callback();
-  }
-
-  async screenshot(callback: () => Promise<void>) {
-    return await callback();
-  }
-}
-
 export class Browser {
-  constructor(protected config: RenderingConfig, protected log: Logger, protected timings: BrowserTimings) {}
+  constructor(protected config: RenderingConfig, protected log: Logger) {
+    this.log.info(
+      'Browser initiated',
+      'chromeBin',
+      this.config.chromeBin,
+      'ignoresHttpsErrors',
+      this.config.ignoresHttpsErrors,
+      'timezone',
+      this.config.timezone,
+      'args',
+      this.config.args,
+      'dumpio',
+      this.config.dumpio,
+      'verboseLogging',
+      this.config.verboseLogging
+    );
+  }
 
   async getBrowserVersion(): Promise<string> {
-    const launcherOptions = this.getLauncherOptions({});
-    const browser = await puppeteer.launch(launcherOptions);
-    return browser.version();
+    let browser;
+
+    try {
+      const launcherOptions = this.getLauncherOptions({});
+      browser = await puppeteer.launch(launcherOptions);
+      return await browser.version();
+    } finally {
+      if (browser) {
+        await browser.close();
+      }
+    }
   }
 
   async start(): Promise<void> {}
@@ -84,7 +78,8 @@ export class Browser {
     const launcherOptions: any = {
       env: env,
       ignoreHTTPSErrors: this.config.ignoresHttpsErrors,
-      args: ['--no-sandbox'],
+      dumpio: this.config.dumpio,
+      args: this.config.args,
     };
 
     if (this.config.chromeBin) {
@@ -101,18 +96,8 @@ export class Browser {
     try {
       this.validateOptions(options);
       const launcherOptions = this.getLauncherOptions(options);
-
-      browser = await this.timings.launch(
-        async () =>
-          // launch browser
-          await puppeteer.launch(launcherOptions)
-      );
-      page = await this.timings.newPage(
-        async () =>
-          // open a new page
-          await browser.newPage()
-      );
-
+      browser = await puppeteer.launch(launcherOptions);
+      page = await browser.newPage();
       this.addPageListeners(page);
 
       return await this.takeScreenshot(page, options);
@@ -139,32 +124,22 @@ export class Browser {
       domain: options.domain,
     });
     await page.mouse.move(options.width, options.height);
-
-    await this.timings.navigate(async () => {
-      // wait until all data was loaded
-      await page.goto(options.url, { waitUntil: 'networkidle0' });
-    });
-
-    await this.timings.panelsRendered(async () => {
-      // wait for all panels to render
-      await page.waitForFunction(
-        () => {
-          const panelCount = document.querySelectorAll('.panel').length || document.querySelectorAll('.panel-container').length;
-          return (window as any).panelsRendered >= panelCount;
-        },
-        {
-          timeout: options.timeout * 1000,
-        }
-      );
-    });
+    await page.goto(options.url, { waitUntil: 'networkidle0' });
+    await page.waitForFunction(
+      () => {
+        const panelCount = document.querySelectorAll('.panel').length || document.querySelectorAll('.panel-container').length;
+        return (window as any).panelsRendered >= panelCount;
+      },
+      {
+        timeout: options.timeout * 1000,
+      }
+    );
 
     if (!options.filePath) {
       options.filePath = uniqueFilename(os.tmpdir()) + '.png';
     }
 
-    await this.timings.screenshot(async () => {
-      await page.screenshot({ path: options.filePath });
-    });
+    await page.screenshot({ path: options.filePath });
 
     return { filePath: options.filePath };
   }

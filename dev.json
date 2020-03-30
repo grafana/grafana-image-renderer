@@ -19,12 +19,16 @@
     "timezone": null,
     "chromeBin": null,
     "ignoresHttpsErrors": false,
-    "timingMetrics": false,
     "mode": "default",
     "clustering": {
       "mode": "browser",
       "maxConcurrency": 5
     },
-    "verboseLogging": false
+    "verboseLogging": false,
+    "dumpio": true,
+    "args": [
+      "--no-sandbox",
+      "--disable-setuid-sandbox"
+    ]
   }
 }
