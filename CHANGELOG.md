@@ -1,3 +1,7 @@
+## 1.0.12-beta1 (2020-03-30)
+
+- More configuration options to ease investigation [#123](https://github.com/grafana/grafana-image-renderer/pull/123), [marefr](https://github.com/marefr)
+
 ## 1.0.11 (2020-03-20)
 
 - Render: Add support for enabling verbose logging using environment variable [#105](https://github.com/grafana/grafana-image-renderer/pull/105), [marefr](https://github.com/marefr)
