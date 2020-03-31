@@ -1,4 +1,4 @@
-A Grafana backend plugin that handles rendering panels and dashboards to PNGs using headless Chrome.
+A Grafana backend plugin that handles rendering panels and dashboards to PNGs using a headless browser (Chromium).
 
 ## Requirements
 
@@ -44,7 +44,7 @@ You can override certain settings by using environment variables and making sure
 
 **Default timezone:**
 
-Instruct headless Chrome to use a default timezone when not provided by Grafana, e.g. when rendering panel image of alert. See [ICU’s metaZones.txt](https://cs.chromium.org/chromium/src/third_party/icu/source/data/misc/metaZones.txt?rcl=faee8bc70570192d82d2978a71e2a615788597d1) for a list of supported timezone IDs. Fallbacks to `TZ` environment variable if not set.
+Instruct headless browser instance to use a default timezone when not provided by Grafana, e.g. when rendering panel image of alert. See [ICU’s metaZones.txt](https://cs.chromium.org/chromium/src/third_party/icu/source/data/misc/metaZones.txt?rcl=faee8bc70570192d82d2978a71e2a615788597d1) for a list of supported timezone IDs. Fallbacks to `TZ` environment variable if not set.
 
 ```bash
 GF_RENDERER_PLUGIN_TZ=Europe/Stockholm
@@ -52,7 +52,7 @@ GF_RENDERER_PLUGIN_TZ=Europe/Stockholm
 
 **Ignore HTTPS errors:**
 
-Instruct headless Chrome whether to ignore HTTPS errors during navigation. Per default HTTPS errors is not ignored.
+Instruct headless browser instance whether to ignore HTTPS errors during navigation. Per default HTTPS errors is not ignored.
 Due to the security risk it's not recommended to ignore HTTPS errors.
 
 ```bash
@@ -69,7 +69,7 @@ GF_RENDERER_PLUGIN_GRPC_PORT=50059
 
 **Verbose logging:**
 
-Instruct headless Chrome whether to capture and log verbose information when rendering an image. Default is `false` and will only capture and log error messages. When enabled, `true`, debug messages are captured and logged as well.
+Instruct headless browser instance whether to capture and log verbose information when rendering an image. Default is `false` and will only capture and log error messages. When enabled, `true`, debug messages are captured and logged as well.
 
 For the verbose information to be included in the Grafana server log you have to adjust the rendering log level to `debug`, see [Troubleshoot image rendering](https://grafana.com/docs/grafana/latest/administration/image_rendering/#troubleshoot-image-rendering) for instructions.
 
