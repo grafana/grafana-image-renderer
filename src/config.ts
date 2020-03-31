@@ -10,10 +10,11 @@ export interface RenderingConfig {
   timezone?: string;
   chromeBin?: string;
   ignoresHttpsErrors: boolean;
-  timingMetrics: boolean;
   mode: string;
   clustering: ClusteringConfig;
   verboseLogging: boolean;
+  dumpio: boolean;
+  args: string[];
 }
 
 export interface MetricsConfig {
@@ -65,13 +66,14 @@ const defaultRenderingConfig: RenderingConfig = {
   timezone: undefined,
   chromeBin: undefined,
   ignoresHttpsErrors: false,
-  timingMetrics: false,
   mode: 'default',
   clustering: {
     mode: 'browser',
     maxConcurrency: 5,
   },
   verboseLogging: false,
+  dumpio: false,
+  args: ['--no-sandbox'],
 };
 
 export const defaultServiceConfig: ServiceConfig = {

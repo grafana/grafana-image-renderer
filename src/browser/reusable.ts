@@ -1,23 +1,18 @@
 import * as puppeteer from 'puppeteer';
-import { Browser, RenderResponse, BrowserTimings, RenderOptions } from './browser';
+import { Browser, RenderResponse, RenderOptions } from './browser';
 import { Logger } from '../logger';
 import { RenderingConfig } from '../config';
 
 export class ReusableBrowser extends Browser {
   browser: puppeteer.Browser;
 
-  constructor(config: RenderingConfig, log: Logger, timings: BrowserTimings) {
-    super(config, log, timings);
+  constructor(config: RenderingConfig, log: Logger) {
+    super(config, log);
   }
 
   async start(): Promise<void> {
     const launcherOptions = this.getLauncherOptions({});
-
-    this.browser = await this.timings.launch(
-      async () =>
-        // launch browser
-        await puppeteer.launch(launcherOptions)
-    );
+    this.browser = await puppeteer.launch(launcherOptions);
   }
 
   async render(options: RenderOptions): Promise<RenderResponse> {
@@ -27,12 +22,7 @@ export class ReusableBrowser extends Browser {
     try {
       this.validateOptions(options);
       context = await this.browser.createIncognitoBrowserContext();
-
-      page = await this.timings.newPage(
-        async () =>
-          // open a new page
-          await context.newPage()
-      );
+      page = await context.newPage();
 
       if (options.timezone) {
         // set timezone
