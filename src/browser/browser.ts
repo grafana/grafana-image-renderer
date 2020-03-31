@@ -1,5 +1,6 @@
+import * as os from 'os';
+import * as uniqueFilename from 'unique-filename';
 import * as puppeteer from 'puppeteer';
-import { Browser as PuppeteerBrowser, Page } from 'puppeteer';
 import { Logger } from '../logger';
 import { RenderingConfig } from '../config';
 
@@ -132,6 +133,10 @@ export class Browser {
         timeout: options.timeout * 1000,
       }
     );
+
+    if (!options.filePath) {
+      options.filePath = uniqueFilename(os.tmpdir()) + '.png';
+    }
 
     await page.screenshot({ path: options.filePath });
 

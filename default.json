@@ -13,11 +13,6 @@
         "json": true,
         "colorize": false
       }
-    },
-    "fileRetention": {
-      "enabled": true,
-      "cronSchedule": "0 0 * * *",
-      "retentionSeconds": 3600
     }
   },
   "rendering": {
