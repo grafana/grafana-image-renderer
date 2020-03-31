@@ -26,7 +26,7 @@ HTTP_PORT=0
 
 **Default timezone:**
 
-Instruct headless Chrome to use a default timezone when not provided by Grafana, .e.g. when rendering panel image of alert. See [ICU’s metaZones.txt](https://cs.chromium.org/chromium/src/third_party/icu/source/data/misc/metaZones.txt?rcl=faee8bc70570192d82d2978a71e2a615788597d1) for a list of supported timezone IDs. Fallbacks to `TZ` environment variable if not set.
+Instruct headless browser instance to use a default timezone when not provided by Grafana, .e.g. when rendering panel image of alert. See [ICU’s metaZones.txt](https://cs.chromium.org/chromium/src/third_party/icu/source/data/misc/metaZones.txt?rcl=faee8bc70570192d82d2978a71e2a615788597d1) for a list of supported timezone IDs. Fallbacks to `TZ` environment variable if not set.
 
 ```bash
 BROWSER_TZ=Europe/Stockholm
@@ -34,7 +34,7 @@ BROWSER_TZ=Europe/Stockholm
 
 **Ignore HTTPS errors:**
 
-Instruct headless Chrome whether to ignore HTTPS errors during navigation. Per default HTTPS errors is not ignored.
+Instruct headless browser instance whether to ignore HTTPS errors during navigation. Per default HTTPS errors is not ignored.
 Due to the security risk it's not recommended to ignore HTTPS errors.
 
 ```bash
@@ -59,12 +59,29 @@ LOG_LEVEL=debug
 
 **Verbose logging:**
 
-Instruct headless Chrome whether to capture and log verbose information when rendering an image. Default is `false` and will only capture and log error messages. When enabled (`true`) debug messages are captured and logged as well.
+Instruct headless browser instance whether to capture and log verbose information when rendering an image. Default is `false` and will only capture and log error messages. When enabled (`true`) debug messages are captured and logged as well.
 
 Note that you need to change log level to `debug`, see above, for the verbose information to be included in the logs.
 
 ```bash
 RENDERING_VERBOSE_LOGGING=true
+```
+
+**Capture browser output:**
+
+Instruct headless browser instance whether to output its debug and error messages into running process of remote rendering service. Default is `false`.
+This can be useful to enable (`true`) when troubleshooting.
+
+```bash
+RENDERING_DUMPIO=true
+```
+
+**Start browser with additional arguments:**
+
+Additional arguments to pass to the headless browser instance. Default is `--no-sandbox`. The list of Chromium flags can be found [here](https://peter.sh/experiments/chromium-command-line-switches/). Multiple arguments is separated with comma-character.
+
+```bash
+RENDERING_ARGS=--no-sandbox,--disable-setuid-sandbox,--disable-dev-shm-usage,--disable-accelerated-2d-canvas,--disable-gpu,--window-size=1280x758
 ```
 
 ## Configuration file

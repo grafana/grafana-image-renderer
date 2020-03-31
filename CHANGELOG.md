@@ -1,6 +1,11 @@
+## 1.0.12 (2020-03-31)
+
+- Remote rendering: Delete temporary file after serving it to client [#120](https://github.com/grafana/grafana-image-renderer/pull/120), [marefr](https://github.com/marefr)
+- Remote rendering: More configuration options [#123](https://github.com/grafana/grafana-image-renderer/pull/123), [marefr](https://github.com/marefr)
+
 ## 1.0.12-beta1 (2020-03-30)
 
-- More configuration options to ease investigation [#123](https://github.com/grafana/grafana-image-renderer/pull/123), [marefr](https://github.com/marefr)
+- Remote rendering: More configuration options [#123](https://github.com/grafana/grafana-image-renderer/pull/123), [marefr](https://github.com/marefr)
 
 ## 1.0.11 (2020-03-20)
 
