@@ -1,12 +1,13 @@
+import * as fs from 'fs';
 import * as net from 'net';
 import express = require('express');
-import { Logger } from '../logger';
-import { Browser } from '../browser';
 import * as boom from '@hapi/boom';
 import morgan = require('morgan');
+import * as promClient from 'prom-client';
+import { Logger } from '../logger';
+import { Browser } from '../browser';
 import { ServiceConfig } from '../config';
 import { metricsMiddleware } from './metrics_middleware';
-import * as promClient from 'prom-client';
 import { RenderOptions } from '../browser/browser';
 
 export class HttpServer {
@@ -79,7 +80,7 @@ export class HttpServer {
     await this.browser.start();
   }
 
-  render = async (req: express.Request, res: express.Response) => {
+  render = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
     if (!req.query.url) {
       throw boom.badRequest('Missing url parameter');
     }
@@ -95,12 +96,24 @@ export class HttpServer {
       timezone: req.query.timezone,
       encoding: req.query.encoding,
     };
+
     this.log.debug('Render request received', 'url', options.url);
     req.on('close', err => {
       this.log.debug('Connection closed', 'url', options.url, 'error', err);
     });
     const result = await this.browser.render(options);
-    res.sendFile(result.filePath);
+    res.sendFile(result.filePath, err => {
+      if (err) {
+        next(err);
+      } else {
+        try {
+          this.log.debug('Deleting temporary file', 'file', result.filePath);
+          fs.unlinkSync(result.filePath);
+        } catch (e) {
+          this.log.error('Failed to delete temporary file', 'file', result.filePath);
+        }
+      }
+    });
   };
 }
 

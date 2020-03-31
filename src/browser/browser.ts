@@ -1,7 +1,6 @@
 import * as os from 'os';
+import * as uniqueFilename from 'unique-filename';
 import * as puppeteer from 'puppeteer';
-import { Browser as PuppeteerBrowser, Page } from 'puppeteer';
-import uniqueFilename = require('unique-filename');
 import { Logger } from '../logger';
 import { RenderingConfig } from '../config';
 
