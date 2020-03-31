@@ -107,6 +107,7 @@ export class HttpServer {
         next(err);
       } else {
         try {
+          this.log.debug('Deleting temporary file', 'file', result.filePath);
           fs.unlinkSync(result.filePath);
         } catch (e) {
           this.log.error('Failed to delete temporary file', 'file', result.filePath);
