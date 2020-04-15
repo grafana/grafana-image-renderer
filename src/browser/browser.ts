@@ -56,6 +56,10 @@ export class Browser {
   async start(): Promise<void> {}
 
   validateOptions(options: RenderOptions) {
+    if (options.url.startsWith(`socket://`)) {
+      // Puppeteer doesn't support socket:// URLs
+      throw new Error(`Image rendering in socket mode is not supported`);
+    }
     options.width = parseInt(options.width as string, 10) || 1000;
     options.height = parseInt(options.height as string, 10) || 500;
     options.timeout = parseInt(options.timeout as string, 10) || 30;
@@ -123,6 +127,7 @@ export class Browser {
       domain: options.domain,
     });
     await page.mouse.move(options.width, options.height);
+    this.log.debug(`Navigating to ${options.url}`);
     await page.goto(options.url, { waitUntil: 'networkidle0' });
     await page.waitForFunction(
       () => {
@@ -193,15 +198,15 @@ export class Browser {
   };
 
   logRequest = (req: any) => {
-    this.log.debug('Browser request', 'url', req._url, 'method', req._url);
+    this.log.debug('Browser request', 'url', req.url(), 'method', req.method());
   };
 
   logRequestFailed = (req: any) => {
-    this.log.error('Browser request failed', 'url', req._url, 'method', req._method);
+    this.log.error('Browser request failed', 'url', req.url(), 'method', req.method(), 'failure', req.failure().errorText);
   };
 
   logRequestFinished = (req: any) => {
-    this.log.debug('Browser request finished', 'url', req._url, 'method', req._method);
+    this.log.debug('Browser request finished', 'url', req.url(), 'method', req.method());
   };
 
   logPageClosed = () => {
