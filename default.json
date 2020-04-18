@@ -17,6 +17,7 @@
   },
   "rendering": {
     "timezone": null,
+    "acceptLanguage": null,
     "chromeBin": null,
     "ignoresHttpsErrors": false,
     "mode": "default",
@@ -28,6 +29,10 @@
     "dumpio": false,
     "args": [
       "--no-sandbox"
-    ]
+    ],
+    "deviceScaleFactor": 1,
+    "maxWidth": 3080,
+    "maxHeight": 3000,
+    "maxDeviceScaleFactor": 10
   }
 }

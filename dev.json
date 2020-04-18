@@ -29,6 +29,10 @@
     "args": [
       "--no-sandbox",
       "--disable-setuid-sandbox"
-    ]
+    ],
+    "deviceScaleFactor": 2,
+    "maxWidth": 1980,
+    "maxHeight": 8000,
+    "maxDeviceScaleFactor": 10
   }
 }

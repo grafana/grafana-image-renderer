@@ -14,6 +14,11 @@ export interface RenderingConfig {
   verboseLogging: boolean;
   dumpio: boolean;
   args: string[];
+  deviceScaleFactor: number;
+  acceptLanguage?: string;
+  maxWidth: number;
+  maxHeight: number;
+  maxDeviceScaleFactor: number;
 }
 
 export interface MetricsConfig {
@@ -65,6 +70,11 @@ const defaultRenderingConfig: RenderingConfig = {
   verboseLogging: false,
   dumpio: false,
   args: ['--no-sandbox'],
+  deviceScaleFactor: 1,
+  acceptLanguage: undefined,
+  maxWidth: 3000,
+  maxHeight: 3000,
+  maxDeviceScaleFactor: 10,
 };
 
 export const defaultServiceConfig: ServiceConfig = {
