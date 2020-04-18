@@ -41,9 +41,9 @@
     "lint-staged": "^9.5.0",
     "pkg": "4.3.8",
     "prettier": "^1.19.1",
-    "tsc-watch": "^1.0.21",
-    "tslint": "^5.20.1",
-    "typescript": "^2.8.3"
+    "tsc-watch": "^4.2.3",
+    "tslint": "^6.1.1",
+    "typescript": "^3.8.3"
   },
   "resolutions": {
     "minimist": "1.2.5"
