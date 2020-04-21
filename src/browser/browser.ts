@@ -57,20 +57,20 @@ export class Browser {
     options.height = parseInt(options.height as string, 10) || 500;
     options.timeout = parseInt(options.timeout as string, 10) || 30;
 
-    if (options.width > this.config.maxWidth || options.width < 10) {
-      options.width = this.config.maxWidth;
-    }
-
     if (options.width < 10) {
       options.width = 1000;
     }
 
-    if (options.height > this.config.maxHeight) {
-      options.height = this.config.maxHeight;
+    if (options.width > this.config.maxWidth) {
+      options.width = this.config.maxWidth;
     }
 
     if (options.height < 10) {
       options.height = 500;
+    }
+
+    if (options.height > this.config.maxHeight) {
+      options.height = this.config.maxHeight;
     }
 
     options.deviceScaleFactor = parseFloat((options.deviceScaleFactor || 1) as string) || 1;
