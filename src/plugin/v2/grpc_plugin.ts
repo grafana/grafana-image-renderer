@@ -54,14 +54,17 @@ export class RenderGRPCPluginV2 implements GrpcPlugin {
     metrics.up.set(1);
 
     let browserVersion = 'unknown';
+    let labelValue = 1;
 
     try {
       browserVersion = await browser.getBrowserVersion();
-      metrics.browserInfo.labels(browserVersion).set(1);
-      this.log.debug('Using browser version', 'browserVersion', browserVersion);
-    } catch {
-      this.log.error('Failed to get browser version');
-      metrics.browserInfo.labels('unknown').set(0);
+    } catch (err) {
+      this.log.error('Failed to get browser version', 'err', err);
+      labelValue = 0;
+    }
+    metrics.browserInfo.labels(browserVersion).set(labelValue);
+    if (browserVersion !== 'unknown') {
+          this.log.debug('Using browser version', 'browserVersion', browserVersion);
     }
 
     await pluginService.start(browserVersion);
@@ -104,14 +107,15 @@ class PluginGRPCServer {
       headers: headers,
     };
 
+    this.log.debug('Render request received', 'url', options.url);
+    let errStr = '';
     try {
-      this.log.debug('Render request received', 'url', options.url);
       await this.browser.render(options);
-      callback(null, { error: '' });
     } catch (err) {
       this.log.error('Render request failed', 'url', options.url, 'error', err.toString());
-      callback(null, { error: err.toString() });
+      errStr = err.toString();
     }
+    callback(null, { error: errStr });
   }
 
   async checkHealth(_: grpc.ServerUnaryCall<CheckHealthRequest>, callback: grpc.sendUnaryData<CheckHealthResponse>) {

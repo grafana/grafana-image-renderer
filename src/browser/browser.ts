@@ -29,7 +29,7 @@ export interface RenderResponse {
 
 export class Browser {
   constructor(protected config: RenderingConfig, protected log: Logger) {
-    this.log.debug('Browser initiated', 'config', this.config);
+    this.log.debug('Browser initialized', 'config', this.config);
   }
 
   async getBrowserVersion(): Promise<string> {

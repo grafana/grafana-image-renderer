@@ -47,7 +47,7 @@ const protocolVersion = (opts: ServeConfig): ProtocolNegotiation => {
     opts.versionedPlugins[protoVersion] = pluginSet;
   }
 
-  // Sort the version to make sure we match the latest first
+  // Sort the versions to make sure we match the latest first
   let versions: number[] = [];
   for (let n = 0; n < Object.keys(opts.versionedPlugins).length; n++) {
     const version = Object.keys(opts.versionedPlugins)[n];
