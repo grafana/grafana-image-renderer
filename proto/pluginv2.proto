@@ -1,0 +1,171 @@
+syntax = "proto3";
+package pluginv2;
+
+option go_package = ".;pluginv2";
+
+//-----------------------------------------------
+// Common
+//-----------------------------------------------
+
+message DataSourceConfig {
+  int64 id = 1;
+  string name = 2;
+  string url = 3;
+  string user = 4;
+  string database = 5;
+  bool basicAuthEnabled = 6;
+  string basicAuthUser = 7;
+
+  // from [data_source.json_data] field in the database
+  bytes jsonData = 8;
+
+  // from [data_source.secure_json_data] field in the database
+  map<string,string> decryptedSecureJsonData = 9;
+  int64 lastUpdatedMS = 10;
+}
+
+message PluginConfig {
+  int64 orgId = 1;
+  string pluginId = 2;
+
+  // from [plugin_setting.json_data] field in the database
+  bytes jsonData = 3;
+
+  // from [plugin_setting.secure_json_data] field in the database
+  map<string,string> decryptedSecureJsonData = 4;
+  int64 lastUpdatedMS = 5;
+
+  DataSourceConfig datasourceConfig = 6;
+}
+
+message User {
+  string login = 1;
+  string name = 2;
+  string email = 3;
+  string role = 4;
+}
+
+//---------------------------------------------------------
+// Resource service enables HTTP-style requests over gRPC.
+//---------------------------------------------------------
+
+service Resource {
+  rpc CallResource(CallResourceRequest) returns (stream CallResourceResponse);
+}
+
+message StringList {
+  repeated string values = 1;
+}
+
+message CallResourceRequest {
+  PluginConfig config = 1;
+  User user = 2;
+  string path = 3;
+  string method = 4;
+  string url = 5;
+  map<string,StringList> headers = 6;
+  bytes body = 7;
+}
+
+message CallResourceResponse {
+  int32 code = 1;
+  map<string,StringList> headers = 2;
+  bytes body = 3;
+}
+
+//-----------------------------------------------
+// Data
+//-----------------------------------------------
+
+service Data {
+  rpc QueryData(QueryDataRequest) returns (QueryDataResponse);
+}
+
+message TimeRange {
+  int64 fromEpochMS = 1;
+  int64 toEpochMS = 2;
+}
+
+message DataQuery {
+  string refId = 1;
+  int64 maxDataPoints = 2;
+  int64 intervalMS = 3;
+  TimeRange timeRange = 4;
+  bytes json = 5;
+}
+
+// QueryDataRequest
+message QueryDataRequest {
+  // Plugin Configuration
+  PluginConfig config = 1;
+
+  //Info about the user who calls the plugin.
+  User user = 2;
+
+  // Environment info
+  map<string,string> headers = 3;
+
+  // List of data queries
+  repeated DataQuery queries = 4;
+}
+
+message QueryDataResponse {
+  // Map of refId to response
+  map<string,DataResponse> responses = 1;
+}
+
+message DataResponse {
+  // Arrow encoded DataFrames
+  // Frame has its own meta, warnings, and repeats refId
+  repeated bytes frames = 1;
+  string error = 2;
+  bytes jsonMeta = 3; // Warning: Current ignored by frontend. Would be for metadata about the query.
+}
+
+//-----------------------------------------------
+// Diagnostics
+//-----------------------------------------------
+
+service Diagnostics {
+  rpc CheckHealth(CheckHealthRequest) returns (CheckHealthResponse);
+  rpc CollectMetrics(CollectMetricsRequest) returns (CollectMetricsResponse);
+}
+
+message CollectMetricsRequest {
+}
+
+message CollectMetricsResponse {
+  message Payload {
+    bytes prometheus = 1;
+  }
+
+  Payload metrics = 1;
+}
+
+message CheckHealthRequest {
+  PluginConfig config = 1;
+}
+
+message CheckHealthResponse {
+  enum HealthStatus {
+    UNKNOWN = 0;
+    OK = 1;
+    ERROR = 2;
+  }
+
+  HealthStatus status = 1;
+  string message = 2;
+  bytes jsonDetails = 3;
+}
+
+//-----------------------------------------------
+// Transform - Very experimental
+//-----------------------------------------------
+
+service Transform {
+  rpc TransformData(QueryDataRequest) returns (QueryDataResponse);
+}
+
+service TransformDataCallBack {
+  rpc QueryData(QueryDataRequest) returns (QueryDataResponse);
+}

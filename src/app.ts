@@ -1,12 +1,14 @@
 import * as path from 'path';
 import * as puppeteer from 'puppeteer';
 import * as _ from 'lodash';
-import { GrpcPlugin } from './plugin/grpc-plugin';
+import { RenderGRPCPluginV1 } from './plugin/v1/grpc_plugin';
+import { RenderGRPCPluginV2 } from './plugin/v2/grpc_plugin';
 import { HttpServer } from './service/http-server';
 import { ConsoleLogger, PluginLogger } from './logger';
 import { createBrowser } from './browser';
 import * as minimist from 'minimist';
 import { defaultPluginConfig, defaultServiceConfig, readJSONFileSync, PluginConfig, ServiceConfig } from './config';
+import { serve } from './node-plugin';
 
 async function main() {
   const argv = minimist(process.argv.slice(2));
@@ -14,6 +16,7 @@ async function main() {
   const command = argv._[0];
 
   if (command === undefined) {
+    const logger = new PluginLogger();
     const config: PluginConfig = defaultPluginConfig;
     populatePluginConfigFromEnv(config, env);
 
@@ -26,10 +29,24 @@ async function main() {
       config.rendering.chromeBin = [path.dirname(process.execPath), ...parts].join(path.sep);
     }
 
-    const logger = new PluginLogger();
-    const browser = createBrowser(config.rendering, logger);
-    const plugin = new GrpcPlugin(config, logger, browser);
-    plugin.start();
+    serve({
+      handshakeConfig: {
+        protocolVersion: 2,
+        magicCookieKey: 'grafana_plugin_type',
+        magicCookieValue: 'datasource',
+      },
+      versionedPlugins: {
+        1: {
+          'grafana-image-renderer': new RenderGRPCPluginV1(config, logger),
+        },
+        2: {
+          renderer: new RenderGRPCPluginV2(config, logger),
+        },
+      },
+      logger: logger,
+      grpcHost: config.plugin.grpc.host,
+      grpcPort: config.plugin.grpc.port,
+    });
   } else if (command === 'server') {
     let config: ServiceConfig = defaultServiceConfig;
 
@@ -61,6 +78,7 @@ main().catch(err => {
 });
 
 function populatePluginConfigFromEnv(config: PluginConfig, env: NodeJS.ProcessEnv) {
+  // Plugin v1 legacy env variables
   if (env['GF_RENDERER_PLUGIN_TZ']) {
     config.rendering.timezone = env['GF_RENDERER_PLUGIN_TZ'];
   } else {
@@ -81,6 +99,15 @@ function populatePluginConfigFromEnv(config: PluginConfig, env: NodeJS.ProcessEn
 
   if (env['GF_RENDERER_PLUGIN_VERBOSE_LOGGING']) {
     config.rendering.verboseLogging = env['GF_RENDERER_PLUGIN_VERBOSE_LOGGING'] === 'true';
+  }
+
+  // Plugin v2 env variables needs to be initiated early
+  if (env['GF_PLUGIN_GRPC_HOST']) {
+    config.plugin.grpc.host = env['GF_PLUGIN_GRPC_HOST'] as string;
+  }
+
+  if (env['GF_PLUGIN_GRPC_PORT']) {
+    config.plugin.grpc.port = parseInt(env['GF_PLUGIN_GRPC_PORT'] as string, 10);
   }
 }
 

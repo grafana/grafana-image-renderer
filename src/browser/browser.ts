@@ -4,6 +4,11 @@ import * as puppeteer from 'puppeteer';
 import { Logger } from '../logger';
 import { RenderingConfig } from '../config';
 
+export interface HTTPHeaders {
+  'Accept-Language'?: string;
+  [header: string]: string | undefined;
+}
+
 export interface RenderOptions {
   url: string;
   width: string | number;
@@ -14,6 +19,8 @@ export interface RenderOptions {
   domain: string;
   timezone?: string;
   encoding?: string;
+  deviceScaleFactor?: string | number;
+  headers?: HTTPHeaders;
 }
 
 export interface RenderResponse {
@@ -22,21 +29,7 @@ export interface RenderResponse {
 
 export class Browser {
   constructor(protected config: RenderingConfig, protected log: Logger) {
-    this.log.info(
-      'Browser initiated',
-      'chromeBin',
-      this.config.chromeBin,
-      'ignoresHttpsErrors',
-      this.config.ignoresHttpsErrors,
-      'timezone',
-      this.config.timezone,
-      'args',
-      this.config.args,
-      'dumpio',
-      this.config.dumpio,
-      'verboseLogging',
-      this.config.verboseLogging
-    );
+    this.log.debug('Browser initialized', 'config', this.config);
   }
 
   async getBrowserVersion(): Promise<string> {
@@ -60,17 +53,43 @@ export class Browser {
       // Puppeteer doesn't support socket:// URLs
       throw new Error(`Image rendering in socket mode is not supported`);
     }
-    options.width = parseInt(options.width as string, 10) || 1000;
-    options.height = parseInt(options.height as string, 10) || 500;
+
+    options.width = parseInt(options.width as string, 10) || this.config.width;
+    options.height = parseInt(options.height as string, 10) || this.config.height;
     options.timeout = parseInt(options.timeout as string, 10) || 30;
 
-    if (options.width > 3000 || options.width < 10) {
-      options.width = 2500;
+    if (options.width < 10) {
+      options.width = this.config.width;
     }
 
-    if (options.height > 3000 || options.height < 10) {
-      options.height = 1500;
+    if (options.width > this.config.maxWidth) {
+      options.width = this.config.maxWidth;
     }
+
+    if (options.height < 10) {
+      options.height = this.config.height;
+    }
+
+    if (options.height > this.config.maxHeight) {
+      options.height = this.config.maxHeight;
+    }
+
+    options.deviceScaleFactor = parseFloat(((options.deviceScaleFactor as string) || '1') as string) || 1;
+
+    if (options.deviceScaleFactor > this.config.maxDeviceScaleFactor) {
+      options.deviceScaleFactor = this.config.deviceScaleFactor;
+    }
+
+    options.headers = options.headers || {};
+    const headers = {};
+
+    if (options.headers['Accept-Language']) {
+      headers['Accept-Language'] = options.headers['Accept-Language'];
+    } else if (this.config.acceptLanguage) {
+      headers['Accept-Language'] = this.config.acceptLanguage;
+    }
+
+    options.headers = headers;
   }
 
   getLauncherOptions(options) {
@@ -116,19 +135,51 @@ export class Browser {
   }
 
   async takeScreenshot(page: any, options: any): Promise<RenderResponse> {
+    if (this.config.verboseLogging) {
+      this.log.debug(
+        'Setting viewport for page',
+        'width',
+        options.width.toString(),
+        'height',
+        options.height.toString(),
+        'deviceScaleFactor',
+        options.deviceScaleFactor.toString()
+      );
+    }
     await page.setViewport({
       width: options.width,
       height: options.height,
-      deviceScaleFactor: 1,
+      deviceScaleFactor: options.deviceScaleFactor,
     });
+
+    if (this.config.verboseLogging) {
+      this.log.debug('Setting cookie for page', 'renderKey', options.renderKey, 'domain', options.domain);
+    }
     await page.setCookie({
       name: 'renderKey',
       value: options.renderKey,
       domain: options.domain,
     });
+
+    if (options.headers && Object.keys(options.headers).length > 0) {
+      this.log.debug(`Setting extra HTTP headers for page`, 'headers', options.headers);
+      await page.setExtraHTTPHeaders(options.headers);
+    }
+
+    if (this.config.verboseLogging) {
+      this.log.debug('Moving mouse on page', 'x', options.width, 'y', options.height);
+    }
     await page.mouse.move(options.width, options.height);
-    this.log.debug(`Navigating to ${options.url}`);
+
+    if (this.config.verboseLogging) {
+      this.log.debug('Navigating and waiting for all network requests to finish', 'url', options.url);
+    }
+
     await page.goto(options.url, { waitUntil: 'networkidle0' });
+
+    if (this.config.verboseLogging) {
+      this.log.debug('Waiting for dashboard/panel to load', 'timeout', `${options.timeout}s`);
+    }
     await page.waitForFunction(
       () => {
         const panelCount = document.querySelectorAll('.panel').length || document.querySelectorAll('.panel-container').length;
@@ -143,6 +194,9 @@ export class Browser {
       options.filePath = uniqueFilename(os.tmpdir()) + '.png';
     }
 
+    if (this.config.verboseLogging) {
+      this.log.debug('Taking screenshot', 'filePath', options.filePath);
+    }
     await page.screenshot({ path: options.filePath });
 
     return { filePath: options.filePath };

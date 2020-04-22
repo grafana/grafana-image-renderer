@@ -8,7 +8,7 @@ import { Logger } from '../logger';
 import { Browser } from '../browser';
 import { ServiceConfig } from '../config';
 import { metricsMiddleware } from './metrics_middleware';
-import { RenderOptions } from '../browser/browser';
+import { RenderOptions, HTTPHeaders } from '../browser/browser';
 
 export class HttpServer {
   app: express.Express;
@@ -85,6 +85,12 @@ export class HttpServer {
       throw boom.badRequest('Missing url parameter');
     }
 
+    const headers: HTTPHeaders = {};
+
+    if (req.headers['Accept-Language']) {
+      headers['Accept-Language'] = (req.headers['Accept-Language'] as string[]).join(';');
+    }
+
     const options: RenderOptions = {
       url: req.query.url,
       width: req.query.width,
@@ -95,6 +101,8 @@ export class HttpServer {
       domain: req.query.domain,
       timezone: req.query.timezone,
       encoding: req.query.encoding,
+      deviceScaleFactor: req.query.deviceScaleFactor,
+      headers: headers,
     };
 
     this.log.debug('Render request received', 'url', options.url);
