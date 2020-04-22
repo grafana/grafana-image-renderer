@@ -1,3 +1,11 @@
+## 2.0.0-beta1 (2020-04-22)
+
+- Adds support for Grafana v2 backend plugins [#128](https://github.com/grafana/grafana-image-renderer/pull/128), [marefr](https://github.com/marefr)
+- Browser: Adds support for setting viewport device scale factor [#128](https://github.com/grafana/grafana-image-renderer/pull/128), [marefr](https://github.com/marefr)
+- Browser: Adds support for attaching Accept-Language header to support render is name locale as Grafana user [#128](https://github.com/grafana/grafana-image-renderer/pull/128), [marefr](https://github.com/marefr)
+- Browser: Fail render if the URL has socket protocol [#127](https://github.com/grafana/grafana-image-renderer/pull/127), [aknuds1](https://github.com/aknuds1)
+- Chore: Upgrade typescript dependencies [#129](https://github.com/grafana/grafana-image-renderer/pull/129), [marefr](https://github.com/marefr)
+
 ## 1.0.12 (2020-03-31)
 
 - Remote rendering: Delete temporary file after serving it to client [#120](https://github.com/grafana/grafana-image-renderer/pull/120), [marefr](https://github.com/marefr)
