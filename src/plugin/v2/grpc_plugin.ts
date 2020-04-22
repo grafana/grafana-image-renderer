@@ -41,9 +41,8 @@ export class RenderGRPCPluginV2 implements GrpcPlugin {
   }
 
   async grpcServer(server: grpc.Server) {
-    const metrics = setupMetrics();
     const browser = createBrowser(this.config.rendering, this.log);
-    const pluginService = new PluginGRPCServer(browser, this.log, metrics);
+    const pluginService = new PluginGRPCServer(browser, this.log);
 
     const rendererServiceDef = rendererV2ProtoDescriptor['pluginextensionv2']['Renderer']['service'];
     server.addService(rendererServiceDef, pluginService);
@@ -51,6 +50,7 @@ export class RenderGRPCPluginV2 implements GrpcPlugin {
     const pluginServiceDef = pluginV2ProtoDescriptor['pluginv2']['Diagnostics']['service'];
     server.addService(pluginServiceDef, pluginService);
 
+    const metrics = setupMetrics();
     metrics.up.set(1);
 
     let browserVersion = 'unknown';
@@ -64,7 +64,7 @@ export class RenderGRPCPluginV2 implements GrpcPlugin {
     }
     metrics.browserInfo.labels(browserVersion).set(labelValue);
     if (browserVersion !== 'unknown') {
-          this.log.debug('Using browser version', 'browserVersion', browserVersion);
+      this.log.debug('Using browser version', 'browserVersion', browserVersion);
     }
 
     await pluginService.start(browserVersion);
@@ -74,7 +74,7 @@ export class RenderGRPCPluginV2 implements GrpcPlugin {
 class PluginGRPCServer {
   private browserVersion: string | undefined;
 
-  constructor(private browser: Browser, private log: Logger, private metrics: Metrics) {}
+  constructor(private browser: Browser, private log: Logger) {}
 
   async start(browserVersion?: string) {
     this.browserVersion = browserVersion;
@@ -137,22 +137,54 @@ class PluginGRPCServer {
 const populateConfigFromEnv = (config: PluginConfig) => {
   const env = Object.assign({}, process.env);
 
-  if (env['GF_PLUGIN_RENDERING_TIMEZONE']) {
-    config.rendering.timezone = env['GF_PLUGIN_RENDERING_TIMEZONE'];
-  } else {
-    config.rendering.timezone = env['TZ'];
+  if (env['GF_PLUGIN_RENDERING_CHROME_BIN']) {
+    config.rendering.chromeBin = env['GF_PLUGIN_RENDERING_CHROME_BIN'];
   }
 
-  if (env['GF_PLUGIN_RENDERING_VIEWPORT_DEVICE_SCALE_FACTOR']) {
-    config.rendering.maxDeviceScaleFactor = parseFloat(env['GF_PLUGIN_RENDERING_VIEWPORT_DEVICE_SCALE_FACTOR'] as string);
+  if (env['GF_PLUGIN_RENDERING_ARGS']) {
+    const args = env['GF_PLUGIN_RENDERING_ARGS'] as string;
+    if (args.length > 0) {
+      const argsList = args.split(',');
+      if (argsList.length > 0) {
+        config.rendering.args = argsList;
+      }
+    }
   }
 
   if (env['GF_PLUGIN_RENDERING_IGNORE_HTTPS_ERRORS']) {
     config.rendering.ignoresHttpsErrors = env['GF_PLUGIN_RENDERING_IGNORE_HTTPS_ERRORS'] === 'true';
   }
 
-  if (env['GF_PLUGIN_RENDERING_CHROME_BIN']) {
-    config.rendering.chromeBin = env['GF_PLUGIN_RENDERING_CHROME_BIN'];
+  if (env['GF_PLUGIN_RENDERING_TIMEZONE']) {
+    config.rendering.timezone = env['GF_PLUGIN_RENDERING_TIMEZONE'];
+  }
+
+  if (env['GF_PLUGIN_RENDERING_LANGUAGE']) {
+    config.rendering.acceptLanguage = env['GF_PLUGIN_RENDERING_LANGUAGE'];
+  }
+
+  if (env['GF_PLUGIN_RENDERING_VIEWPORT_WIDTH']) {
+    config.rendering.width = parseInt(env['GF_PLUGIN_RENDERING_VIEWPORT_WIDTH'] as string, 10);
+  }
+
+  if (env['GF_PLUGIN_RENDERING_VIEWPORT_HEIGHT']) {
+    config.rendering.height = parseInt(env['GF_PLUGIN_RENDERING_VIEWPORT_HEIGHT'] as string, 10);
+  }
+
+  if (env['GF_PLUGIN_RENDERING_VIEWPORT_DEVICE_SCALE_FACTOR']) {
+    config.rendering.deviceScaleFactor = parseFloat(env['GF_PLUGIN_RENDERING_VIEWPORT_DEVICE_SCALE_FACTOR'] as string);
+  }
+
+  if (env['GF_PLUGIN_RENDERING_VIEWPORT_MAX_WIDTH']) {
+    config.rendering.maxWidth = parseInt(env['GF_PLUGIN_RENDERING_VIEWPORT_MAX_WIDTH'] as string, 10);
+  }
+
+  if (env['GF_PLUGIN_RENDERING_VIEWPORT_MAX_HEIGHT']) {
+    config.rendering.maxHeight = parseInt(env['GF_PLUGIN_RENDERING_VIEWPORT_MAX_HEIGHT'] as string, 10);
+  }
+
+  if (env['GF_PLUGIN_RENDERING_VIEWPORT_MAX_DEVICE_SCALE_FACTOR']) {
+    config.rendering.maxDeviceScaleFactor = parseFloat(env['GF_PLUGIN_RENDERING_VIEWPORT_MAX_DEVICE_SCALE_FACTOR'] as string);
   }
 
   if (env['GF_PLUGIN_RENDERING_MODE']) {
@@ -173,16 +205,6 @@ const populateConfigFromEnv = (config: PluginConfig) => {
 
   if (env['GF_PLUGIN_RENDERING_DUMPIO']) {
     config.rendering.dumpio = env['GF_PLUGIN_RENDERING_DUMPIO'] === 'true';
-  }
-
-  if (env['GF_PLUGIN_RENDERING_ARGS']) {
-    const args = env['GF_PLUGIN_RENDERING_ARGS'] as string;
-    if (args.length > 0) {
-      const argsList = args.split(',');
-      if (argsList.length > 0) {
-        config.rendering.args = argsList;
-      }
-    }
   }
 };
 

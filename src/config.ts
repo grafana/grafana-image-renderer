@@ -6,19 +6,21 @@ export interface ClusteringConfig {
 }
 
 export interface RenderingConfig {
-  timezone?: string;
   chromeBin?: string;
+  args: string[];
   ignoresHttpsErrors: boolean;
+  timezone?: string;
+  acceptLanguage?: string;
+  width: number;
+  height: number;
+  deviceScaleFactor: number;
+  maxWidth: number;
+  maxHeight: number;
+  maxDeviceScaleFactor: number;
   mode: string;
   clustering: ClusteringConfig;
   verboseLogging: boolean;
   dumpio: boolean;
-  args: string[];
-  deviceScaleFactor: number;
-  acceptLanguage?: string;
-  maxWidth: number;
-  maxHeight: number;
-  maxDeviceScaleFactor: number;
 }
 
 export interface MetricsConfig {
@@ -59,9 +61,17 @@ export interface PluginConfig {
 }
 
 const defaultRenderingConfig: RenderingConfig = {
-  timezone: undefined,
   chromeBin: undefined,
+  args: ['--no-sandbox'],
   ignoresHttpsErrors: false,
+  timezone: undefined,
+  acceptLanguage: undefined,
+  width: 1000,
+  height: 500,
+  deviceScaleFactor: 1,
+  maxWidth: 3000,
+  maxHeight: 3000,
+  maxDeviceScaleFactor: 3,
   mode: 'default',
   clustering: {
     mode: 'browser',
@@ -69,12 +79,6 @@ const defaultRenderingConfig: RenderingConfig = {
   },
   verboseLogging: false,
   dumpio: false,
-  args: ['--no-sandbox'],
-  deviceScaleFactor: 1,
-  acceptLanguage: undefined,
-  maxWidth: 3000,
-  maxHeight: 3000,
-  maxDeviceScaleFactor: 10,
 };
 
 export const defaultServiceConfig: ServiceConfig = {

@@ -53,12 +53,13 @@ export class Browser {
       // Puppeteer doesn't support socket:// URLs
       throw new Error(`Image rendering in socket mode is not supported`);
     }
-    options.width = parseInt(options.width as string, 10) || 1000;
-    options.height = parseInt(options.height as string, 10) || 500;
+
+    options.width = parseInt(options.width as string, 10) || this.config.width;
+    options.height = parseInt(options.height as string, 10) || this.config.height;
     options.timeout = parseInt(options.timeout as string, 10) || 30;
 
     if (options.width < 10) {
-      options.width = 1000;
+      options.width = this.config.width;
     }
 
     if (options.width > this.config.maxWidth) {
@@ -66,17 +67,17 @@ export class Browser {
     }
 
     if (options.height < 10) {
-      options.height = 500;
+      options.height = this.config.height;
     }
 
     if (options.height > this.config.maxHeight) {
       options.height = this.config.maxHeight;
     }
 
-    options.deviceScaleFactor = parseFloat((options.deviceScaleFactor || 1) as string) || 1;
+    options.deviceScaleFactor = parseFloat(((options.deviceScaleFactor as string) || '1') as string) || 1;
 
     if (options.deviceScaleFactor > this.config.maxDeviceScaleFactor) {
-      options.deviceScaleFactor = 1;
+      options.deviceScaleFactor = this.config.deviceScaleFactor;
     }
 
     options.headers = options.headers || {};
@@ -84,7 +85,10 @@ export class Browser {
 
     if (options.headers['Accept-Language']) {
       headers['Accept-Language'] = options.headers['Accept-Language'];
+    } else if (this.config.acceptLanguage) {
+      headers['Accept-Language'] = this.config.acceptLanguage;
     }
+
     options.headers = headers;
   }
 

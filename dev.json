@@ -2,11 +2,13 @@
   "service": {
     "host": "localhost",
     "port": 8081,
+
     "metrics": {
       "enabled": true,
       "collectDefaultMetrics": true,
       "requestDurationBuckets": [1, 5, 7, 9, 11, 13, 15, 20, 30]
     },
+
     "logging": {
       "level": "debug",
       "console": {
@@ -16,23 +18,29 @@
     }
   },
   "rendering": {
-    "timezone": null,
     "chromeBin": null,
+    "args": [
+      "--no-sandbox",
+      "--disable-setuid-sandbox"
+    ],
     "ignoresHttpsErrors": false,
+
+    "timezone": null,
+    "acceptLanguage": null,
+    "width": 1000,
+    "height": 500,
+    "deviceScaleFactor": 2,
+    "maxWidth": 1980,
+    "maxHeight": 8000,
+    "maxDeviceScaleFactor": 10,
+
     "mode": "default",
     "clustering": {
       "mode": "browser",
       "maxConcurrency": 5
     },
+
     "verboseLogging": false,
-    "dumpio": true,
-    "args": [
-      "--no-sandbox",
-      "--disable-setuid-sandbox"
-    ],
-    "deviceScaleFactor": 2,
-    "maxWidth": 1980,
-    "maxHeight": 8000,
-    "maxDeviceScaleFactor": 10
+    "dumpio": true
   }
 }

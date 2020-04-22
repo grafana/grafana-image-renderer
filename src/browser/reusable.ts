@@ -16,8 +16,8 @@ export class ReusableBrowser extends Browser {
   }
 
   async render(options: RenderOptions): Promise<RenderResponse> {
-    let context: puppeteer.BrowserContext;
-    let page: puppeteer.Page;
+    let context: puppeteer.BrowserContext | undefined;
+    let page: puppeteer.Page | undefined;
 
     try {
       this.validateOptions(options);

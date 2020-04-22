@@ -30,7 +30,7 @@ export class RenderGRPCPluginV1 implements GrpcPlugin {
 class RendererGRPCServer {
   private browser: Browser;
 
-  constructor(private config: PluginConfig, private log: Logger) {
+  constructor(config: PluginConfig, private log: Logger) {
     this.browser = createBrowser(config.rendering, log);
   }
 
