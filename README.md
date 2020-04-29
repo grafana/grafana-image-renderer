@@ -79,7 +79,7 @@ GF_RENDERER_PLUGIN_VERBOSE_LOGGING=true
 
 ## Remote Rendering Using Docker
 
-Instead of installing and running the image renderer as a plugin, you can run it as a remote image rendering service using Docker. Read more about [remote rendering using Docker](https://github.com/grafana/grafana-image-renderer/blob/master/docs/remote_rendering_using_docker.md).
+Instead of installing and running the image renderer as a plugin, you can run it as a remote image rendering service using Docker. Read more about [remote rendering using Docker](https://github.com/grafana/grafana-image-renderer/blob/v1.x/docs/remote_rendering_using_docker.md).
 
 ## Troubleshooting
 
@@ -87,8 +87,8 @@ For troubleshooting help, please refer to [Grafana Image Rendering documentation
 
 ## Building from source
 
-See [Building from source](https://github.com/grafana/grafana-image-renderer/blob/master/docs/building_from_source.md).
+See [Building from source](https://github.com/grafana/grafana-image-renderer/blob/v1.x/docs/building_from_source.md).
 
 ## Additional information
 
-See [docs](https://github.com/grafana/grafana-image-renderer/blob/master/docs/index.md).
+See [docs](https://github.com/grafana/grafana-image-renderer/blob/v1.x/docs/index.md).
