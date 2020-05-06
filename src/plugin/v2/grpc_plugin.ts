@@ -1,4 +1,4 @@
-import * as grpc from 'grpc';
+import * as grpc from '@grpc/grpc-js';
 import * as protoLoader from '@grpc/proto-loader';
 import * as promClient from 'prom-client';
 import { GrpcPlugin } from '../../node-plugin';
@@ -42,7 +42,74 @@ export class RenderGRPCPluginV2 implements GrpcPlugin {
 
   async grpcServer(server: grpc.Server) {
     const browser = createBrowser(this.config.rendering, this.log);
-    const pluginService = new PluginGRPCServer(browser, this.log);
+    let browserVersion = 'unknown';
+    let labelValue = 1;
+    try {
+      browserVersion = await browser.getBrowserVersion();
+    } catch (err) {
+      this.log.error('Failed to get browser version', 'err', err);
+      labelValue = 0;
+    }
+    if (browserVersion !== 'unknown') {
+      this.log.debug('Using browser version', 'browserVersion', browserVersion);
+    }
+    const pluginService = {
+      render(call: grpc.ServerUnaryCall<RenderRequest, any>, callback: grpc.sendUnaryData<RenderResponse>) {
+        const req = call.request;
+        if (req == null) {
+          callback(new Error('Request must be supplied'), null);
+          return;
+        }
+
+        const headers: HTTPHeaders = {};
+
+        if (req.headers) {
+          for (const key in req.headers) {
+            if (req.headers.hasOwnProperty(key)) {
+              const h = req.headers[key];
+              headers[key] = h.values.join(';');
+            }
+          }
+        }
+
+        const options: RenderOptions = {
+          url: req.url,
+          width: req.width,
+          height: req.height,
+          filePath: req.filePath,
+          timeout: req.timeout,
+          renderKey: req.renderKey,
+          domain: req.domain,
+          timezone: req.timezone,
+          deviceScaleFactor: req.deviceScaleFactor,
+          headers: headers,
+        };
+
+        this.log.debug('Render request received', 'url', options.url);
+        browser.render(options).then(
+          () => {
+            callback(null, { error: '' });
+          },
+          err => {
+            this.log.error('Render request failed', 'url', options.url, 'error', err.toString());
+            callback(null, { error: err.toString() });
+          }
+        );
+      },
+      checkHealth(call: grpc.ServerUnaryCall<CheckHealthRequest, any>, callback: grpc.sendUnaryData<CheckHealthResponse>) {
+        const jsonDetails = Buffer.from(
+          JSON.stringify({
+            browserVersion,
+          })
+        );
+
+        callback(null, { status: HealthStatus.OK, message: 'Success', jsonDetails: jsonDetails });
+      },
+      collectMetrics(_: grpc.ServerUnaryCall<CollectMetricsRequest, any>, callback: grpc.sendUnaryData<CollectMetricsResponse>) {
+        const payload = Buffer.from(promClient.register.metrics());
+        callback(null, { metrics: { prometheus: payload } });
+      },
+    };
 
     const rendererServiceDef = rendererV2ProtoDescriptor['pluginextensionv2']['Renderer']['service'];
     server.addService(rendererServiceDef, pluginService);
@@ -52,85 +119,9 @@ export class RenderGRPCPluginV2 implements GrpcPlugin {
 
     const metrics = setupMetrics();
     metrics.up.set(1);
-
-    let browserVersion = 'unknown';
-    let labelValue = 1;
-
-    try {
-      browserVersion = await browser.getBrowserVersion();
-    } catch (err) {
-      this.log.error('Failed to get browser version', 'err', err);
-      labelValue = 0;
-    }
     metrics.browserInfo.labels(browserVersion).set(labelValue);
-    if (browserVersion !== 'unknown') {
-      this.log.debug('Using browser version', 'browserVersion', browserVersion);
-    }
 
-    await pluginService.start(browserVersion);
-  }
-}
-
-class PluginGRPCServer {
-  private browserVersion: string | undefined;
-
-  constructor(private browser: Browser, private log: Logger) {}
-
-  async start(browserVersion?: string) {
-    this.browserVersion = browserVersion;
-    await this.browser.start();
-  }
-
-  async render(call: grpc.ServerUnaryCall<RenderRequest>, callback: grpc.sendUnaryData<RenderResponse>) {
-    const req = call.request;
-    const headers: HTTPHeaders = {};
-
-    if (req.headers) {
-      for (const key in req.headers) {
-        if (req.headers.hasOwnProperty(key)) {
-          const h = req.headers[key];
-          headers[key] = h.values.join(';');
-        }
-      }
-    }
-
-    const options: RenderOptions = {
-      url: req.url,
-      width: req.width,
-      height: req.height,
-      filePath: req.filePath,
-      timeout: req.timeout,
-      renderKey: req.renderKey,
-      domain: req.domain,
-      timezone: req.timezone,
-      deviceScaleFactor: req.deviceScaleFactor,
-      headers: headers,
-    };
-
-    this.log.debug('Render request received', 'url', options.url);
-    let errStr = '';
-    try {
-      await this.browser.render(options);
-    } catch (err) {
-      this.log.error('Render request failed', 'url', options.url, 'error', err.toString());
-      errStr = err.toString();
-    }
-    callback(null, { error: errStr });
-  }
-
-  async checkHealth(_: grpc.ServerUnaryCall<CheckHealthRequest>, callback: grpc.sendUnaryData<CheckHealthResponse>) {
-    const jsonDetails = Buffer.from(
-      JSON.stringify({
-        browserVersion: this.browserVersion,
-      })
-    );
-
-    callback(null, { status: HealthStatus.OK, message: 'Success', jsonDetails: jsonDetails });
-  }
-
-  async collectMetrics(_: grpc.ServerUnaryCall<CollectMetricsRequest>, callback: grpc.sendUnaryData<CollectMetricsResponse>) {
-    const payload = Buffer.from(promClient.register.metrics());
-    callback(null, { metrics: { prometheus: payload } });
+    await browser.start();
   }
 }
 

@@ -1,7 +1,8 @@
-import * as grpc from 'grpc';
+import * as grpc from '@grpc/grpc-js';
 import * as protoLoader from '@grpc/proto-loader';
 import { coreProtocolVersion, PluginSet, VersionedPluginSet, ServeConfig } from './types';
 import { PluginLogger } from '../../logger';
+import util from 'util';
 
 export const healthPackageDef = protoLoader.loadSync(__dirname + '/../../../proto/health.proto', {
   keepCase: true,
@@ -81,7 +82,7 @@ const protocolVersion = (opts: ServeConfig): ProtocolNegotiation => {
   };
 };
 
-export const serve = (opts: ServeConfig) => {
+export const serve = async (opts: ServeConfig) => {
   const env = Object.assign({}, process.env);
   opts.logger = opts.logger || new PluginLogger();
 
@@ -121,7 +122,7 @@ export const serve = (opts: ServeConfig) => {
   opts.grpcPort = opts.grpcPort || 0;
 
   const address = `${opts.grpcHost}:${opts.grpcPort}`;
-  const boundPortNumber = server.bind(address, grpc.ServerCredentials.createInsecure());
+  const boundPortNumber = await util.promisify(server.bindAsync).bind(server)(address, grpc.ServerCredentials.createInsecure());
   if (boundPortNumber === 0) {
     throw new Error(`failed to bind address=${address}, boundPortNumber=${boundPortNumber}`);
   }
