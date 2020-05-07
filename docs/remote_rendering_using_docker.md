@@ -84,6 +84,28 @@ Additional arguments to pass to the headless browser instance. Default is `--no-
 RENDERING_ARGS=--no-sandbox,--disable-setuid-sandbox,--disable-dev-shm-usage,--disable-accelerated-2d-canvas,--disable-gpu,--window-size=1280x758
 ```
 
+**Change how browser instances are created:**
+
+You can instruct how headless browser instances are created by configuring a rendering mode (`RENDERING_MODE`). Default is `default` and will create a new browser instance on each request. Other supported values are `clustered` and `reusable`.
+
+```bash
+RENDERING_MODE=default
+```
+
+When using `clustered` you can configure a clustering mode to define how many browser instances or incognito pages that can execute concurrently. Default is `browser` and will ensure a maximum amount of browser instances can execute concurrently. Mode `context` will ensure a maximum amount of incognito pages can execute concurrently. You can also configure the maximum concurrency allowed which per default is `5`.
+
+```bash
+RENDERING_MODE=clustered
+RENDERING_CLUSTERING_MODE=default
+RENDERING_CLUSTERING_MAX_CONCURRENCY=5
+```
+
+When using the rendering mode `reusable` one browser instance will be created and reused. A new incognito page will be opened on each request for. This mode is a bit experimental since if the browser instance crashes it will not automatically be restarted.
+
+```bash
+RENDERING_MODE=reusable
+```
+
 ## Configuration file
 
 You can override certain settings by using a configuration file, see [default.json](https://github.com/grafana/grafana-image-renderer/tree/master/default.json) for defaults. Note that any configured environment variable takes precedence over configuration file settings.
@@ -94,6 +116,8 @@ You can volume mount your custom configuration file when starting the docker con
 docker run -d --name=renderer --network=host -v /some/path/config.json:/usr/src/app/config.json grafana/grafana-image-renderer:latest
 ```
 
+You can see a docker-compose example using a custom configuration file [here/](https://github.com/grafana/grafana-image-renderer/tree/master/devenv/docker/custom-config).
+
 ## Docker Compose example
 
 The following docker-compose example can also be found in [docker/](https://github.com/grafana/grafana-image-renderer/tree/master/devenv/docker/simple).
@@ -103,9 +127,9 @@ version: '2'
 
 services:
   grafana:
-    image: grafana/grafana:master
+    image: grafana/grafana:latest
     ports:
-     - "3000:3000"
+      - 3000
     environment:
       GF_RENDERING_SERVER_URL: http://renderer:8081/render
       GF_RENDERING_CALLBACK_URL: http://grafana:3000/
@@ -114,6 +138,8 @@ services:
     image: grafana/grafana-image-renderer:latest
     ports:
       - 8081
+    environment:
+      ENABLE_METRICS: 'true'
 ```
 
 1. Start containers:
@@ -124,7 +150,11 @@ services:
 3. Create a dashboard, add a panel and save the dashboard.
 4. Panel context menu -> Share -> Direct link rendered image
 
-## Prometheus metrics endpoint output example
+## Enable Prometheus metrics endpoint
+
+The service can be configured to expose a Prometheus metrics endpoint. There's [dashboard](https://grafana.com/grafana/dashboards/12203) published that explains the details of how to configure and monitor the rendering service using Prometheus as a data source.
+
+**Metrics endpoint output example:**
 
 ```
 # HELP process_cpu_user_seconds_total Total user CPU time spent in seconds.
