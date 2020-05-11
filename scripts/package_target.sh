@@ -25,11 +25,11 @@ if [ $? != 0 ]; then
    echo "${?}\n". 1>&2 && exit 1
 fi
 
-node scripts/download_grpc.js ${ARCH} ${OUT}
+# node scripts/download_grpc.js ${ARCH} ${OUT}
 
-if [ $? != 0 ]; then
-   echo "${?}\n". 1>&2 && exit 1
-fi
+# if [ $? != 0 ]; then
+#    echo "${?}\n". 1>&2 && exit 1
+# fi
 
 node scripts/rename_executable.js ${ARCH} ${OUT}
 
