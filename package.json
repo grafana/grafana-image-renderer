@@ -39,7 +39,7 @@
     "@types/node": "^10.0.9",
     "husky": "^3.1.0",
     "lint-staged": "^9.5.0",
-    "pkg": "4.3.8",
+    "pkg": "4.4.8",
     "prettier": "^1.19.1",
     "tsc-watch": "^4.2.3",
     "tslint": "^6.1.1",
