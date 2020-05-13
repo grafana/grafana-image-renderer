@@ -7,7 +7,13 @@ option go_package = ".;pluginv2";
 // Common
 //-----------------------------------------------
 
-message DataSourceConfig {
+message AppInstanceSettings {
+  bytes jsonData = 3;
+  map<string,string> decryptedSecureJsonData = 4;
+  int64 lastUpdatedMS = 5;
+}
+
+message DataSourceInstanceSettings {
   int64 id = 1;
   string name = 2;
   string url = 3;
@@ -15,27 +21,9 @@ message DataSourceConfig {
   string database = 5;
   bool basicAuthEnabled = 6;
   string basicAuthUser = 7;
-
-  // from [data_source.json_data] field in the database
   bytes jsonData = 8;
-
-  // from [data_source.secure_json_data] field in the database
   map<string,string> decryptedSecureJsonData = 9;
   int64 lastUpdatedMS = 10;
-}
-
-message PluginConfig {
-  int64 orgId = 1;
-  string pluginId = 2;
-
-  // from [plugin_setting.json_data] field in the database
-  bytes jsonData = 3;
-
-  // from [plugin_setting.secure_json_data] field in the database
-  map<string,string> decryptedSecureJsonData = 4;
-  int64 lastUpdatedMS = 5;
-
-  DataSourceConfig datasourceConfig = 6;
 }
 
 message User {
@@ -43,6 +31,33 @@ message User {
   string name = 2;
   string email = 3;
   string role = 4;
+}
+
+message PluginContext {
+  // The Grafana organization id the request originating from.
+  int64 orgId = 1;
+
+  // The unique identifier of the plugin the request  originating from.
+  string pluginId = 2;
+
+  // The Grafana user the request originating from.
+  //
+  // Will not be provided if Grafana backend initiated the request.
+  User user = 3;
+
+  // App plugin instance settings is the configured app instance settings.
+  // In Grafana an app instance is an enabled app plugin in a
+  // Grafana organization.
+  //
+  // Will only be set if request targeting an app instance.
+  AppInstanceSettings appInstanceSettings = 4;
+
+  // Data source instance settings is the configured data source instance
+  // settings. In Grafana a data source instance is a created data source
+  // in a Grafana organization.
+  //
+  // Will only be set if request targeting a data source instance.
+  DataSourceInstanceSettings dataSourceInstanceSettings = 5;
 }
 
 //---------------------------------------------------------
@@ -58,13 +73,12 @@ message StringList {
 }
 
 message CallResourceRequest {
-  PluginConfig config = 1;
-  User user = 2;
-  string path = 3;
-  string method = 4;
-  string url = 5;
-  map<string,StringList> headers = 6;
-  bytes body = 7;
+  PluginContext pluginContext = 1;
+  string path = 2;
+  string method = 3;
+  string url = 4;
+  map<string,StringList> headers = 5;
+  bytes body = 6;
 }
 
 message CallResourceResponse {
@@ -92,21 +106,18 @@ message DataQuery {
   int64 intervalMS = 3;
   TimeRange timeRange = 4;
   bytes json = 5;
+  string queryType = 6;
 }
 
 // QueryDataRequest
 message QueryDataRequest {
-  // Plugin Configuration
-  PluginConfig config = 1;
-
-  //Info about the user who calls the plugin.
-  User user = 2;
+  PluginContext pluginContext = 1;
 
   // Environment info
-  map<string,string> headers = 3;
+  map<string,string> headers = 2;
 
   // List of data queries
-  repeated DataQuery queries = 4;
+  repeated DataQuery queries = 3;
 }
 
 message QueryDataResponse {
@@ -132,6 +143,7 @@ service Diagnostics {
 }
 
 message CollectMetricsRequest {
+  PluginContext pluginContext = 1;
 }
 
 message CollectMetricsResponse {
@@ -143,7 +155,7 @@ message CollectMetricsResponse {
 }
 
 message CheckHealthRequest {
-  PluginConfig config = 1;
+  PluginContext pluginContext = 1;
 }
 
 message CheckHealthResponse {

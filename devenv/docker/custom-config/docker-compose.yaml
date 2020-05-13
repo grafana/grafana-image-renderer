@@ -13,5 +13,5 @@ services:
     image: grafana/grafana-image-renderer:latest
     ports:
       - 8081
-    environment:
-      ENABLE_METRICS: 'true'
+    volumes:
+      - ./config.json:/usr/src/app/config.json
