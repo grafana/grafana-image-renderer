@@ -29,7 +29,7 @@ async function main() {
       config.rendering.chromeBin = [path.dirname(process.execPath), ...parts].join(path.sep);
     }
 
-    serve({
+    await serve({
       handshakeConfig: {
         protocolVersion: 2,
         magicCookieKey: 'grafana_plugin_type',

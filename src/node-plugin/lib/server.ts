@@ -1,4 +1,4 @@
-import * as grpc from 'grpc';
+import * as grpc from '@grpc/grpc-js';
 import * as protoLoader from '@grpc/proto-loader';
 import { coreProtocolVersion, PluginSet, VersionedPluginSet, ServeConfig } from './types';
 import { PluginLogger } from '../../logger';
@@ -81,7 +81,7 @@ const protocolVersion = (opts: ServeConfig): ProtocolNegotiation => {
   };
 };
 
-export const serve = (opts: ServeConfig) => {
+export const serve = async (opts: ServeConfig) => {
   const env = Object.assign({}, process.env);
   opts.logger = opts.logger || new PluginLogger();
 
@@ -113,19 +113,26 @@ export const serve = (opts: ServeConfig) => {
   for (const key in pluginSet) {
     if (pluginSet.hasOwnProperty(key)) {
       const p = pluginSet[key];
-      p.grpcServer(server);
+      await p.grpcServer(server);
     }
   }
 
   opts.grpcHost = opts.grpcHost || '127.0.0.1';
   opts.grpcPort = opts.grpcPort || 0;
 
-  const address = `${opts.grpcHost}:${opts.grpcPort}`;
-  const boundPortNumber = server.bind(address, grpc.ServerCredentials.createInsecure());
-  if (boundPortNumber === 0) {
-    throw new Error(`failed to bind address=${address}, boundPortNumber=${boundPortNumber}`);
-  }
+  return new Promise<void>((resolve, reject) => {
+    const address = `${opts.grpcHost}:${opts.grpcPort}`;
+    server.bindAsync(address, grpc.ServerCredentials.createInsecure(), (error: Error | null, port: number) => {
+      if (error) {
+        reject(error);
+      }
+      if (port === 0) {
+        reject(new Error(`failed to bind address=${address}, boundPortNumber=${port}`));
+      }
 
-  server.start();
-  console.log(`${coreProtocolVersion}|${protoVersion}|tcp|${opts.grpcHost}:${boundPortNumber}|grpc`);
+      server.start();
+      console.log(`${coreProtocolVersion}|${protoVersion}|tcp|${opts.grpcHost}:${port}|grpc`);
+      resolve();
+    });
+  });
 };

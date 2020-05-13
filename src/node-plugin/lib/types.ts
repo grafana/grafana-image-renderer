@@ -1,4 +1,4 @@
-import * as grpc from 'grpc';
+import * as grpc from '@grpc/grpc-js';
 import { Logger } from '../../logger';
 
 export interface GrpcPlugin {

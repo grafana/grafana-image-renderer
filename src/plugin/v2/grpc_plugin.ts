@@ -1,4 +1,4 @@
-import * as grpc from 'grpc';
+import * as grpc from '@grpc/grpc-js';
 import * as protoLoader from '@grpc/proto-loader';
 import * as promClient from 'prom-client';
 import { GrpcPlugin } from '../../node-plugin';
@@ -45,10 +45,10 @@ export class RenderGRPCPluginV2 implements GrpcPlugin {
     const pluginService = new PluginGRPCServer(browser, this.log);
 
     const rendererServiceDef = rendererV2ProtoDescriptor['pluginextensionv2']['Renderer']['service'];
-    server.addService(rendererServiceDef, pluginService);
+    server.addService(rendererServiceDef, pluginService as any);
 
     const pluginServiceDef = pluginV2ProtoDescriptor['pluginv2']['Diagnostics']['service'];
-    server.addService(pluginServiceDef, pluginService);
+    server.addService(pluginServiceDef, pluginService as any);
 
     const metrics = setupMetrics();
     metrics.up.set(1);
@@ -81,9 +81,13 @@ class PluginGRPCServer {
     await this.browser.start();
   }
 
-  async render(call: grpc.ServerUnaryCall<RenderRequest>, callback: grpc.sendUnaryData<RenderResponse>) {
+  async render(call: grpc.ServerUnaryCall<RenderRequest, any>, callback: grpc.sendUnaryData<RenderResponse>) {
     const req = call.request;
     const headers: HTTPHeaders = {};
+
+    if (!req) {
+      throw new Error('Request cannot be null');
+    }
 
     if (req.headers) {
       for (const key in req.headers) {
@@ -118,7 +122,7 @@ class PluginGRPCServer {
     callback(null, { error: errStr });
   }
 
-  async checkHealth(_: grpc.ServerUnaryCall<CheckHealthRequest>, callback: grpc.sendUnaryData<CheckHealthResponse>) {
+  async checkHealth(_: grpc.ServerUnaryCall<CheckHealthRequest, any>, callback: grpc.sendUnaryData<CheckHealthResponse>) {
     const jsonDetails = Buffer.from(
       JSON.stringify({
         browserVersion: this.browserVersion,
@@ -128,7 +132,7 @@ class PluginGRPCServer {
     callback(null, { status: HealthStatus.OK, message: 'Success', jsonDetails: jsonDetails });
   }
 
-  async collectMetrics(_: grpc.ServerUnaryCall<CollectMetricsRequest>, callback: grpc.sendUnaryData<CollectMetricsResponse>) {
+  async collectMetrics(_: grpc.ServerUnaryCall<CollectMetricsRequest, any>, callback: grpc.sendUnaryData<CollectMetricsResponse>) {
     const payload = Buffer.from(promClient.register.metrics());
     callback(null, { metrics: { prometheus: payload } });
   }
