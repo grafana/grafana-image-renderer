@@ -139,7 +139,7 @@ FROM grafana/grafana-image-renderer:latest
 RUN apk add --no-cache nss-tools 
 # not required, useful for debugging
 RUN apk add --no-cache curl 
-ADD myCA-root-certificate.pem /usr/local/share/ca-certificates/rootCA.crt
+ADD internal-root-ca.crt.pem /usr/local/share/ca-certificates/rootCA.crt
 RUN chmod 644 /usr/local/share/ca-certificates/rootCA.crt 
 RUN /usr/sbin/update-ca-certificates
 # register root cert with Network Security Services, which is used by Chromium
