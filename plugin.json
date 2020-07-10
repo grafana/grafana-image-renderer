@@ -3,6 +3,8 @@
   "name": "Grafana Image Renderer",
   "id": "grafana-image-renderer",
 
+  "backend": true,
+
   "info": {
     "description": "Grafana Backend Image Renderer that uses headless chrome to capture images.",
     "author": {

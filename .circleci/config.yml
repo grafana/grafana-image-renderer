@@ -1,4 +1,4 @@
-version: 2
+version: 2.1
 
 aliases:
   - &filter-not-release-or-master
@@ -14,6 +14,18 @@ defaults: &defaults
   working_directory: ~/grafana-image-renderer
   docker:
     - image: circleci/node:12.13.1-stretch
+
+commands:
+  install-grabpl:
+    description: "Install Grafana build pipeline tool"
+    steps:
+      - run:
+          name: "Install Grafana build pipeline tool"
+          command: |
+            VERSION=0.4.22
+            curl -fLO https://grafana-downloads.storage.googleapis.com/grafana-build-pipeline/v${VERSION}/grabpl
+            chmod +x grabpl
+            mv grabpl /tmp
 
 jobs:
   build:
@@ -39,7 +51,17 @@ jobs:
           paths:
             - build/*
 
-  package_linux_x64:
+  package:
+    description: "Package plugin"
+    parameters:
+      arch:
+        type: string
+      skip_chromium:
+        type: boolean
+        default: false
+      override_output:
+        type: string
+        default: ''
     <<: *defaults
     steps:
       - checkout
@@ -53,88 +75,29 @@ jobs:
           command: 'yarn install --pure-lockfile --no-progress'
       - run:
           name: Package
-          command: './scripts/package_target.sh linux-x64-glibc'
+          command: |
+            if [ << parameters.skip_chromium >> = true ]; then
+              ./scripts/package_target.sh << parameters.arch >> true << parameters.override_output >>
+            else
+              ./scripts/package_target.sh << parameters.arch >>
+            fi
+      - install-grabpl
+      - run:
+          name: Create and sign plugin manifest
+          command: |
+            if [ << parameters.skip_chromium >> = true ]; then
+              /tmp/grabpl build-plugin-manifest ./dist/<< parameters.override_output >>
+            else
+              /tmp/grabpl build-plugin-manifest ./dist/plugin-<< parameters.arch >>
+            fi
       - run:
           name: Archive
-          command: './scripts/archive_target.sh linux-x64-glibc'
-      - persist_to_workspace:
-          root: .
-          paths:
-            - dist/*
-            - artifacts/*
-      - store_artifacts:
-          path: artifacts
-
-  package_darwin_x64:
-    <<: *defaults
-    steps:
-      - checkout
-      - attach_workspace:
-          at: .
-      - restore_cache:
-          keys:
-            - dependency-cache-{{ checksum "yarn.lock" }}
-      - run:
-          name: Install dependencies
-          command: 'yarn install --pure-lockfile --no-progress'
-      - run:
-          name: Package
-          command: './scripts/package_target.sh darwin-x64-unknown'
-      - run:
-          name: Archive
-          command: './scripts/archive_target.sh darwin-x64-unknown'
-      - persist_to_workspace:
-          root: .
-          paths:
-            - dist/*
-            - artifacts/*
-      - store_artifacts:
-          path: artifacts
-
-  package_windows_x64:
-    <<: *defaults
-    steps:
-      - checkout
-      - attach_workspace:
-          at: .
-      - restore_cache:
-          keys:
-            - dependency-cache-{{ checksum "yarn.lock" }}
-      - run:
-          name: Install dependencies
-          command: 'yarn install --pure-lockfile --no-progress'
-      - run:
-          name: Package
-          command: './scripts/package_target.sh win32-x64-unknown'
-      - run:
-          name: Archive
-          command: './scripts/archive_target.sh win32-x64-unknown'
-      - persist_to_workspace:
-          root: .
-          paths:
-            - dist/*
-            - artifacts/*
-      - store_artifacts:
-          path: artifacts
-
-  package_linux_x64_no_chromium:
-    <<: *defaults
-    steps:
-      - checkout
-      - attach_workspace:
-          at: .
-      - restore_cache:
-          keys:
-            - dependency-cache-{{ checksum "yarn.lock" }}
-      - run:
-          name: Install dependencies
-          command: 'yarn install --pure-lockfile --no-progress'
-      - run:
-          name: Package
-          command: './scripts/package_target.sh linux-x64-glibc true plugin-linux-x64-glibc-no-chromium'
-      - run:
-          name: Archive
-          command: './scripts/archive_target.sh linux-x64-glibc plugin-linux-x64-glibc-no-chromium'
+          command: |
+            if [ << parameters.skip_chromium >> = true ]; then
+              ./scripts/archive_target.sh << parameters.arch >> << parameters.override_output >>
+            else
+              ./scripts/archive_target.sh << parameters.arch >>
+            fi
       - persist_to_workspace:
           root: .
           paths:
@@ -183,30 +146,30 @@ workflows:
     jobs:
       - build:
           filters: *filter-only-master
-      - package_linux_x64:
+      - package:
+          filters: *filter-only-master
           requires:
             - build
+          name: package-<< matrix.arch >>
+          matrix:
+            parameters:
+              arch: [linux-x64-glibc, darwin-x64-unknown, win32-x64-unknown]
+      - package:
           filters: *filter-only-master
-      - package_darwin_x64:
           requires:
             - build
-          filters: *filter-only-master
-      - package_windows_x64:
-          requires:
-            - build
-          filters: *filter-only-master
-      - package_linux_x64_no_chromium:
-          requires:
-            - build
-          filters: *filter-only-master
+          name: package-linux-x64-glibc-no-chromium
+          arch: linux-x64-glibc
+          skip_chromium: true
+          override_output: plugin-linux-x64-glibc-no-chromium
       - approve-release:
           type: approval
           requires:
             - build
-            - package_linux_x64
-            - package_darwin_x64
-            - package_windows_x64
-            - package_linux_x64_no_chromium
+            - package-linux-x64-glibc
+            - package-darwin-x64-unknown
+            - package-win32-x64-unknown
+            - package-linux-x64-glibc-no-chromium
           filters: *filter-only-master
       - publish-github-release:
           requires:
@@ -221,3 +184,19 @@ workflows:
     jobs:
       - build:
           filters: *filter-not-release-or-master
+      - package:
+          filters: *filter-not-release-or-master
+          requires:
+            - build
+          name: package-<< matrix.arch >>
+          matrix:
+            parameters:
+              arch: [linux-x64-glibc, darwin-x64-unknown, win32-x64-unknown]
+      - package:
+          filters: *filter-not-release-or-master
+          requires:
+            - build
+          name: package-linux-x64-glibc-no-chromium
+          arch: linux-x64-glibc
+          skip_chromium: true
+          override_output: plugin-linux-x64-glibc-no-chromium
