@@ -24,7 +24,7 @@
     "express": "^4.16.3",
     "express-prom-bundle": "^5.1.5",
     "google-protobuf": "3.5.0",
-    "lodash": "^4.17.15",
+    "lodash": "^4.17.19",
     "minimist": "^1.2.0",
     "morgan": "^1.9.0",
     "mz": "^2.7.0",
