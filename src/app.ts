@@ -158,6 +158,10 @@ function populateServiceConfigFromEnv(config: ServiceConfig, env: NodeJS.Process
     config.rendering.verboseLogging = env['RENDERING_VERBOSE_LOGGING'] === 'true';
   }
 
+  if (env['RENDERING_DEFAULT_TIMEOUT']) {
+    config.rendering.defaultTimeout = parseInt(env['RENDERING_DEFAULT_TIMEOUT'] as string, 10);
+  }
+
   if (env['RENDERING_DUMPIO']) {
     config.rendering.dumpio = env['RENDERING_DUMPIO'] === 'true';
   }

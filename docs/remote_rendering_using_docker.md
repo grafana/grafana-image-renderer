@@ -76,6 +76,15 @@ This can be useful to enable (`true`) when troubleshooting.
 RENDERING_DUMPIO=true
 ```
 
+**Change the browser timeout**
+
+Sets the default maximum time (in milliseconds) for the browser to perform actions like make upstream HTTP requests. Default is 30000.
+
+```bash
+RENDERING_DEFAULT_TIMEOUT=10000
+```
+
+
 **Start browser with additional arguments:**
 
 Additional arguments to pass to the headless browser instance. Default is `--no-sandbox`. The list of Chromium flags can be found [here](https://peter.sh/experiments/chromium-command-line-switches/). Multiple arguments is separated with comma-character.

@@ -17,6 +17,7 @@ export interface RenderingConfig {
   maxWidth: number;
   maxHeight: number;
   maxDeviceScaleFactor: number;
+  defaultTimeout: number;
   mode: string;
   clustering: ClusteringConfig;
   verboseLogging: boolean;
@@ -72,6 +73,7 @@ const defaultRenderingConfig: RenderingConfig = {
   maxWidth: 3000,
   maxHeight: 3000,
   maxDeviceScaleFactor: 3,
+  defaultTimeout: 30000,
   mode: 'default',
   clustering: {
     mode: 'browser',

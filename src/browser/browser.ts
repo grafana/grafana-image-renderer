@@ -161,6 +161,9 @@ export class Browser {
       domain: options.domain,
     });
 
+    this.log.debug(`Setting default timeout`, this.config.defaultTimeout);
+    await page.setDefaultTimeout(this.config.defaultTimeout);
+
     if (options.headers && Object.keys(options.headers).length > 0) {
       this.log.debug(`Setting extra HTTP headers for page`, 'headers', options.headers);
       await page.setExtraHTTPHeaders(options.headers);
