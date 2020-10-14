@@ -150,6 +150,16 @@ services:
 3. Create a dashboard, add a panel and save the dashboard.
 4. Panel context menu -> Share -> Direct link rendered image
 
+## Enable in Grafana Helm chart
+
+The [Helm chart](https://github.com/grafana/helm-charts/tree/main/charts/grafana#image-renderer-plug-in) supports directly enabling a remote image renderer deployment.
+
+```bash
+helm install --name my-grafana grafana/grafana \
+  --set imageRenderer.enabled=true \
+  --set imageRenderer.env.RENDERING_ARGS=--no-sandbox,--disable-setuid-sandbox
+```
+
 ## Enable Prometheus metrics endpoint
 
 The service can be configured to expose a Prometheus metrics endpoint. There's [dashboard](https://grafana.com/grafana/dashboards/12203) published that explains the details of how to configure and monitor the rendering service using Prometheus as a data source.

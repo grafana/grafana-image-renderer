@@ -43,6 +43,10 @@ For available configuration settings, please refer to [Grafana Image Rendering d
 
 Instead of installing and running the image renderer as a plugin, you can run it as a remote image rendering service using Docker. Read more about [remote rendering using Docker](https://github.com/grafana/grafana-image-renderer/blob/master/docs/remote_rendering_using_docker.md).
 
+### Remote rendering in Kubernetes
+
+The Grafana [Helm chart](https://github.com/grafana/helm-charts/tree/main/charts/grafana) supports creating a remote renderer by setting `imageRenderer.enabled = true`. Settings are configured in the same way as [remote rendering using Docker](https://github.com/grafana/grafana-image-renderer/blob/master/docs/remote_rendering_using_docker.md).
+
 ## Troubleshooting
 
 For troubleshooting help, please refer to [Grafana Image Rendering documentation](https://grafana.com/docs/administration/image_rendering/#troubleshooting).
