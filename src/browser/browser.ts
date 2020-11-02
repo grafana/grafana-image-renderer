@@ -3,6 +3,7 @@ import * as uniqueFilename from 'unique-filename';
 import * as puppeteer from 'puppeteer';
 import { Logger } from '../logger';
 import { RenderingConfig } from '../config';
+import CancellationToken from 'cancellationtoken';
 
 export interface HTTPHeaders {
   'Accept-Language'?: string;
@@ -111,7 +112,7 @@ export class Browser {
     return launcherOptions;
   }
 
-  async render(options: RenderOptions): Promise<RenderResponse> {
+  async render(token: CancellationToken, options: RenderOptions): Promise<RenderResponse> {
     let browser;
     let page: any;
 
@@ -120,6 +121,17 @@ export class Browser {
       const launcherOptions = this.getLauncherOptions(options);
       browser = await puppeteer.launch(launcherOptions);
       page = await browser.newPage();
+
+      token.onCancelled(async (reason?: any) => {
+        if (page) {
+          this.removePageListeners(page);
+          await page.close();
+        }
+        if (browser) {
+          await browser.close();
+        }
+      });
+
       this.addPageListeners(page);
 
       return await this.takeScreenshot(page, options);

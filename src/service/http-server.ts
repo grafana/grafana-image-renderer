@@ -9,6 +9,7 @@ import { Browser } from '../browser';
 import { ServiceConfig } from '../config';
 import { metricsMiddleware } from './metrics_middleware';
 import { RenderOptions, HTTPHeaders } from '../browser/browser';
+import CancellationToken from 'cancellationtoken';
 
 export class HttpServer {
   app: express.Express;
@@ -91,6 +92,8 @@ export class HttpServer {
       headers['Accept-Language'] = (req.headers['Accept-Language'] as string[]).join(';');
     }
 
+    const { cancel, token } = CancellationToken.create();
+
     const options: RenderOptions = {
       url: req.query.url,
       width: req.query.width,
@@ -109,7 +112,7 @@ export class HttpServer {
     req.on('close', err => {
       this.log.debug('Connection closed', 'url', options.url, 'error', err);
     });
-    const result = await this.browser.render(options);
+    const result = await this.browser.render(token, options);
     res.sendFile(result.filePath, err => {
       if (err) {
         next(err);

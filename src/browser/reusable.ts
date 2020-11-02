@@ -2,6 +2,7 @@ import * as puppeteer from 'puppeteer';
 import { Browser, RenderResponse, RenderOptions } from './browser';
 import { Logger } from '../logger';
 import { RenderingConfig } from '../config';
+import CancellationToken from 'cancellationtoken';
 
 export class ReusableBrowser extends Browser {
   browser: puppeteer.Browser;
@@ -15,7 +16,7 @@ export class ReusableBrowser extends Browser {
     this.browser = await puppeteer.launch(launcherOptions);
   }
 
-  async render(options: RenderOptions): Promise<RenderResponse> {
+  async render(token: CancellationToken, options: RenderOptions): Promise<RenderResponse> {
     let context: puppeteer.BrowserContext | undefined;
     let page: puppeteer.Page | undefined;
 

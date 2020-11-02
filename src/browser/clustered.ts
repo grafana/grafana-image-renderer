@@ -2,6 +2,7 @@ import { Cluster } from 'puppeteer-cluster';
 import { Browser, RenderResponse, RenderOptions } from './browser';
 import { Logger } from '../logger';
 import { RenderingConfig, ClusteringConfig } from '../config';
+import CancellationToken from 'cancellationtoken';
 
 export class ClusteredBrowser extends Browser {
   cluster: Cluster<any, RenderResponse>;
@@ -41,7 +42,7 @@ export class ClusteredBrowser extends Browser {
     });
   }
 
-  async render(options: RenderOptions): Promise<RenderResponse> {
+  async render(token: CancellationToken, options: RenderOptions): Promise<RenderResponse> {
     this.validateOptions(options);
     return await this.cluster.execute(options);
   }

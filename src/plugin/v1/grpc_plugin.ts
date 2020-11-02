@@ -5,6 +5,7 @@ import { Logger } from '../../logger';
 import { PluginConfig } from '../../config';
 import { createBrowser, Browser } from '../../browser';
 import { RenderOptions } from '../../browser/browser';
+import CancellationToken from 'cancellationtoken';
 
 const renderPackageDef = protoLoader.loadSync(__dirname + '/../../../proto/renderer.proto', {
   keepCase: true,
@@ -37,8 +38,10 @@ export class RenderGRPCPluginV1 implements GrpcPlugin {
           encoding: req.encoding,
         };
 
+        const { cancel, token } = CancellationToken.create();
+
         this.log.debug('Render request received', 'url', options.url);
-        browser.render(options).then(
+        browser.render(token, options).then(
           () => {
             callback(null, { error: '' });
           },

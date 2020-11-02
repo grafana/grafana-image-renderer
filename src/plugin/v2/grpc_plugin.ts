@@ -15,6 +15,7 @@ import {
   CollectMetricsResponse,
   HealthStatus,
 } from './types';
+import CancellationToken from 'cancellationtoken';
 
 const rendererV2PackageDef = protoLoader.loadSync(__dirname + '/../../../proto/rendererv2.proto', {
   keepCase: true,
@@ -111,10 +112,30 @@ class PluginGRPCServer {
       headers: headers,
     };
 
+    const { cancel, token } = CancellationToken.create();
+    let done = false;
+
     this.log.debug('Render request received', 'url', options.url);
     let errStr = '';
     try {
-      await this.browser.render(options);
+      const logger = this.log;
+      call.once('error', err => {
+        logger.error('server: got error', 'error', err);
+      });
+
+      call.once('cancelled', () => {
+        logger.info('server: request cancelled', 'cancelled', call.cancelled);
+        if (!done) {
+          cancel('client cancelled');
+        }
+      });
+
+      call.once('end', () => {
+        logger.info('server: request ended', 'cancelled', call.cancelled);
+      });
+
+      await this.browser.render(token, options);
+      done = true;
     } catch (err) {
       this.log.error('Render request failed', 'url', options.url, 'error', err.toString());
       errStr = err.toString();
