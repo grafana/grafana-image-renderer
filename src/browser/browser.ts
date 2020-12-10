@@ -180,32 +180,27 @@ export class Browser {
       this.log.debug('Navigating and waiting for all network requests to finish', 'url', options.url);
     }
 
-    if (!this.hasLoaded) {
-      await page.goto(options.url, { waitUntil: 'networkidle0' });
-      this.hasLoaded = true;
-    } else {
-      await page.evaluate((options: any) => {
-        if (!(window as any).angular) {
-          window.location.href = options.url;
-          return true;
-        }
+    await page.evaluate((options: any) => {
+      if (!(window as any).angular) {
+        window.location.href = options.url;
+        return true;
+      }
 
-        const url = new URL(options.url);
-        const injector = (window as any).angular.element(document.body).injector();
-        const $locationService = injector.get('$location');
+      const url = new URL(options.url);
+      const injector = (window as any).angular.element(document.body).injector();
+      const $locationService = injector.get('$location');
 
-        // const link = document.createElement("a");
-        // link.appendChild(document.createTextNode("text"))
-        // link.href = ""
+      // const link = document.createElement("a");
+      // link.appendChild(document.createTextNode("text"))
+      // link.href = ""
 
-        $locationService.url(url.pathname + url.search);
+      $locationService.url(url.pathname + url.search);
 
-        return new Promise(resolve => {
-          injector.get('$rootScope').$digest();
-          setTimeout(resolve, 50);
-        });
-      }, options);
-    }
+      return new Promise(resolve => {
+        injector.get('$rootScope').$digest();
+        setTimeout(resolve, 50);
+      });
+    }, options);
 
     if (this.config.verboseLogging) {
       this.log.debug('Waiting for dashboard/panel to load', 'timeout', `${options.timeout}s`);
