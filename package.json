@@ -15,7 +15,7 @@
     "precommit": "npm run tslint & npm run typecheck",
     "watch": "tsc-watch --onSuccess \"node build/app.js server --config=dev.json\"",
     "build": "tsc",
-    "start": "node build/app.js --config=dev.json"
+    "start": "node build/app.js server --config=dev.json"
   },
   "dependencies": {
     "@grpc/grpc-js": "^1.0",
@@ -54,10 +54,7 @@
     }
   },
   "lint-staged": {
-    "*.ts": [
-      "prettier --write",
-      "git add"
-    ]
+    "*.ts": ["prettier --write", "git add"]
   },
   "pkg": {
     "assets": "proto/*"

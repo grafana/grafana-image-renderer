@@ -28,6 +28,8 @@ export interface RenderResponse {
 }
 
 export class Browser {
+  hasLoaded: boolean;
+
   constructor(protected config: RenderingConfig, protected log: Logger) {
     this.log.debug('Browser initialized', 'config', this.config);
   }
@@ -146,6 +148,7 @@ export class Browser {
         options.deviceScaleFactor.toString()
       );
     }
+
     await page.setViewport({
       width: options.width,
       height: options.height,
@@ -155,6 +158,7 @@ export class Browser {
     if (this.config.verboseLogging) {
       this.log.debug('Setting cookie for page', 'renderKey', options.renderKey, 'domain', options.domain);
     }
+
     await page.setCookie({
       name: 'renderKey',
       value: options.renderKey,
@@ -169,17 +173,44 @@ export class Browser {
     if (this.config.verboseLogging) {
       this.log.debug('Moving mouse on page', 'x', options.width, 'y', options.height);
     }
+
     await page.mouse.move(options.width, options.height);
 
     if (this.config.verboseLogging) {
       this.log.debug('Navigating and waiting for all network requests to finish', 'url', options.url);
     }
 
-    await page.goto(options.url, { waitUntil: 'networkidle0' });
+    if (!this.hasLoaded) {
+      await page.goto(options.url, { waitUntil: 'networkidle0' });
+      this.hasLoaded = true;
+    } else {
+      await page.evaluate((options: any) => {
+        if (!(window as any).angular) {
+          window.location.href = options.url;
+          return true;
+        }
+
+        const url = new URL(options.url);
+        const injector = (window as any).angular.element(document.body).injector();
+        const $locationService = injector.get('$location');
+
+        // const link = document.createElement("a");
+        // link.appendChild(document.createTextNode("text"))
+        // link.href = ""
+
+        $locationService.url(url.pathname + url.search);
+
+        return new Promise(resolve => {
+          injector.get('$rootScope').$digest();
+          setTimeout(resolve, 50);
+        });
+      }, options);
+    }
 
     if (this.config.verboseLogging) {
       this.log.debug('Waiting for dashboard/panel to load', 'timeout', `${options.timeout}s`);
     }
+
     await page.waitForFunction(
       () => {
         const panelCount = document.querySelectorAll('.panel').length || document.querySelectorAll('.panel-container').length;
