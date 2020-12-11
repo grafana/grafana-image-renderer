@@ -196,6 +196,8 @@ export class Browser {
 
       $locationService.url(url.pathname + url.search);
 
+      (window as any).panelsRendered = 0;
+
       return new Promise(resolve => {
         injector.get('$rootScope').$digest();
         setTimeout(resolve, 50);
