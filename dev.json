@@ -19,10 +19,7 @@
   },
   "rendering": {
     "chromeBin": null,
-    "args": [
-      "--no-sandbox",
-      "--disable-setuid-sandbox"
-    ],
+    "args": ["--no-sandbox", "--disable-setuid-sandbox"],
     "ignoresHttpsErrors": false,
 
     "timezone": null,
@@ -34,7 +31,7 @@
     "maxHeight": 8000,
     "maxDeviceScaleFactor": 10,
 
-    "mode": "default",
+    "mode": "reusable",
     "clustering": {
       "mode": "browser",
       "maxConcurrency": 5

@@ -5,6 +5,7 @@ import { RenderingConfig } from '../config';
 
 export class ReusableBrowser extends Browser {
   browser: puppeteer.Browser;
+  page: puppeteer.Page;
 
   constructor(config: RenderingConfig, log: Logger) {
     super(config, log);
@@ -17,29 +18,36 @@ export class ReusableBrowser extends Browser {
 
   async render(options: RenderOptions): Promise<RenderResponse> {
     let context: puppeteer.BrowserContext | undefined;
-    let page: puppeteer.Page | undefined;
+    console.log('reusable');
 
     try {
       this.validateOptions(options);
-      context = await this.browser.createIncognitoBrowserContext();
-      page = await context.newPage();
+
+      if (!this.page) {
+        context = await this.browser.createIncognitoBrowserContext();
+        console.log('new page');
+        this.page = await context.newPage();
+        this.addPageListeners(this.page);
+      }
 
       if (options.timezone) {
         // set timezone
-        await page.emulateTimezone(options.timezone);
+        await this.page.emulateTimezone(options.timezone);
       }
 
-      this.addPageListeners(page);
-
-      return await this.takeScreenshot(page, options);
-    } finally {
-      if (page) {
-        this.removePageListeners(page);
-        await page.close();
+      return await this.takeScreenshot(this.page, options);
+    } catch (err) {
+      if (this.page) {
+        this.removePageListeners(this.page);
+        await this.page.close();
+        this.page = null;
       }
+
       if (context) {
         await context.close();
       }
+
+      throw err;
     }
   }
 }
