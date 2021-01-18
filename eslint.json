@@ -1,4 +1,7 @@
 {
+  "parserOptions": {
+    "project": "./tsconfig.json"
+  },
   "rules": {
     "array-type": [true, "array-simple"],
     "arrow-return-shorthand": true,
