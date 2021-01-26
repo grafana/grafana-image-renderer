@@ -17,12 +17,12 @@ defaults: &defaults
 
 commands:
   install-grabpl:
-    description: "Install Grafana build pipeline tool"
+    description: 'Install Grafana build pipeline tool'
     steps:
       - run:
-          name: "Install Grafana build pipeline tool"
+          name: 'Install Grafana build pipeline tool'
           command: |
-            VERSION=0.4.22
+            VERSION=0.5.35
             curl -fLO https://grafana-downloads.storage.googleapis.com/grafana-build-pipeline/v${VERSION}/grabpl
             chmod +x grabpl
             mv grabpl /tmp
@@ -52,7 +52,7 @@ jobs:
             - build/*
 
   package:
-    description: "Package plugin"
+    description: 'Package plugin'
     parameters:
       arch:
         type: string
@@ -114,17 +114,17 @@ jobs:
       - checkout
       - add_ssh_keys:
           fingerprints:
-            - "9a:40:f1:ad:ea:d5:c9:07:bd:54:dc:a8:0d:ea:be:0e"
+            - '9a:40:f1:ad:ea:d5:c9:07:bd:54:dc:a8:0d:ea:be:0e'
       - attach_workspace:
           at: .
       - run:
-          name: "Install dependencies"
+          name: 'Install dependencies'
           command: 'apk add --update --no-cache jq'
       - run:
-          name: "Generate MD5 checksums"
+          name: 'Generate MD5 checksums'
           command: './scripts/generate_md5sum.sh'
       - run:
-          name: "Publish Release on GitHub"
+          name: 'Publish Release on GitHub'
           command: './scripts/publish_github_release.sh'
 
   publish-docker-release:
@@ -137,7 +137,7 @@ jobs:
       - checkout
       - setup_remote_docker
       - run:
-          name: "Build and push Docker image"
+          name: 'Build and push Docker image'
           command: ./scripts/build_push_docker.sh
 
 workflows:
