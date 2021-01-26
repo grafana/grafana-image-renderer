@@ -1,3 +1,7 @@
+## 2.0.1 (2021-01-26)
+
+- Browser: Use timeout parameter for initial navigation to the dashboard being rendered [#171](https://github.com/grafana/grafana-image-renderer/pull/171), [](https://github.com/w4rgrum)
+
 ## 2.0.0 (2020-05-16)
 
 - Plugin: Migrate to @grpc/grpc-js to resolve problems when IPv6 is disabled [#135](https://github.com/grafana/grafana-image-renderer/pull/135), [aknuds1](https://github.com/aknuds1)
@@ -54,7 +58,9 @@
 - Remote rendering: Support configuring HTTP host and port thru config and environment variables [#40](https://github.com/grafana/grafana-image-renderer/pull/40), [marefr](https://github.com/marefr)
 - Remote rendering: Support reading config from file [#73](https://github.com/grafana/grafana-image-renderer/pull/73), [marefr](https://github.com/marefr)
 - Remote rendering: Collect and expose Prometheus metrics [#71](https://github.com/grafana/grafana-image-renderer/pull/71), [marefr](https://github.com/marefr)
+
 ### Breaking changes
+
 - Plugin now automatically assigns gPRC port not in use. Before port `50059` was used. You can change this by using the `GF_RENDERER_PLUGIN_GRPC_PORT` environment variable.
 
 ## 1.0.8-beta1 (2019-12-17)
