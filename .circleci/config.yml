@@ -135,7 +135,8 @@ jobs:
       - image: circleci/buildpack-deps:stretch
     steps:
       - checkout
-      - setup_remote_docker
+      - setup_remote_docker:
+          version: 19.03.13
       - run:
           name: 'Build and push Docker image'
           command: ./scripts/build_push_docker.sh
