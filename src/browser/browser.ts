@@ -1,6 +1,7 @@
 import * as os from 'os';
 import * as uniqueFilename from 'unique-filename';
 import * as puppeteer from 'puppeteer';
+import * as mergeImg from 'merge-img';
 import { Logger } from '../logger';
 import { RenderingConfig } from '../config';
 
@@ -146,11 +147,6 @@ export class Browser {
         options.deviceScaleFactor.toString()
       );
     }
-    await page.setViewport({
-      width: options.width,
-      height: options.height,
-      deviceScaleFactor: options.deviceScaleFactor,
-    });
 
     if (this.config.verboseLogging) {
       this.log.debug('Setting cookie for page', 'renderKey', options.renderKey, 'domain', options.domain);
@@ -194,12 +190,49 @@ export class Browser {
       options.filePath = uniqueFilename(os.tmpdir()) + '.png';
     }
 
+    // await page.setViewport({
+    //   // width: options.width,
+    //   // height: options.height,
+    //   deviceScaleFactor: options.deviceScaleFactor,
+    // });
+    // const bodyHeight = await page.evaluate(() => document.body.scrollHeight);
+    // await page.setViewport({
+    //   width: options.width,
+    //   height: bodyHeight,
+    //   deviceScaleFactor: options.deviceScaleFactor,
+    // });
+
     if (this.config.verboseLogging) {
       this.log.debug('Taking screenshot', 'filePath', options.filePath);
     }
-    await page.screenshot({ path: options.filePath });
+
+    const elements = [
+      await page.$('.panel-header'),
+      await page.$('.scrollbar-view > div > div:first-child'),
+      await page.$('.scrollbar-view > div > div:last-child > div'),
+    ];
+
+    const images: string[] = [];
+    for (let i = 0; i < elements.length; i++) {
+      const path = `image-${i}.png`;
+      await elements[i].screenshot({ path });
+      images.push(path);
+    }
+    const img = await mergeImg(images, { direction: true, align: 'center' });
+    await this.writeImg(img, options.filePath);
+    // await page.screenshot({ path: options.filePath, fullPage: true });
 
     return { filePath: options.filePath };
+  }
+
+  writeImg(img, path) {
+    return new Promise((resolve, reject) => {
+      try {
+        img.write(path, resolve);
+      } catch {
+        reject();
+      }
+    });
   }
 
   addPageListeners(page: any) {
