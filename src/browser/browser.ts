@@ -122,7 +122,8 @@ export class Browser {
       page = await browser.newPage();
       this.addPageListeners(page);
 
-      return await this.takeScreenshot(page, options);
+      return await this.exportCSV(page, options);
+      // return await this.takeScreenshot(page, options);
     } finally {
       if (page) {
         this.removePageListeners(page);
@@ -132,6 +133,52 @@ export class Browser {
         await browser.close();
       }
     }
+  }
+
+  async exportCSV(page: any, options: any): Promise<RenderResponse> {
+    if (this.config.verboseLogging) {
+      this.log.debug('Setting cookie for page', 'renderKey', options.renderKey, 'domain', options.domain);
+    }
+    await page.setCookie({
+      name: 'renderKey',
+      value: options.renderKey,
+      domain: options.domain,
+    });
+
+    if (options.headers && Object.keys(options.headers).length > 0) {
+      this.log.debug(`Setting extra HTTP headers for page`, 'headers', options.headers);
+      await page.setExtraHTTPHeaders(options.headers);
+    }
+
+    if (this.config.verboseLogging) {
+      this.log.debug('Navigating and waiting for all network requests to finish', 'url', options.url);
+    }
+
+    await page.goto(options.url, { waitUntil: 'networkidle0', timeout: options.timeout * 1000 });
+
+    if (this.config.verboseLogging) {
+      this.log.debug('Waiting for dashboard/panel to load', 'timeout', `${options.timeout}s`);
+    }
+    await page.waitForFunction(
+      () => {
+        const panelCount = document.querySelectorAll('.panel').length || document.querySelectorAll('.panel-container').length;
+        return (window as any).panelsRendered >= panelCount;
+      },
+      {
+        timeout: options.timeout * 1000,
+      }
+    );
+
+    if (!options.filePath) {
+      options.filePath = uniqueFilename(os.tmpdir()) + '.csv';
+    }
+
+    await page._client.send('Page.setDownloadBehavior', { behavior: 'allow', downloadPath: options.filePath });
+    await page.click('div[aria-label="Panel inspector Data content"] > div > button');
+
+    await page.waitFor(10000);
+
+    return { filePath: options.filePath };
   }
 
   async takeScreenshot(page: any, options: any): Promise<RenderResponse> {
@@ -233,7 +280,7 @@ export class Browser {
   };
 
   logPageError = (err: Error) => {
-    this.log.error('Browser uncaught exception', 'error', err.toString());
+    this.log.error('Browser uncaught exception', 'error', err.stack);
   };
 
   logConsoleMessage = (msg: any) => {
