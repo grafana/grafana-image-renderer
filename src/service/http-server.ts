@@ -1,4 +1,5 @@
 import * as fs from 'fs';
+import * as path from 'path';
 import * as net from 'net';
 import express = require('express');
 import * as boom from '@hapi/boom';
@@ -8,7 +9,7 @@ import { Logger } from '../logger';
 import { Browser } from '../browser';
 import { ServiceConfig } from '../config';
 import { metricsMiddleware } from './metrics_middleware';
-import { RenderOptions, HTTPHeaders } from '../browser/browser';
+import { RenderOptions, HTTPHeaders, RenderType } from '../browser/browser';
 
 export class HttpServer {
   app: express.Express;
@@ -92,6 +93,7 @@ export class HttpServer {
     }
 
     const options: RenderOptions = {
+      renderType: req.query.renderType,
       url: req.query.url,
       width: req.query.width,
       height: req.query.height,
@@ -117,6 +119,9 @@ export class HttpServer {
         try {
           this.log.debug('Deleting temporary file', 'file', result.filePath);
           fs.unlinkSync(result.filePath);
+          if (req.query.renderType === RenderType.CSV) {
+            fs.rmdirSync(path.dirname(result.filePath));
+          }
         } catch (e) {
           this.log.error('Failed to delete temporary file', 'file', result.filePath);
         }

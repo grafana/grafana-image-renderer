@@ -99,6 +99,7 @@ class PluginGRPCServer {
     }
 
     const options: RenderOptions = {
+      renderType: req.renderType,
       url: req.url,
       width: req.width,
       height: req.height,

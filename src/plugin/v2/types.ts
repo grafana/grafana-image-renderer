@@ -1,8 +1,11 @@
+import { RenderType } from '../../browser/browser';
+
 export interface StringList {
   values: string[];
 }
 
 export interface RenderRequest {
+  renderType: RenderType;
   url: string;
   width: number;
   height: number;

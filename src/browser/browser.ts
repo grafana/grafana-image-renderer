@@ -1,6 +1,8 @@
 import * as os from 'os';
 import * as uniqueFilename from 'unique-filename';
 import * as puppeteer from 'puppeteer';
+import * as chokidar from 'chokidar';
+import * as fs from 'fs';
 import { Logger } from '../logger';
 import { RenderingConfig } from '../config';
 
@@ -9,7 +11,13 @@ export interface HTTPHeaders {
   [header: string]: string | undefined;
 }
 
+export enum RenderType {
+  CSV = 'csv',
+  PNG = 'png',
+}
+
 export interface RenderOptions {
+  renderType: RenderType;
   url: string;
   width: string | number;
   height: string | number;
@@ -54,6 +62,21 @@ export class Browser {
       throw new Error(`Image rendering in socket mode is not supported`);
     }
 
+    options.headers = options.headers || {};
+    const headers = {};
+
+    if (options.headers['Accept-Language']) {
+      headers['Accept-Language'] = options.headers['Accept-Language'];
+    } else if (this.config.acceptLanguage) {
+      headers['Accept-Language'] = this.config.acceptLanguage;
+    }
+
+    options.headers = headers;
+
+    if (options.renderType === RenderType.CSV) {
+      return;
+    }
+
     options.width = parseInt(options.width as string, 10) || this.config.width;
     options.height = parseInt(options.height as string, 10) || this.config.height;
     options.timeout = parseInt(options.timeout as string, 10) || 30;
@@ -79,17 +102,6 @@ export class Browser {
     if (options.deviceScaleFactor > this.config.maxDeviceScaleFactor) {
       options.deviceScaleFactor = this.config.deviceScaleFactor;
     }
-
-    options.headers = options.headers || {};
-    const headers = {};
-
-    if (options.headers['Accept-Language']) {
-      headers['Accept-Language'] = options.headers['Accept-Language'];
-    } else if (this.config.acceptLanguage) {
-      headers['Accept-Language'] = this.config.acceptLanguage;
-    }
-
-    options.headers = headers;
   }
 
   getLauncherOptions(options) {
@@ -122,8 +134,13 @@ export class Browser {
       page = await browser.newPage();
       this.addPageListeners(page);
 
-      return await this.exportCSV(page, options);
-      // return await this.takeScreenshot(page, options);
+      switch (options.renderType) {
+        case RenderType.CSV:
+          return await this.exportCSV(page, options);
+        case RenderType.PNG:
+        default:
+          return await this.takeScreenshot(page, options);
+      }
     } finally {
       if (page) {
         this.removePageListeners(page);
@@ -150,35 +167,40 @@ export class Browser {
       await page.setExtraHTTPHeaders(options.headers);
     }
 
+    const downloadPath = uniqueFilename(os.tmpdir());
+    fs.mkdirSync(downloadPath);
+    const watcher = chokidar.watch(downloadPath);
+    let filePath = '';
+    watcher.on('unlink', file => {
+      filePath = file.replace('.crdownload', '');
+    });
+
+    await page._client.send('Page.setDownloadBehavior', { behavior: 'allow', downloadPath: downloadPath });
+
     if (this.config.verboseLogging) {
       this.log.debug('Navigating and waiting for all network requests to finish', 'url', options.url);
     }
 
     await page.goto(options.url, { waitUntil: 'networkidle0', timeout: options.timeout * 1000 });
 
-    if (this.config.verboseLogging) {
-      this.log.debug('Waiting for dashboard/panel to load', 'timeout', `${options.timeout}s`);
-    }
     await page.waitForFunction(
-      () => {
-        const panelCount = document.querySelectorAll('.panel').length || document.querySelectorAll('.panel-container').length;
-        return (window as any).panelsRendered >= panelCount;
+      filePath => {
+        return filePath !== '';
       },
       {
         timeout: options.timeout * 1000,
-      }
+      },
+      filePath
     );
 
-    if (!options.filePath) {
-      options.filePath = uniqueFilename(os.tmpdir()) + '.csv';
+    await watcher.close();
+
+    if (options.filePath) {
+      fs.renameSync(filePath, options.filePath);
+      filePath = options.filePath;
     }
 
-    await page._client.send('Page.setDownloadBehavior', { behavior: 'allow', downloadPath: options.filePath });
-    await page.click('div[aria-label="Panel inspector Data content"] > div > button');
-
-    await page.waitFor(10000);
-
-    return { filePath: options.filePath };
+    return { filePath };
   }
 
   async takeScreenshot(page: any, options: any): Promise<RenderResponse> {
