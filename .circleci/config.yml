@@ -62,6 +62,9 @@ jobs:
       override_output:
         type: string
         default: ''
+      skip_signing_errors:
+        type: boolean
+        default: false
     <<: *defaults
     steps:
       - checkout
@@ -90,6 +93,8 @@ jobs:
             else
               /tmp/grabpl build-plugin-manifest ./dist/plugin-<< parameters.arch >>
             fi
+
+            if [ << parameters.skip_signing_errors >> = true ] && [ $? > 0 ]; then exit 0;
       - run:
           name: Archive
           command: |
@@ -193,6 +198,8 @@ workflows:
           matrix:
             parameters:
               arch: [linux-x64-glibc, darwin-x64-unknown, win32-x64-unknown]
+              skip_signing_errors: true
+
       - package:
           filters: *filter-not-release-or-master
           requires:
@@ -201,3 +208,4 @@ workflows:
           arch: linux-x64-glibc
           skip_chromium: true
           override_output: plugin-linux-x64-glibc-no-chromium
+          skip_signing_errors: true
