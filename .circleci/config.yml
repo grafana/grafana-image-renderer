@@ -94,7 +94,7 @@ jobs:
               /tmp/grabpl build-plugin-manifest ./dist/plugin-<< parameters.arch >>
             fi
 
-            if [ << parameters.skip_signing_errors >> = true ] && [ $? > 0 ]; then exit 0; fi
+            if [ << parameters.skip_signing_errors >> = true ]; then exit 0; fi
       - run:
           name: Archive
           command: |
