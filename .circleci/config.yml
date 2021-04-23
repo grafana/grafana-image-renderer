@@ -96,6 +96,8 @@ jobs:
 
             if [ << parameters.skip_signing_errors >> = true ]; then
               exit 0
+            else
+              exit $?
             fi
       - run:
           name: Archive
