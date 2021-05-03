@@ -114,13 +114,15 @@ class PluginGRPCServer {
 
     this.log.debug('Render request received', 'url', options.url);
     let errStr = '';
+    let fileName = '';
     try {
-      await this.browser.render(options);
+      const result = await this.browser.render(options);
+      fileName = result.fileName || '';
     } catch (err) {
       this.log.error('Render request failed', 'url', options.url, 'error', err.toString());
       errStr = err.toString();
     }
-    callback(null, { error: errStr });
+    callback(null, { error: errStr, fileName });
   }
 
   async checkHealth(_: grpc.ServerUnaryCall<CheckHealthRequest, any>, callback: grpc.sendUnaryData<CheckHealthResponse>) {

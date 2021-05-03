@@ -2,6 +2,7 @@ import * as os from 'os';
 import * as uniqueFilename from 'unique-filename';
 import * as puppeteer from 'puppeteer';
 import * as chokidar from 'chokidar';
+import * as path from 'path';
 import * as fs from 'fs';
 import { Logger } from '../logger';
 import { RenderingConfig } from '../config';
@@ -33,6 +34,7 @@ export interface RenderOptions {
 
 export interface RenderResponse {
   filePath: string;
+  fileName?: string;
 }
 
 export class Browser {
@@ -170,9 +172,9 @@ export class Browser {
     const downloadPath = uniqueFilename(os.tmpdir());
     fs.mkdirSync(downloadPath);
     const watcher = chokidar.watch(downloadPath);
-    let filePath = '';
+    let downloadFilePath = '';
     watcher.on('unlink', file => {
-      filePath = file.replace('.crdownload', '');
+      downloadFilePath = file.replace('.crdownload', '');
     });
 
     await page._client.send('Page.setDownloadBehavior', { behavior: 'allow', downloadPath: downloadPath });
@@ -190,17 +192,18 @@ export class Browser {
       {
         timeout: options.timeout * 1000,
       },
-      filePath
+      downloadFilePath
     );
 
     await watcher.close();
 
+    let filePath = downloadFilePath;
     if (options.filePath) {
-      fs.renameSync(filePath, options.filePath);
+      fs.renameSync(downloadFilePath, options.filePath);
       filePath = options.filePath;
     }
 
-    return { filePath };
+    return { filePath, fileName: path.basename(downloadFilePath) };
   }
 
   async takeScreenshot(page: any, options: any): Promise<RenderResponse> {

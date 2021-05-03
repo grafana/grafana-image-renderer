@@ -22,6 +22,7 @@ export interface RenderRequest {
 
 export interface RenderResponse {
   error?: any;
+  fileName?: string;
 }
 
 export interface CollectMetricsRequest {}

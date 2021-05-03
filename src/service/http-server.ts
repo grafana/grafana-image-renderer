@@ -112,6 +112,10 @@ export class HttpServer {
       this.log.debug('Connection closed', 'url', options.url, 'error', err);
     });
     const result = await this.browser.render(options);
+
+    if (result.fileName) {
+      res.setHeader('Content-Disposition', `attachment; filename="${result.fileName}"`);
+    }
     res.sendFile(result.filePath, err => {
       if (err) {
         next(err);
