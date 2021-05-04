@@ -173,8 +173,10 @@ export class Browser {
     fs.mkdirSync(downloadPath);
     const watcher = chokidar.watch(downloadPath);
     let downloadFilePath = '';
-    watcher.on('unlink', file => {
-      downloadFilePath = file.replace('.crdownload', '');
+    watcher.on('add', file => {
+      if (!file.endsWith('.crdownload')) {
+        downloadFilePath = file;
+      }
     });
 
     await page._client.send('Page.setDownloadBehavior', { behavior: 'allow', downloadPath: downloadPath });
@@ -186,7 +188,7 @@ export class Browser {
     await page.goto(options.url, { waitUntil: 'networkidle0', timeout: options.timeout * 1000 });
 
     if (this.config.verboseLogging) {
-      this.log.debug('Waiting for download to end', 'url', options.url);
+      this.log.debug('Waiting for download to end');
     }
 
     const startDate = Date.now();
