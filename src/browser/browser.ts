@@ -193,10 +193,14 @@ export class Browser {
 
     const startDate = Date.now();
     while (Date.now() - startDate <= options.timeout * 1000) {
-      if (downloadFilePath != '') {
+      if (downloadFilePath !== '') {
         break;
       }
       await new Promise(resolve => setTimeout(resolve, 500));
+    }
+
+    if (downloadFilePath === '') {
+      throw new Error(`Timeout exceeded while waiting for download to end`);
     }
 
     await watcher.close();
