@@ -185,15 +185,17 @@ export class Browser {
 
     await page.goto(options.url, { waitUntil: 'networkidle0', timeout: options.timeout * 1000 });
 
-    await page.waitForFunction(
-      filePath => {
-        return filePath !== '';
-      },
-      {
-        timeout: options.timeout * 1000,
-      },
-      downloadFilePath
-    );
+    if (this.config.verboseLogging) {
+      this.log.debug('Waiting for download to end', 'url', options.url);
+    }
+
+    const startDate = Date.now();
+    while (Date.now() - startDate <= options.timeout * 1000) {
+      if (downloadFilePath != '') {
+        break;
+      }
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
 
     await watcher.close();
 
