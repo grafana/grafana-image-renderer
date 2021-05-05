@@ -209,6 +209,7 @@ export class Browser {
     if (options.filePath) {
       fs.renameSync(downloadFilePath, options.filePath);
       filePath = options.filePath;
+      fs.rmdirSync(path.dirname(downloadFilePath));
     }
 
     return { filePath, fileName: path.basename(downloadFilePath) };

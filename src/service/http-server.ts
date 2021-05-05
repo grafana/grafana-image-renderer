@@ -123,7 +123,7 @@ export class HttpServer {
         try {
           this.log.debug('Deleting temporary file', 'file', result.filePath);
           fs.unlinkSync(result.filePath);
-          if (req.query.renderType === RenderType.CSV) {
+          if (req.query.renderType === RenderType.CSV && !options.filePath) {
             fs.rmdirSync(path.dirname(result.filePath));
           }
         } catch (e) {
