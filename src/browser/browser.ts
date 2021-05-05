@@ -314,7 +314,7 @@ export class Browser {
   };
 
   logPageError = (err: Error) => {
-    this.log.error('Browser uncaught exception', 'error', err.stack);
+    this.log.error('Browser uncaught exception', 'error', err.toString());
   };
 
   logConsoleMessage = (msg: any) => {
