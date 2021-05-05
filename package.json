@@ -28,19 +28,18 @@
     "lodash": "^4.17.21",
     "minimist": "^1.2.0",
     "morgan": "^1.9.0",
-    "mz": "^2.7.0",
     "prom-client": "^11.5.3",
-    "puppeteer": "^2.0.0",
-    "puppeteer-cluster": "^0.18.0",
+    "puppeteer": "^3.3.0",
+    "puppeteer-cluster": "^0.22.0",
     "unique-filename": "^1.1.0",
     "winston": "^3.2.1"
   },
   "devDependencies": {
     "@types/express": "^4.11.1",
     "@types/node": "^14.14.41",
-    "husky": "^3.1.0",
+    "husky": "^6.0.0",
     "lint-staged": "^9.5.0",
-    "pkg": "4.4.8",
+    "pkg": "4.5.1",
     "prettier": "^1.19.1",
     "tsc-watch": "^4.2.3",
     "typescript": "^3.8.3"

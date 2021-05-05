@@ -10,6 +10,19 @@ import { ServiceConfig } from '../config';
 import { metricsMiddleware } from './metrics_middleware';
 import { RenderOptions, HTTPHeaders } from '../browser/browser';
 
+export interface RenderRequest {
+  url: string;
+  width: number;
+  height: number;
+  deviceScaleFactor: number;
+  filePath: string;
+  renderKey: string;
+  domain: string;
+  timeout: number;
+  timezone: string;
+  encoding: string;
+}
+
 export class HttpServer {
   app: express.Express;
 
@@ -80,7 +93,7 @@ export class HttpServer {
     await this.browser.start();
   }
 
-  render = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+  render = async (req: express.Request<any, any, any, RenderRequest, any>, res: express.Response, next: express.NextFunction) => {
     if (!req.query.url) {
       throw boom.badRequest('Missing url parameter');
     }
