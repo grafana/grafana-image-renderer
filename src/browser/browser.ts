@@ -12,13 +12,7 @@ export interface HTTPHeaders {
   [header: string]: string | undefined;
 }
 
-export enum RenderType {
-  CSV = 'csv',
-  PNG = 'png',
-}
-
 export interface RenderOptions {
-  renderType: RenderType;
   url: string;
   width: string | number;
   height: string | number;
@@ -32,7 +26,22 @@ export interface RenderOptions {
   headers?: HTTPHeaders;
 }
 
+export interface RenderCSVOptions {
+  url: string;
+  filePath: string;
+  timeout: string | number;
+  renderKey: string;
+  domain: string;
+  timezone?: string;
+  encoding?: string;
+  headers?: HTTPHeaders;
+}
+
 export interface RenderResponse {
+  filePath: string;
+}
+
+export interface RenderCSVResponse {
   filePath: string;
   fileName?: string;
 }
@@ -58,7 +67,7 @@ export class Browser {
 
   async start(): Promise<void> {}
 
-  validateOptions(options: RenderOptions) {
+  validateRenderOptions(options: RenderOptions | RenderCSVOptions) {
     if (options.url.startsWith(`socket://`)) {
       // Puppeteer doesn't support socket:// URLs
       throw new Error(`Image rendering in socket mode is not supported`);
@@ -75,13 +84,14 @@ export class Browser {
 
     options.headers = headers;
 
-    if (options.renderType === RenderType.CSV) {
-      return;
-    }
+    options.timeout = parseInt(options.timeout as string, 10) || 30;
+  }
+
+  validateImageOptions(options: RenderOptions) {
+    this.validateRenderOptions(options);
 
     options.width = parseInt(options.width as string, 10) || this.config.width;
     options.height = parseInt(options.height as string, 10) || this.config.height;
-    options.timeout = parseInt(options.timeout as string, 10) || 30;
 
     if (options.width < 10) {
       options.width = this.config.width;
@@ -125,36 +135,7 @@ export class Browser {
     return launcherOptions;
   }
 
-  async render(options: RenderOptions): Promise<RenderResponse> {
-    let browser;
-    let page: any;
-
-    try {
-      this.validateOptions(options);
-      const launcherOptions = this.getLauncherOptions(options);
-      browser = await puppeteer.launch(launcherOptions);
-      page = await browser.newPage();
-      this.addPageListeners(page);
-
-      switch (options.renderType) {
-        case RenderType.CSV:
-          return await this.exportCSV(page, options);
-        case RenderType.PNG:
-        default:
-          return await this.takeScreenshot(page, options);
-      }
-    } finally {
-      if (page) {
-        this.removePageListeners(page);
-        await page.close();
-      }
-      if (browser) {
-        await browser.close();
-      }
-    }
-  }
-
-  async exportCSV(page: any, options: any): Promise<RenderResponse> {
+  async preparePage(page: any, options: any) {
     if (this.config.verboseLogging) {
       this.log.debug('Setting cookie for page', 'renderKey', options.renderKey, 'domain', options.domain);
     }
@@ -168,6 +149,112 @@ export class Browser {
       this.log.debug(`Setting extra HTTP headers for page`, 'headers', options.headers);
       await page.setExtraHTTPHeaders(options.headers);
     }
+  }
+
+  async render(options: RenderOptions): Promise<RenderResponse> {
+    let browser;
+    let page: any;
+
+    try {
+      this.validateImageOptions(options);
+      const launcherOptions = this.getLauncherOptions(options);
+      browser = await puppeteer.launch(launcherOptions);
+      page = await browser.newPage();
+      this.addPageListeners(page);
+
+      return this.takeScreenshot(page, options);
+    } finally {
+      if (page) {
+        this.removePageListeners(page);
+        await page.close();
+      }
+      if (browser) {
+        await browser.close();
+      }
+    }
+  }
+
+  async takeScreenshot(page: any, options: any): Promise<RenderResponse> {
+    if (this.config.verboseLogging) {
+      this.log.debug(
+        'Setting viewport for page',
+        'width',
+        options.width.toString(),
+        'height',
+        options.height.toString(),
+        'deviceScaleFactor',
+        options.deviceScaleFactor.toString()
+      );
+    }
+    await page.setViewport({
+      width: options.width,
+      height: options.height,
+      deviceScaleFactor: options.deviceScaleFactor,
+    });
+
+    await this.preparePage(page, options);
+
+    if (this.config.verboseLogging) {
+      this.log.debug('Moving mouse on page', 'x', options.width, 'y', options.height);
+    }
+    await page.mouse.move(options.width, options.height);
+
+    if (this.config.verboseLogging) {
+      this.log.debug('Navigating and waiting for all network requests to finish', 'url', options.url);
+    }
+
+    await page.goto(options.url, { waitUntil: 'networkidle0', timeout: options.timeout * 1000 });
+
+    if (this.config.verboseLogging) {
+      this.log.debug('Waiting for dashboard/panel to load', 'timeout', `${options.timeout}s`);
+    }
+    await page.waitForFunction(
+      () => {
+        const panelCount = document.querySelectorAll('.panel').length || document.querySelectorAll('.panel-container').length;
+        return (window as any).panelsRendered >= panelCount;
+      },
+      {
+        timeout: options.timeout * 1000,
+      }
+    );
+
+    if (!options.filePath) {
+      options.filePath = uniqueFilename(os.tmpdir()) + '.png';
+    }
+
+    if (this.config.verboseLogging) {
+      this.log.debug('Taking screenshot', 'filePath', options.filePath);
+    }
+    await page.screenshot({ path: options.filePath });
+
+    return { filePath: options.filePath };
+  }
+
+  async renderCSV(options: RenderCSVOptions): Promise<RenderCSVResponse> {
+    let browser;
+    let page: any;
+
+    try {
+      this.validateRenderOptions(options);
+      const launcherOptions = this.getLauncherOptions(options);
+      browser = await puppeteer.launch(launcherOptions);
+      page = await browser.newPage();
+      this.addPageListeners(page);
+
+      return this.exportCSV(page, options);
+    } finally {
+      if (page) {
+        this.removePageListeners(page);
+        await page.close();
+      }
+      if (browser) {
+        await browser.close();
+      }
+    }
+  }
+
+  async exportCSV(page: any, options: any): Promise<RenderCSVResponse> {
+    await this.preparePage(page, options);
 
     const downloadPath = uniqueFilename(os.tmpdir());
     fs.mkdirSync(downloadPath);
@@ -213,74 +300,6 @@ export class Browser {
     }
 
     return { filePath, fileName: path.basename(downloadFilePath) };
-  }
-
-  async takeScreenshot(page: any, options: any): Promise<RenderResponse> {
-    if (this.config.verboseLogging) {
-      this.log.debug(
-        'Setting viewport for page',
-        'width',
-        options.width.toString(),
-        'height',
-        options.height.toString(),
-        'deviceScaleFactor',
-        options.deviceScaleFactor.toString()
-      );
-    }
-    await page.setViewport({
-      width: options.width,
-      height: options.height,
-      deviceScaleFactor: options.deviceScaleFactor,
-    });
-
-    if (this.config.verboseLogging) {
-      this.log.debug('Setting cookie for page', 'renderKey', options.renderKey, 'domain', options.domain);
-    }
-    await page.setCookie({
-      name: 'renderKey',
-      value: options.renderKey,
-      domain: options.domain,
-    });
-
-    if (options.headers && Object.keys(options.headers).length > 0) {
-      this.log.debug(`Setting extra HTTP headers for page`, 'headers', options.headers);
-      await page.setExtraHTTPHeaders(options.headers);
-    }
-
-    if (this.config.verboseLogging) {
-      this.log.debug('Moving mouse on page', 'x', options.width, 'y', options.height);
-    }
-    await page.mouse.move(options.width, options.height);
-
-    if (this.config.verboseLogging) {
-      this.log.debug('Navigating and waiting for all network requests to finish', 'url', options.url);
-    }
-
-    await page.goto(options.url, { waitUntil: 'networkidle0', timeout: options.timeout * 1000 });
-
-    if (this.config.verboseLogging) {
-      this.log.debug('Waiting for dashboard/panel to load', 'timeout', `${options.timeout}s`);
-    }
-    await page.waitForFunction(
-      () => {
-        const panelCount = document.querySelectorAll('.panel').length || document.querySelectorAll('.panel-container').length;
-        return (window as any).panelsRendered >= panelCount;
-      },
-      {
-        timeout: options.timeout * 1000,
-      }
-    );
-
-    if (!options.filePath) {
-      options.filePath = uniqueFilename(os.tmpdir()) + '.png';
-    }
-
-    if (this.config.verboseLogging) {
-      this.log.debug('Taking screenshot', 'filePath', options.filePath);
-    }
-    await page.screenshot({ path: options.filePath });
-
-    return { filePath: options.filePath };
   }
 
   addPageListeners(page: any) {

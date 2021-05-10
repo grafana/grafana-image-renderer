@@ -1,11 +1,8 @@
-import { RenderType } from '../../browser/browser';
-
 export interface StringList {
   values: string[];
 }
 
 export interface RenderRequest {
-  renderType: RenderType;
   url: string;
   width: number;
   height: number;
@@ -21,6 +18,22 @@ export interface RenderRequest {
 }
 
 export interface RenderResponse {
+  error?: any;
+}
+
+export interface RenderCSVRequest {
+  url: string;
+  filePath: string;
+  renderKey: string;
+  domain: string;
+  timeout: number;
+  timezone: string;
+  headers: {
+    [header: string]: StringList;
+  };
+}
+
+export interface RenderCSVResponse {
   error?: any;
   fileName?: string;
 }

@@ -1,5 +1,5 @@
 import * as puppeteer from 'puppeteer';
-import { Browser, RenderResponse, RenderOptions } from './browser';
+import { Browser, RenderResponse, RenderOptions, RenderCSVResponse, RenderCSVOptions } from './browser';
 import { Logger } from '../logger';
 import { RenderingConfig } from '../config';
 
@@ -20,7 +20,7 @@ export class ReusableBrowser extends Browser {
     let page: puppeteer.Page | undefined;
 
     try {
-      this.validateOptions(options);
+      this.validateImageOptions(options);
       context = await this.browser.createIncognitoBrowserContext();
       page = await context.newPage();
 
@@ -31,7 +31,35 @@ export class ReusableBrowser extends Browser {
 
       this.addPageListeners(page);
 
-      return await this.takeScreenshot(page, options);
+      return this.takeScreenshot(page, options);
+    } finally {
+      if (page) {
+        this.removePageListeners(page);
+        await page.close();
+      }
+      if (context) {
+        await context.close();
+      }
+    }
+  }
+
+  async renderCSV(options: RenderCSVOptions): Promise<RenderCSVResponse> {
+    let context: puppeteer.BrowserContext | undefined;
+    let page: puppeteer.Page | undefined;
+
+    try {
+      this.validateRenderOptions(options);
+      context = await this.browser.createIncognitoBrowserContext();
+      page = await context.newPage();
+
+      if (options.timezone) {
+        // set timezone
+        await page.emulateTimezone(options.timezone);
+      }
+
+      this.addPageListeners(page);
+
+      return this.exportCSV(page, options);
     } finally {
       if (page) {
         this.removePageListeners(page);

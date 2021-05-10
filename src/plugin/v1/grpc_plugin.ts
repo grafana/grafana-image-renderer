@@ -26,7 +26,6 @@ export class RenderGRPCPluginV1 implements GrpcPlugin {
       render: (call: grpc.ServerUnaryCall<any, any>, callback) => {
         const req = call.request;
         const options: RenderOptions = {
-          renderType: req.renderType,
           url: req.url,
           width: req.width,
           height: req.height,
