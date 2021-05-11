@@ -93,11 +93,12 @@ jobs:
             else
               /tmp/grabpl build-plugin-manifest ./dist/plugin-<< parameters.arch >>
             fi
+            EXIT_CODE=$?
 
             if [ << parameters.skip_signing_errors >> = true ]; then
               exit 0
             else
-              exit $?
+              exit $EXIT_CODE
             fi
       - run:
           name: Archive
