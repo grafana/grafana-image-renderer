@@ -24,4 +24,4 @@ platform = platformTransform[platform] || platform;
 arch = archTransform[arch] || arch;
 const outputPath = "dist/" + (process.argv[3] || `plugin-${archArg}`);
 
-childProcess.execSync(`./node_modules/.bin/pkg -t node12-${platform}-${arch} . --out-path ${outputPath}`, {stdio: 'inherit'});
+childProcess.execSync(`"./node_modules/.bin/pkg" -t node14-${platform}-${arch} . --out-path ${outputPath}`, {stdio: 'inherit'});

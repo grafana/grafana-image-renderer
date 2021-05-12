@@ -263,7 +263,7 @@ nodejs_heap_space_size_available_bytes{space="new_large_object"} 1047488 1579444
 
 # HELP nodejs_version_info Node.js version info.
 # TYPE nodejs_version_info gauge
-nodejs_version_info{version="v12.13.1",major="12",minor="13",patch="1"} 1
+nodejs_version_info{version="v14.16.1",major="14",minor="16",patch="1"} 1
 
 # HELP grafana_image_renderer_service_http_request_duration_seconds duration histogram of http responses labeled with: status_code
 # TYPE grafana_image_renderer_service_http_request_duration_seconds histogram
