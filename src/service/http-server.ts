@@ -24,6 +24,16 @@ export interface RenderRequest {
   encoding: string;
 }
 
+export interface RenderCSVRequest {
+  url: string;
+  filePath: string;
+  renderKey: string;
+  domain: string;
+  timeout: number;
+  timezone: string;
+  encoding: string;
+}
+
 export class HttpServer {
   app: express.Express;
 
@@ -140,7 +150,7 @@ export class HttpServer {
     });
   };
 
-  renderCSV = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+  renderCSV = async (req: express.Request<any, any, any, RenderCSVRequest, any>, res: express.Response, next: express.NextFunction) => {
     if (!req.query.url) {
       throw boom.badRequest('Missing url parameter');
     }
