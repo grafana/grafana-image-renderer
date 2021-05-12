@@ -120,6 +120,7 @@ export class Browser {
       const launcherOptions = this.getLauncherOptions(options);
       browser = await puppeteer.launch(launcherOptions);
       page = await browser.newPage();
+      await page.emulateTimezone(launcherOptions.env.TZ);
       this.addPageListeners(page);
 
       return await this.takeScreenshot(page, options);
