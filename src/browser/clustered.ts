@@ -48,10 +48,10 @@ export class ClusteredBrowser extends Browser {
         this.addPageListeners(page);
         switch (data.renderType) {
           case RenderType.CSV:
-            return this.exportCSV(page, data.options);
+            return await this.exportCSV(page, data.options);
           case RenderType.PNG:
           default:
-            return this.takeScreenshot(page, data.options);
+            return await this.takeScreenshot(page, data.options);
         }
       } finally {
         this.removePageListeners(page);

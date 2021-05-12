@@ -162,7 +162,7 @@ export class Browser {
       page = await browser.newPage();
       this.addPageListeners(page);
 
-      return this.takeScreenshot(page, options);
+      return await this.takeScreenshot(page, options);
     } finally {
       if (page) {
         this.removePageListeners(page);
@@ -241,7 +241,7 @@ export class Browser {
       page = await browser.newPage();
       this.addPageListeners(page);
 
-      return this.exportCSV(page, options);
+      return await this.exportCSV(page, options);
     } finally {
       if (page) {
         this.removePageListeners(page);
