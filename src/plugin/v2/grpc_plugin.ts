@@ -124,7 +124,7 @@ class PluginGRPCServer {
     callback(null, { error: errStr });
   }
 
-  async renderCSV(call: grpc.ServerUnaryCall<RenderCSVRequest, any>, callback: grpc.sendUnaryData<RenderCSVResponse>) {
+  async renderCsv(call: grpc.ServerUnaryCall<RenderCSVRequest, any>, callback: grpc.sendUnaryData<RenderCSVResponse>) {
     const req = call.request;
     const headers: HTTPHeaders = {};
 
