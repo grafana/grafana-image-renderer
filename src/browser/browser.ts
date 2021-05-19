@@ -294,9 +294,10 @@ export class Browser {
 
     let filePath = downloadFilePath;
     if (options.filePath) {
-      fs.renameSync(downloadFilePath, options.filePath);
-      filePath = options.filePath;
+      fs.copyFileSync(downloadFilePath, options.filePath);
+      fs.unlinkSync(downloadFilePath);
       fs.rmdirSync(path.dirname(downloadFilePath));
+      filePath = options.filePath;
     }
 
     return { filePath, fileName: path.basename(downloadFilePath) };
