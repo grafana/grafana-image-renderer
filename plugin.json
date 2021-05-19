@@ -20,10 +20,10 @@
       {"name": "Project site", "url": "https://github.com/grafana/grafana-image-renderer"},
       {"name": "Apache License", "url": "https://github.com/grafana/grafana-image-renderer/blob/master/LICENSE"}
     ],
-    "version": "2.1.1",
-    "updated": "2021-05-18"
+    "version": "3.0.0-beta1",
+    "updated": "2021-05-19"
   },
   "dependencies": {
-    "grafanaVersion": "5.x.x 6.x.x 7.x.x"
+    "grafanaVersion": "5.x.x 6.x.x 7.x.x 8.x.x"
   }
 }
