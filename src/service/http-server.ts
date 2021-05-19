@@ -1,4 +1,5 @@
 import * as fs from 'fs';
+import * as path from 'path';
 import * as net from 'net';
 import express = require('express');
 import * as boom from '@hapi/boom';
@@ -8,13 +9,23 @@ import { Logger } from '../logger';
 import { Browser } from '../browser';
 import { ServiceConfig } from '../config';
 import { metricsMiddleware } from './metrics_middleware';
-import { RenderOptions, HTTPHeaders } from '../browser/browser';
+import { RenderOptions, RenderCSVOptions, HTTPHeaders } from '../browser/browser';
 
 export interface RenderRequest {
   url: string;
   width: number;
   height: number;
   deviceScaleFactor: number;
+  filePath: string;
+  renderKey: string;
+  domain: string;
+  timeout: number;
+  timezone: string;
+  encoding: string;
+}
+
+export interface RenderCSVRequest {
+  url: string;
   filePath: string;
   renderKey: string;
   domain: string;
@@ -52,6 +63,7 @@ export class HttpServer {
     });
 
     this.app.get('/render', asyncMiddleware(this.render));
+    this.app.get('/render/csv', asyncMiddleware(this.renderCSV));
     this.app.use((err, req, res, next) => {
       if (err.stack) {
         this.log.error('Request failed', 'url', req.url, 'stack', err.stack);
@@ -123,6 +135,7 @@ export class HttpServer {
       this.log.debug('Connection closed', 'url', options.url, 'error', err);
     });
     const result = await this.browser.render(options);
+
     res.sendFile(result.filePath, err => {
       if (err) {
         next(err);
@@ -130,6 +143,54 @@ export class HttpServer {
         try {
           this.log.debug('Deleting temporary file', 'file', result.filePath);
           fs.unlinkSync(result.filePath);
+        } catch (e) {
+          this.log.error('Failed to delete temporary file', 'file', result.filePath);
+        }
+      }
+    });
+  };
+
+  renderCSV = async (req: express.Request<any, any, any, RenderCSVRequest, any>, res: express.Response, next: express.NextFunction) => {
+    if (!req.query.url) {
+      throw boom.badRequest('Missing url parameter');
+    }
+
+    const headers: HTTPHeaders = {};
+
+    if (req.headers['Accept-Language']) {
+      headers['Accept-Language'] = (req.headers['Accept-Language'] as string[]).join(';');
+    }
+
+    const options: RenderCSVOptions = {
+      url: req.query.url,
+      filePath: req.query.filePath,
+      timeout: req.query.timeout,
+      renderKey: req.query.renderKey,
+      domain: req.query.domain,
+      timezone: req.query.timezone,
+      encoding: req.query.encoding,
+      headers: headers,
+    };
+
+    this.log.debug('Render request received', 'url', options.url);
+    req.on('close', err => {
+      this.log.debug('Connection closed', 'url', options.url, 'error', err);
+    });
+    const result = await this.browser.renderCSV(options);
+
+    if (result.fileName) {
+      res.setHeader('Content-Disposition', `attachment; filename="${result.fileName}"`);
+    }
+    res.sendFile(result.filePath, err => {
+      if (err) {
+        next(err);
+      } else {
+        try {
+          this.log.debug('Deleting temporary file', 'file', result.filePath);
+          fs.unlinkSync(result.filePath);
+          if (!options.filePath) {
+            fs.rmdirSync(path.dirname(result.filePath));
+          }
         } catch (e) {
           this.log.error('Failed to delete temporary file', 'file', result.filePath);
         }
