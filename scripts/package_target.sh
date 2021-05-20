@@ -39,5 +39,6 @@ fi
 
 cp plugin.json ${COPY_PATH}
 cp README.md ${COPY_PATH}
+cp CHANGELOG.md ${COPY_PATH}
 cp LICENSE ${COPY_PATH}
 cp -r img ${COPY_PATH}

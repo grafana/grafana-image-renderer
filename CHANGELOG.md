@@ -1,3 +1,11 @@
+## 3.0.0-beta1 (2021-05-19)
+
+- Add CSV rendering feature [#217](https://github.com/grafana/grafana-image-renderer/pull/217), [AgnesToulet](https://github.com/AgnesToulet)
+
+## 2.1.1 (2021-05-18)
+
+- Chore: Add changelog in package files [#226](https://github.com/grafana/grafana-image-renderer/pull/226), [AgnesToulet](https://github.com/AgnesToulet)
+
 ## 2.1.0 (2021-05-11)
 
 - Chore/Security: Upgrade dependencies and bump Node to LTS (14.16.1) [#218](https://github.com/grafana/grafana-image-renderer/pull/218), [AgnesToulet](https://github.com/AgnesToulet)

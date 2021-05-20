@@ -1,6 +1,9 @@
 import * as os from 'os';
 import * as uniqueFilename from 'unique-filename';
 import * as puppeteer from 'puppeteer';
+import * as chokidar from 'chokidar';
+import * as path from 'path';
+import * as fs from 'fs';
 import { Logger } from '../logger';
 import { RenderingConfig } from '../config';
 
@@ -23,8 +26,24 @@ export interface RenderOptions {
   headers?: HTTPHeaders;
 }
 
+export interface RenderCSVOptions {
+  url: string;
+  filePath: string;
+  timeout: string | number;
+  renderKey: string;
+  domain: string;
+  timezone?: string;
+  encoding?: string;
+  headers?: HTTPHeaders;
+}
+
 export interface RenderResponse {
   filePath: string;
+}
+
+export interface RenderCSVResponse {
+  filePath: string;
+  fileName?: string;
 }
 
 export class Browser {
@@ -48,15 +67,31 @@ export class Browser {
 
   async start(): Promise<void> {}
 
-  validateOptions(options: RenderOptions) {
+  validateRenderOptions(options: RenderOptions | RenderCSVOptions) {
     if (options.url.startsWith(`socket://`)) {
       // Puppeteer doesn't support socket:// URLs
       throw new Error(`Image rendering in socket mode is not supported`);
     }
 
+    options.headers = options.headers || {};
+    const headers = {};
+
+    if (options.headers['Accept-Language']) {
+      headers['Accept-Language'] = options.headers['Accept-Language'];
+    } else if (this.config.acceptLanguage) {
+      headers['Accept-Language'] = this.config.acceptLanguage;
+    }
+
+    options.headers = headers;
+
+    options.timeout = parseInt(options.timeout as string, 10) || 30;
+  }
+
+  validateImageOptions(options: RenderOptions) {
+    this.validateRenderOptions(options);
+
     options.width = parseInt(options.width as string, 10) || this.config.width;
     options.height = parseInt(options.height as string, 10) || this.config.height;
-    options.timeout = parseInt(options.timeout as string, 10) || 30;
 
     if (options.width < 10) {
       options.width = this.config.width;
@@ -79,17 +114,6 @@ export class Browser {
     if (options.deviceScaleFactor > this.config.maxDeviceScaleFactor) {
       options.deviceScaleFactor = this.config.deviceScaleFactor;
     }
-
-    options.headers = options.headers || {};
-    const headers = {};
-
-    if (options.headers['Accept-Language']) {
-      headers['Accept-Language'] = options.headers['Accept-Language'];
-    } else if (this.config.acceptLanguage) {
-      headers['Accept-Language'] = this.config.acceptLanguage;
-    }
-
-    options.headers = headers;
   }
 
   getLauncherOptions(options) {
@@ -111,12 +135,28 @@ export class Browser {
     return launcherOptions;
   }
 
+  async preparePage(page: any, options: any) {
+    if (this.config.verboseLogging) {
+      this.log.debug('Setting cookie for page', 'renderKey', options.renderKey, 'domain', options.domain);
+    }
+    await page.setCookie({
+      name: 'renderKey',
+      value: options.renderKey,
+      domain: options.domain,
+    });
+
+    if (options.headers && Object.keys(options.headers).length > 0) {
+      this.log.debug(`Setting extra HTTP headers for page`, 'headers', options.headers);
+      await page.setExtraHTTPHeaders(options.headers);
+    }
+  }
+
   async render(options: RenderOptions): Promise<RenderResponse> {
     let browser;
     let page: any;
 
     try {
-      this.validateOptions(options);
+      this.validateImageOptions(options);
       const launcherOptions = this.getLauncherOptions(options);
       browser = await puppeteer.launch(launcherOptions);
       page = await browser.newPage();
@@ -153,19 +193,7 @@ export class Browser {
       deviceScaleFactor: options.deviceScaleFactor,
     });
 
-    if (this.config.verboseLogging) {
-      this.log.debug('Setting cookie for page', 'renderKey', options.renderKey, 'domain', options.domain);
-    }
-    await page.setCookie({
-      name: 'renderKey',
-      value: options.renderKey,
-      domain: options.domain,
-    });
-
-    if (options.headers && Object.keys(options.headers).length > 0) {
-      this.log.debug(`Setting extra HTTP headers for page`, 'headers', options.headers);
-      await page.setExtraHTTPHeaders(options.headers);
-    }
+    await this.preparePage(page, options);
 
     if (this.config.verboseLogging) {
       this.log.debug('Moving mouse on page', 'x', options.width, 'y', options.height);
@@ -201,6 +229,79 @@ export class Browser {
     await page.screenshot({ path: options.filePath });
 
     return { filePath: options.filePath };
+  }
+
+  async renderCSV(options: RenderCSVOptions): Promise<RenderCSVResponse> {
+    let browser;
+    let page: any;
+
+    try {
+      this.validateRenderOptions(options);
+      const launcherOptions = this.getLauncherOptions(options);
+      browser = await puppeteer.launch(launcherOptions);
+      page = await browser.newPage();
+      this.addPageListeners(page);
+
+      return await this.exportCSV(page, options);
+    } finally {
+      if (page) {
+        this.removePageListeners(page);
+        await page.close();
+      }
+      if (browser) {
+        await browser.close();
+      }
+    }
+  }
+
+  async exportCSV(page: any, options: any): Promise<RenderCSVResponse> {
+    await this.preparePage(page, options);
+
+    const downloadPath = uniqueFilename(os.tmpdir());
+    fs.mkdirSync(downloadPath);
+    const watcher = chokidar.watch(downloadPath);
+    let downloadFilePath = '';
+    watcher.on('add', file => {
+      if (!file.endsWith('.crdownload')) {
+        downloadFilePath = file;
+      }
+    });
+
+    await page._client.send('Page.setDownloadBehavior', { behavior: 'allow', downloadPath: downloadPath });
+
+    if (this.config.verboseLogging) {
+      this.log.debug('Navigating and waiting for all network requests to finish', 'url', options.url);
+    }
+
+    await page.goto(options.url, { waitUntil: 'networkidle0', timeout: options.timeout * 1000 });
+
+    if (this.config.verboseLogging) {
+      this.log.debug('Waiting for download to end');
+    }
+
+    const startDate = Date.now();
+    while (Date.now() - startDate <= options.timeout * 1000) {
+      if (downloadFilePath !== '') {
+        break;
+      }
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
+
+    if (downloadFilePath === '') {
+      throw new Error(`Timeout exceeded while waiting for download to end`);
+    }
+
+    await watcher.close();
+
+    let filePath = downloadFilePath;
+    if (options.filePath) {
+      fs.copyFileSync(downloadFilePath, options.filePath);
+      fs.unlinkSync(downloadFilePath);
+      fs.rmdirSync(path.dirname(downloadFilePath));
+      filePath = options.filePath;
+    }
+
+    return { filePath, fileName: path.basename(downloadFilePath) };
   }
 
   addPageListeners(page: any) {

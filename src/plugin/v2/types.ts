@@ -21,6 +21,23 @@ export interface RenderResponse {
   error?: any;
 }
 
+export interface RenderCSVRequest {
+  url: string;
+  filePath: string;
+  renderKey: string;
+  domain: string;
+  timeout: number;
+  timezone: string;
+  headers: {
+    [header: string]: StringList;
+  };
+}
+
+export interface RenderCSVResponse {
+  error?: any;
+  fileName?: string;
+}
+
 export interface CollectMetricsRequest {}
 
 export interface MetricsPayload {

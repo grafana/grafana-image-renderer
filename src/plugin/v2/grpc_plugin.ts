@@ -5,10 +5,12 @@ import { GrpcPlugin } from '../../node-plugin';
 import { Logger } from '../../logger';
 import { PluginConfig } from '../../config';
 import { createBrowser, Browser } from '../../browser';
-import { RenderOptions, HTTPHeaders } from '../../browser/browser';
+import { RenderOptions, RenderCSVOptions, HTTPHeaders } from '../../browser/browser';
 import {
   RenderRequest,
   RenderResponse,
+  RenderCSVRequest,
+  RenderCSVResponse,
   CheckHealthRequest,
   CheckHealthResponse,
   CollectMetricsRequest,
@@ -120,6 +122,46 @@ class PluginGRPCServer {
       errStr = err.toString();
     }
     callback(null, { error: errStr });
+  }
+
+  async renderCsv(call: grpc.ServerUnaryCall<RenderCSVRequest, any>, callback: grpc.sendUnaryData<RenderCSVResponse>) {
+    const req = call.request;
+    const headers: HTTPHeaders = {};
+
+    if (!req) {
+      throw new Error('Request cannot be null');
+    }
+
+    if (req.headers) {
+      for (const key in req.headers) {
+        if (req.headers.hasOwnProperty(key)) {
+          const h = req.headers[key];
+          headers[key] = h.values.join(';');
+        }
+      }
+    }
+
+    const options: RenderCSVOptions = {
+      url: req.url,
+      filePath: req.filePath,
+      timeout: req.timeout,
+      renderKey: req.renderKey,
+      domain: req.domain,
+      timezone: req.timezone,
+      headers: headers,
+    };
+
+    this.log.debug('Render request received', 'url', options.url);
+    let errStr = '';
+    let fileName = '';
+    try {
+      const result = await this.browser.renderCSV(options);
+      fileName = result.fileName || '';
+    } catch (err) {
+      this.log.error('Render request failed', 'url', options.url, 'error', err.toString());
+      errStr = err.toString();
+    }
+    callback(null, { error: errStr, fileName });
   }
 
   async checkHealth(_: grpc.ServerUnaryCall<CheckHealthRequest, any>, callback: grpc.sendUnaryData<CheckHealthResponse>) {
