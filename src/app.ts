@@ -74,9 +74,7 @@ main().catch(err => {
 });
 
 function populatePluginConfigFromEnv(config: PluginConfig, env: NodeJS.ProcessEnv) {
-  config.rendering.timezone = env['TZ'];
-
-  // Plugin v2 env variables needs to be initiated early
+  // Plugin env variables that needs to be initiated early
   if (env['GF_PLUGIN_GRPC_HOST']) {
     config.plugin.grpc.host = env['GF_PLUGIN_GRPC_HOST'] as string;
   }
