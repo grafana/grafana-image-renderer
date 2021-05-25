@@ -24,6 +24,6 @@
     "updated": "2021-05-19"
   },
   "dependencies": {
-    "grafanaVersion": "7.x.x 8.x.x"
+    "grafanaDependency": ">=7.0.0"
   }
 }
