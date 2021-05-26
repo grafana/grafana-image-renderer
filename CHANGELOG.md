@@ -1,3 +1,9 @@
+## 3.0.0-beta2 (2021-05-26)
+
+- Remove support for plugin V1 protocol [#233](https://github.com/grafana/grafana-image-renderer/pull/233), [AgnesToulet](https://github.com/AgnesToulet)
+- Browser: Fix moving CSV file when the tmp folder is not on the same device as the target file path [#232](https://github.com/grafana/grafana-image-renderer/pull/232), [AgnesToulet](https://github.com/AgnesToulet)
+- Chore: Upgrade grabpl version [#231](https://github.com/grafana/grafana-image-renderer/pull/231), [AgnesToulet](https://github.com/AgnesToulet)
+
 ## 3.0.0-beta1 (2021-05-19)
 
 - Add CSV rendering feature [#217](https://github.com/grafana/grafana-image-renderer/pull/217), [AgnesToulet](https://github.com/AgnesToulet)
