@@ -134,6 +134,13 @@ export class Browser {
 
     return launcherOptions;
   }
+  
+  async setTimezone(page, options) {
+    const timezone = options.timezone || this.config.timezone;
+    if (timezone) {
+      await page.emulateTimezone(timezone);
+    }
+  }
 
   async preparePage(page: any, options: any) {
     if (this.config.verboseLogging) {
@@ -160,7 +167,6 @@ export class Browser {
       const launcherOptions = this.getLauncherOptions(options);
       browser = await puppeteer.launch(launcherOptions);
       page = await browser.newPage();
-      await page.emulateTimezone(launcherOptions.env.TZ);
       this.addPageListeners(page);
 
       return await this.takeScreenshot(page, options);
@@ -194,6 +200,7 @@ export class Browser {
     });
 
     await this.preparePage(page, options);
+    await this.setTimezone(page, options);
 
     if (this.config.verboseLogging) {
       this.log.debug('Moving mouse on page', 'x', options.width, 'y', options.height);
