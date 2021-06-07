@@ -61,6 +61,10 @@ export class HttpServer {
     this.app.get('/', (req: express.Request, res: express.Response) => {
       res.send('Grafana Image Renderer');
     });
+    this.app.get('/render/version', (req: express.Request, res: express.Response) => {
+      const pluginInfo = require('../../plugin.json');
+      res.send({ version: pluginInfo.info.version });
+    });
 
     this.app.get('/render', asyncMiddleware(this.render));
     this.app.get('/render/csv', asyncMiddleware(this.renderCSV));
