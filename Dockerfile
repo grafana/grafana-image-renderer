@@ -32,6 +32,7 @@ COPY --from=build /usr/src/app/node_modules node_modules
 COPY --from=build /usr/src/app/build build
 COPY --from=build /usr/src/app/proto proto
 COPY --from=build /usr/src/app/default.json config.json
+COPY --from=build /usr/src/app/plugin.json plugin.json
 
 EXPOSE 8081
 
