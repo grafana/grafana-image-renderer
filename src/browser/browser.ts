@@ -263,7 +263,8 @@ export class Browser {
 
   async exportCSV(page: any, options: any): Promise<RenderCSVResponse> {
     await this.preparePage(page, options);
-
+    await this.setTimezone(page, options);
+    
     const downloadPath = uniqueFilename(os.tmpdir());
     fs.mkdirSync(downloadPath);
     const watcher = chokidar.watch(downloadPath);
