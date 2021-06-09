@@ -1,7 +1,7 @@
 const path = require('path');
 const child_process = require('child_process');
 const Puppeteer = require('puppeteer');
-const puppeteerPackageJson = require('puppeteer/package.json');
+const { PUPPETEER_REVISIONS } = require('puppeteer/lib/esm/puppeteer/revisions')
 
 const archArg = process.argv[2];
 let [
@@ -22,7 +22,7 @@ if (platform === 'darwin') {
 const outputPath = "dist/" + (process.argv[3] || `plugin-${archArg}`);
 
 const browserFetcher = Puppeteer.createBrowserFetcher({ platform });
-const revision = puppeteerPackageJson.puppeteer.chromium_revision;
+const revision = PUPPETEER_REVISIONS.chromium;
 
 browserFetcher
   .download(revision, null)
