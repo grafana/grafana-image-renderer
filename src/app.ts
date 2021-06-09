@@ -1,7 +1,6 @@
 import * as path from 'path';
 import * as puppeteer from 'puppeteer';
 import * as _ from 'lodash';
-import { RenderGRPCPluginV1 } from './plugin/v1/grpc_plugin';
 import { RenderGRPCPluginV2 } from './plugin/v2/grpc_plugin';
 import { HttpServer } from './service/http-server';
 import { ConsoleLogger, PluginLogger } from './logger';
@@ -36,9 +35,6 @@ async function main() {
         magicCookieValue: 'datasource',
       },
       versionedPlugins: {
-        1: {
-          'grafana-image-renderer': new RenderGRPCPluginV1(config, logger),
-        },
         2: {
           renderer: new RenderGRPCPluginV2(config, logger),
         },
@@ -78,30 +74,7 @@ main().catch(err => {
 });
 
 function populatePluginConfigFromEnv(config: PluginConfig, env: NodeJS.ProcessEnv) {
-  // Plugin v1 legacy env variables
-  if (env['GF_RENDERER_PLUGIN_TZ']) {
-    config.rendering.timezone = env['GF_RENDERER_PLUGIN_TZ'];
-  } else {
-    config.rendering.timezone = env['TZ'];
-  }
-
-  if (env['GF_RENDERER_PLUGIN_GRPC_PORT']) {
-    config.plugin.grpc.port = parseInt(env['GF_RENDERER_PLUGIN_GRPC_PORT'] as string, 10);
-  }
-
-  if (env['GF_RENDERER_PLUGIN_IGNORE_HTTPS_ERRORS']) {
-    config.rendering.ignoresHttpsErrors = env['GF_RENDERER_PLUGIN_IGNORE_HTTPS_ERRORS'] === 'true';
-  }
-
-  if (env['GF_RENDERER_PLUGIN_CHROME_BIN']) {
-    config.rendering.chromeBin = env['GF_RENDERER_PLUGIN_CHROME_BIN'];
-  }
-
-  if (env['GF_RENDERER_PLUGIN_VERBOSE_LOGGING']) {
-    config.rendering.verboseLogging = env['GF_RENDERER_PLUGIN_VERBOSE_LOGGING'] === 'true';
-  }
-
-  // Plugin v2 env variables needs to be initiated early
+  // Plugin env variables that needs to be initiated early
   if (env['GF_PLUGIN_GRPC_HOST']) {
     config.plugin.grpc.host = env['GF_PLUGIN_GRPC_HOST'] as string;
   }

@@ -88,6 +88,7 @@ jobs:
       - run:
           name: Create and sign plugin manifest
           command: |
+            set +e
             if [ << parameters.skip_chromium >> = true ]; then
               /tmp/grabpl build-plugin-manifest ./dist/<< parameters.override_output >>
             else

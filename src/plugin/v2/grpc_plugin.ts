@@ -203,6 +203,8 @@ const populateConfigFromEnv = (config: PluginConfig) => {
 
   if (env['GF_PLUGIN_RENDERING_TIMEZONE']) {
     config.rendering.timezone = env['GF_PLUGIN_RENDERING_TIMEZONE'];
+  } else {
+    config.rendering.timezone = env['TZ'];
   }
 
   if (env['GF_PLUGIN_RENDERING_LANGUAGE']) {
