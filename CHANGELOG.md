@@ -1,3 +1,8 @@
+## 3.0.1 (2021-06-10)
+
+- Browser: Fix panel timezone when the timezone query parameter is specified [#224](https://github.com/grafana/grafana-image-renderer/pull/224), [Bujupah](https://github.com/Bujupah)
+- Docker: Fix version endpoint for Docker images [#248](https://github.com/grafana/grafana-image-renderer/pull/248), [mbentley](https://github.com/mbentley)
+
 ## 3.0.0 (2021-06-07)
 
 - Security: Bump path-parse from 1.0.6 to 1.0.7 [#244](https://github.com/grafana/grafana-image-renderer/pull/244), [AgnesToulet](https://github.com/AgnesToulet)
