@@ -134,6 +134,13 @@ export class Browser {
 
     return launcherOptions;
   }
+  
+  async setTimezone(page, options) {
+    const timezone = options.timezone || this.config.timezone;
+    if (timezone) {
+      await page.emulateTimezone(timezone);
+    }
+  }
 
   async preparePage(page: any, options: any) {
     if (this.config.verboseLogging) {
@@ -193,6 +200,7 @@ export class Browser {
     });
 
     await this.preparePage(page, options);
+    await this.setTimezone(page, options);
 
     if (this.config.verboseLogging) {
       this.log.debug('Moving mouse on page', 'x', options.width, 'y', options.height);
@@ -255,7 +263,8 @@ export class Browser {
 
   async exportCSV(page: any, options: any): Promise<RenderCSVResponse> {
     await this.preparePage(page, options);
-
+    await this.setTimezone(page, options);
+    
     const downloadPath = uniqueFilename(os.tmpdir());
     fs.mkdirSync(downloadPath);
     const watcher = chokidar.watch(downloadPath);
