@@ -118,6 +118,40 @@ docker run -d --name=renderer --network=host -v /some/path/config.json:/usr/src/
 
 You can see a docker-compose example using a custom configuration file [here/](https://github.com/grafana/grafana-image-renderer/tree/master/devenv/docker/custom-config).
 
+## Certificate signed by internal certificate authorities
+
+In many cases Grafana, runs on internal servers and uses certificates that have not been signed by a CA ([Certificate Authority](https://en.wikipedia.org/wiki/Certificate_authority)) known to Chrome, and therefore cannot be validated. Chrome internally uses NSS ([Network Security Services](https://en.wikipedia.org/wiki/Network_Security_Services)) for cryptogtraphic operations such as the validation of certificates.
+
+If you are using the Grafana Image Renderer with a Grafana server that uses a certificate signed by such a custom CA (for example a company-internal CA), rendering images will fail and you will see messages like this in the Grafana log:
+
+```
+t=2019-12-04T12:39:22+0000 lvl=error msg="Render request failed" logger=rendering error=map[] url="https://192.168.106.101:3443/d-solo/zxDJxNaZk/graphite-metrics?orgId=1&refresh=1m&from=1575438321300&to=1575459921300&var-Host=master1&panelId=4&width=1000&height=500&tz=Europe%2FBerlin&render=1" timestamp=0001-01-01T00:00:00.000Z
+t=2019-12-04T12:39:22+0000 lvl=error msg="Rendering failed." logger=context userId=1 orgId=1 uname=admin error="Rendering failed: Error: net::ERR_CERT_AUTHORITY_INVALID at https://192.168.106.101:3443/d-solo/zxDJxNaZk/graphite-metrics?orgId=1&refresh=1m&from=1575438321300&to=1575459921300&var-Host=master1&panelId=4&width=1000&height=500&tz=Europe%2FBerlin&render=1"
+t=2019-12-04T12:39:22+0000 lvl=error msg="Request Completed" logger=context userId=1 orgId=1 uname=admin method=GET path=/render/d-solo/zxDJxNaZk/graphite-metrics status=500 remote_addr=192.168.106.101 time_ms=310 size=1722 referer="https://grafana.xxx-xxx/d/zxDJxNaZk/graphite-metrics?orgId=1&refresh=1m"
+```
+
+(The severity-level `error` in the above messages might be misspelled with a single `r`)
+
+If this happens, then you have to add the certificate to the trust store. If you have the certificate file for the internal root CA in the file `internal-root-ca.crt.pem`, then use this `Dockerfile` to create new Docker image that has the specific NSS trust store.
+
+```
+FROM grafana/grafana-image-renderer:latest
+RUN apk add --no-cache nss-tools 
+# not required, useful for debugging
+RUN apk add --no-cache curl 
+ADD internal-root-ca.crt.pem /usr/local/share/ca-certificates/rootCA.crt
+RUN chmod 644 /usr/local/share/ca-certificates/rootCA.crt 
+RUN /usr/sbin/update-ca-certificates
+# register root cert with Network Security Services, which is used by Chromium
+RUN mkdir -p $HOME/.pki/nssdb
+RUN cd $HOME/.pki/nssdb
+RUN certutil -N -d sql:.
+RUN certutil -d sql:$HOME/.pki/nssdb -A -t TC -n "CAcert.org" -i /usr/local/share/ca-certificates/rootCA.crt
+```
+
+Build the Dockerfile with e.g `docker build --no-cache -t image_renderer .` and run it with `docker run -p 8081:8081 image_renderer`
+
+
 ## Docker Compose example
 
 The following docker-compose example can also be found in [docker/](https://github.com/grafana/grafana-image-renderer/tree/master/devenv/docker/simple).
