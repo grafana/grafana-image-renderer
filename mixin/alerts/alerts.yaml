@@ -1,0 +1,13 @@
+groups:
+  - name: GrafanaImageRendererAlerts
+    rules:
+      - alert: GrafanaImageRendererAlertsRequestsFailing
+        for: 5m
+        expr: |
+          (100 * namespace_job_statuscode:grafana_image_renderer_service_http_request_duration_seconds_count:rate5m{status_code=~"5.."}
+          / 
+          namespace_job_statuscode:grafana_image_renderer_service_http_request_duration_seconds_count:rate5m) > 5
+        labels:
+          severity: 'warning'
+        annotations:
+          message: "'{{ $labels.namespace }}' / '{{ $labels.job }}' is experiencing {{ $value | humanize }}% errors"

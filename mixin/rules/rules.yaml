@@ -1,0 +1,7 @@
+groups:
+  - name: grafana_rules
+    rules:
+    # Sum HTTP requests by status code but ignore ephemeral labels like pod and instance 
+    - record: namespace_job_statuscode:grafana_image_renderer_service_http_request_duration_seconds_count:rate5m
+      expr: |
+          sum without(instance, pod) (rate(grafana_image_renderer_service_http_request_duration_seconds_count[5m])) 
