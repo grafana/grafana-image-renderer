@@ -38,4 +38,5 @@ EXPOSE 8081
 
 ENTRYPOINT ["dumb-init", "--"]
 
+USER node
 CMD ["node", "build/app.js", "server", "--config=config.json"]
