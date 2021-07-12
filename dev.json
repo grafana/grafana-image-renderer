@@ -6,6 +6,7 @@
     "metrics": {
       "enabled": true,
       "collectDefaultMetrics": true,
+      "collectTimingMetrics": true,
       "requestDurationBuckets": [1, 5, 7, 9, 11, 13, 15, 20, 30]
     },
 
@@ -21,7 +22,11 @@
     "chromeBin": null,
     "args": [
       "--no-sandbox",
-      "--disable-setuid-sandbox"
+      "--disable-setuid-sandbox",
+      "--disable-dev-shm-usage",
+      "--disable-accelerated-2d-canvas",
+      "--disable-gpu",
+      "--window-size=1920x1080"
     ],
     "ignoresHttpsErrors": false,
 

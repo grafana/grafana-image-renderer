@@ -26,6 +26,7 @@ export interface RenderingConfig {
 export interface MetricsConfig {
   enabled: boolean;
   collectDefaultMetrics: boolean;
+  collectTimingMetrics: boolean;
   requestDurationBuckets: number[];
 }
 
@@ -88,6 +89,7 @@ export const defaultServiceConfig: ServiceConfig = {
     metrics: {
       enabled: false,
       collectDefaultMetrics: true,
+      collectTimingMetrics: false,
       requestDurationBuckets: [0.5, 1, 3, 5, 7, 10, 20, 30, 60],
     },
     logging: {

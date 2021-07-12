@@ -1,5 +1,5 @@
 import { Cluster } from 'puppeteer-cluster';
-import { Browser, RenderResponse, RenderOptions, RenderCSVOptions, RenderCSVResponse } from './browser';
+import { Browser, RenderResponse, RenderOptions, RenderCSVOptions, RenderCSVResponse, Metrics } from './browser';
 import { Logger } from '../logger';
 import { RenderingConfig, ClusteringConfig } from '../config';
 
@@ -20,8 +20,8 @@ export class ClusteredBrowser extends Browser {
   clusteringConfig: ClusteringConfig;
   concurrency: number;
 
-  constructor(config: RenderingConfig, log: Logger) {
-    super(config, log);
+  constructor(config: RenderingConfig, log: Logger, metrics: Metrics) {
+    super(config, log, metrics);
 
     this.clusteringConfig = config.clustering;
     this.concurrency = Cluster.CONCURRENCY_BROWSER;
@@ -39,6 +39,8 @@ export class ClusteredBrowser extends Browser {
       puppeteerOptions: launcherOptions,
     });
     await this.cluster.task(async ({ page, data }) => {
+      // await page.tracing.start({ path: 'profile.json', screenshots: true });
+
       if (data.options.timezone) {
         // set timezone
         await page.emulateTimezone(data.options.timezone);
@@ -54,6 +56,7 @@ export class ClusteredBrowser extends Browser {
             return await this.takeScreenshot(page, data.options);
         }
       } finally {
+        // await page.tracing.stop();
         this.removePageListeners(page);
       }
     });

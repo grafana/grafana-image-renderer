@@ -1,13 +1,13 @@
 import * as puppeteer from 'puppeteer';
-import { Browser, RenderResponse, RenderOptions, RenderCSVResponse, RenderCSVOptions } from './browser';
+import { Browser, RenderResponse, RenderOptions, RenderCSVResponse, RenderCSVOptions, Metrics } from './browser';
 import { Logger } from '../logger';
 import { RenderingConfig } from '../config';
 
 export class ReusableBrowser extends Browser {
   browser: puppeteer.Browser;
 
-  constructor(config: RenderingConfig, log: Logger) {
-    super(config, log);
+  constructor(config: RenderingConfig, log: Logger, metrics: Metrics) {
+    super(config, log, metrics);
   }
 
   async start(): Promise<void> {

@@ -4,12 +4,17 @@ import * as puppeteer from 'puppeteer';
 import * as chokidar from 'chokidar';
 import * as path from 'path';
 import * as fs from 'fs';
+import * as promClient from 'prom-client';
 import { Logger } from '../logger';
 import { RenderingConfig } from '../config';
 
 export interface HTTPHeaders {
   'Accept-Language'?: string;
   [header: string]: string | undefined;
+}
+
+export interface Metrics {
+  durationHistogram: promClient.Histogram;
 }
 
 export interface RenderOptions {
@@ -47,7 +52,7 @@ export interface RenderCSVResponse {
 }
 
 export class Browser {
-  constructor(protected config: RenderingConfig, protected log: Logger) {
+  constructor(protected config: RenderingConfig, protected log: Logger, protected metrics: Metrics) {
     this.log.debug('Browser initialized', 'config', this.config);
   }
 
@@ -156,11 +161,16 @@ export class Browser {
     let page: any;
 
     try {
+      const endLaunchPuppeteer = this.metrics.durationHistogram.startTimer({ step: 'launch' });
       this.validateImageOptions(options);
       const launcherOptions = this.getLauncherOptions(options);
       browser = await puppeteer.launch(launcherOptions);
+      const sec = endLaunchPuppeteer();
+
+      const endNewPage = this.metrics.durationHistogram.startTimer({ step: 'newPage' });
       page = await browser.newPage();
       this.addPageListeners(page);
+      endNewPage();
 
       return await this.takeScreenshot(page, options);
     } finally {
@@ -175,6 +185,7 @@ export class Browser {
   }
 
   async takeScreenshot(page: any, options: any): Promise<RenderResponse> {
+    const endPrepare = this.metrics.durationHistogram.startTimer({ step: 'preparePage' });
     if (this.config.verboseLogging) {
       this.log.debug(
         'Setting viewport for page',
@@ -203,8 +214,13 @@ export class Browser {
       this.log.debug('Navigating and waiting for all network requests to finish', 'url', options.url);
     }
 
-    await page.goto(options.url, { waitUntil: 'networkidle0', timeout: options.timeout * 1000 });
+    endPrepare();
 
+    const endGoTo = this.metrics.durationHistogram.startTimer({ step: 'navigate' });
+    await page.goto(options.url, { timeout: options.timeout * 1000 });
+    endGoTo();
+
+    const endWaitFor = this.metrics.durationHistogram.startTimer({ step: 'panelsRendered' });
     if (this.config.verboseLogging) {
       this.log.debug('Waiting for dashboard/panel to load', 'timeout', `${options.timeout}s`);
     }
@@ -217,7 +233,9 @@ export class Browser {
         timeout: options.timeout * 1000,
       }
     );
+    endWaitFor();
 
+    const endTakeScreenshot = this.metrics.durationHistogram.startTimer({ step: 'screenshot' });
     if (!options.filePath) {
       options.filePath = uniqueFilename(os.tmpdir()) + '.png';
     }
@@ -226,6 +244,7 @@ export class Browser {
       this.log.debug('Taking screenshot', 'filePath', options.filePath);
     }
     await page.screenshot({ path: options.filePath });
+    endTakeScreenshot();
 
     return { filePath: options.filePath };
   }
@@ -260,7 +279,7 @@ export class Browser {
     fs.mkdirSync(downloadPath);
     const watcher = chokidar.watch(downloadPath);
     let downloadFilePath = '';
-    watcher.on('add', file => {
+    watcher.on('add', (file) => {
       if (!file.endsWith('.crdownload')) {
         downloadFilePath = file;
       }
@@ -272,7 +291,7 @@ export class Browser {
       this.log.debug('Navigating and waiting for all network requests to finish', 'url', options.url);
     }
 
-    await page.goto(options.url, { waitUntil: 'networkidle0', timeout: options.timeout * 1000 });
+    await page.goto(options.url, { timeout: options.timeout * 1000 });
 
     if (this.config.verboseLogging) {
       this.log.debug('Waiting for download to end');
@@ -283,7 +302,7 @@ export class Browser {
       if (downloadFilePath !== '') {
         break;
       }
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise((resolve) => setTimeout(resolve, 500));
     }
 
     if (downloadFilePath === '') {
