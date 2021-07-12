@@ -60,6 +60,8 @@ export class Browser {
       return await browser.version();
     } finally {
       if (browser) {
+        const pages = await browser.pages();
+        await Promise.all(pages.map((page) => page.close()));
         await browser.close();
       }
     }
@@ -260,7 +262,7 @@ export class Browser {
     fs.mkdirSync(downloadPath);
     const watcher = chokidar.watch(downloadPath);
     let downloadFilePath = '';
-    watcher.on('add', file => {
+    watcher.on('add', (file) => {
       if (!file.endsWith('.crdownload')) {
         downloadFilePath = file;
       }
@@ -283,7 +285,7 @@ export class Browser {
       if (downloadFilePath !== '') {
         break;
       }
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise((resolve) => setTimeout(resolve, 500));
     }
 
     if (downloadFilePath === '') {
