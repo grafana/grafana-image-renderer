@@ -18,8 +18,8 @@ async function main() {
     const logger = new PluginLogger();
     const config: PluginConfig = defaultPluginConfig;
     populatePluginConfigFromEnv(config, env);
-
     if (!config.rendering.chromeBin && (process as any).pkg) {
+      //@ts-ignore
       const parts = puppeteer.executablePath().split(path.sep);
       while (!parts[0].startsWith('chrome-')) {
         parts.shift();
