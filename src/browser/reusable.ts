@@ -20,9 +20,11 @@ export class ReusableBrowser extends Browser {
     let page: puppeteer.Page | undefined;
 
     try {
-      this.validateImageOptions(options);
-      context = await this.browser.createIncognitoBrowserContext();
-      page = await context.newPage();
+      page = await this.withTimingMetrics<puppeteer.Page>(async () => {
+        this.validateImageOptions(options);
+        context = await this.browser.createIncognitoBrowserContext();
+        return context.newPage();
+      }, 'newPage');
 
       if (options.timezone) {
         // set timezone
