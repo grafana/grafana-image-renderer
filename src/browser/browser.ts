@@ -293,7 +293,7 @@ export class Browser {
       this.log.debug('Navigating and waiting for all network requests to finish', 'url', options.url);
     }
 
-    await page.goto(options.url, { timeout: options.timeout * 1000 });
+    await page.goto(options.url, { waitUntil: 'networkidle0', timeout: options.timeout * 1000 });
 
     if (this.config.verboseLogging) {
       this.log.debug('Waiting for download to end');

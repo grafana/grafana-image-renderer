@@ -39,8 +39,6 @@ export class ClusteredBrowser extends Browser {
       puppeteerOptions: launcherOptions,
     });
     await this.cluster.task(async ({ page, data }) => {
-      // await page.tracing.start({ path: 'profile.json', screenshots: true });
-
       if (data.options.timezone) {
         // set timezone
         await page.emulateTimezone(data.options.timezone);
@@ -56,7 +54,6 @@ export class ClusteredBrowser extends Browser {
             return await this.takeScreenshot(page, data.options);
         }
       } finally {
-        // await page.tracing.stop();
         this.removePageListeners(page);
       }
     });
