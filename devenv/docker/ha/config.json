@@ -10,6 +10,7 @@
   "rendering": {
     "timezone": null,
     "chromeBin": null,
+    "args": ["--no-sandbox", "--disable-gpu"],
     "ignoresHttpsErrors": false,
     "timingMetrics": true,
     "mode": "default",

@@ -78,7 +78,7 @@ RENDERING_DUMPIO=true
 
 **Start browser with additional arguments:**
 
-Additional arguments to pass to the headless browser instance. Default is `--no-sandbox`. The list of Chromium flags can be found [here](https://peter.sh/experiments/chromium-command-line-switches/). Multiple arguments is separated with comma-character.
+Additional arguments to pass to the headless browser instance. Defaults are `--no-sandbox,--disable-gpu`. The list of Chromium flags can be found [here](https://peter.sh/experiments/chromium-command-line-switches/) and the list of flags used as defaults by Puppeteer can be found [there](https://github.com/puppeteer/puppeteer/blob/main/src/node/Launcher.ts#L172). Multiple arguments is separated with comma-character. 
 
 ```bash
 RENDERING_ARGS=--no-sandbox,--disable-setuid-sandbox,--disable-dev-shm-usage,--disable-accelerated-2d-canvas,--disable-gpu,--window-size=1280x758
