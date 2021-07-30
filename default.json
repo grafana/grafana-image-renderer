@@ -6,7 +6,6 @@
     "metrics": {
       "enabled": false,
       "collectDefaultMetrics": true,
-      "collectTimingMetrics": false,
       "requestDurationBuckets": [1, 5, 7, 9, 11, 13, 15, 20, 30]
     },
 
@@ -20,9 +19,7 @@
   },
   "rendering": {
     "chromeBin": null,
-    "args": [
-      "--no-sandbox"
-    ],
+    "args": ["--no-sandbox"],
     "ignoresHttpsErrors": false,
 
     "timezone": null,
@@ -41,6 +38,7 @@
     },
 
     "verboseLogging": false,
-    "dumpio": false
+    "dumpio": false,
+    "timingMetrics": false
   }
 }

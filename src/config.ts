@@ -21,12 +21,12 @@ export interface RenderingConfig {
   clustering: ClusteringConfig;
   verboseLogging: boolean;
   dumpio: boolean;
+  timingMetrics: boolean;
 }
 
 export interface MetricsConfig {
   enabled: boolean;
   collectDefaultMetrics: boolean;
-  collectTimingMetrics: boolean;
   requestDurationBuckets: number[];
 }
 
@@ -80,6 +80,7 @@ const defaultRenderingConfig: RenderingConfig = {
   },
   verboseLogging: false,
   dumpio: false,
+  timingMetrics: false,
 };
 
 export const defaultServiceConfig: ServiceConfig = {
@@ -89,7 +90,6 @@ export const defaultServiceConfig: ServiceConfig = {
     metrics: {
       enabled: false,
       collectDefaultMetrics: true,
-      collectTimingMetrics: false,
       requestDurationBuckets: [0.5, 1, 3, 5, 7, 10, 20, 30, 60],
     },
     logging: {

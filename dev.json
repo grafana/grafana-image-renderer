@@ -6,7 +6,6 @@
     "metrics": {
       "enabled": true,
       "collectDefaultMetrics": true,
-      "collectTimingMetrics": true,
       "requestDurationBuckets": [1, 5, 7, 9, 11, 13, 15, 20, 30]
     },
 
@@ -45,7 +44,8 @@
       "maxConcurrency": 5
     },
 
-    "verboseLogging": false,
-    "dumpio": true
+    "verboseLogging": true,
+    "dumpio": false,
+    "timingMetrics": true
   }
 }

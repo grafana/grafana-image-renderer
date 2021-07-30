@@ -116,7 +116,7 @@ class PluginGRPCServer {
     this.log.debug('Render request received', 'url', options.url);
     let errStr = '';
     try {
-      // await this.browser.render(options);
+      await this.browser.render(options);
     } catch (err) {
       this.log.error('Render request failed', 'url', options.url, 'error', err.toString());
       errStr = err.toString();

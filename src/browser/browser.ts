@@ -161,16 +161,17 @@ export class Browser {
     let page: any;
 
     try {
-      const endLaunchPuppeteer = this.metrics.durationHistogram.startTimer({ step: 'launch' });
-      this.validateImageOptions(options);
-      const launcherOptions = this.getLauncherOptions(options);
-      browser = await puppeteer.launch(launcherOptions);
-      const sec = endLaunchPuppeteer();
+      const browser = await this.withTimingMetrics<puppeteer.Browser>(() => {
+        this.validateImageOptions(options);
+        const launcherOptions = this.getLauncherOptions(options);
+        return puppeteer.launch(launcherOptions);
+      }, 'launch');
 
-      const endNewPage = this.metrics.durationHistogram.startTimer({ step: 'newPage' });
-      page = await browser.newPage();
+      const page = await this.withTimingMetrics<puppeteer.Page>(() => {
+        return browser.newPage();
+      }, 'newPage');
+
       this.addPageListeners(page);
-      endNewPage();
 
       return await this.takeScreenshot(page, options);
     } finally {
@@ -185,57 +186,56 @@ export class Browser {
   }
 
   async takeScreenshot(page: any, options: any): Promise<RenderResponse> {
-    const endPrepare = this.metrics.durationHistogram.startTimer({ step: 'preparePage' });
-    if (this.config.verboseLogging) {
-      this.log.debug(
-        'Setting viewport for page',
-        'width',
-        options.width.toString(),
-        'height',
-        options.height.toString(),
-        'deviceScaleFactor',
-        options.deviceScaleFactor.toString()
-      );
-    }
-    await page.setViewport({
-      width: options.width,
-      height: options.height,
-      deviceScaleFactor: options.deviceScaleFactor,
-    });
-
-    await this.preparePage(page, options);
-
-    if (this.config.verboseLogging) {
-      this.log.debug('Moving mouse on page', 'x', options.width, 'y', options.height);
-    }
-    await page.mouse.move(options.width, options.height);
-
-    if (this.config.verboseLogging) {
-      this.log.debug('Navigating and waiting for all network requests to finish', 'url', options.url);
-    }
-
-    endPrepare();
-
-    const endGoTo = this.metrics.durationHistogram.startTimer({ step: 'navigate' });
-    await page.goto(options.url, { timeout: options.timeout * 1000 });
-    endGoTo();
-
-    const endWaitFor = this.metrics.durationHistogram.startTimer({ step: 'panelsRendered' });
-    if (this.config.verboseLogging) {
-      this.log.debug('Waiting for dashboard/panel to load', 'timeout', `${options.timeout}s`);
-    }
-    await page.waitForFunction(
-      () => {
-        const panelCount = document.querySelectorAll('.panel').length || document.querySelectorAll('.panel-container').length;
-        return (window as any).panelsRendered >= panelCount;
-      },
-      {
-        timeout: options.timeout * 1000,
+    await this.withTimingMetrics(async () => {
+      if (this.config.verboseLogging) {
+        this.log.debug(
+          'Setting viewport for page',
+          'width',
+          options.width.toString(),
+          'height',
+          options.height.toString(),
+          'deviceScaleFactor',
+          options.deviceScaleFactor.toString()
+        );
       }
-    );
-    endWaitFor();
 
-    const endTakeScreenshot = this.metrics.durationHistogram.startTimer({ step: 'screenshot' });
+      await page.setViewport({
+        width: options.width,
+        height: options.height,
+        deviceScaleFactor: options.deviceScaleFactor,
+      });
+
+      await this.preparePage(page, options);
+
+      if (this.config.verboseLogging) {
+        this.log.debug('Moving mouse on page', 'x', options.width, 'y', options.height);
+      }
+      return page.mouse.move(options.width, options.height);
+    }, 'prepare');
+
+    await this.withTimingMetrics<void>(() => {
+      if (this.config.verboseLogging) {
+        this.log.debug('Navigating and waiting for all network requests to finish', 'url', options.url);
+      }
+
+      return page.goto(options.url, { timeout: options.timeout * 1000 });
+    }, 'navigate');
+
+    await this.withTimingMetrics<void>(() => {
+      if (this.config.verboseLogging) {
+        this.log.debug('Waiting for dashboard/panel to load', 'timeout', `${options.timeout}s`);
+      }
+      return page.waitForFunction(
+        () => {
+          const panelCount = document.querySelectorAll('.panel').length || document.querySelectorAll('.panel-container').length;
+          return (window as any).panelsRendered >= panelCount;
+        },
+        {
+          timeout: options.timeout * 1000,
+        }
+      );
+    }, 'panelsRendered');
+
     if (!options.filePath) {
       options.filePath = uniqueFilename(os.tmpdir()) + '.png';
     }
@@ -243,8 +243,10 @@ export class Browser {
     if (this.config.verboseLogging) {
       this.log.debug('Taking screenshot', 'filePath', options.filePath);
     }
-    await page.screenshot({ path: options.filePath });
-    endTakeScreenshot();
+
+    await this.withTimingMetrics<void>(() => {
+      return page.screenshot({ path: options.filePath });
+    }, 'screenshot');
 
     return { filePath: options.filePath };
   }
@@ -320,6 +322,18 @@ export class Browser {
     }
 
     return { filePath, fileName: path.basename(downloadFilePath) };
+  }
+
+  async withTimingMetrics<T>(callback: () => Promise<T>, step: string): Promise<T> {
+    if (this.config.timingMetrics) {
+      const endTimer = this.metrics.durationHistogram.startTimer({ step });
+      const res = await callback();
+      endTimer();
+
+      return res;
+    } else {
+      return callback();
+    }
   }
 
   addPageListeners(page: any) {
