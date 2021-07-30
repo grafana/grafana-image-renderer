@@ -161,13 +161,13 @@ export class Browser {
     let page: any;
 
     try {
-      const browser = await this.withTimingMetrics<puppeteer.Browser>(() => {
+      browser = await this.withTimingMetrics<puppeteer.Browser>(() => {
         this.validateImageOptions(options);
         const launcherOptions = this.getLauncherOptions(options);
         return puppeteer.launch(launcherOptions);
       }, 'launch');
 
-      const page = await this.withTimingMetrics<puppeteer.Page>(() => {
+      page = await this.withTimingMetrics<puppeteer.Page>(() => {
         return browser.newPage();
       }, 'newPage');
 
