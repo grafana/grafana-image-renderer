@@ -65,6 +65,8 @@ export class Browser {
       return await browser.version();
     } finally {
       if (browser) {
+        const pages = await browser.pages();
+        await Promise.all(pages.map((page) => page.close()));
         await browser.close();
       }
     }
@@ -140,6 +142,13 @@ export class Browser {
     return launcherOptions;
   }
 
+  async setTimezone(page, options) {
+    const timezone = options.timezone || this.config.timezone;
+    if (timezone) {
+      await page.emulateTimezone(timezone);
+    }
+  }
+
   async preparePage(page: any, options: any) {
     if (this.config.verboseLogging) {
       this.log.debug('Setting cookie for page', 'renderKey', options.renderKey, 'domain', options.domain);
@@ -206,6 +215,7 @@ export class Browser {
       });
 
       await this.preparePage(page, options);
+      await this.setTimezone(page, options);
 
       if (this.config.verboseLogging) {
         this.log.debug('Moving mouse on page', 'x', options.width, 'y', options.height);
@@ -276,6 +286,7 @@ export class Browser {
 
   async exportCSV(page: any, options: any): Promise<RenderCSVResponse> {
     await this.preparePage(page, options);
+    await this.setTimezone(page, options);
 
     const downloadPath = uniqueFilename(os.tmpdir());
     fs.mkdirSync(downloadPath);

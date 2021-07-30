@@ -26,15 +26,30 @@ CMD [ "yarn", "run", "dev" ]
 
 FROM base
 
+LABEL maintainer="Grafana team <hello@grafana.com>"
+
+ARG GF_UID="472"
+ARG GF_GID="472"
+ENV GF_PATHS_HOME="/usr/share/grafana"
+
+WORKDIR $GF_PATHS_HOME
+
+RUN addgroup -S -g $GF_GID grafana && \
+    adduser -S -u $GF_UID -G grafana grafana && \
+    mkdir -p "$GF_PATHS_HOME" && \
+    chown -R grafana:grafana "$GF_PATHS_HOME"
+
 ENV NODE_ENV=production
 
 COPY --from=build /usr/src/app/node_modules node_modules
 COPY --from=build /usr/src/app/build build
 COPY --from=build /usr/src/app/proto proto
 COPY --from=build /usr/src/app/default.json config.json
+COPY --from=build /usr/src/app/plugin.json plugin.json
 
 EXPOSE 8081
 
-ENTRYPOINT ["dumb-init", "--"]
+USER grafana
 
+ENTRYPOINT ["dumb-init", "--"]
 CMD ["node", "build/app.js", "server", "--config=config.json"]
