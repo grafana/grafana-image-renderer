@@ -228,7 +228,7 @@ export class Browser {
         this.log.debug('Navigating and waiting for all network requests to finish', 'url', options.url);
       }
 
-      return page.goto(options.url, { timeout: options.timeout * 1000 });
+      return page.goto(options.url, { waitUntil: 'networkidle0', timeout: options.timeout * 1000 });
     }, 'navigate');
 
     await this.withTimingMetrics<void>(() => {
