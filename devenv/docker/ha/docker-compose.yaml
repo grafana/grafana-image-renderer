@@ -65,13 +65,13 @@ services:
   renderer:
     image: grafana/grafana-image-renderer:${RENDERER_VERSION}
     volumes:
-      - ./config.json:/usr/src/app/config.json
     environment:
       - VIRTUAL_HOST=renderer.loc
       - ENABLE_METRICS=true
       - RENDERING_MODE=${RENDERING_MODE}
       - RENDERING_CLUSTERING_MODE=${RENDERING_CLUSTERING_MODE}
       - RENDERING_CLUSTERING_MAX_CONCURRENCY=${RENDERING_CLUSTERING_MAX_CONCURRENCY}
+      - ./config.json:/usr/share/grafana/config.json
     ports:
       - 8081
     # mem_limit: 500mb

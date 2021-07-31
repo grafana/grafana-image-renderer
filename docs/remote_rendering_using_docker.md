@@ -113,7 +113,7 @@ You can override certain settings by using a configuration file, see [default.js
 You can volume mount your custom configuration file when starting the docker container:
 
 ```bash
-docker run -d --name=renderer --network=host -v /some/path/config.json:/usr/src/app/config.json grafana/grafana-image-renderer:latest
+docker run -d --name=renderer --network=host -v /some/path/config.json:/usr/share/grafana/config.json grafana/grafana-image-renderer:latest
 ```
 
 You can see a docker-compose example using a custom configuration file [here/](https://github.com/grafana/grafana-image-renderer/tree/master/devenv/docker/custom-config).
