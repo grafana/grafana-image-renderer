@@ -94,10 +94,6 @@ Instead of installing and running the image renderer as a plugin, you can run it
 
 ## Troubleshooting
 
-### Performance troubleshooting
-
-### Other
-
 For troubleshooting help, please refer to
 [Grafana Image Rendering documentation](https://grafana.com/docs/grafana/latest/administration/image_rendering/#troubleshoot-image-rendering).
 
