@@ -86,25 +86,7 @@ RENDERING_ARGS=--no-sandbox,--disable-setuid-sandbox,--disable-dev-shm-usage,--d
 
 **Change how browser instances are created:**
 
-You can instruct how headless browser instances are created by configuring a rendering mode (`RENDERING_MODE`). Default is `default` and will create a new browser instance on each request. Other supported values are `clustered` and `reusable`.
-
-```bash
-RENDERING_MODE=default
-```
-
-When using `clustered` you can configure a clustering mode to define how many browser instances or incognito pages that can execute concurrently. Default is `browser` and will ensure a maximum amount of browser instances can execute concurrently. Mode `context` will ensure a maximum amount of incognito pages can execute concurrently. You can also configure the maximum concurrency allowed which per default is `5`.
-
-```bash
-RENDERING_MODE=clustered
-RENDERING_CLUSTERING_MODE=default
-RENDERING_CLUSTERING_MAX_CONCURRENCY=5
-```
-
-When using the rendering mode `reusable` one browser instance will be created and reused. A new incognito page will be opened on each request for. This mode is a bit experimental since if the browser instance crashes it will not automatically be restarted.
-
-```bash
-RENDERING_MODE=reusable
-```
+See [rendering mode documentation](https://github.com/grafana/grafana-image-renderer#rendering-mode).
 
 ## Configuration file
 
