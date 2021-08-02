@@ -34,10 +34,39 @@ for rendering and using remote rendering, see [Remote Rendering Using Docker](#r
 
 If you still want to install the plugin in the Grafana docker image we provide instructions for how to build a custom Grafana image, see [Grafana Docker documentation](https://grafana.com/docs/installation/docker/#custom-image-with-grafana-image-renderer-plugin-pre-installed) for further instructions.
 
-
 ### Configuration
 
-For available configuration settings, please refer to [Grafana Image Rendering documentation](https://grafana.com/docs/administration/image_rendering/).
+#### Rendering mode
+
+You can instruct how headless browser instances are created by configuring a rendering mode (`RENDERING_MODE`). Default is `default`, other supported values are `clustered` and `reusable`.
+
+##### Default
+
+Default mode will create a new browser instance on each request. When handling multiple concurrent requests, this mode increases memory usage as it will launch multiple browsers at the same time. If you want to set a maximum
+
+> Note: When using the `default` mode, it's recommended to not remove the default Chromium flag `--disable-gpu`. When receiving a lot of concurrent requests, not using this flag can cause Puppeteer `newPage` function to freeze, causing request timeout and leaving browsers open.
+
+```bash
+RENDERING_MODE=default
+```
+
+When using `clustered` you can configure a clustering mode to define how many browser instances or incognito pages that can execute concurrently. Default is `browser` and will ensure a maximum amount of browser instances can execute concurrently. Mode `context` will ensure a maximum amount of incognito pages can execute concurrently. You can also configure the maximum concurrency allowed which per default is `5`.
+
+```bash
+RENDERING_MODE=clustered
+RENDERING_CLUSTERING_MODE=default
+RENDERING_CLUSTERING_MAX_CONCURRENCY=5
+```
+
+When using the rendering mode `reusable` one browser instance will be created and reused. A new incognito page will be opened on each request for. This mode is a bit experimental since if the browser instance crashes it will not automatically be restarted.
+
+```bash
+RENDERING_MODE=reusable
+```
+
+#### Configure Grafana
+
+For available Grafana configuration settings, please refer to [Grafana Image Rendering documentation](https://grafana.com/docs/administration/image_rendering/).
 
 ## Remote Rendering Using Docker
 
@@ -45,7 +74,11 @@ Instead of installing and running the image renderer as a plugin, you can run it
 
 ## Troubleshooting
 
-For troubleshooting help, please refer to 
+### Performance troubleshooting
+
+### Other
+
+For troubleshooting help, please refer to
 [Grafana Image Rendering documentation](https://grafana.com/docs/grafana/latest/administration/image_rendering/#troubleshoot-image-rendering).
 
 ## Additional information
