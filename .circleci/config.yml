@@ -192,8 +192,8 @@ workflows:
       - build:
           filters: *filter-only-master
       - security_scan:
-        filters: *filter-only-master
-        requires:
+          filters: *filter-only-master
+          requires:
             - build
       - package:
           filters: *filter-only-master
