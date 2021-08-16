@@ -152,7 +152,6 @@ jobs:
           name: 'Build and push Docker image'
           command: ./scripts/build_push_docker.sh
   security_scan:
-    executor: default_exec
     steps:
       - checkout
       - attach_workspace:
