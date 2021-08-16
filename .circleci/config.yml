@@ -233,6 +233,9 @@ workflows:
     jobs:
       - build:
           filters: *filter-not-release-or-master
+      - security_scan:
+          requires:
+            - build
       - package:
           filters: *filter-not-release-or-master
           requires:
