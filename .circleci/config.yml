@@ -152,6 +152,7 @@ jobs:
           name: 'Build and push Docker image'
           command: ./scripts/build_push_docker.sh
   security_scan:
+    executor: scan_exec
     steps:
       - checkout
       - attach_workspace:
@@ -251,3 +252,8 @@ workflows:
           skip_chromium: true
           override_output: plugin-linux-x64-glibc-no-chromium
           skip_signing_errors: true
+
+executors:
+  scan_exec:
+    docker:
+    - image: srclosson/grafana-plugin-ci-alpine:latest
