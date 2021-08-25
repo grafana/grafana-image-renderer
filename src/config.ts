@@ -63,7 +63,7 @@ export interface PluginConfig {
 
 const defaultRenderingConfig: RenderingConfig = {
   chromeBin: undefined,
-  args: ['--no-sandbox'],
+  args: ['--no-sandbox', '--disable-gpu'],
   ignoresHttpsErrors: false,
   timezone: undefined,
   acceptLanguage: undefined,

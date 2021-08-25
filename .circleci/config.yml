@@ -151,6 +151,39 @@ jobs:
       - run:
           name: 'Build and push Docker image'
           command: ./scripts/build_push_docker.sh
+  security_scan:
+    executor: scan_exec
+    steps:
+      - checkout
+      - attach_workspace:
+          at: .
+      - restore_cache:
+          name: restore node_modules
+          keys:
+            - build-cache-{{ .Environment.CACHE_VERSION }}-{{ checksum "yarn.lock" }}
+      - run:
+          name: Run Veracode scan
+          command: |
+            apk add curl
+            # Increase heap size or the scanner will die.
+            export _JAVA_OPTIONS=-Xmx4g
+            mkdir -p ci/jobs/security_scan
+            curl -sSL https://download.sourceclear.com/ci.sh | sh | tee ci/jobs/security_scan/sourclear_scan.out
+            ##
+            # Not failing builds now if we detect items we deem a problem in the scan output, but the following
+            # Would be an example
+            #
+            # grep "High Risk" ci/jobs/security_scan/sourclear_scan.out && false || true
+      - persist_to_workspace:
+          root: .
+          paths:
+            - ci/jobs/security_scan
+      - store_test_results:
+          path: ci/jobs/security_scan
+      - store_artifacts:
+          path: ci/jobs/security_scan      
+
+  
 
 workflows:
   version: 2
@@ -158,6 +191,10 @@ workflows:
     jobs:
       - build:
           filters: *filter-only-master
+      - security_scan:
+          filters: *filter-only-master
+          requires:
+            - build
       - package:
           filters: *filter-only-master
           requires:
@@ -196,6 +233,9 @@ workflows:
     jobs:
       - build:
           filters: *filter-not-release-or-master
+      - security_scan:
+          requires:
+            - build
       - package:
           filters: *filter-not-release-or-master
           requires:
@@ -215,3 +255,8 @@ workflows:
           skip_chromium: true
           override_output: plugin-linux-x64-glibc-no-chromium
           skip_signing_errors: true
+
+executors:
+  scan_exec:
+    docker:
+    - image: srclosson/grafana-plugin-ci-alpine:latest

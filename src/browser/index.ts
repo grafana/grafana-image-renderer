@@ -15,6 +15,12 @@ export function createBrowser(config: RenderingConfig, log: Logger, metrics: Met
     return new ReusableBrowser(config, log, metrics);
   }
 
+  if (!config.args.includes['--disable-gpu']) {
+    log.warn(
+      'using default mode without the --disable-gpu flag is not recommended as it can cause Puppeteer newPage function to freeze, leaving browsers open'
+    );
+  }
+
   return new Browser(config, log, metrics);
 }
 

@@ -19,7 +19,7 @@
   },
   "rendering": {
     "chromeBin": null,
-    "args": ["--no-sandbox"],
+    "args": ["--no-sandbox", "--disable-gpu"],
     "ignoresHttpsErrors": false,
 
     "timezone": null,
