@@ -1,5 +1,78 @@
 import http from "k6/http";
 
+export const DatasourcesEndpoint = class DatasourcesEndpoint {
+  constructor(httpClient) {
+    this.httpClient = httpClient;
+  }
+
+  getAll() {
+    return this.httpClient.get('/datasources');
+  }
+
+  getById(id) {
+    return this.httpClient.get(`/datasources/${id}`);
+  }
+
+  getByName(name) {
+    return this.httpClient.get(`/datasources/name/${name}`);
+  }
+
+  create(payload) {
+    return this.httpClient.post(`/datasources`, JSON.stringify(payload));
+  }
+
+  update(id, payload) {
+    return this.httpClient.put(`/datasources/${id}`, JSON.stringify(payload));
+  }
+
+  delete(id) {
+    return this.httpClient.delete(`/datasources/${id}`);
+  }
+};
+
+export const DashboardsEndpoint = class DashboardsEndpoint {
+  constructor(httpClient) {
+    this.httpClient = httpClient;
+  }
+
+  getAll() {
+    return this.httpClient.get('/dashboards');
+  }
+
+  upsert(payload) {
+    return this.httpClient.post(`/dashboards/db`, JSON.stringify(payload));
+  }
+
+  delete(id) {
+    return this.httpClient.delete(`/dashboards/uid/${id}`);
+  }
+};
+
+export const OrganizationsEndpoint = class OrganizationsEndpoint {
+  constructor(httpClient) {
+    this.httpClient = httpClient;
+  }
+
+  getById(id) {
+    return this.httpClient.get(`/orgs/${id}`);
+  }
+
+  getByName(name) {
+    return this.httpClient.get(`/orgs/name/${name}`);
+  }
+
+  create(name) {
+    let payload = {
+      name: name,
+    };
+    return this.httpClient.post(`/orgs`, JSON.stringify(payload));
+  }
+
+  delete(id) {
+    return this.httpClient.delete(`/orgs/${id}`);
+  }
+};
+
 export const UIEndpoint = class UIEndpoint {
   constructor(httpClient) {
     this.httpClient = httpClient;
@@ -10,16 +83,44 @@ export const UIEndpoint = class UIEndpoint {
     return this.httpClient.formPost('/login', payload);
   }
 
-  render() {
-    return this.httpClient.get('/render/d-solo/_CPokraWz/graph-panel?orgId=1&panelId=1&width=1000&height=500&tz=Europe%2FStockholm')
+  renderPanel(orgId, dashboardUid, panelId) {
+    return this.httpClient.get(
+      `/render/d-solo/${dashboardUid}/graph-panel`,
+      {
+        orgId,
+        panelId,
+        width: 1000,
+        height: 500,
+        tz: 'Europe/Stockholm',
+      }
+    );
   }
 }
 
 export const GrafanaClient = class GrafanaClient {
   constructor(httpClient) {
-    httpClient.onBeforeRequest = this.onBeforeRequest;
+    httpClient.onBeforeRequest = (params) => {
+      if (this.orgId && this.orgId > 0) {
+        params.headers = params.headers || {};
+        params.headers["X-Grafana-Org-Id"] = this.orgId;
+      }
+    }
+
     this.raw = httpClient;
+    this.dashboards = new DashboardsEndpoint(httpClient.withUrl('/api'));
+    this.datasources = new DatasourcesEndpoint(httpClient.withUrl('/api'));
+    this.orgs = new OrganizationsEndpoint(httpClient.withUrl('/api'));
     this.ui = new UIEndpoint(httpClient);
+  }
+
+  loadCookies(cookies) {
+    for (let [name, value] of Object.entries(cookies)) {
+      http.cookieJar().set(this.raw.url, name, value);
+    }
+  }
+
+  saveCookies() {
+    return http.cookieJar().cookiesForURL(this.raw.url + '/');
   }
 
   batch(requests) {
@@ -28,13 +129,6 @@ export const GrafanaClient = class GrafanaClient {
 
   withOrgId(orgId) {
     this.orgId = orgId;
-  }
-
-  onBeforeRequest(params) {
-    if (this.orgId && this.orgId > 0) {
-      params = params.headers || {};
-      params.headers["X-Grafana-Org-Id"] = this.orgId;
-    }
   }
 }
 
@@ -62,10 +156,17 @@ export const BaseClient = class BaseClient {
 
   }
 
-  get(url, params) {
+  get(url, queryParams, params) {
     params = params || {};
     this.beforeRequest(params);
     this.onBeforeRequest(params);
+
+    if (queryParams) {
+      url += '?' + Array.from(Object.entries(queryParams)).map(([key, value]) =>
+        `${key}=${encodeURIComponent(value)}`
+      ).join('&');
+    }
+
     return http.get(this.url + url, params);
   }
 
@@ -84,6 +185,16 @@ export const BaseClient = class BaseClient {
     this.beforeRequest(params);
     this.onBeforeRequest(params);
     return http.post(this.url + url, body, params);
+  }
+
+  put(url, body, params) {
+    params = params || {};
+    params.headers = params.headers || {};
+    params.headers['Content-Type'] = 'application/json';
+
+    this.beforeRequest(params);
+    this.onBeforeRequest(params);
+    return http.put(this.url + url, body, params);
   }
 
   delete(url, params) {
