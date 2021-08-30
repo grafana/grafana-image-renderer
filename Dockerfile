@@ -32,8 +32,11 @@ ARG GF_UID="472"
 ARG GF_GID="472"
 ENV GF_PATHS_HOME="/usr/src/app"
 
+ WORKDIR $GF_PATHS_HOME
+
 RUN addgroup -S -g $GF_GID grafana && \
     adduser -S -u $GF_UID -G grafana grafana && \
+    mkdir -p "$GF_PATHS_HOME" && \
     chown -R grafana:grafana "$GF_PATHS_HOME"
 
 ENV NODE_ENV=production
