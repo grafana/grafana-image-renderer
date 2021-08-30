@@ -13,7 +13,7 @@ export let options = {
 
 let endpoint = __ENV.URL || 'http://localhost:3000';
 const client = createClient(endpoint);
-const dashboard = JSON.parse(open('fixtures/image-renderer-perf-dashboard.json'));
+const dashboard = JSON.parse(open('fixtures/graph_panel.json'));
 
 export const setup = () => {
   let grafanaSession;
@@ -27,7 +27,7 @@ export const setup = () => {
 
   const orgId = createTestOrgIfNotExists(client);
   client.withOrgId(orgId);
-  upsertTestdataDatasource(client);
+  upsertTestdataDatasource(client, dashboard.panels[0].datasource);
   upsertTestdataDashboard(client, dashboard);
 
   return {

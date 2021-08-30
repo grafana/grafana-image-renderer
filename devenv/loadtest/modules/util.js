@@ -20,11 +20,11 @@ export const createTestOrgIfNotExists = (client) => {
   return res.json().id;
 };
 
-export const upsertTestdataDatasource = (client) => {
+export const upsertTestdataDatasource = (client, name) => {
   const payload = {
     access: 'proxy',
     isDefault: false,
-    name: 'k6-image-renderer-testdata',
+    name,
     type: 'testdata',
   };
 

@@ -26,7 +26,17 @@ run() {
 	done
 	shift $((OPTIND-1))
 
-  docker run -t --network=host -v $PWD:/src -e URL=$url --rm -i loadimpact/k6:master run --vus $vus --duration $duration $iterationsOption /src/render_test.js
+  docker run \
+    -it \
+    --network=host \
+    --mount type=bind,source=$PWD,destination=/src \
+    -e URL=$url \
+    --rm \
+    loadimpact/k6:master run \
+    --vus $vus \
+    --duration $duration \
+    $iterationsOption \
+    /src/render_test.js
 }
 
 run "$@"

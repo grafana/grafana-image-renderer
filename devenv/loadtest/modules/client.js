@@ -24,10 +24,6 @@ export const DatasourcesEndpoint = class DatasourcesEndpoint {
   update(id, payload) {
     return this.httpClient.put(`/datasources/${id}`, JSON.stringify(payload));
   }
-
-  delete(id) {
-    return this.httpClient.delete(`/datasources/${id}`);
-  }
 };
 
 export const DashboardsEndpoint = class DashboardsEndpoint {
@@ -41,10 +37,6 @@ export const DashboardsEndpoint = class DashboardsEndpoint {
 
   upsert(payload) {
     return this.httpClient.post(`/dashboards/db`, JSON.stringify(payload));
-  }
-
-  delete(id) {
-    return this.httpClient.delete(`/dashboards/uid/${id}`);
   }
 };
 
@@ -66,10 +58,6 @@ export const OrganizationsEndpoint = class OrganizationsEndpoint {
       name: name,
     };
     return this.httpClient.post(`/orgs`, JSON.stringify(payload));
-  }
-
-  delete(id) {
-    return this.httpClient.delete(`/orgs/${id}`);
   }
 };
 
