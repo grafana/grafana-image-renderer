@@ -32,7 +32,7 @@ ARG GF_UID="472"
 ARG GF_GID="472"
 ENV GF_PATHS_HOME="/usr/src/app"
 
- WORKDIR $GF_PATHS_HOME
+WORKDIR $GF_PATHS_HOME
 
 RUN addgroup -S -g $GF_GID grafana && \
     adduser -S -u $GF_UID -G grafana grafana && \
