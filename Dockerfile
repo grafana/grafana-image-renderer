@@ -30,7 +30,7 @@ LABEL maintainer="Grafana team <hello@grafana.com>"
 
 ARG GF_UID="472"
 ARG GF_GID="472"
-ENV GF_PATHS_HOME="/usr/share/grafana"
+ENV GF_PATHS_HOME="/usr/src/app"
 
 WORKDIR $GF_PATHS_HOME
 
