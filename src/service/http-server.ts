@@ -6,10 +6,10 @@ import * as boom from '@hapi/boom';
 import morgan = require('morgan');
 import * as promClient from 'prom-client';
 import { Logger } from '../logger';
-import { Browser } from '../browser';
+import { Browser, createBrowser } from '../browser';
 import { ServiceConfig } from '../config';
 import { metricsMiddleware } from './metrics_middleware';
-import { RenderOptions, RenderCSVOptions, HTTPHeaders } from '../browser/browser';
+import { RenderOptions, RenderCSVOptions, HTTPHeaders, Metrics } from '../browser/browser';
 
 export interface RenderRequest {
   url: string;
@@ -36,8 +36,9 @@ export interface RenderCSVRequest {
 
 export class HttpServer {
   app: express.Express;
+  browser: Browser;
 
-  constructor(private config: ServiceConfig, private log: Logger, private browser: Browser) {}
+  constructor(private config: ServiceConfig, private log: Logger) {}
 
   async start() {
     this.app = express();
@@ -90,6 +91,16 @@ export class HttpServer {
       });
     }
 
+    const metrics = {
+      durationHistogram: new promClient.Histogram({
+        name: 'grafana_image_renderer_step_duration_seconds',
+        help: 'duration histogram of browser steps for rendering an image labeled with: step',
+        labelNames: ['step'],
+        buckets: [0.3, 0.5, 1, 2, 3, 5],
+      }),
+    };
+    this.browser = createBrowser(this.config.rendering, this.log, metrics);
+
     if (this.config.service.metrics.enabled) {
       const browserInfo = new promClient.Gauge({
         name: 'grafana_image_renderer_browser_info',
@@ -135,12 +146,13 @@ export class HttpServer {
     };
 
     this.log.debug('Render request received', 'url', options.url);
-    req.on('close', err => {
+    req.on('close', (err) => {
       this.log.debug('Connection closed', 'url', options.url, 'error', err);
     });
+
     const result = await this.browser.render(options);
 
-    res.sendFile(result.filePath, err => {
+    res.sendFile(result.filePath, (err) => {
       if (err) {
         next(err);
       } else {
@@ -177,7 +189,7 @@ export class HttpServer {
     };
 
     this.log.debug('Render request received', 'url', options.url);
-    req.on('close', err => {
+    req.on('close', (err) => {
       this.log.debug('Connection closed', 'url', options.url, 'error', err);
     });
     const result = await this.browser.renderCSV(options);
@@ -185,7 +197,7 @@ export class HttpServer {
     if (result.fileName) {
       res.setHeader('Content-Disposition', `attachment; filename="${result.fileName}"`);
     }
-    res.sendFile(result.filePath, err => {
+    res.sendFile(result.filePath, (err) => {
       if (err) {
         next(err);
       } else {
@@ -205,8 +217,8 @@ export class HttpServer {
 
 // wrapper for our async route handlers
 // probably you want to move it to a new file
-const asyncMiddleware = fn => (req, res, next) => {
-  Promise.resolve(fn(req, res, next)).catch(err => {
+const asyncMiddleware = (fn) => (req, res, next) => {
+  Promise.resolve(fn(req, res, next)).catch((err) => {
     if (!err.isBoom) {
       return next(boom.badImplementation(err));
     }

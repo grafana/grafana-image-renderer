@@ -21,6 +21,7 @@ export interface RenderingConfig {
   clustering: ClusteringConfig;
   verboseLogging: boolean;
   dumpio: boolean;
+  timingMetrics: boolean;
 }
 
 export interface MetricsConfig {
@@ -79,6 +80,7 @@ const defaultRenderingConfig: RenderingConfig = {
   },
   verboseLogging: false,
   dumpio: false,
+  timingMetrics: false,
 };
 
 export const defaultServiceConfig: ServiceConfig = {

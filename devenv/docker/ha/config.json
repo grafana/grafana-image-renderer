@@ -2,7 +2,7 @@
   "service": {
     "port": 8081,
     "metrics": {
-      "enabled": false,
+      "enabled": true,
       "collectDefaultMetrics": true,
       "requestDurationBuckets": [1, 5, 7, 9, 11, 13, 15, 20, 30]
     }
@@ -12,11 +12,11 @@
     "chromeBin": null,
     "args": ["--no-sandbox", "--disable-gpu"],
     "ignoresHttpsErrors": false,
-    "timingMetrics": true,
     "mode": "default",
     "clustering": {
       "mode": "browser",
       "maxConcurrency": 5
-    }
+    },
+    "timingMetrics": true
   }
 }

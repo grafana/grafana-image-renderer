@@ -4,12 +4,17 @@ import * as puppeteer from 'puppeteer';
 import * as chokidar from 'chokidar';
 import * as path from 'path';
 import * as fs from 'fs';
+import * as promClient from 'prom-client';
 import { Logger } from '../logger';
 import { RenderingConfig } from '../config';
 
 export interface HTTPHeaders {
   'Accept-Language'?: string;
   [header: string]: string | undefined;
+}
+
+export interface Metrics {
+  durationHistogram: promClient.Histogram;
 }
 
 export interface RenderOptions {
@@ -47,7 +52,7 @@ export interface RenderCSVResponse {
 }
 
 export class Browser {
-  constructor(protected config: RenderingConfig, protected log: Logger) {
+  constructor(protected config: RenderingConfig, protected log: Logger, protected metrics: Metrics) {
     this.log.debug('Browser initialized', 'config', this.config);
   }
 
@@ -136,7 +141,7 @@ export class Browser {
 
     return launcherOptions;
   }
-  
+
   async setTimezone(page, options) {
     const timezone = options.timezone || this.config.timezone;
     if (timezone) {
@@ -165,10 +170,16 @@ export class Browser {
     let page: any;
 
     try {
-      this.validateImageOptions(options);
-      const launcherOptions = this.getLauncherOptions(options);
-      browser = await puppeteer.launch(launcherOptions);
-      page = await browser.newPage();
+      browser = await this.withTimingMetrics<puppeteer.Browser>(() => {
+        this.validateImageOptions(options);
+        const launcherOptions = this.getLauncherOptions(options);
+        return puppeteer.launch(launcherOptions);
+      }, 'launch');
+
+      page = await this.withTimingMetrics<puppeteer.Page>(() => {
+        return browser.newPage();
+      }, 'newPage');
+
       this.addPageListeners(page);
 
       return await this.takeScreenshot(page, options);
@@ -184,49 +195,56 @@ export class Browser {
   }
 
   async takeScreenshot(page: any, options: any): Promise<RenderResponse> {
-    if (this.config.verboseLogging) {
-      this.log.debug(
-        'Setting viewport for page',
-        'width',
-        options.width.toString(),
-        'height',
-        options.height.toString(),
-        'deviceScaleFactor',
-        options.deviceScaleFactor.toString()
-      );
-    }
-    await page.setViewport({
-      width: options.width,
-      height: options.height,
-      deviceScaleFactor: options.deviceScaleFactor,
-    });
-
-    await this.preparePage(page, options);
-    await this.setTimezone(page, options);
-
-    if (this.config.verboseLogging) {
-      this.log.debug('Moving mouse on page', 'x', options.width, 'y', options.height);
-    }
-    await page.mouse.move(options.width, options.height);
-
-    if (this.config.verboseLogging) {
-      this.log.debug('Navigating and waiting for all network requests to finish', 'url', options.url);
-    }
-
-    await page.goto(options.url, { waitUntil: 'networkidle0', timeout: options.timeout * 1000 });
-
-    if (this.config.verboseLogging) {
-      this.log.debug('Waiting for dashboard/panel to load', 'timeout', `${options.timeout}s`);
-    }
-    await page.waitForFunction(
-      () => {
-        const panelCount = document.querySelectorAll('.panel').length || document.querySelectorAll('.panel-container').length;
-        return (window as any).panelsRendered >= panelCount;
-      },
-      {
-        timeout: options.timeout * 1000,
+    await this.withTimingMetrics(async () => {
+      if (this.config.verboseLogging) {
+        this.log.debug(
+          'Setting viewport for page',
+          'width',
+          options.width.toString(),
+          'height',
+          options.height.toString(),
+          'deviceScaleFactor',
+          options.deviceScaleFactor.toString()
+        );
       }
-    );
+
+      await page.setViewport({
+        width: options.width,
+        height: options.height,
+        deviceScaleFactor: options.deviceScaleFactor,
+      });
+
+      await this.preparePage(page, options);
+      await this.setTimezone(page, options);
+
+      if (this.config.verboseLogging) {
+        this.log.debug('Moving mouse on page', 'x', options.width, 'y', options.height);
+      }
+      return page.mouse.move(options.width, options.height);
+    }, 'prepare');
+
+    await this.withTimingMetrics<void>(() => {
+      if (this.config.verboseLogging) {
+        this.log.debug('Navigating and waiting for all network requests to finish', 'url', options.url);
+      }
+
+      return page.goto(options.url, { waitUntil: 'networkidle0', timeout: options.timeout * 1000 });
+    }, 'navigate');
+
+    await this.withTimingMetrics<void>(() => {
+      if (this.config.verboseLogging) {
+        this.log.debug('Waiting for dashboard/panel to load', 'timeout', `${options.timeout}s`);
+      }
+      return page.waitForFunction(
+        () => {
+          const panelCount = document.querySelectorAll('.panel').length || document.querySelectorAll('.panel-container').length;
+          return (window as any).panelsRendered >= panelCount;
+        },
+        {
+          timeout: options.timeout * 1000,
+        }
+      );
+    }, 'panelsRendered');
 
     if (!options.filePath) {
       options.filePath = uniqueFilename(os.tmpdir()) + '.png';
@@ -235,7 +253,10 @@ export class Browser {
     if (this.config.verboseLogging) {
       this.log.debug('Taking screenshot', 'filePath', options.filePath);
     }
-    await page.screenshot({ path: options.filePath });
+
+    await this.withTimingMetrics<void>(() => {
+      return page.screenshot({ path: options.filePath });
+    }, 'screenshot');
 
     return { filePath: options.filePath };
   }
@@ -266,7 +287,7 @@ export class Browser {
   async exportCSV(page: any, options: any): Promise<RenderCSVResponse> {
     await this.preparePage(page, options);
     await this.setTimezone(page, options);
-    
+
     const downloadPath = uniqueFilename(os.tmpdir());
     fs.mkdirSync(downloadPath);
     const watcher = chokidar.watch(downloadPath);
@@ -312,6 +333,18 @@ export class Browser {
     }
 
     return { filePath, fileName: path.basename(downloadFilePath) };
+  }
+
+  async withTimingMetrics<T>(callback: () => Promise<T>, step: string): Promise<T> {
+    if (this.config.timingMetrics) {
+      const endTimer = this.metrics.durationHistogram.startTimer({ step });
+      const res = await callback();
+      endTimer();
+
+      return res;
+    } else {
+      return callback();
+    }
   }
 
   addPageListeners(page: any) {

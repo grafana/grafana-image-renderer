@@ -1,5 +1,5 @@
 import { Cluster } from 'puppeteer-cluster';
-import { Browser, RenderResponse, RenderOptions, RenderCSVOptions, RenderCSVResponse } from './browser';
+import { Browser, RenderResponse, RenderOptions, RenderCSVOptions, RenderCSVResponse, Metrics } from './browser';
 import { Logger } from '../logger';
 import { RenderingConfig, ClusteringConfig } from '../config';
 
@@ -20,8 +20,8 @@ export class ClusteredBrowser extends Browser {
   clusteringConfig: ClusteringConfig;
   concurrency: number;
 
-  constructor(config: RenderingConfig, log: Logger) {
-    super(config, log);
+  constructor(config: RenderingConfig, log: Logger, metrics: Metrics) {
+    super(config, log, metrics);
 
     this.clusteringConfig = config.clustering;
     this.concurrency = Cluster.CONCURRENCY_BROWSER;

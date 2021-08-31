@@ -38,6 +38,7 @@
     },
 
     "verboseLogging": false,
-    "dumpio": false
+    "dumpio": false,
+    "timingMetrics": false
   }
 }

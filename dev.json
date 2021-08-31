@@ -37,7 +37,8 @@
       "maxConcurrency": 5
     },
 
-    "verboseLogging": false,
-    "dumpio": true
+    "verboseLogging": true,
+    "dumpio": false,
+    "timingMetrics": true
   }
 }

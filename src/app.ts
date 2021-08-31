@@ -4,7 +4,6 @@ import * as _ from 'lodash';
 import { RenderGRPCPluginV2 } from './plugin/v2/grpc_plugin';
 import { HttpServer } from './service/http-server';
 import { ConsoleLogger, PluginLogger } from './logger';
-import { createBrowser } from './browser';
 import * as minimist from 'minimist';
 import { defaultPluginConfig, defaultServiceConfig, readJSONFileSync, PluginConfig, ServiceConfig } from './config';
 import { serve } from './node-plugin';
@@ -59,16 +58,14 @@ async function main() {
     populateServiceConfigFromEnv(config, env);
 
     const logger = new ConsoleLogger(config.service.logging);
-    const browser = createBrowser(config.rendering, logger);
-    const server = new HttpServer(config, logger, browser);
-
+    const server = new HttpServer(config, logger);
     await server.start();
   } else {
     console.log('Unknown command');
   }
 }
 
-main().catch(err => {
+main().catch((err) => {
   console.error(err);
   process.exit(1);
 });
