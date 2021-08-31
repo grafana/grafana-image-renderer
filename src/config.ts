@@ -72,7 +72,7 @@ const defaultRenderingConfig: RenderingConfig = {
   deviceScaleFactor: 1,
   maxWidth: 3000,
   maxHeight: 3000,
-  maxDeviceScaleFactor: 3,
+  maxDeviceScaleFactor: 4,
   mode: 'default',
   clustering: {
     mode: 'browser',
