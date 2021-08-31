@@ -71,7 +71,7 @@ services:
       - RENDERING_MODE=${RENDERING_MODE}
       - RENDERING_CLUSTERING_MODE=${RENDERING_CLUSTERING_MODE}
       - RENDERING_CLUSTERING_MAX_CONCURRENCY=${RENDERING_CLUSTERING_MAX_CONCURRENCY}
-      - ./config.json:/usr/share/grafana/config.json
+      - ./config.json:/usr/src/app/config.json
     ports:
       - 8081
     # mem_limit: 500mb

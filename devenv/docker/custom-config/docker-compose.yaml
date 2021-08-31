@@ -14,4 +14,4 @@ services:
     ports:
       - 8081
     volumes:
-      - ./config.json:/usr/share/grafana/config.json
+      - ./config.json:/usr/src/app/config.json
