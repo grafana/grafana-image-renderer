@@ -20,6 +20,11 @@ Run load test for custom duration:
 $ ./run.sh -d 10s
 ```
 
+Run only 1 iteration of the load test (useful for testing):
+
+```bash
+$ ./run.sh -i 1
+
 Run load test for custom target url:
 
 ```bash
