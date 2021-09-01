@@ -1,9 +1,9 @@
-import { check, fail, group } from 'k6';
+import { check, group } from 'k6';
 import { createClient } from './modules/client.js';
 import {
   createTestOrgIfNotExists,
   upsertTestdataDatasource,
-  upsertTestdataDashboard,
+  upsertDashboard,
 } from './modules/util.js';
 
 export let options = {
@@ -16,7 +16,6 @@ const client = createClient(endpoint);
 const dashboard = JSON.parse(open('fixtures/graph_panel.json'));
 
 export const setup = () => {
-  let grafanaSession;
   group("user authenticates thru ui with username and password", () => {
     let res = client.ui.login('admin', 'admin');
 
@@ -28,7 +27,7 @@ export const setup = () => {
   const orgId = createTestOrgIfNotExists(client);
   client.withOrgId(orgId);
   upsertTestdataDatasource(client, dashboard.panels[0].datasource);
-  upsertTestdataDashboard(client, dashboard);
+  upsertDashboard(client, dashboard);
 
   return {
     orgId,
@@ -36,7 +35,6 @@ export const setup = () => {
   };
 };
 
-import http from 'k6/http';
 export default (data) => {
   client.loadCookies(data.cookies);
   client.withOrgId(data.orgId);

@@ -36,7 +36,7 @@ run() {
     --vus $vus \
     --duration $duration \
     $iterationsOption \
-    /src/render_test.js
+    //src/render_test.js
 }
 
 run "$@"

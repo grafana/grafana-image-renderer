@@ -48,7 +48,7 @@ export const upsertTestdataDatasource = (client, name) => {
   return id;
 };
 
-export const upsertTestdataDashboard = (client, dashboard) => {
+export const upsertDashboard = (client, dashboard) => {
   const payload = {
     dashboard,
     overwrite: true,

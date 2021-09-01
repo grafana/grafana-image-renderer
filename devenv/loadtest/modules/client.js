@@ -146,7 +146,6 @@ export const BaseClient = class BaseClient {
 
   get(url, queryParams, params) {
     params = params || {};
-    this.beforeRequest(params);
     this.onBeforeRequest(params);
 
     if (queryParams) {
@@ -180,7 +179,6 @@ export const BaseClient = class BaseClient {
     params.headers = params.headers || {};
     params.headers['Content-Type'] = 'application/json';
 
-    this.beforeRequest(params);
     this.onBeforeRequest(params);
     return http.put(this.url + url, body, params);
   }
