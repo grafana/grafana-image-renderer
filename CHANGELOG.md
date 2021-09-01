@@ -1,3 +1,16 @@
+## 3.1.0 (2021-09-01)
+
+- Settings: Set the maximum device scale factor to 4 as default [#276](https://github.com/grafana/grafana-image-renderer/pull/276), [AgnesToulet](https://github.com/AgnesToulet)
+- Metrics: Add browser timing metrics [#263](https://github.com/grafana/grafana-image-renderer/pull/263), [AgnesToulet](https://github.com/AgnesToulet)
+- Settings: Add --disable-gpu in the default Chromium args [#262](https://github.com/grafana/grafana-image-renderer/pull/262), [AgnesToulet](https://github.com/AgnesToulet)
+- Security: Update path-parse to v1.0.7 [#268](https://github.com/grafana/grafana-image-renderer/pull/268), [joanlopez](https://github.com/joanlopez)
+- Chore: Upgrade dependencies [#246](https://github.com/grafana/grafana-image-renderer/pull/246), [Clarity-89](https://github.com/Clarity-89)
+- Docker: Run image renderer under non-root Grafana user [#144](https://github.com/grafana/grafana-image-renderer/pull/144), [wardbekker](https://github.com/wardbekker)
+
+### Important change
+
+The default Chromium flags have been updated to include `--disable-gpu` as it fixes memory leaks issues when using the `default` rendering mode. If you don't want to use this flag, you need to update your service configuration, either through the [service configuration file](https://github.com/grafana/grafana-image-renderer/blob/master/docs/remote_rendering_using_docker.md#configuration-file), the [environment variables](https://github.com/grafana/grafana-image-renderer/blob/master/docs/remote_rendering_using_docker.md#environment-variables) or the [Grafana configuration file](https://grafana.com/docs/grafana/latest/administration/configuration/#rendering_args) (if you're using the plugin mode).
+
 ## 3.0.1 (2021-06-10)
 
 - Browser: Fix panel timezone when the timezone query parameter is specified [#224](https://github.com/grafana/grafana-image-renderer/pull/224), [Bujupah](https://github.com/Bujupah)
