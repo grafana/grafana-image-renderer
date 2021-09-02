@@ -19,23 +19,24 @@ system you may encounter errors when trying to render an image. For further deta
 
 ### Memory requirements
 
-Minimum free memory recommendation is 16GB on the system doing the rendering.
+Rendering images requires a lot of memory, mainly because Grafana creates browser instances in the background for the actual rendering.
+We recommend a minimum of 16GB of free memory on the system rendering images.
 
-Rendering images can require a lot of memory, mainly because Grafana creates browser instances in the background for the actual rendering. If multiple images are rendered in parallel, then the rendering has a bigger memory footprint. One advantage of using the remote rendering service is that the rendering will be done on the remote system, so your local system resources will not be affected by rendering.
+Rendering multiple images in parallel requires an even bigger memory footprint. You can use the remote rendering service in order to render images on a remote system, so your local system resources are not affected.
 
 ## Plugin installation
 
-### Using grafana-cli
+You can install the plugin using Grafana CLI (recommended way) or with Grafana Docker image.
 
-**NOTE:** Installing this plugin using grafana-cli is supported from Grafana v6.4.
+### Grafana CLI (recommended)
 
 ```bash
 grafana-cli plugins install grafana-image-renderer
 ```
 
-### Install in Grafana Docker image
+### Grafana Docker image
 
-This plugin is not compatible with the current Grafana Docker image without installing further system-level dependencies. We recommend setting up another Docker container for rendering and using remote rendering, see [Run in Docker](#run-in-docker) for reference.
+This plugin is not compatible with the current Grafana Docker image and requires additional system-level dependencies. We recommend setting up another Docker container for rendering and using remote rendering instead. For instruction, refer to [Run in Docker](#run-in-docker).
 
 If you still want to install the plugin in the Grafana docker image we provide instructions for how to build a custom Grafana image, see [Grafana Docker documentation](https://grafana.com/docs/installation/docker/#custom-image-with-grafana-image-renderer-plugin-pre-installed) for further instructions.
 
