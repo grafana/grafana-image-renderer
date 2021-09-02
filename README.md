@@ -13,9 +13,9 @@ A Grafana backend plugin that handles rendering panels and dashboards to PNGs us
 This plugin is packaged in a single executable with [Node.js](https://nodejs.org/) runtime and [Chromium browser](https://www.chromium.org/Home).
 This means that you don't need to have Node.js and Chromium installed in your system for the plugin to function.
 
-However, [Chromium browser](https://www.chromium.org/) depends on certain libraries and if you don't have all of those libraries installed in your
-system you may encounter errors when trying to render an image. For further details and troubleshooting help, please refer to
-[Grafana Image Rendering documentation](https://grafana.com/docs/image_rendering/).
+However, the [Chromium browser](https://www.chromium.org/) depends on certain libraries. If you don't have all of those libraries installed in your
+system, you may see some errors when you try to render an image. For more information including troubleshooting help, refer to
+[Grafana Image Rendering documentation](https://grafana.com/docs/image-rendering/).
 
 ### Memory requirements
 
@@ -38,23 +38,23 @@ grafana-cli plugins install grafana-image-renderer
 
 This plugin is not compatible with the current Grafana Docker image and requires additional system-level dependencies. We recommend setting up another Docker container for rendering and using remote rendering instead. For instruction, refer to [Run in Docker](#run-in-docker).
 
-If you still want to install the plugin in the Grafana docker image we provide instructions for how to build a custom Grafana image, see [Grafana Docker documentation](https://grafana.com/docs/installation/docker/#custom-image-with-grafana-image-renderer-plugin-pre-installed) for further instructions.
+If you still want to install the plugin with the Grafana Docker image, refer to the instructions on building a custom Grafana image in [Grafana Docker documentation](https://grafana.com/docs/installation/docker/#custom-image-with-grafana-image-renderer-plugin-pre-installed).
 
 ## Remote rendering service installation
 
-> Requires an internet connection.
+> **Note:** Requires an internet connection.
 
-This plugin can also be run as a remote HTTP rendering service. In this setup, Grafana renders an image by making a HTTP request to the remote rendering service, which in turn renders the image and returns it back in the HTTP response to Grafana.
+You can run this plugin as a remote HTTP rendering service. In this setup, Grafana renders an image by making an HTTP request to the remote rendering service, which in turn renders the image and returns it back in the HTTP response to Grafana.
 
 You can run the remote HTTP rendering service using Docker or as a standalone Node.js application.
 
 ### Run in Docker
 
-The docker images are published at [Docker Hub](https://hub.docker.com/r/grafana/grafana-image-renderer).
+Grafana Docker images are published at [Docker Hub](https://hub.docker.com/r/grafana/grafana-image-renderer).
 
-The following example shows how to run Grafana and the remote HTTP rendering service in two separate Docker containers using Docker Compose.
+The following example shows how you can run Grafana and the remote HTTP rendering service in two separate Docker containers using Docker Compose.
 
-Create a `docker-compose.yml` with the following content:
+1. Create a `docker-compose.yml` with the following content:
 
 ```yaml
 version: '2'
@@ -74,7 +74,7 @@ services:
       - 8081
 ```
 
-And then run:
+1. Next, run docker compose.
 
 ```bash
 docker-compose up
@@ -114,5 +114,5 @@ For available configuration settings, please refer to [Grafana Image Rendering d
 
 ## Troubleshooting
 
-For troubleshooting help, please refer to
+For troubleshooting help, refer to
 [Grafana Image Rendering troubleshooting documentation](https://grafana.com/docs/grafana/latest/administration/image_rendering/troubleshooting.md).
