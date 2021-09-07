@@ -1,14 +1,12 @@
 import * as promBundle from 'express-prom-bundle';
+import * as promClient from 'prom-client';
+import * as onFinished from 'on-finished';
+import express = require('express');
+
 import { MetricsConfig } from '../config';
 import { Logger } from '../logger';
 
-export const metricsMiddleware = (config: MetricsConfig, log: Logger) => {
-  if (!config.enabled) {
-    return (req, res, next) => {
-      next();
-    };
-  }
-
+export const setupHttpServerMetrics = (app: express.Express, config: MetricsConfig, log: Logger) => {
   log.info(
     'Metrics enabled',
     'collectDefaultMetrics',
@@ -17,13 +15,15 @@ export const metricsMiddleware = (config: MetricsConfig, log: Logger) => {
     config.requestDurationBuckets.join(',')
   );
 
+  const excludeRegExp = /^((?!(render)).)*$/;
+
   const opts = {
     httpDurationMetricName: 'grafana_image_renderer_service_http_request_duration_seconds',
     metricType: 'histogram',
     buckets: config.requestDurationBuckets,
-    excludeRoutes: [/^((?!(render)).)*$/],
+    excludeRoutes: [excludeRegExp],
     promClient: {},
-    formatStatusCode: res => {
+    formatStatusCode: (res) => {
       if (res && res.req && res.req.aborted) {
         // Nginx non-standard code 499 Client Closed Request
         // Used when the client has closed the request before
@@ -39,6 +39,29 @@ export const metricsMiddleware = (config: MetricsConfig, log: Logger) => {
     opts.promClient.collectDefaultMetrics = {};
   }
 
-  const bundle = promBundle(opts);
-  return bundle;
+  const metricsMiddleware = promBundle(opts);
+  app.use(metricsMiddleware);
+
+  const httpRequestsInFlight = new promClient.Gauge({
+    name: 'grafana_image_renderer_http_request_in_flight',
+    help: 'A gauge of requests currently being served by the image renderer.',
+  });
+  app.use(requestsInFlightMiddleware(httpRequestsInFlight, excludeRegExp));
+};
+
+const requestsInFlightMiddleware = (httpRequestsInFlight: promClient.Gauge, excludeRegExp: RegExp) => {
+  return (req, res, next) => {
+    const path = req.originalUrl || req.url;
+    if (path.match(excludeRegExp)) {
+      return next();
+    }
+
+    httpRequestsInFlight.inc();
+    onFinished(res, () => {
+      httpRequestsInFlight.dec();
+      next();
+    });
+
+    next();
+  };
 };
