@@ -2,7 +2,7 @@
 
 set -e
 
-TAG='v4.5.0'
+TAG=''
 if [[ "$1" == "main" ]]; then
   TAG="main-$(git rev-parse --short HEAD)"
 else
