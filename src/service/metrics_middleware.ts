@@ -59,7 +59,6 @@ const requestsInFlightMiddleware = (httpRequestsInFlight: promClient.Gauge, excl
     httpRequestsInFlight.inc();
     onFinished(res, () => {
       httpRequestsInFlight.dec();
-      next();
     });
 
     next();
