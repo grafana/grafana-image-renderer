@@ -151,6 +151,19 @@ jobs:
       - run:
           name: 'Build and push Docker image'
           command: ./scripts/build_push_docker.sh
+  publish-docker-main:
+    working_directory: ~/grafana-image-renderer
+    environment:
+      IMAGE_NAME: grafana/grafana-image-renderer
+    docker:
+      - image: circleci/buildpack-deps:stretch
+    steps:
+      - checkout
+      - setup_remote_docker:
+          version: 19.03.13
+      - run:
+          name: 'Build and push Docker image'
+          command: ./scripts/build_push_docker.sh main
   security_scan:
     executor: scan_exec
     steps:
@@ -211,6 +224,10 @@ workflows:
           arch: linux-x64-glibc
           skip_chromium: true
           override_output: plugin-linux-x64-glibc-no-chromium
+      - publish-docker-main:
+          requires:
+            - build
+          filters: *filter-only-master
       - approve-release:
           type: approval
           requires:
