@@ -1,16 +1,20 @@
 #/bin/bash
 
-PWD=$(pwd)
+cd "$(dirname $0)"
 
 run() {
-  duration='15m'
-  url='http://localhost:3000'
-  vus='2'
+  local duration='15m'
+  local url='http://localhost:3000'
+  local vus='2'
+  local iterationsOption=''
 
-  while getopts ":d:u:v:" o; do
+  while getopts ":d:i:u:v:" o; do
     case "${o}" in
 				d)
             duration=${OPTARG}
+            ;;
+        i)
+            iterationsOption="--iterations ${OPTARG}"
             ;;
         u)
             url=${OPTARG}
@@ -22,7 +26,17 @@ run() {
 	done
 	shift $((OPTIND-1))
 
-  docker run -t --network=host -v $PWD:/src -e URL=$url --rm -i loadimpact/k6:master run --vus $vus --duration $duration src/render_test.js
+  docker run \
+    -it \
+    --network=host \
+    --mount type=bind,source=$PWD,destination=/src \
+    -e URL=$url \
+    --rm \
+    loadimpact/k6:master run \
+    --vus $vus \
+    --duration $duration \
+    $iterationsOption \
+    //src/render_test.js
 }
 
 run "$@"
