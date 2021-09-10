@@ -29,6 +29,7 @@
     "lodash": "^4.17.21",
     "minimist": "^1.2.0",
     "morgan": "^1.9.0",
+    "on-finished": "^2.3.0",
     "prom-client": "^11.5.3",
     "puppeteer": "^10.0.0",
     "puppeteer-cluster": "^0.22.0",
