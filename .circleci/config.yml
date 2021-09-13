@@ -224,7 +224,7 @@ workflows:
           arch: linux-x64-glibc
           skip_chromium: true
           override_output: plugin-linux-x64-glibc-no-chromium
-      - publish-docker-main:
+      - publish-docker-master:
           requires:
             - build
           filters: *filter-only-master
