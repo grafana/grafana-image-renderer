@@ -8,7 +8,7 @@ import * as promClient from 'prom-client';
 import { Logger } from '../logger';
 import { Browser, createBrowser } from '../browser';
 import { ServiceConfig } from '../config';
-import { metricsMiddleware } from './metrics_middleware';
+import { setupHttpServerMetrics } from './metrics_middleware';
 import { RenderOptions, RenderCSVOptions, HTTPHeaders, Metrics } from '../browser/browser';
 
 export interface RenderRequest {
@@ -58,7 +58,10 @@ export class HttpServer {
         stream: this.log.errorWriter,
       })
     );
-    this.app.use(metricsMiddleware(this.config.service.metrics, this.log));
+
+    if (this.config.service.metrics.enabled) {
+      setupHttpServerMetrics(this.app, this.config.service.metrics, this.log);
+    }
     this.app.get('/', (req: express.Request, res: express.Response) => {
       res.send('Grafana Image Renderer');
     });
