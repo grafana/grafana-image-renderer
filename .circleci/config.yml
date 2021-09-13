@@ -151,7 +151,7 @@ jobs:
       - run:
           name: 'Build and push Docker image'
           command: ./scripts/build_push_docker.sh
-  publish-docker-main:
+  publish-docker-master:
     working_directory: ~/grafana-image-renderer
     environment:
       IMAGE_NAME: grafana/grafana-image-renderer
@@ -163,7 +163,7 @@ jobs:
           version: 19.03.13
       - run:
           name: 'Build and push Docker image'
-          command: ./scripts/build_push_docker.sh main
+          command: ./scripts/build_push_docker.sh master
   security_scan:
     executor: scan_exec
     steps:
