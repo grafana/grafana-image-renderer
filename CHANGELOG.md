@@ -1,3 +1,12 @@
+## 3.2.0 (2021-09-17)
+
+- Docs: Update documentation to improve visibility and avoid duplicates with Grafana documentation [#277](https://github.com/grafana/grafana-image-renderer/pull/277), [AgnesToulet](https://github.com/AgnesToulet)
+- Instrumentation: Update grafana_image_renderer_step_duration_seconds buckets [#287](https://github.com/grafana/grafana-image-renderer/pull/287), [AgnesToulet](https://github.com/AgnesToulet)
+- Security: Bump chokidar from 3.5.1 to 3.5.2 [#284](https://github.com/grafana/grafana-image-renderer/pull/284), [AgnesToulet](https://github.com/AgnesToulet)
+- Instrumentation: Add gauge of total number of requests in flight [#281](https://github.com/grafana/grafana-image-renderer/pull/281), [AgnesToulet](https://github.com/AgnesToulet)
+- Security: Bump axios from 0.21.1 to 0.21.4 [#283](https://github.com/grafana/grafana-image-renderer/pull/283), [dependabot[bot]](https://github.com/apps/dependabot)
+- Chore: Add self-contained setup for load test [#275](https://github.com/grafana/grafana-image-renderer/pull/275), [pianohacker](https://github.com/pianohacker)
+
 ## 3.1.0 (2021-09-01)
 
 - Settings: Set the maximum device scale factor to 4 as default [#276](https://github.com/grafana/grafana-image-renderer/pull/276), [AgnesToulet](https://github.com/AgnesToulet)
