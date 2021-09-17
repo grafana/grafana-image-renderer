@@ -279,7 +279,7 @@ const setupMetrics = (): PluginMetrics => {
       name: 'grafana_image_renderer_step_duration_seconds',
       help: 'duration histogram of browser steps for rendering an image labeled with: step',
       labelNames: ['step'],
-      buckets: [0.3, 0.5, 1, 2, 3, 5],
+      buckets: [0.1, 0.3, 0.5, 1, 3, 5, 10, 20, 30],
     }),
   };
 };
