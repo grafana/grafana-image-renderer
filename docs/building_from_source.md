@@ -1,4 +1,4 @@
-# Building from source
+# Build the image renderer from source
 
 Git clone this repo:
 

@@ -13,41 +13,106 @@ A Grafana backend plugin that handles rendering panels and dashboards to PNGs us
 This plugin is packaged in a single executable with [Node.js](https://nodejs.org/) runtime and [Chromium browser](https://www.chromium.org/Home).
 This means that you don't need to have Node.js and Chromium installed in your system for the plugin to function.
 
-However, [Chromium browser](https://www.chromium.org/) depends on certain libraries and if you don't have all of those libraries installed in your
-system you may encounter errors when trying to render an image. For further details and troubleshooting help, please refer to
-[Grafana Image Rendering documentation](https://grafana.com/docs/administration/image_rendering/).
+However, the [Chromium browser](https://www.chromium.org/) depends on certain libraries. If you don't have all of those libraries installed in your
+system, you may see some errors when you try to render an image. For more information including troubleshooting help, refer to
+[Grafana Image Rendering documentation](https://grafana.com/docs/image-rendering/).
 
-## Installation
+### Memory requirements
 
-### Using grafana-cli
+Rendering images requires a lot of memory, mainly because Grafana creates browser instances in the background for the actual rendering.
+We recommend a minimum of 16GB of free memory on the system rendering images.
 
-**NOTE:** Installing this plugin using grafana-cli is supported from Grafana v6.4.
+Rendering multiple images in parallel requires an even bigger memory footprint. You can use the remote rendering service in order to render images on a remote system, so your local system resources are not affected.
+
+## Plugin installation
+
+You can install the plugin using Grafana CLI (recommended way) or with Grafana Docker image.
+
+### Grafana CLI (recommended)
 
 ```bash
 grafana-cli plugins install grafana-image-renderer
 ```
 
-### Install in Grafana Docker image
+### Grafana Docker image
 
-This plugin is not compatible with the current Grafana Docker image without installing further system-level dependencies. We recommend setting up another Docker container
-for rendering and using remote rendering, see [Remote Rendering Using Docker](#remote-rendering-using-docker) for reference.
+This plugin is not compatible with the current Grafana Docker image and requires additional system-level dependencies. We recommend setting up another Docker container for rendering and using remote rendering instead. For instruction, refer to [Run in Docker](#run-in-docker).
 
-If you still want to install the plugin in the Grafana docker image we provide instructions for how to build a custom Grafana image, see [Grafana Docker documentation](https://grafana.com/docs/installation/docker/#custom-image-with-grafana-image-renderer-plugin-pre-installed) for further instructions.
+If you still want to install the plugin with the Grafana Docker image, refer to the instructions on building a custom Grafana image in [Grafana Docker documentation](https://grafana.com/docs/installation/docker/#custom-image-with-grafana-image-renderer-plugin-pre-installed).
 
+## Remote rendering service installation
 
-### Configuration
+> **Note:** Requires an internet connection.
 
-For available configuration settings, please refer to [Grafana Image Rendering documentation](https://grafana.com/docs/administration/image_rendering/).
+You can run this plugin as a remote HTTP rendering service. In this setup, Grafana renders an image by making an HTTP request to the remote rendering service, which in turn renders the image and returns it back in the HTTP response to Grafana.
 
-## Remote Rendering Using Docker
+You can run the remote HTTP rendering service using Docker or as a standalone Node.js application.
 
-Instead of installing and running the image renderer as a plugin, you can run it as a remote image rendering service using Docker. Read more about [remote rendering using Docker](https://github.com/grafana/grafana-image-renderer/blob/master/docs/remote_rendering_using_docker.md).
+### Run in Docker
+
+Grafana Docker images are published at [Docker Hub](https://hub.docker.com/r/grafana/grafana-image-renderer).
+
+The following example shows how you can run Grafana and the remote HTTP rendering service in two separate Docker containers using Docker Compose.
+
+1. Create a `docker-compose.yml` with the following content:
+
+```yaml
+version: '2'
+
+services:
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - '3000:3000'
+    environment:
+      GF_RENDERING_SERVER_URL: http://renderer:8081/render
+      GF_RENDERING_CALLBACK_URL: http://grafana:3000/
+      GF_LOG_FILTERS: rendering:debug
+  renderer:
+    image: grafana/grafana-image-renderer:latest
+    ports:
+      - 8081
+```
+
+1. Next, run docker compose.
+
+```bash
+docker-compose up
+```
+
+### Run as standalone Node.js application
+
+The following example describes how to build and run the remote HTTP rendering service as a standalone Node.js application and configure Grafana appropriately.
+
+1. Clone the [Grafana image renderer plugin](https://grafana.com/grafana/plugins/grafana-image-renderer) Git repository.
+1. Install dependencies and build:
+
+   ```bash
+   yarn install --pure-lockfile
+   yarn run build
+   ```
+
+1. Run the server:
+
+   ```bash
+   node build/app.js server --port=8081
+   ```
+
+1. Update Grafana configuration:
+
+   ```
+   [rendering]
+   server_url = http://localhost:8081/render
+   callback_url = http://localhost:3000/
+   ```
+
+1. Restart Grafana.
+
+## Configuration
+
+For available configuration settings, please refer to [Grafana Image Rendering documentation](https://grafana.com/docs/grafana/latest/image-rendering/#configuration).
 
 ## Troubleshooting
 
-For troubleshooting help, please refer to 
-[Grafana Image Rendering documentation](https://grafana.com/docs/grafana/latest/administration/image_rendering/#troubleshoot-image-rendering).
-
-## Additional information
-
-See [docs](https://github.com/grafana/grafana-image-renderer/blob/master/docs/index.md).
+For troubleshooting help, refer to
+[Grafana Image Rendering troubleshooting documentation](https://grafana.com/docs/grafana/latest//image-rendering/troubleshooting.md).
