@@ -110,9 +110,9 @@ The following example describes how to build and run the remote HTTP rendering s
 
 ## Configuration
 
-For available configuration settings, please refer to [Grafana Image Rendering documentation](https://grafana.com/docs/grafana/latest/image-rendering/#configuration).
+For available configuration settings, please refer to [Grafana Image Rendering documentation](https://grafana.com/docs/grafana/latest/administration/configuration/#rendering).
 
 ## Troubleshooting
 
 For troubleshooting help, refer to
-[Grafana Image Rendering troubleshooting documentation](https://grafana.com/docs/grafana/latest//image-rendering/troubleshooting.md).
+[Grafana Image Rendering troubleshooting documentation](https://grafana.com/docs/grafana/latest/administration/image_rendering/#troubleshoot-image-rendering).
