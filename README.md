@@ -15,7 +15,7 @@ This means that you don't need to have Node.js and Chromium installed in your sy
 
 However, the [Chromium browser](https://www.chromium.org/) depends on certain libraries. If you don't have all of those libraries installed in your
 system, you may see some errors when you try to render an image. For more information including troubleshooting help, refer to
-[Grafana Image Rendering documentation](https://grafana.com/docs/image-rendering/).
+[Grafana Image Rendering documentation](https://grafana.com/docs/grafana/latest/image-rendering/).
 
 ### Memory requirements
 
@@ -110,9 +110,9 @@ The following example describes how to build and run the remote HTTP rendering s
 
 ## Configuration
 
-For available configuration settings, please refer to [Grafana Image Rendering documentation](https://grafana.com/docs/grafana/latest/administration/configuration/#rendering).
+For available configuration settings, please refer to [Grafana Image Rendering documentation](https://grafana.com/docs/grafana/latest/image-rendering/#configuration).
 
 ## Troubleshooting
 
 For troubleshooting help, refer to
-[Grafana Image Rendering troubleshooting documentation](https://grafana.com/docs/grafana/latest/administration/image_rendering/#troubleshoot-image-rendering).
+[Grafana Image Rendering troubleshooting documentation](https://grafana.com/docs/grafana/latest/image-rendering/troubleshooting/).
