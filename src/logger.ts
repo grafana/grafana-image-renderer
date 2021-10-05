@@ -52,12 +52,12 @@ export class ConsoleLogger implements Logger {
     });
 
     this.errorWriter = {
-      write: message => {
+      write: (message) => {
         this.logger.error(message);
       },
     };
     this.debugWriter = {
-      write: message => {
+      write: (message) => {
         this.logger.debug(message);
       },
     };
