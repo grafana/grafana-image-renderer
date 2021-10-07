@@ -1,3 +1,10 @@
+## 3.2.1 (2021-10-07)
+
+- Chore: Upgrade dev dependencies [#294](https://github.com/grafana/grafana-image-renderer/pull/294), [AgnesToulet](https://github.com/AgnesToulet)
+- Chore: Fix eslint usage [#293](https://github.com/grafana/grafana-image-renderer/pull/293), [AgnesToulet](https://github.com/AgnesToulet)
+- Docs: Fix links in README.md [#290](https://github.com/grafana/grafana-image-renderer/pull/290), [simonc6372](https://github.com/simonc6372)
+- Security: Bump semver-regex from 3.1.2 to 3.1.3 [#289](https://github.com/grafana/grafana-image-renderer/pull/289), [dependabot[bot]](https://github.com/apps/dependabot)
+
 ## 3.2.0 (2021-09-17)
 
 - Docs: Update documentation to improve visibility and avoid duplicates with Grafana documentation [#277](https://github.com/grafana/grafana-image-renderer/pull/277), [AgnesToulet](https://github.com/AgnesToulet)
