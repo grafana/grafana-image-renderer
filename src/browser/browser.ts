@@ -235,10 +235,11 @@ export class Browser {
       if (this.config.verboseLogging) {
         this.log.debug('Waiting for dashboard/panel to load', 'timeout', `${options.timeout}s`);
       }
+
       return page.waitForFunction(
         () => {
           const panelCount = document.querySelectorAll('.panel').length || document.querySelectorAll('.panel-container').length;
-          return (window as any).panelsRendered >= panelCount;
+          return (window as any).panelsRendered >= panelCount || (window as any).panelsRendered === undefined;
         },
         {
           timeout: options.timeout * 1000,
