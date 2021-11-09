@@ -34,7 +34,8 @@
     "mode": "default",
     "clustering": {
       "mode": "browser",
-      "maxConcurrency": 5
+      "maxConcurrency": 5,
+      "timeout": 30
     },
 
     "verboseLogging": true,

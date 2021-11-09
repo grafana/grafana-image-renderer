@@ -3,6 +3,7 @@ import * as fs from 'fs';
 export interface ClusteringConfig {
   mode: string;
   maxConcurrency: number;
+  timeout: number;
 }
 
 export interface RenderingConfig {
@@ -77,6 +78,7 @@ const defaultRenderingConfig: RenderingConfig = {
   clustering: {
     mode: 'browser',
     maxConcurrency: 5,
+    timeout: 30,
   },
   verboseLogging: false,
   dumpio: false,

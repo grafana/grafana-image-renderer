@@ -36,6 +36,7 @@ export class ClusteredBrowser extends Browser {
     this.cluster = await Cluster.launch({
       concurrency: this.concurrency,
       maxConcurrency: this.clusteringConfig.maxConcurrency,
+      timeout: this.clusteringConfig.timeout,
       puppeteerOptions: launcherOptions,
     });
     await this.cluster.task(async ({ page, data }) => {
