@@ -6,7 +6,15 @@ import { ReusableBrowser } from './reusable';
 
 export function createBrowser(config: RenderingConfig, log: Logger, metrics: Metrics): Browser {
   if (config.mode === 'clustered') {
-    log.info('using clustered browser', 'mode', config.clustering.mode, 'maxConcurrency', config.clustering.maxConcurrency, 'timeout',config.clustering.timeout);
+    log.info(
+      'using clustered browser',
+      'mode',
+      config.clustering.mode,
+      'maxConcurrency',
+      config.clustering.maxConcurrency,
+      'timeout',
+      config.clustering.timeout
+    );
     return new ClusteredBrowser(config, log, metrics);
   }
 
