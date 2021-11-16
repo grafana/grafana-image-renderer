@@ -235,6 +235,7 @@ export class Browser {
       if (this.config.verboseLogging) {
         this.log.debug('Waiting for dashboard/panel to load', 'timeout', `${options.timeout}s`);
       }
+
       return page.waitForFunction(
         () => {
           const panelCount = document.querySelectorAll('.panel').length || document.querySelectorAll('.panel-container').length;
