@@ -247,6 +247,10 @@ const populateConfigFromEnv = (config: PluginConfig) => {
     config.rendering.clustering.maxConcurrency = parseInt(env['GF_PLUGIN_RENDERING_CLUSTERING_MAX_CONCURRENCY'] as string, 10);
   }
 
+  if (env['GF_PLUGIN_RENDERING_CLUSTERING_TIMEOUT']) {
+    config.rendering.clustering.timeout = parseInt(env['GF_PLUGIN_RENDERING_CLUSTERING_TIMEOUT'] as string, 10);
+  }
+
   if (env['GF_PLUGIN_RENDERING_VERBOSE_LOGGING']) {
     config.rendering.verboseLogging = env['GF_PLUGIN_RENDERING_VERBOSE_LOGGING'] === 'true';
   }

@@ -124,6 +124,10 @@ function populateServiceConfigFromEnv(config: ServiceConfig, env: NodeJS.Process
     config.rendering.clustering.maxConcurrency = parseInt(env['RENDERING_CLUSTERING_MAX_CONCURRENCY'] as string, 10);
   }
 
+  if (env['RENDERING_CLUSTERING_TIMEOUT']) {
+    config.rendering.clustering.timeout = parseInt(env['RENDERING_CLUSTERING_TIMEOUT'] as string, 10);
+  }
+
   if (env['RENDERING_VERBOSE_LOGGING']) {
     config.rendering.verboseLogging = env['RENDERING_VERBOSE_LOGGING'] === 'true';
   }
