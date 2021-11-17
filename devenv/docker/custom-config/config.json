@@ -36,7 +36,8 @@
     "mode": "clustered",
     "clustering": {
       "mode": "context",
-      "maxConcurrency": 5
+      "maxConcurrency": 5,
+      "timeout": 30
     },
 
     "verboseLogging": false,
