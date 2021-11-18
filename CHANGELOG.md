@@ -1,3 +1,8 @@
+## 3.3.0 (2021-11-18)
+
+- Chore: Bump pkg from 5.3.3 to 5.4.1 [#305](https://github.com/grafana/grafana-image-renderer/pull/305), [AgnesToulet](https://github.com/AgnesToulet)
+- Configuration: Add timeout setting for clustered mode [#303](https://github.com/grafana/grafana-image-renderer/pull/303), [AgnesToulet](https://github.com/AgnesToulet)
+
 ## 3.2.1 (2021-10-07)
 
 - Chore: Upgrade dev dependencies [#294](https://github.com/grafana/grafana-image-renderer/pull/294), [AgnesToulet](https://github.com/AgnesToulet)
