@@ -5,7 +5,7 @@ import { GrpcPlugin } from '../../node-plugin';
 import { Logger } from '../../logger';
 import { PluginConfig } from '../../config';
 import { createBrowser, Browser } from '../../browser';
-import { RenderOptions, RenderCSVOptions, HTTPHeaders } from '../../browser/browser';
+import { HTTPHeaders, ImageRenderOptions, RenderOptions } from '../../types';
 import {
   RenderRequest,
   RenderResponse,
@@ -100,7 +100,7 @@ class PluginGRPCServer {
       }
     }
 
-    const options: RenderOptions = {
+    const options: ImageRenderOptions = {
       url: req.url,
       width: req.width,
       height: req.height,
@@ -141,7 +141,7 @@ class PluginGRPCServer {
       }
     }
 
-    const options: RenderCSVOptions = {
+    const options: RenderOptions = {
       url: req.url,
       filePath: req.filePath,
       timeout: req.timeout,

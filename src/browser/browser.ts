@@ -7,41 +7,11 @@ import * as fs from 'fs';
 import * as promClient from 'prom-client';
 import { Logger } from '../logger';
 import { RenderingConfig } from '../config';
-
-export interface HTTPHeaders {
-  'Accept-Language'?: string;
-  [header: string]: string | undefined;
-}
+import { ImageRenderOptions, RenderOptions } from '../types';
 
 export interface Metrics {
   durationHistogram: promClient.Histogram;
 }
-
-export interface RenderOptions {
-  url: string;
-  width: string | number;
-  height: string | number;
-  filePath: string;
-  timeout: string | number;
-  renderKey: string;
-  domain: string;
-  timezone?: string;
-  encoding?: string;
-  deviceScaleFactor?: string | number;
-  headers?: HTTPHeaders;
-}
-
-export interface RenderCSVOptions {
-  url: string;
-  filePath: string;
-  timeout: string | number;
-  renderKey: string;
-  domain: string;
-  timezone?: string;
-  encoding?: string;
-  headers?: HTTPHeaders;
-}
-
 export interface RenderResponse {
   filePath: string;
 }
@@ -74,7 +44,7 @@ export class Browser {
 
   async start(): Promise<void> {}
 
-  validateRenderOptions(options: RenderOptions | RenderCSVOptions) {
+  validateRenderOptions(options: RenderOptions) {
     if (options.url.startsWith(`socket://`)) {
       // Puppeteer doesn't support socket:// URLs
       throw new Error(`Image rendering in socket mode is not supported`);
@@ -91,10 +61,14 @@ export class Browser {
 
     options.headers = headers;
 
-    options.timeout = parseInt(options.timeout as string, 10) || 30;
+    if (typeof options.timeout === 'string') {
+      options.timeout = parseInt((options.timeout as unknown) as string, 10);
+    }
+
+    options.timeout = options.timeout || 30;
   }
 
-  validateImageOptions(options: RenderOptions) {
+  validateImageOptions(options: ImageRenderOptions) {
     this.validateRenderOptions(options);
 
     options.width = parseInt(options.width as string, 10) || this.config.width;
@@ -142,32 +116,34 @@ export class Browser {
     return launcherOptions;
   }
 
-  async setTimezone(page, options) {
+  async setTimezone(page: puppeteer.Page, options: RenderOptions) {
     const timezone = options.timezone || this.config.timezone;
     if (timezone) {
       await page.emulateTimezone(timezone);
     }
   }
 
-  async preparePage(page: any, options: any) {
-    if (this.config.verboseLogging) {
-      this.log.debug('Setting cookie for page', 'renderKey', options.renderKey, 'domain', options.domain);
+  async preparePage(page: puppeteer.Page, options: RenderOptions) {
+    if (options.renderKey) {
+      if (this.config.verboseLogging) {
+        this.log.debug('Setting cookie for page', 'renderKey', options.renderKey, 'domain', options.domain);
+      }
+      await page.setCookie({
+        name: 'renderKey',
+        value: options.renderKey,
+        domain: options.domain,
+      });
     }
-    await page.setCookie({
-      name: 'renderKey',
-      value: options.renderKey,
-      domain: options.domain,
-    });
 
     if (options.headers && Object.keys(options.headers).length > 0) {
       this.log.debug(`Setting extra HTTP headers for page`, 'headers', options.headers);
-      await page.setExtraHTTPHeaders(options.headers);
+      await page.setExtraHTTPHeaders(options.headers as any);
     }
   }
 
-  async render(options: RenderOptions): Promise<RenderResponse> {
-    let browser;
-    let page: any;
+  async render(options: ImageRenderOptions): Promise<RenderResponse> {
+    let browser: puppeteer.Browser | undefined = undefined;
+    let page: puppeteer.Page | undefined = undefined;
 
     try {
       browser = await this.withTimingMetrics<puppeteer.Browser>(() => {
@@ -177,7 +153,7 @@ export class Browser {
       }, 'launch');
 
       page = await this.withTimingMetrics<puppeteer.Page>(() => {
-        return browser.newPage();
+        return browser!.newPage();
       }, 'newPage');
 
       this.addPageListeners(page);
@@ -194,7 +170,7 @@ export class Browser {
     }
   }
 
-  async takeScreenshot(page: any, options: any): Promise<RenderResponse> {
+  async takeScreenshot(page: any, options: ImageRenderOptions): Promise<RenderResponse> {
     await this.withTimingMetrics(async () => {
       if (this.config.verboseLogging) {
         this.log.debug(
@@ -204,7 +180,7 @@ export class Browser {
           'height',
           options.height.toString(),
           'deviceScaleFactor',
-          options.deviceScaleFactor.toString()
+          options.deviceScaleFactor
         );
       }
 
@@ -261,7 +237,7 @@ export class Browser {
     return { filePath: options.filePath };
   }
 
-  async renderCSV(options: RenderCSVOptions): Promise<RenderCSVResponse> {
+  async renderCSV(options: RenderOptions): Promise<RenderCSVResponse> {
     let browser;
     let page: any;
 
@@ -284,7 +260,7 @@ export class Browser {
     }
   }
 
-  async exportCSV(page: any, options: any): Promise<RenderCSVResponse> {
+  async exportCSV(page: any, options: RenderOptions): Promise<RenderCSVResponse> {
     await this.preparePage(page, options);
     await this.setTimezone(page, options);
 
