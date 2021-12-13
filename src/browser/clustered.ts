@@ -1,5 +1,6 @@
 import { Cluster } from 'puppeteer-cluster';
-import { Browser, RenderResponse, RenderOptions, RenderCSVOptions, RenderCSVResponse, Metrics } from './browser';
+import { ImageRenderOptions, RenderOptions } from '../types';
+import { Browser, RenderResponse, RenderCSVResponse, Metrics } from './browser';
 import { Logger } from '../logger';
 import { RenderingConfig, ClusteringConfig } from '../config';
 
@@ -9,7 +10,7 @@ enum RenderType {
 }
 
 interface ClusterOptions {
-  options: RenderOptions | RenderCSVOptions;
+  options: RenderOptions | ImageRenderOptions;
   renderType: RenderType;
 }
 
@@ -52,7 +53,7 @@ export class ClusteredBrowser extends Browser {
             return await this.exportCSV(page, data.options);
           case RenderType.PNG:
           default:
-            return await this.takeScreenshot(page, data.options);
+            return await this.takeScreenshot(page, data.options as ImageRenderOptions);
         }
       } finally {
         this.removePageListeners(page);
@@ -60,12 +61,12 @@ export class ClusteredBrowser extends Browser {
     });
   }
 
-  async render(options: RenderOptions): Promise<RenderResponse> {
+  async render(options: ImageRenderOptions): Promise<RenderResponse> {
     this.validateImageOptions(options);
     return this.cluster.execute({ options, renderType: RenderType.PNG });
   }
 
-  async renderCSV(options: RenderCSVOptions): Promise<RenderCSVResponse> {
+  async renderCSV(options: RenderOptions): Promise<RenderCSVResponse> {
     this.validateRenderOptions(options);
     return this.cluster.execute({ options, renderType: RenderType.CSV });
   }

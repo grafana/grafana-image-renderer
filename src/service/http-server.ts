@@ -9,30 +9,7 @@ import { Logger } from '../logger';
 import { Browser, createBrowser } from '../browser';
 import { ServiceConfig } from '../config';
 import { setupHttpServerMetrics } from './metrics_middleware';
-import { RenderOptions, RenderCSVOptions, HTTPHeaders, Metrics } from '../browser/browser';
-
-export interface RenderRequest {
-  url: string;
-  width: number;
-  height: number;
-  deviceScaleFactor: number;
-  filePath: string;
-  renderKey: string;
-  domain: string;
-  timeout: number;
-  timezone: string;
-  encoding: string;
-}
-
-export interface RenderCSVRequest {
-  url: string;
-  filePath: string;
-  renderKey: string;
-  domain: string;
-  timeout: number;
-  timezone: string;
-  encoding: string;
-}
+import { HTTPHeaders, ImageRenderOptions, RenderOptions } from '../types';
 
 export class HttpServer {
   app: express.Express;
@@ -123,7 +100,7 @@ export class HttpServer {
     await this.browser.start();
   }
 
-  render = async (req: express.Request<any, any, any, RenderRequest, any>, res: express.Response, next: express.NextFunction) => {
+  render = async (req: express.Request<any, any, any, ImageRenderOptions, any>, res: express.Response, next: express.NextFunction) => {
     if (!req.query.url) {
       throw boom.badRequest('Missing url parameter');
     }
@@ -134,7 +111,7 @@ export class HttpServer {
       headers['Accept-Language'] = (req.headers['Accept-Language'] as string[]).join(';');
     }
 
-    const options: RenderOptions = {
+    const options: ImageRenderOptions = {
       url: req.query.url,
       width: req.query.width,
       height: req.query.height,
@@ -169,7 +146,7 @@ export class HttpServer {
     });
   };
 
-  renderCSV = async (req: express.Request<any, any, any, RenderCSVRequest, any>, res: express.Response, next: express.NextFunction) => {
+  renderCSV = async (req: express.Request<any, any, any, RenderOptions, any>, res: express.Response, next: express.NextFunction) => {
     if (!req.query.url) {
       throw boom.badRequest('Missing url parameter');
     }
@@ -180,7 +157,7 @@ export class HttpServer {
       headers['Accept-Language'] = (req.headers['Accept-Language'] as string[]).join(';');
     }
 
-    const options: RenderCSVOptions = {
+    const options: RenderOptions = {
       url: req.query.url,
       filePath: req.query.filePath,
       timeout: req.query.timeout,
