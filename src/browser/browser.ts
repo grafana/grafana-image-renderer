@@ -5,6 +5,7 @@ import * as chokidar from 'chokidar';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as promClient from 'prom-client';
+import * as sharp from 'sharp';
 import { Logger } from '../logger';
 import { RenderingConfig } from '../config';
 import { ImageRenderOptions, RenderOptions } from '../types';
@@ -82,6 +83,12 @@ export class Browser {
       options.width = this.config.maxWidth;
     }
 
+    // Trigger full height snapshots with a negative height value
+    if (options.height === -1) {
+      options.fullPageImage = true;
+      options.height = Math.floor(options.width * 0.75);
+    }
+
     if (options.height < 10) {
       options.height = this.config.height;
     }
@@ -92,7 +99,18 @@ export class Browser {
 
     options.deviceScaleFactor = parseFloat(((options.deviceScaleFactor as string) || '1') as string) || 1;
 
-    if (options.deviceScaleFactor > this.config.maxDeviceScaleFactor) {
+    // Scaled thumbnails
+    if (options.deviceScaleFactor <= 0) {
+      options.scaleImage = options.deviceScaleFactor * -1;
+      options.deviceScaleFactor = 1;
+
+      if (options.scaleImage > 1) {
+        options.width *= options.scaleImage;
+        options.height *= options.scaleImage;
+      } else {
+        options.scaleImage = undefined;
+      }
+    } else if (options.deviceScaleFactor > this.config.maxDeviceScaleFactor) {
       options.deviceScaleFactor = this.config.deviceScaleFactor;
     }
   }
@@ -230,9 +248,26 @@ export class Browser {
       this.log.debug('Taking screenshot', 'filePath', options.filePath);
     }
 
+    if (options.fullPageImage) {
+      this.log.debug('TODO: take full screen image', 'url', options.url);
+    }
+
     await this.withTimingMetrics<void>(() => {
       return page.screenshot({ path: options.filePath });
     }, 'screenshot');
+
+    if (options.scaleImage) {
+      const scaled = uniqueFilename(os.tmpdir()) + '.webp';
+      await sharp(options.filePath)
+        .resize(320, 240)
+        .toFormat('webp', {
+          quality: 70, // 80 is default
+        })
+        .toFile(scaled);
+
+      fs.unlink(options.filePath, () => {});
+      options.filePath = scaled;
+    }
 
     return { filePath: options.filePath };
   }

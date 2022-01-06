@@ -32,6 +32,7 @@
     "prom-client": "^11.5.3",
     "puppeteer": "^10.0.0",
     "puppeteer-cluster": "^0.22.0",
+    "sharp": "^0.29.3",
     "unique-filename": "^1.1.0",
     "winston": "^3.2.1"
   },

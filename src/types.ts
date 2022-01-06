@@ -19,4 +19,8 @@ export interface ImageRenderOptions extends RenderOptions {
   width: string | number;
   height: string | number;
   deviceScaleFactor?: string | number;
+
+  // Runtime options derived from the input
+  fullPageImage?: boolean;
+  scaleImage?: number;
 }
