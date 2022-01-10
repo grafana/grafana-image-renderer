@@ -163,6 +163,10 @@ export class Browser {
       this.log.debug(`Setting extra HTTP headers for page`, 'headers', options.headers);
       await page.setExtraHTTPHeaders(options.headers as any);
     }
+
+    // automatically accept "Changes you made may not be saved" dialog which could be triggered by saving migrated dashboard schema
+    const acceptBeforeUnload = (dialog) => dialog.type() === 'beforeunload' && dialog.accept();
+    page.on('dialog', acceptBeforeUnload);
   }
 
   async scrollToLoadAllPanels(page: puppeteer.Page, options: ImageRenderOptions): Promise<DashboardScrollingResult> {
