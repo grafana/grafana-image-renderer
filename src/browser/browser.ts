@@ -357,16 +357,16 @@ export class Browser {
     );
 
     if (options.scaleImage) {
-      const scaled = uniqueFilename(os.tmpdir()) + '.webp';
+      const scaled = `${options.filePath}_${Date.now()}_scaled.png`;
       await sharp(options.filePath)
         .resize(320, 240, { fit: 'inside' })
-        .toFormat('webp', {
-          quality: 70, // 80 is default
-        })
+        // .toFormat('webp', {
+        //   quality: 70, // 80 is default
+        // })
         .toFile(scaled);
 
-      fs.unlink(options.filePath, () => {});
-      options.filePath = scaled;
+      // overwrite the original image with the scaled value
+      fs.renameSync(scaled, options.filePath);
     }
 
     return { filePath: options.filePath };
