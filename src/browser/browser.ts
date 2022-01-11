@@ -358,8 +358,10 @@ export class Browser {
 
     if (options.scaleImage) {
       const scaled = `${options.filePath}_${Date.now()}_scaled.png`;
+      const w = +options.width / options.scaleImage;
+      const h = +options.height / options.scaleImage;
       await sharp(options.filePath)
-        .resize(320, 240, { fit: 'inside' })
+        .resize(w, h, { fit: 'inside' })
         // .toFormat('webp', {
         //   quality: 70, // 80 is default
         // })
