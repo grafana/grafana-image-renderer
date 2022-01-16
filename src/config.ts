@@ -76,9 +76,9 @@ const defaultRenderingConfig: RenderingConfig = {
   maxWidth: 3000,
   maxHeight: 3000,
   maxDeviceScaleFactor: 4,
-  mode: 'default',
+  mode: 'clustered',
   clustering: {
-    mode: 'browser',
+    mode: 'browserPerDomain',
     maxConcurrency: 5,
     timeout: 30,
   },

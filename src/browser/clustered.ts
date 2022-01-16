@@ -3,6 +3,7 @@ import { ImageRenderOptions, RenderOptions } from '../types';
 import { Browser, RenderResponse, RenderCSVResponse, Metrics } from './browser';
 import { Logger } from '../logger';
 import { RenderingConfig, ClusteringConfig } from '../config';
+import { ConcurrencyImplementationClassType } from 'puppeteer-cluster/dist/concurrency/ConcurrencyImplementation';
 
 enum RenderType {
   CSV = 'csv',
@@ -10,6 +11,7 @@ enum RenderType {
 }
 
 interface ClusterOptions {
+  groupId: string;
   options: RenderOptions | ImageRenderOptions;
   renderType: RenderType;
 }
@@ -19,7 +21,7 @@ type ClusterResponse = RenderResponse | RenderCSVResponse;
 export class ClusteredBrowser extends Browser {
   cluster: Cluster<ClusterOptions, ClusterResponse>;
   clusteringConfig: ClusteringConfig;
-  concurrency: number;
+  concurrency: number | ConcurrencyImplementationClassType;
 
   constructor(config: RenderingConfig, log: Logger, metrics: Metrics) {
     super(config, log, metrics);
@@ -30,12 +32,17 @@ export class ClusteredBrowser extends Browser {
     if (this.clusteringConfig.mode === 'context') {
       this.concurrency = Cluster.CONCURRENCY_CONTEXT;
     }
+
+    if (this.clusteringConfig.mode === 'browserPerDomain') {
+      this.concurrency = Cluster.CONCURRENCY_BROWSER_PER_REQUEST_GROUP;
+    }
   }
 
   async start(): Promise<void> {
     const launcherOptions = this.getLauncherOptions({});
-    this.cluster = await Cluster.launch({
+    this.cluster = await Cluster.launch<ClusterOptions, ClusterResponse>({
       concurrency: this.concurrency,
+      workerShutdownTimeout: 10000,
       maxConcurrency: this.clusteringConfig.maxConcurrency,
       timeout: this.clusteringConfig.timeout * 1000,
       puppeteerOptions: launcherOptions,
@@ -63,11 +70,11 @@ export class ClusteredBrowser extends Browser {
 
   async render(options: ImageRenderOptions): Promise<RenderResponse> {
     this.validateImageOptions(options);
-    return this.cluster.execute({ options, renderType: RenderType.PNG });
+    return this.cluster.execute({ groupId: options.domain, options, renderType: RenderType.PNG });
   }
 
   async renderCSV(options: RenderOptions): Promise<RenderCSVResponse> {
     this.validateRenderOptions(options);
-    return this.cluster.execute({ options, renderType: RenderType.CSV });
+    return this.cluster.execute({ groupId: options.domain, options, renderType: RenderType.CSV });
   }
 }
