@@ -1,3 +1,6 @@
+## 3.4.0 (--)
+- Support full height dashboards and scaled thumbnails [#312](https://github.com/grafana/grafana-image-renderer/pull/312)
+
 ## 3.3.0 (2021-11-18)
 
 - Chore: Bump pkg from 5.3.3 to 5.4.1 [#305](https://github.com/grafana/grafana-image-renderer/pull/305), [AgnesToulet](https://github.com/AgnesToulet)

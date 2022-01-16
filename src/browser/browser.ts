@@ -163,6 +163,10 @@ export class Browser {
       this.log.debug(`Setting extra HTTP headers for page`, 'headers', options.headers);
       await page.setExtraHTTPHeaders(options.headers as any);
     }
+
+    // automatically accept "Changes you made may not be saved" dialog which could be triggered by saving migrated dashboard schema
+    const acceptBeforeUnload = (dialog) => dialog.type() === 'beforeunload' && dialog.accept();
+    page.on('dialog', acceptBeforeUnload);
   }
 
   async scrollToLoadAllPanels(page: puppeteer.Page, options: ImageRenderOptions): Promise<DashboardScrollingResult> {
@@ -353,16 +357,18 @@ export class Browser {
     );
 
     if (options.scaleImage) {
-      const scaled = uniqueFilename(os.tmpdir()) + '.webp';
+      const scaled = `${options.filePath}_${Date.now()}_scaled.png`;
+      const w = +options.width / options.scaleImage;
+      const h = +options.height / options.scaleImage;
       await sharp(options.filePath)
-        .resize(320, 240, { fit: 'inside' })
-        .toFormat('webp', {
-          quality: 70, // 80 is default
-        })
+        .resize(w, h, { fit: 'inside' })
+        // .toFormat('webp', {
+        //   quality: 70, // 80 is default
+        // })
         .toFile(scaled);
 
-      fs.unlink(options.filePath, () => {});
-      options.filePath = scaled;
+      // overwrite the original image with the scaled value
+      fs.renameSync(scaled, options.filePath);
     }
 
     return { filePath: options.filePath };
