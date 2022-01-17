@@ -78,7 +78,7 @@ const defaultRenderingConfig: RenderingConfig = {
   maxDeviceScaleFactor: 4,
   mode: 'clustered',
   clustering: {
-    mode: 'browserPerDomain',
+    mode: 'browserPerRenderKey',
     maxConcurrency: 5,
     timeout: 30,
   },
