@@ -33,7 +33,7 @@ export class ClusteredBrowser extends Browser {
       this.concurrency = Cluster.CONCURRENCY_CONTEXT;
     }
 
-    if (this.clusteringConfig.mode === 'browserPerDomain') {
+    if (this.clusteringConfig.mode === 'browserPerRenderKey') {
       this.concurrency = Cluster.CONCURRENCY_BROWSER_PER_REQUEST_GROUP;
     }
   }
@@ -70,11 +70,11 @@ export class ClusteredBrowser extends Browser {
 
   async render(options: ImageRenderOptions): Promise<RenderResponse> {
     this.validateImageOptions(options);
-    return this.cluster.execute({ groupId: options.domain, options, renderType: RenderType.PNG });
+    return this.cluster.execute({ groupId: options.renderKey, options, renderType: RenderType.PNG });
   }
 
   async renderCSV(options: RenderOptions): Promise<RenderCSVResponse> {
     this.validateRenderOptions(options);
-    return this.cluster.execute({ groupId: options.domain, options, renderType: RenderType.CSV });
+    return this.cluster.execute({ groupId: options.renderKey, options, renderType: RenderType.CSV });
   }
 }
