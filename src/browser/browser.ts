@@ -191,13 +191,13 @@ export class Browser {
       };
     }
 
-    const scrolls = Math.floor(dashboardHeights.scroll / dashboardHeights.client);
-
-    if (scrolls < 1 || dashboardHeights.scroll === dashboardHeights.client) {
+    if (dashboardHeights.scroll <= dashboardHeights.client) {
       return {
         scrolled: false,
       };
     }
+
+    const scrolls = Math.floor(dashboardHeights.scroll / dashboardHeights.client);
 
     for (let i = 0; i < scrolls; i++) {
       await page.evaluate(
