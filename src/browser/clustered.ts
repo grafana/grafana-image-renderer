@@ -1,9 +1,9 @@
-import { Cluster } from 'puppeteer-cluster';
+import { Cluster } from 'poolpeteer';
 import { ImageRenderOptions, RenderOptions } from '../types';
 import { Browser, RenderResponse, RenderCSVResponse, Metrics } from './browser';
 import { Logger } from '../logger';
 import { RenderingConfig, ClusteringConfig } from '../config';
-import { ConcurrencyImplementationClassType } from 'puppeteer-cluster/dist/concurrency/ConcurrencyImplementation';
+import { ConcurrencyImplementationClassType } from 'poolpeteer/dist/concurrency/ConcurrencyImplementation';
 
 enum RenderType {
   CSV = 'csv',

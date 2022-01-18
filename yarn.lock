@@ -942,7 +942,7 @@ debug@2.6.9:
   dependencies:
     ms "2.0.0"
 
-debug@4, debug@^4.0.1, debug@^4.1.1, debug@^4.3.1, debug@^4.3.2:
+debug@4, debug@4.3.3, debug@^4.0.1, debug@^4.1.1, debug@^4.3.1, debug@^4.3.2:
   version "4.3.3"
   resolved "https://registry.yarnpkg.com/debug/-/debug-4.3.3.tgz#04266e0b70a98d4462e6e288e38259213332b664"
   integrity sha512-/zxw5+vh1Tfv+4Qn7a5nsbcJKPaSvCDhojn6FEl9vupwK2VCSDtEiEtqr8DFtzYFOdz63LBkxec7DYuc2jon6Q==
@@ -2805,6 +2805,13 @@ please-upgrade-node@^3.2.0:
   dependencies:
     semver-compare "^1.0.0"
 
+poolpeteer@0.0.22:
+  version "0.22.0"
+  resolved "https://registry.yarnpkg.com/poolpeteer/-/poolpeteer-0.22.0.tgz#890a1dd4b01a77b3ce9d92384e1f7199c7e785db"
+  integrity sha512-mDQW3pfpiyVPAEsMugXgqTg/ShWXN4Z+9Bz2OcWBoCBWJUxtulEZbs3UO6ydkcETe4uCohRmPL5JmlIX98awqw==
+  dependencies:
+    debug "4.3.3"
+
 prebuild-install@6.1.4:
   version "6.1.4"
   resolved "https://registry.yarnpkg.com/prebuild-install/-/prebuild-install-6.1.4.tgz#ae3c0142ad611d58570b89af4986088a4937e00f"
@@ -2947,12 +2954,6 @@ punycode@^2.1.0:
   version "2.1.1"
   resolved "https://registry.yarnpkg.com/punycode/-/punycode-2.1.1.tgz#b58b010ac40c22c5657616c8d2c2c02c7bf479ec"
   integrity sha512-XRsRjdf+j5ml+y/6GKHPZbrF/8p2Yga0JPtdqTIY2Xe5ohJPD9saDJJLPvp9+NSBprVvevdXZybnj2cv8OEd0A==
-
-puppeteer-cluster@ArturWierzbicki/puppeteer-cluster#fe2be64f:
-  version "0.22.0"
-  resolved "https://codeload.github.com/ArturWierzbicki/puppeteer-cluster/tar.gz/fe2be64f808e010d6978aaf325b8475041e7f5b4"
-  dependencies:
-    debug "^4.1.1"
 
 puppeteer@^10.0.0:
   version "10.4.0"
