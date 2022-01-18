@@ -257,20 +257,6 @@ export class Browser {
     });
   };
 
-  withFullPageViewport = (
-    fn: () => Promise<unknown>,
-    page: puppeteer.Page,
-    options: ImageRenderOptions,
-    scrollHeight: number
-  ): (() => Promise<void>) => async () => {
-    await this.setViewport(page, {
-      ...options,
-      height: scrollHeight,
-    });
-    await fn();
-    await this.setViewport(page, options);
-  };
-
   async takeScreenshot(page: puppeteer.Page, options: ImageRenderOptions): Promise<RenderResponse> {
     try {
       await this.withTimingMetrics(async () => {
@@ -349,14 +335,15 @@ export class Browser {
       this.log.debug('Taking screenshot', 'filePath', options.filePath);
     }
 
-    const screenshotFn = () =>
-      page.screenshot({ path: options.filePath, fullPage: options.fullPageImage, captureBeyondViewport: options.fullPageImage });
-
-    if (scrollResult.scrolled) {
-      await this.withTimingMetrics(this.withFullPageViewport(screenshotFn, page, options, scrollResult.scrollHeight), 'screenshot');
-    } else {
-      await this.withTimingMetrics(screenshotFn, 'screenshot');
-    }
+    await this.withTimingMetrics(async () => {
+      if (scrollResult.scrolled) {
+        await this.setViewport(page, {
+          ...options,
+          height: scrollResult.scrollHeight,
+        });
+      }
+      return page.screenshot({ path: options.filePath, fullPage: options.fullPageImage, captureBeyondViewport: options.fullPageImage });
+    }, 'screenshot');
 
     if (options.scaleImage) {
       const scaled = `${options.filePath}_${Date.now()}_scaled.png`;
