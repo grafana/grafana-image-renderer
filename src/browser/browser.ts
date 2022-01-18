@@ -351,10 +351,12 @@ export class Browser {
 
     const screenshotFn = () =>
       page.screenshot({ path: options.filePath, fullPage: options.fullPageImage, captureBeyondViewport: options.fullPageImage });
-    await this.withTimingMetrics(
-      scrollResult.scrolled ? this.withFullPageViewport(screenshotFn, page, options, scrollResult.scrollHeight) : screenshotFn,
-      'screenshot'
-    );
+
+    if (scrollResult.scrolled) {
+      await this.withTimingMetrics(this.withFullPageViewport(screenshotFn, page, options, scrollResult.scrollHeight), 'screenshot');
+    } else {
+      await this.withTimingMetrics(screenshotFn, 'screenshot');
+    }
 
     if (options.scaleImage) {
       const scaled = `${options.filePath}_${Date.now()}_scaled.png`;
