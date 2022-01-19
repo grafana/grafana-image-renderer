@@ -174,37 +174,41 @@ export class Browser {
     const scrollDelay = options.scrollDelay ?? 500;
 
     await page.waitForSelector(scrollDivSelector);
-    const dashboardHeights: { scroll: number; client: number } | undefined = await page.evaluate((scrollDivSelector) => {
-      const div = document.querySelector(scrollDivSelector);
-      if (!div) {
-        return undefined;
+    const heights: { dashboard?: { scroll: number; client: number }; body: { client: number } } = await page.evaluate((scrollDivSelector) => {
+      const body = { client: document.body.clientHeight };
+      const dashboardDiv = document.querySelector(scrollDivSelector);
+      if (!dashboardDiv) {
+        return {
+          body,
+        };
       }
+
       return {
-        scroll: div.scrollHeight,
-        client: div.clientHeight,
+        dashboard: { scroll: dashboardDiv.scrollHeight, client: dashboardDiv.clientHeight },
+        body,
       };
     }, scrollDivSelector);
 
-    if (!dashboardHeights) {
+    if (!heights.dashboard) {
       return {
         scrolled: false,
       };
     }
 
-    if (dashboardHeights.scroll <= dashboardHeights.client) {
+    if (heights.dashboard.scroll <= heights.dashboard.client) {
       return {
         scrolled: false,
       };
     }
 
-    const scrolls = Math.floor(dashboardHeights.scroll / dashboardHeights.client);
+    const scrolls = Math.floor(heights.dashboard.scroll / heights.dashboard.client);
 
     for (let i = 0; i < scrolls; i++) {
       await page.evaluate(
         (scrollByHeight, scrollDivSelector) => {
           document.querySelector(scrollDivSelector)?.scrollBy(0, scrollByHeight);
         },
-        dashboardHeights.client,
+        heights.dashboard.client,
         scrollDivSelector
       );
       await page.waitForTimeout(scrollDelay);
@@ -214,9 +218,11 @@ export class Browser {
       document.querySelector(scrollDivSelector)?.scrollTo(0, 0);
     }, scrollDivSelector);
 
+    // Header height will be equal to 0 in Kiosk mode
+    const headerHeight = heights.body.client - heights.dashboard.client;
     return {
       scrolled: true,
-      scrollHeight: dashboardHeights.scroll,
+      scrollHeight: heights.dashboard.scroll + headerHeight,
     };
   }
 
