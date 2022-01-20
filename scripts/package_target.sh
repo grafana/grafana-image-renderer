@@ -10,6 +10,12 @@ if [ -z "$ARCH" ]; then
     exit 1
 fi
 
+if [ ${SKIP_SHARP_DOWNLOAD} = false ]; then
+    node scripts/download_sharp.js ${ARCH} ${OUT}
+else
+    echo "Skipping sharp download"
+fi
+
 mkdir -p dist
 node scripts/pkg.js ${ARCH} ${OUT}
 if [ $? != 0 ]; then
@@ -20,12 +26,6 @@ if [ ${SKIP_CHROMIUM} = false ]; then
     node scripts/download_chromium.js ${ARCH} ${OUT}
 else
     echo "Skipping chromium download"
-fi
-
-if [ ${SKIP_SHARP_DOWNLOAD} = false ]; then
-    node scripts/download_sharp.js ${ARCH} ${OUT}
-else
-    echo "Skipping sharp download"
 fi
 
 
