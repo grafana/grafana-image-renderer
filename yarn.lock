@@ -2765,7 +2765,7 @@ pkg-fetch@3.2.6:
     tar-fs "^2.1.1"
     yargs "^16.2.0"
 
-pkg@^5.4.1:
+pkg@5.5.2:
   version "5.5.2"
   resolved "https://registry.yarnpkg.com/pkg/-/pkg-5.5.2.tgz#c21ca9b5cb48feceb3b158c17df855ada350086d"
   integrity sha512-pD0UB2ud01C6pVv2wpGsTYJrXI/bnvGRYvMLd44wFzA1p+A2jrlTGFPAYa7YEYzmitXhx23PqalaG1eUEnSwcA==
@@ -3205,7 +3205,7 @@ setprototypeof@1.2.0:
   resolved "https://registry.npmjs.org/setprototypeof/-/setprototypeof-1.2.0.tgz"
   integrity sha512-E5LDX7Wrp85Kil5bhZv46j8jOeboKq5JMmYM3gVGdGH8xFpPWXUMsNrlODCrkoxMEeNi/XZIwuRvY4XNwYMJpw==
 
-sharp@^0.29.3:
+sharp@0.29.3:
   version "0.29.3"
   resolved "https://registry.yarnpkg.com/sharp/-/sharp-0.29.3.tgz#0da183d626094c974516a48fab9b3e4ba92eb5c2"
   integrity sha512-fKWUuOw77E4nhpyzCCJR1ayrttHoFHBT2U/kR/qEMRhvPEcluG4BKj324+SCO1e84+knXHwhJ1HHJGnUt4ElGA==
