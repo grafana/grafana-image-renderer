@@ -3,6 +3,7 @@
 ARCH="${1:-}"
 SKIP_CHROMIUM=${2:-false}
 OUT="${3:-}"
+SKIP_SHARP_DOWNLOAD=${4:-false}
 
 if [ -z "$ARCH" ]; then
     echo "ARCH (arg 1) has to be set"
@@ -20,6 +21,13 @@ if [ ${SKIP_CHROMIUM} = false ]; then
 else
     echo "Skipping chromium download"
 fi
+
+if [ ${SKIP_SHARP_DOWNLOAD} = false ]; then
+    node scripts/download_sharp.js ${ARCH} ${OUT}
+else
+    echo "Skipping sharp download"
+fi
+
 
 if [ $? != 0 ]; then
    echo "${?}\n". 1>&2 && exit 1

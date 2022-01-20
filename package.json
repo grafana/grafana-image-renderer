@@ -69,7 +69,11 @@
     ]
   },
   "pkg": {
-    "assets": "proto/*"
+    "assets": [
+      "proto/*",
+      "node_modules/sharp/build/Release",
+      "node_modules/sharp/vendor/lib"
+    ]
   },
   "bin": "build/app.js",
   "engines": {
