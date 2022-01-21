@@ -1,0 +1,15 @@
+{
+  "name": "pkg-sharp-issue",
+  "scripts": {
+    "package-and-run": "pkg -t node14-linux-x64 . --out-path ./dist && ./dist/pkg-sharp-issue ./rocket.png",
+    "run-source": "node ./src/index.js ./rocket.png"
+  },
+  "dependencies": {
+    "sharp": "0.29.3"
+  },
+  "devDependencies": {
+    "pkg": "5.5.2"
+  },
+  "bin": "src/index.js",
+  "license": "Apache-2.0"
+}
