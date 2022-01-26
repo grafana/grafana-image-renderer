@@ -34,14 +34,11 @@ fs.writeFileSync(`${sharpDownloader}/package.json`, JSON.stringify({
     }
 ))
 
-
-
 const downloadedSharp = `${sharpDownloader}/node_modules/sharp`
 
-
-
-child_process.execSync(`cd ${sharpDownloader} && npm install --platform=${platform} --arch=${arch}`, {stdio: 'inherit'})
-child_process.execSync(`rm -rf ${currentSharp} && cp -RP ${downloadedSharp} ${targetNodeModules}`);
-
-
-fs.rmSync(sharpDownloader, {recursive: true, force: true})
+try {
+    child_process.execSync(`cd ${sharpDownloader} && npm install --platform=${platform} --arch=${arch}`, {stdio: 'inherit'})
+    child_process.execSync(`rm -rf ${currentSharp} && cp -RP ${downloadedSharp} ${targetNodeModules}`);
+} finally {
+    fs.rmSync(sharpDownloader, {recursive: true, force: true})
+}
