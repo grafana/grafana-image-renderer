@@ -30,6 +30,7 @@
     "maxWidth": 1980,
     "maxHeight": 8000,
     "maxDeviceScaleFactor": 10,
+    "headed": false,
 
     "mode": "default",
     "clustering": {

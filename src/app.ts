@@ -8,6 +8,8 @@ import * as minimist from 'minimist';
 import { defaultPluginConfig, defaultServiceConfig, readJSONFileSync, PluginConfig, ServiceConfig } from './config';
 import { serve } from './node-plugin';
 
+const chromeFolderPrefix = 'chrome-';
+
 async function main() {
   const argv = minimist(process.argv.slice(2));
   const env = Object.assign({}, process.env);
@@ -19,12 +21,19 @@ async function main() {
     populatePluginConfigFromEnv(config, env);
     if (!config.rendering.chromeBin && (process as any).pkg) {
       //@ts-ignore
-      const parts = puppeteer.executablePath().split(path.sep);
-      while (!parts[0].startsWith('chrome-')) {
-        parts.shift();
-      }
+      const executablePath = puppeteer.executablePath() as string;
 
-      config.rendering.chromeBin = [path.dirname(process.execPath), ...parts].join(path.sep);
+      if (executablePath.includes(chromeFolderPrefix)) {
+        const parts = executablePath.split(path.sep);
+        while (!parts[0].startsWith(chromeFolderPrefix)) {
+          parts.shift();
+        }
+
+        config.rendering.chromeBin = [path.dirname(process.execPath), ...parts].join(path.sep);
+      } else {
+        // local chrome installation in dev mode
+        config.rendering.chromeBin = env['PUPPETEER_EXECUTABLE_PATH'];
+      }
     }
 
     await serve({

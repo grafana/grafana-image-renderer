@@ -5,6 +5,7 @@ import * as chokidar from 'chokidar';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as promClient from 'prom-client';
+import * as sharp from 'sharp';
 import { Logger } from '../logger';
 import { RenderingConfig } from '../config';
 import { ImageRenderOptions, RenderOptions } from '../types';
@@ -20,6 +21,10 @@ export interface RenderCSVResponse {
   filePath: string;
   fileName?: string;
 }
+
+type DashboardScrollingResult = { scrolled: false } | { scrolled: true; scrollHeight: number };
+
+type PuppeteerLaunchOptions = Parameters<typeof puppeteer['launch']>[0];
 
 export class Browser {
   constructor(protected config: RenderingConfig, protected log: Logger, protected metrics: Metrics) {
@@ -82,6 +87,12 @@ export class Browser {
       options.width = this.config.maxWidth;
     }
 
+    // Trigger full height snapshots with a negative height value
+    if (options.height === -1) {
+      options.fullPageImage = true;
+      options.height = Math.floor(options.width * 0.75);
+    }
+
     if (options.height < 10) {
       options.height = this.config.height;
     }
@@ -92,7 +103,18 @@ export class Browser {
 
     options.deviceScaleFactor = parseFloat(((options.deviceScaleFactor as string) || '1') as string) || 1;
 
-    if (options.deviceScaleFactor > this.config.maxDeviceScaleFactor) {
+    // Scaled thumbnails
+    if (options.deviceScaleFactor <= 0) {
+      options.scaleImage = options.deviceScaleFactor * -1;
+      options.deviceScaleFactor = 1;
+
+      if (options.scaleImage > 1) {
+        options.width *= options.scaleImage;
+        options.height *= options.scaleImage;
+      } else {
+        options.scaleImage = undefined;
+      }
+    } else if (options.deviceScaleFactor > this.config.maxDeviceScaleFactor) {
       options.deviceScaleFactor = this.config.deviceScaleFactor;
     }
   }
@@ -102,7 +124,7 @@ export class Browser {
     // set env timezone
     env.TZ = options.timezone || this.config.timezone;
 
-    const launcherOptions: any = {
+    const launcherOptions: PuppeteerLaunchOptions = {
       env: env,
       ignoreHTTPSErrors: this.config.ignoresHttpsErrors,
       dumpio: this.config.dumpio,
@@ -112,6 +134,8 @@ export class Browser {
     if (this.config.chromeBin) {
       launcherOptions.executablePath = this.config.chromeBin;
     }
+
+    launcherOptions.headless = !this.config.headed;
 
     return launcherOptions;
   }
@@ -139,6 +163,67 @@ export class Browser {
       this.log.debug(`Setting extra HTTP headers for page`, 'headers', options.headers);
       await page.setExtraHTTPHeaders(options.headers as any);
     }
+
+    // automatically accept "Changes you made may not be saved" dialog which could be triggered by saving migrated dashboard schema
+    const acceptBeforeUnload = (dialog) => dialog.type() === 'beforeunload' && dialog.accept();
+    page.on('dialog', acceptBeforeUnload);
+  }
+
+  async scrollToLoadAllPanels(page: puppeteer.Page, options: ImageRenderOptions): Promise<DashboardScrollingResult> {
+    const scrollDivSelector = '[class="scrollbar-view"]';
+    const scrollDelay = options.scrollDelay ?? 500;
+
+    await page.waitForSelector(scrollDivSelector);
+    const heights: { dashboard?: { scroll: number; client: number }; body: { client: number } } = await page.evaluate((scrollDivSelector) => {
+      const body = { client: document.body.clientHeight };
+      const dashboardDiv = document.querySelector(scrollDivSelector);
+      if (!dashboardDiv) {
+        return {
+          body,
+        };
+      }
+
+      return {
+        dashboard: { scroll: dashboardDiv.scrollHeight, client: dashboardDiv.clientHeight },
+        body,
+      };
+    }, scrollDivSelector);
+
+    if (!heights.dashboard) {
+      return {
+        scrolled: false,
+      };
+    }
+
+    if (heights.dashboard.scroll <= heights.dashboard.client) {
+      return {
+        scrolled: false,
+      };
+    }
+
+    const scrolls = Math.floor(heights.dashboard.scroll / heights.dashboard.client);
+
+    for (let i = 0; i < scrolls; i++) {
+      await page.evaluate(
+        (scrollByHeight, scrollDivSelector) => {
+          document.querySelector(scrollDivSelector)?.scrollBy(0, scrollByHeight);
+        },
+        heights.dashboard.client,
+        scrollDivSelector
+      );
+      await page.waitForTimeout(scrollDelay);
+    }
+
+    await page.evaluate((scrollDivSelector) => {
+      document.querySelector(scrollDivSelector)?.scrollTo(0, 0);
+    }, scrollDivSelector);
+
+    // Header height will be equal to 0 in Kiosk mode
+    const headerHeight = heights.body.client - heights.dashboard.client;
+    return {
+      scrolled: true,
+      scrollHeight: heights.dashboard.scroll + headerHeight,
+    };
   }
 
   async render(options: ImageRenderOptions): Promise<RenderResponse> {
@@ -170,57 +255,83 @@ export class Browser {
     }
   }
 
-  async takeScreenshot(page: any, options: ImageRenderOptions): Promise<RenderResponse> {
-    await this.withTimingMetrics(async () => {
-      if (this.config.verboseLogging) {
-        this.log.debug(
-          'Setting viewport for page',
-          'width',
-          options.width.toString(),
-          'height',
-          options.height.toString(),
-          'deviceScaleFactor',
-          options.deviceScaleFactor
-        );
-      }
+  private setViewport = async (page: puppeteer.Page, options: ImageRenderOptions): Promise<void> => {
+    await page.setViewport({
+      width: +options.width,
+      height: +options.height,
+      deviceScaleFactor: options.deviceScaleFactor ? +options.deviceScaleFactor : 1,
+    });
+  };
 
-      await page.setViewport({
-        width: options.width,
-        height: options.height,
-        deviceScaleFactor: options.deviceScaleFactor,
-      });
-
-      await this.preparePage(page, options);
-      await this.setTimezone(page, options);
-
-      if (this.config.verboseLogging) {
-        this.log.debug('Moving mouse on page', 'x', options.width, 'y', options.height);
-      }
-      return page.mouse.move(options.width, options.height);
-    }, 'prepare');
-
-    await this.withTimingMetrics<void>(() => {
-      if (this.config.verboseLogging) {
-        this.log.debug('Navigating and waiting for all network requests to finish', 'url', options.url);
-      }
-
-      return page.goto(options.url, { waitUntil: 'networkidle0', timeout: options.timeout * 1000 });
-    }, 'navigate');
-
-    await this.withTimingMetrics<void>(() => {
-      if (this.config.verboseLogging) {
-        this.log.debug('Waiting for dashboard/panel to load', 'timeout', `${options.timeout}s`);
-      }
-      return page.waitForFunction(
-        () => {
-          const panelCount = document.querySelectorAll('.panel').length || document.querySelectorAll('.panel-container').length;
-          return (window as any).panelsRendered >= panelCount;
-        },
-        {
-          timeout: options.timeout * 1000,
+  async takeScreenshot(page: puppeteer.Page, options: ImageRenderOptions): Promise<RenderResponse> {
+    try {
+      await this.withTimingMetrics(async () => {
+        if (this.config.verboseLogging) {
+          this.log.debug(
+            'Setting viewport for page',
+            'width',
+            options.width.toString(),
+            'height',
+            options.height.toString(),
+            'deviceScaleFactor',
+            options.deviceScaleFactor
+          );
         }
-      );
-    }, 'panelsRendered');
+
+        await this.setViewport(page, options);
+
+        await this.preparePage(page, options);
+        await this.setTimezone(page, options);
+
+        if (this.config.verboseLogging) {
+          this.log.debug('Moving mouse on page', 'x', options.width, 'y', options.height);
+        }
+        return page.mouse.move(+options.width, +options.height);
+      }, 'prepare');
+
+      await this.withTimingMetrics(() => {
+        if (this.config.verboseLogging) {
+          this.log.debug('Navigating and waiting for all network requests to finish', 'url', options.url);
+        }
+
+        return page.goto(options.url, { waitUntil: 'networkidle0', timeout: options.timeout * 1000 });
+      }, 'navigate');
+    } catch (err) {
+      this.log.error('Error while trying to prepare page for screenshot', 'url', options.url, 'err', err.stack);
+    }
+
+    let scrollResult: DashboardScrollingResult = {
+      scrolled: false,
+    };
+
+    if (options.fullPageImage) {
+      try {
+        scrollResult = await this.withTimingMetrics(() => {
+          return this.scrollToLoadAllPanels(page, options);
+        }, 'dashboardScrolling');
+      } catch (err) {
+        this.log.error('Error while scrolling to load all panels', 'url', options.url, 'err', err.stack);
+      }
+    }
+
+    try {
+      await this.withTimingMetrics(() => {
+        if (this.config.verboseLogging) {
+          this.log.debug('Waiting for dashboard/panel to load', 'timeout', `${options.timeout}s`);
+        }
+        return page.waitForFunction(
+          () => {
+            const panelCount = document.querySelectorAll('.panel').length || document.querySelectorAll('.panel-container').length;
+            return (window as any).panelsRendered >= panelCount;
+          },
+          {
+            timeout: options.timeout * 1000,
+          }
+        );
+      }, 'panelsRendered');
+    } catch (err) {
+      this.log.error('Error while waiting for the panels to load', 'url', options.url, 'err', err.stack);
+    }
 
     if (!options.filePath) {
       options.filePath = uniqueFilename(os.tmpdir()) + '.png';
@@ -230,9 +341,30 @@ export class Browser {
       this.log.debug('Taking screenshot', 'filePath', options.filePath);
     }
 
-    await this.withTimingMetrics<void>(() => {
-      return page.screenshot({ path: options.filePath });
+    await this.withTimingMetrics(async () => {
+      if (scrollResult.scrolled) {
+        await this.setViewport(page, {
+          ...options,
+          height: scrollResult.scrollHeight,
+        });
+      }
+      return page.screenshot({ path: options.filePath, fullPage: options.fullPageImage, captureBeyondViewport: options.fullPageImage });
     }, 'screenshot');
+
+    if (options.scaleImage) {
+      const scaled = `${options.filePath}_${Date.now()}_scaled.png`;
+      const w = +options.width / options.scaleImage;
+      const h = +options.height / options.scaleImage;
+      await sharp(options.filePath)
+        .resize(w, h, { fit: 'inside' })
+        // .toFormat('webp', {
+        //   quality: 70, // 80 is default
+        // })
+        .toFile(scaled);
+
+      // overwrite the original image with the scaled value
+      fs.renameSync(scaled, options.filePath);
+    }
 
     return { filePath: options.filePath };
   }

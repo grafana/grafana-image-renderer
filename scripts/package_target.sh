@@ -3,10 +3,17 @@
 ARCH="${1:-}"
 SKIP_CHROMIUM=${2:-false}
 OUT="${3:-}"
+SKIP_SHARP_DOWNLOAD=${4:-false}
 
 if [ -z "$ARCH" ]; then
     echo "ARCH (arg 1) has to be set"
     exit 1
+fi
+
+if [ ${SKIP_SHARP_DOWNLOAD} = false ]; then
+    node scripts/download_sharp.js ${ARCH} ${OUT}
+else
+    echo "Skipping sharp download"
 fi
 
 mkdir -p dist

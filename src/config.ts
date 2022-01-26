@@ -23,6 +23,7 @@ export interface RenderingConfig {
   verboseLogging: boolean;
   dumpio: boolean;
   timingMetrics: boolean;
+  headed?: boolean;
 }
 
 export interface MetricsConfig {
@@ -70,6 +71,7 @@ const defaultRenderingConfig: RenderingConfig = {
   acceptLanguage: undefined,
   width: 1000,
   height: 500,
+  headed: false,
   deviceScaleFactor: 1,
   maxWidth: 3000,
   maxHeight: 3000,
