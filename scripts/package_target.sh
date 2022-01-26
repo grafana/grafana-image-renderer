@@ -28,7 +28,6 @@ else
     echo "Skipping chromium download"
 fi
 
-
 if [ $? != 0 ]; then
    echo "${?}\n". 1>&2 && exit 1
 fi
