@@ -4,7 +4,6 @@ const fs = require('fs')
 
 const archArg = process.argv[2];
 
-
 // https://sharp.pixelplumbing.com/install#cross-platform
 const [
     platform, // linux, darwin, win32
