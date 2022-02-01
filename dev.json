@@ -30,9 +30,11 @@
     "maxWidth": 1980,
     "maxHeight": 8000,
     "maxDeviceScaleFactor": 10,
-    "mode": "clustered",
+    "headed": false,
+
+    "mode": "default",
     "clustering": {
-      "mode": "browserPerRenderKey",
+      "mode": "browser",
       "maxConcurrency": 5,
       "timeout": 30
     },

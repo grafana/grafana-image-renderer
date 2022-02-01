@@ -1,4 +1,5 @@
 const childProcess = require('child_process');
+const fs = require('fs')
 
 const archArg = process.argv[2];
 let [
@@ -22,6 +23,16 @@ const archTransform = {
 
 platform = platformTransform[platform] || platform;
 arch = archTransform[arch] || arch;
-const outputPath = "dist/" + (process.argv[3] || `plugin-${archArg}`);
 
-childProcess.execSync(`"./node_modules/.bin/pkg" -t node14-${platform}-${arch} . --out-path ${outputPath}`, {stdio: 'inherit'});
+if(platform === 'macos' && (arch.includes('arm'))) {
+  arch = 'arm64'
+}
+
+const outputPath = "dist/" + (process.argv[3] || `plugin-${archArg}`);
+const outputNodeModules = `${outputPath}/node_modules`
+
+childProcess.execSync(`"./node_modules/.bin/pkg" -t node14-${platform}-${arch} . --out-path ${outputPath} --no-native-build`, {stdio: 'inherit'});
+
+childProcess.execSync(`rm -rf ${outputNodeModules}`)
+fs.mkdirSync(`${outputNodeModules}/sharp`, {recursive: true})
+childProcess.execSync(`cp -RP ./node_modules/sharp/build ${outputNodeModules}/sharp && cp -RP ./node_modules/sharp/vendor ${outputNodeModules}/sharp`)

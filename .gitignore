@@ -35,3 +35,5 @@ dist/**/*
 
 # Ignore output from coverage report
 coverage
+
+scripts/sharp-downloader
