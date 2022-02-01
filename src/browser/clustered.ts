@@ -36,6 +36,10 @@ export class ClusteredBrowser extends Browser {
     if (this.clusteringConfig.mode === 'browserPerRenderKey') {
       this.concurrency = Cluster.CONCURRENCY_BROWSER_PER_REQUEST_GROUP;
     }
+
+    if (this.clusteringConfig.mode === 'contextPerRenderKey') {
+      this.concurrency = Cluster.CONCURRENCY_CONTEXT_PER_REQUEST_GROUP;
+    }
   }
 
   async start(): Promise<void> {
