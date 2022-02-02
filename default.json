@@ -30,10 +30,11 @@
     "maxWidth": 3080,
     "maxHeight": 3000,
     "maxDeviceScaleFactor": 4,
-    "headed": true,
+    "headed": false,
 
     "mode": "clustered",
     "clustering": {
+      "monitor": true,
       "mode": "contextPerRenderKey",
       "maxConcurrency": 5,
       "timeout": 30
