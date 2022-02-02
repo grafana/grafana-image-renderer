@@ -44,7 +44,7 @@ export class ClusteredBrowser extends Browser {
     const launcherOptions = this.getLauncherOptions({});
     this.cluster = await Cluster.launch<ClusterOptions, ClusterResponse>({
       concurrency: this.concurrency,
-      workerShutdownTimeout: 10000,
+      workerShutdownTimeout: 5000,
       monitor: this.clusteringConfig.monitor,
       maxConcurrency: this.clusteringConfig.maxConcurrency,
       timeout: this.clusteringConfig.timeout * 1000,
