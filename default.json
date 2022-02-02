@@ -31,6 +31,7 @@
     "maxHeight": 3000,
     "maxDeviceScaleFactor": 4,
     "headed": false,
+    "emulateNetworkConditions": false,
 
     "mode": "clustered",
     "clustering": {

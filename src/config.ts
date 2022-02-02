@@ -7,6 +7,14 @@ export interface ClusteringConfig {
   timeout: number;
 }
 
+// https://chromedevtools.github.io/devtools-protocol/tot/Network/#method-emulateNetworkConditions
+type NetworkConditions = {
+  offline: boolean;
+  downloadThroughput: number;
+  uploadThroughput: number;
+  latency: number;
+};
+
 export interface RenderingConfig {
   chromeBin?: string;
   args: string[];
@@ -25,6 +33,8 @@ export interface RenderingConfig {
   dumpio: boolean;
   timingMetrics: boolean;
   headed?: boolean;
+  networkConditions?: NetworkConditions;
+  emulateNetworkConditions: boolean;
 }
 
 export interface MetricsConfig {
@@ -84,6 +94,7 @@ const defaultRenderingConfig: RenderingConfig = {
     maxConcurrency: 5,
     timeout: 30,
   },
+  emulateNetworkConditions: false,
   verboseLogging: false,
   dumpio: false,
   timingMetrics: false,

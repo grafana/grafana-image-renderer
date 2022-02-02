@@ -32,6 +32,13 @@
     "maxDeviceScaleFactor": 10,
     "headed": false,
     "mode": "clustered",
+    "emulateNetworkConditions": false,
+    "networkConditions": {
+      "downloadThroughput": 4000000,
+      "uploadThroughput": 4000000,
+      "latency": 100,
+      "offline": false
+    },
 
     "clustering": {
       "monitor": true,
