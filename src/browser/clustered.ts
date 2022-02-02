@@ -74,7 +74,7 @@ export class ClusteredBrowser extends Browser {
 
   private getGroupId = (options: ImageRenderOptions | RenderOptions) => {
     if (this.clusteringConfig.mode === contextPerRenderKey) {
-      return options.renderKey;
+      return `${options.domain}${options.renderKey}`;
     }
 
     return undefined;
