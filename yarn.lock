@@ -2787,9 +2787,9 @@ please-upgrade-node@^3.2.0:
     semver-compare "^1.0.0"
 
 poolpeteer@^0.22.0:
-  version "0.22.17"
-  resolved "https://registry.yarnpkg.com/poolpeteer/-/poolpeteer-0.22.17.tgz#bd6f271b1bc008315108d70ebe7d94684932406e"
-  integrity sha512-qpIHUmhWsL7E7paZl9+CI1D0ax+8N6yrxM8V+0O/IK1/6OIAWS1a/9ve70JOMt1IDxJd7sDkrB8ozg1XR3HV5A==
+  version "0.22.19"
+  resolved "https://registry.yarnpkg.com/poolpeteer/-/poolpeteer-0.22.19.tgz#7b6514f4ec6737fbda1ed715e9f6cb2b1c452816"
+  integrity sha512-3ecGyAMa/5v2/+i4QoC3c/CbM43WJyGzvrn/YA9eieUD6On4UEdDhX9ZtpyooI1v5uyis2ylOZvRL+CVsqwueQ==
   dependencies:
     debug "^4.1.1"
 
