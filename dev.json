@@ -31,9 +31,10 @@
     "maxHeight": 8000,
     "maxDeviceScaleFactor": 10,
     "headed": true,
-
     "mode": "clustered",
+
     "clustering": {
+      "monitor": true,
       "mode": "contextPerRenderKey",
       "maxConcurrency": 5,
       "timeout": 30
