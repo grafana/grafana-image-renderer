@@ -31,12 +31,12 @@
     "maxHeight": 3000,
     "maxDeviceScaleFactor": 4,
     "headed": false,
-    "emulateNetworkConditions": false,
 
-    "mode": "clustered",
+    "mode": "default",
+    "emulateNetworkConditions": false,
     "clustering": {
-      "monitor": true,
-      "mode": "contextPerRenderKey",
+      "monitor": false,
+      "mode": "browser",
       "maxConcurrency": 5,
       "timeout": 30
     },

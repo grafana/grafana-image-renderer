@@ -31,7 +31,8 @@
     "maxHeight": 8000,
     "maxDeviceScaleFactor": 10,
     "headed": false,
-    "mode": "clustered",
+
+    "mode": "default",
     "emulateNetworkConditions": false,
     "networkConditions": {
       "downloadThroughput": 4000000,
@@ -42,7 +43,7 @@
 
     "clustering": {
       "monitor": true,
-      "mode": "contextPerRenderKey",
+      "mode": "browser",
       "maxConcurrency": 5,
       "timeout": 30
     },
