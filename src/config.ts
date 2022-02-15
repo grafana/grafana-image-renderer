@@ -90,7 +90,7 @@ const defaultRenderingConfig: RenderingConfig = {
   mode: 'default',
   clustering: {
     monitor: false,
-    mode: 'browserPerRenderKey',
+    mode: 'browser',
     maxConcurrency: 5,
     timeout: 30,
   },
