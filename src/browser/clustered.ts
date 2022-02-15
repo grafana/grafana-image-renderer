@@ -55,7 +55,6 @@ export class ClusteredBrowser extends Browser {
       monitor: this.clusteringConfig.monitor,
       maxConcurrency: this.clusteringConfig.maxConcurrency,
       timeout: this.clusteringConfig.timeout * 1000,
-      workerCreationDelay: 1000,
       puppeteerOptions: launcherOptions,
     };
 
