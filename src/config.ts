@@ -87,7 +87,7 @@ const defaultRenderingConfig: RenderingConfig = {
   maxWidth: 3000,
   maxHeight: 3000,
   maxDeviceScaleFactor: 4,
-  mode: 'clustered',
+  mode: 'default',
   clustering: {
     monitor: false,
     mode: 'browserPerRenderKey',
