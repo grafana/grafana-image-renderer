@@ -1,5 +1,7 @@
-## 3.4.0 (--)
-- Support full height dashboards and scaled thumbnails [#312](https://github.com/grafana/grafana-image-renderer/pull/312)
+## 3.4.0 (2022-02-17)
+
+- Support new concurrency mode: contextPerRenderKey [#314](https://github.com/grafana/grafana-image-renderer/pull/314), [ArturWierzbicki](https://github.com/ArturWierzbicki)
+- Support full height dashboards and scaled thumbnails [#312](https://github.com/grafana/grafana-image-renderer/pull/312), [ryantxu](https://github.com/ryantxu)
 
 ## 3.3.0 (2021-11-18)
 
