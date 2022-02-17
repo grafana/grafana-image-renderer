@@ -33,7 +33,9 @@
     "headed": false,
 
     "mode": "default",
+    "emulateNetworkConditions": false,
     "clustering": {
+      "monitor": false,
       "mode": "browser",
       "maxConcurrency": 5,
       "timeout": 30

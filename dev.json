@@ -33,7 +33,16 @@
     "headed": false,
 
     "mode": "default",
+    "emulateNetworkConditions": false,
+    "networkConditions": {
+      "downloadThroughput": 4000000,
+      "uploadThroughput": 4000000,
+      "latency": 100,
+      "offline": false
+    },
+
     "clustering": {
+      "monitor": true,
       "mode": "browser",
       "maxConcurrency": 5,
       "timeout": 30

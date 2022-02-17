@@ -148,6 +148,11 @@ export class Browser {
   }
 
   async preparePage(page: puppeteer.Page, options: RenderOptions) {
+    if (this.config.emulateNetworkConditions && this.config.networkConditions) {
+      const client = await page.target().createCDPSession();
+      await client.send('Network.emulateNetworkConditions', this.config.networkConditions);
+    }
+
     if (options.renderKey) {
       if (this.config.verboseLogging) {
         this.log.debug('Setting cookie for page', 'renderKey', options.renderKey, 'domain', options.domain);
