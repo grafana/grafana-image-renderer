@@ -4,10 +4,15 @@ const fs = require('fs')
 const archArg = process.argv[2];
 
 // https://sharp.pixelplumbing.com/install#cross-platform
-const [
+let [
     platform, // linux, darwin, win32
-    arch // x64, ia32, arm, arm64
+    arch, // x64, ia32, arm, arm64
+    libc
 ] = archArg.split('-');
+
+if (platform === 'linux' &&  libc === 'musl') {
+    platform = 'linuxmusl'
+}
 
 const packageJson = JSON.parse(fs.readFileSync('./package.json'))
 
