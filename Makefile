@@ -3,7 +3,6 @@
 ARCH = darwin-x64-unknown
 SKIP_CHROMIUM =
 OUT =
-SKIP_SHARP_DOWNLOAD =
 DOCKER_TAG = dev
 
 all: clean build
@@ -24,7 +23,7 @@ clean_package:
 	./scripts/clean_target.sh ${ARCH} ${OUT}
 
 package:
-	./scripts/package_target.sh ${ARCH} ${SKIP_CHROMIUM} ${OUT} ${SKIP_SHARP_DOWNLOAD}
+	./scripts/package_target.sh ${ARCH} ${SKIP_CHROMIUM} ${OUT}
 
 archive:
 	./scripts/archive_target.sh ${ARCH} ${OUT}

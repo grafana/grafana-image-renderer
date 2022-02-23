@@ -34,5 +34,3 @@ const outputNodeModules = `${outputPath}/node_modules`
 childProcess.execSync(`"./node_modules/.bin/pkg" -t node14-${platform}-${arch} . --out-path ${outputPath} --no-native-build`, {stdio: 'inherit'});
 
 childProcess.execSync(`rm -rf ${outputNodeModules}`)
-fs.mkdirSync(`${outputNodeModules}/sharp`, {recursive: true})
-childProcess.execSync(`cp -RP ./node_modules/sharp/build ${outputNodeModules}/sharp && cp -RP ./node_modules/sharp/vendor ${outputNodeModules}/sharp`)

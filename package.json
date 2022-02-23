@@ -34,7 +34,7 @@
     "puppeteer": "^13.1.3",
     "puppeteer-cluster": "^0.22.0",
     "poolpeteer": "^0.22.0",
-    "sharp": "0.29.3",
+    "jimp": "0.16.1",
     "unique-filename": "^1.1.0",
     "winston": "^3.2.1"
   },

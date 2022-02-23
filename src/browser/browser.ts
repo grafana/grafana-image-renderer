@@ -5,7 +5,7 @@ import * as chokidar from 'chokidar';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as promClient from 'prom-client';
-import * as sharp from 'sharp';
+import * as Jimp from 'jimp';
 import { Logger } from '../logger';
 import { RenderingConfig } from '../config';
 import { ImageRenderOptions, RenderOptions } from '../types';
@@ -360,15 +360,18 @@ export class Browser {
       const scaled = `${options.filePath}_${Date.now()}_scaled.png`;
       const w = +options.width / options.scaleImage;
       const h = +options.height / options.scaleImage;
-      await sharp(options.filePath)
-        .resize(w, h, { fit: 'inside' })
-        // .toFormat('webp', {
-        //   quality: 70, // 80 is default
-        // })
-        .toFile(scaled);
 
-      // overwrite the original image with the scaled value
-      fs.renameSync(scaled, options.filePath);
+      await this.withTimingMetrics(async () => {
+        const file = await Jimp.read(options.filePath);
+        await file
+          .resize(w, h)
+          // .toFormat('webp', {
+          //   quality: 70, // 80 is default
+          // })
+          .writeAsync(scaled);
+
+        fs.renameSync(scaled, options.filePath);
+      }, 'imageResize');
     }
 
     return { filePath: options.filePath };
