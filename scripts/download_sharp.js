@@ -12,7 +12,13 @@ const [
 const packageJson = JSON.parse(fs.readFileSync('./package.json'))
 
 const packageName = 'sharp';
-const packageVersion = Object.entries(packageJson.dependencies).find(([depName]) => depName === packageName)[1]
+const packages = Object.entries(packageJson.dependencies).find(([depName]) => depName === packageName);
+if (!packages?.length) {
+    console.log('Sharp dependency not found')
+    return;
+}
+
+const packageVersion = packages[1]
 
 console.log(`Found ${packageName} with version ${packageVersion}`)
 
