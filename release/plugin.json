@@ -1,0 +1,18 @@
+{
+  "url": "https://github.com/grafana/grafana-image-renderer",
+  "commit": "3e9ad2f06a30d0f336384aef0d067e5ab663c8f9",
+  "download": {
+    "darwin-amd64": {
+      "md5": "7da439543053dd61a5042905ba9de3c2",
+      "url": "https://github.com/grafana/grafana-image-renderer/releases/download/v3.4.1/plugin-darwin-x64-unknown.zip"
+    },
+    "linux-amd64": {
+      "md5": "439eca0768fe6f221c2081c5e7e057bc",
+      "url": "https://github.com/grafana/grafana-image-renderer/releases/download/v3.4.1/plugin-linux-x64-glibc.zip"
+    },
+    "windows-amd64": {
+      "md5": "30a5563b4c6af5213c1748a79d80ef4b",
+      "url": "https://github.com/grafana/grafana-image-renderer/releases/download/v3.4.1/plugin-win32-x64-unknown.zip"
+    }
+  }
+}
