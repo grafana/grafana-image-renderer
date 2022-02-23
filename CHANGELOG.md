@@ -1,3 +1,7 @@
+## 3.4.1 (2022-02-23)
+
+- Fix: replace `sharp` with `jimp` to resolve issues with installing native dependencies [#325](https://github.com/grafana/grafana-image-renderer/pull/325), [ArturWierzbicki](https://github.com/ArturWierzbicki)
+
 ## 3.4.0 (2022-02-17)
 
 - Support new concurrency mode: contextPerRenderKey [#314](https://github.com/grafana/grafana-image-renderer/pull/314), [ArturWierzbicki](https://github.com/ArturWierzbicki)
