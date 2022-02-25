@@ -1,3 +1,46 @@
+## 3.4.1 (2022-02-23)
+
+- Fix: replace `sharp` with `jimp` to resolve issues with installing native dependencies [#325](https://github.com/grafana/grafana-image-renderer/pull/325), [ArturWierzbicki](https://github.com/ArturWierzbicki)
+
+## 3.4.0 (2022-02-17)
+
+- Support new concurrency mode: contextPerRenderKey [#314](https://github.com/grafana/grafana-image-renderer/pull/314), [ArturWierzbicki](https://github.com/ArturWierzbicki)
+- Support full height dashboards and scaled thumbnails [#312](https://github.com/grafana/grafana-image-renderer/pull/312), [ryantxu](https://github.com/ryantxu)
+
+## 3.3.0 (2021-11-18)
+
+- Chore: Bump pkg from 5.3.3 to 5.4.1 [#305](https://github.com/grafana/grafana-image-renderer/pull/305), [AgnesToulet](https://github.com/AgnesToulet)
+- Configuration: Add timeout setting for clustered mode [#303](https://github.com/grafana/grafana-image-renderer/pull/303), [AgnesToulet](https://github.com/AgnesToulet)
+
+## 3.2.1 (2021-10-07)
+
+- Chore: Upgrade dev dependencies [#294](https://github.com/grafana/grafana-image-renderer/pull/294), [AgnesToulet](https://github.com/AgnesToulet)
+- Chore: Fix eslint usage [#293](https://github.com/grafana/grafana-image-renderer/pull/293), [AgnesToulet](https://github.com/AgnesToulet)
+- Docs: Fix links in README.md [#290](https://github.com/grafana/grafana-image-renderer/pull/290), [simonc6372](https://github.com/simonc6372)
+- Security: Bump semver-regex from 3.1.2 to 3.1.3 [#289](https://github.com/grafana/grafana-image-renderer/pull/289), [dependabot[bot]](https://github.com/apps/dependabot)
+
+## 3.2.0 (2021-09-17)
+
+- Docs: Update documentation to improve visibility and avoid duplicates with Grafana documentation [#277](https://github.com/grafana/grafana-image-renderer/pull/277), [AgnesToulet](https://github.com/AgnesToulet)
+- Instrumentation: Update grafana_image_renderer_step_duration_seconds buckets [#287](https://github.com/grafana/grafana-image-renderer/pull/287), [AgnesToulet](https://github.com/AgnesToulet)
+- Security: Bump chokidar from 3.5.1 to 3.5.2 [#284](https://github.com/grafana/grafana-image-renderer/pull/284), [AgnesToulet](https://github.com/AgnesToulet)
+- Instrumentation: Add gauge of total number of requests in flight [#281](https://github.com/grafana/grafana-image-renderer/pull/281), [AgnesToulet](https://github.com/AgnesToulet)
+- Security: Bump axios from 0.21.1 to 0.21.4 [#283](https://github.com/grafana/grafana-image-renderer/pull/283), [dependabot[bot]](https://github.com/apps/dependabot)
+- Chore: Add self-contained setup for load test [#275](https://github.com/grafana/grafana-image-renderer/pull/275), [pianohacker](https://github.com/pianohacker)
+
+## 3.1.0 (2021-09-01)
+
+- Settings: Set the maximum device scale factor to 4 as default [#276](https://github.com/grafana/grafana-image-renderer/pull/276), [AgnesToulet](https://github.com/AgnesToulet)
+- Metrics: Add browser timing metrics [#263](https://github.com/grafana/grafana-image-renderer/pull/263), [AgnesToulet](https://github.com/AgnesToulet)
+- Settings: Add --disable-gpu in the default Chromium args [#262](https://github.com/grafana/grafana-image-renderer/pull/262), [AgnesToulet](https://github.com/AgnesToulet)
+- Security: Update path-parse to v1.0.7 [#268](https://github.com/grafana/grafana-image-renderer/pull/268), [joanlopez](https://github.com/joanlopez)
+- Chore: Upgrade dependencies [#246](https://github.com/grafana/grafana-image-renderer/pull/246), [Clarity-89](https://github.com/Clarity-89)
+- Docker: Run image renderer under non-root Grafana user [#144](https://github.com/grafana/grafana-image-renderer/pull/144), [wardbekker](https://github.com/wardbekker)
+
+### Important change
+
+The default Chromium flags have been updated to include `--disable-gpu` as it fixes memory leaks issues when using the `default` rendering mode. If you don't want to use this flag, you need to update your service configuration, either through the [service configuration file](https://github.com/grafana/grafana-image-renderer/blob/master/docs/remote_rendering_using_docker.md#configuration-file), the [environment variables](https://github.com/grafana/grafana-image-renderer/blob/master/docs/remote_rendering_using_docker.md#environment-variables) or the [Grafana configuration file](https://grafana.com/docs/grafana/latest/administration/configuration/#rendering_args) (if you're using the plugin mode).
+
 ## 3.0.1 (2021-06-10)
 
 - Browser: Fix panel timezone when the timezone query parameter is specified [#224](https://github.com/grafana/grafana-image-renderer/pull/224), [Bujupah](https://github.com/Bujupah)

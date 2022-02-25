@@ -1,13 +1,14 @@
 import * as puppeteer from 'puppeteer';
-import { Browser, RenderResponse, RenderOptions, RenderCSVResponse, RenderCSVOptions } from './browser';
+import { ImageRenderOptions, RenderOptions } from '../types';
+import { Browser, RenderResponse, RenderCSVResponse, Metrics } from './browser';
 import { Logger } from '../logger';
 import { RenderingConfig } from '../config';
 
 export class ReusableBrowser extends Browser {
   browser: puppeteer.Browser;
 
-  constructor(config: RenderingConfig, log: Logger) {
-    super(config, log);
+  constructor(config: RenderingConfig, log: Logger, metrics: Metrics) {
+    super(config, log, metrics);
   }
 
   async start(): Promise<void> {
@@ -15,14 +16,16 @@ export class ReusableBrowser extends Browser {
     this.browser = await puppeteer.launch(launcherOptions);
   }
 
-  async render(options: RenderOptions): Promise<RenderResponse> {
+  async render(options: ImageRenderOptions): Promise<RenderResponse> {
     let context: puppeteer.BrowserContext | undefined;
     let page: puppeteer.Page | undefined;
 
     try {
-      this.validateImageOptions(options);
-      context = await this.browser.createIncognitoBrowserContext();
-      page = await context.newPage();
+      page = await this.withTimingMetrics<puppeteer.Page>(async () => {
+        this.validateImageOptions(options);
+        context = await this.browser.createIncognitoBrowserContext();
+        return context.newPage();
+      }, 'newPage');
 
       if (options.timezone) {
         // set timezone
@@ -43,7 +46,7 @@ export class ReusableBrowser extends Browser {
     }
   }
 
-  async renderCSV(options: RenderCSVOptions): Promise<RenderCSVResponse> {
+  async renderCSV(options: RenderOptions): Promise<RenderCSVResponse> {
     let context: puppeteer.BrowserContext | undefined;
     let page: puppeteer.Page | undefined;
 

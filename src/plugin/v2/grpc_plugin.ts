@@ -5,7 +5,7 @@ import { GrpcPlugin } from '../../node-plugin';
 import { Logger } from '../../logger';
 import { PluginConfig } from '../../config';
 import { createBrowser, Browser } from '../../browser';
-import { RenderOptions, RenderCSVOptions, HTTPHeaders } from '../../browser/browser';
+import { HTTPHeaders, ImageRenderOptions, RenderOptions } from '../../types';
 import {
   RenderRequest,
   RenderResponse,
@@ -43,7 +43,8 @@ export class RenderGRPCPluginV2 implements GrpcPlugin {
   }
 
   async grpcServer(server: grpc.Server) {
-    const browser = createBrowser(this.config.rendering, this.log);
+    const metrics = setupMetrics();
+    const browser = createBrowser(this.config.rendering, this.log, metrics);
     const pluginService = new PluginGRPCServer(browser, this.log);
 
     const rendererServiceDef = rendererV2ProtoDescriptor['pluginextensionv2']['Renderer']['service'];
@@ -52,7 +53,6 @@ export class RenderGRPCPluginV2 implements GrpcPlugin {
     const pluginServiceDef = pluginV2ProtoDescriptor['pluginv2']['Diagnostics']['service'];
     server.addService(pluginServiceDef, pluginService as any);
 
-    const metrics = setupMetrics();
     metrics.up.set(1);
 
     let browserVersion = 'unknown';
@@ -100,7 +100,7 @@ class PluginGRPCServer {
       }
     }
 
-    const options: RenderOptions = {
+    const options: ImageRenderOptions = {
       url: req.url,
       width: req.width,
       height: req.height,
@@ -141,7 +141,7 @@ class PluginGRPCServer {
       }
     }
 
-    const options: RenderCSVOptions = {
+    const options: RenderOptions = {
       url: req.url,
       filePath: req.filePath,
       timeout: req.timeout,
@@ -247,6 +247,10 @@ const populateConfigFromEnv = (config: PluginConfig) => {
     config.rendering.clustering.maxConcurrency = parseInt(env['GF_PLUGIN_RENDERING_CLUSTERING_MAX_CONCURRENCY'] as string, 10);
   }
 
+  if (env['GF_PLUGIN_RENDERING_CLUSTERING_TIMEOUT']) {
+    config.rendering.clustering.timeout = parseInt(env['GF_PLUGIN_RENDERING_CLUSTERING_TIMEOUT'] as string, 10);
+  }
+
   if (env['GF_PLUGIN_RENDERING_VERBOSE_LOGGING']) {
     config.rendering.verboseLogging = env['GF_PLUGIN_RENDERING_VERBOSE_LOGGING'] === 'true';
   }
@@ -256,26 +260,30 @@ const populateConfigFromEnv = (config: PluginConfig) => {
   }
 };
 
-interface Metrics {
+interface PluginMetrics {
   up: promClient.Gauge;
   browserInfo: promClient.Gauge;
+  durationHistogram: promClient.Histogram;
 }
 
-const setupMetrics = (): Metrics => {
+const setupMetrics = (): PluginMetrics => {
   promClient.collectDefaultMetrics();
-  const up = new promClient.Gauge({
-    name: 'up',
-    help: '1 = up, 0 = not up',
-  });
-
-  const browserInfo = new promClient.Gauge({
-    name: 'grafana_image_renderer_browser_info',
-    help: "A metric with a constant '1 value labeled by version of the browser in use",
-    labelNames: ['version'],
-  });
 
   return {
-    up,
-    browserInfo,
+    up: new promClient.Gauge({
+      name: 'up',
+      help: '1 = up, 0 = not up',
+    }),
+    browserInfo: new promClient.Gauge({
+      name: 'grafana_image_renderer_browser_info',
+      help: "A metric with a constant '1 value labeled by version of the browser in use",
+      labelNames: ['version'],
+    }),
+    durationHistogram: new promClient.Histogram({
+      name: 'grafana_image_renderer_step_duration_seconds',
+      help: 'duration histogram of browser steps for rendering an image labeled with: step',
+      labelNames: ['step'],
+      buckets: [0.1, 0.3, 0.5, 1, 3, 5, 10, 20, 30],
+    }),
   };
 };

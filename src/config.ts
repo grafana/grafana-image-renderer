@@ -1,9 +1,19 @@
 import * as fs from 'fs';
 
 export interface ClusteringConfig {
+  monitor: boolean;
   mode: string;
   maxConcurrency: number;
+  timeout: number;
 }
+
+// https://chromedevtools.github.io/devtools-protocol/tot/Network/#method-emulateNetworkConditions
+type NetworkConditions = {
+  offline: boolean;
+  downloadThroughput: number;
+  uploadThroughput: number;
+  latency: number;
+};
 
 export interface RenderingConfig {
   chromeBin?: string;
@@ -21,6 +31,10 @@ export interface RenderingConfig {
   clustering: ClusteringConfig;
   verboseLogging: boolean;
   dumpio: boolean;
+  timingMetrics: boolean;
+  headed?: boolean;
+  networkConditions?: NetworkConditions;
+  emulateNetworkConditions: boolean;
 }
 
 export interface MetricsConfig {
@@ -62,23 +76,28 @@ export interface PluginConfig {
 
 const defaultRenderingConfig: RenderingConfig = {
   chromeBin: undefined,
-  args: ['--no-sandbox'],
+  args: ['--no-sandbox', '--disable-gpu'],
   ignoresHttpsErrors: false,
   timezone: undefined,
   acceptLanguage: undefined,
   width: 1000,
   height: 500,
+  headed: false,
   deviceScaleFactor: 1,
   maxWidth: 3000,
   maxHeight: 3000,
-  maxDeviceScaleFactor: 3,
+  maxDeviceScaleFactor: 4,
   mode: 'default',
   clustering: {
+    monitor: false,
     mode: 'browser',
     maxConcurrency: 5,
+    timeout: 30,
   },
+  emulateNetworkConditions: false,
   verboseLogging: false,
   dumpio: false,
+  timingMetrics: false,
 };
 
 export const defaultServiceConfig: ServiceConfig = {

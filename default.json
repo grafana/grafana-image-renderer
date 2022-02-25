@@ -19,9 +19,7 @@
   },
   "rendering": {
     "chromeBin": null,
-    "args": [
-      "--no-sandbox"
-    ],
+    "args": ["--no-sandbox", "--disable-gpu"],
     "ignoresHttpsErrors": false,
 
     "timezone": null,
@@ -31,15 +29,20 @@
     "deviceScaleFactor": 1,
     "maxWidth": 3080,
     "maxHeight": 3000,
-    "maxDeviceScaleFactor": 3,
+    "maxDeviceScaleFactor": 4,
+    "headed": false,
 
     "mode": "default",
+    "emulateNetworkConditions": false,
     "clustering": {
+      "monitor": false,
       "mode": "browser",
-      "maxConcurrency": 5
+      "maxConcurrency": 5,
+      "timeout": 30
     },
 
     "verboseLogging": false,
-    "dumpio": false
+    "dumpio": false,
+    "timingMetrics": false
   }
 }
