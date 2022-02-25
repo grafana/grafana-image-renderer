@@ -47,6 +47,10 @@ export interface ConsoleLoggerConfig {
   level?: string;
   json: boolean;
   colorize: boolean;
+  timestamp: {
+    enabled: boolean,
+    format: string
+  }
 }
 
 export interface LoggingConfig {
@@ -114,6 +118,10 @@ export const defaultServiceConfig: ServiceConfig = {
       console: {
         json: true,
         colorize: false,
+        timestamp: {
+          enabled: false,
+          format: 'YYYY-MM-DD hh:mm:ss Z',
+        },
       },
     },
   },
