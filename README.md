@@ -4,7 +4,7 @@ A Grafana backend plugin that handles rendering panels and dashboards to PNGs us
 
 ### Supported operating systems
 
-- Linux (x64)
+- Linux (x64, arm64)
 - Windows (x64)
 - Mac OS X (x64)
 
