@@ -17,8 +17,7 @@ const platformTransform = {
 const archTransform = {
   ia32: 'x84',
   arm: 'armv6',
-  // I only assume this is correct
-  arm64: 'armv6',
+  arm64: 'arm64',
 };
 
 platform = platformTransform[platform] || platform;
