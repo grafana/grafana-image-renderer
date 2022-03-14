@@ -88,7 +88,6 @@ export class Browser {
     }
 
     // Trigger full height snapshots with a negative height value
-    options.fullPageImage = false;
     if (options.height === -1) {
       options.fullPageImage = true;
       options.height = Math.floor(options.width * 0.75);
@@ -354,7 +353,7 @@ export class Browser {
           height: scrollResult.scrollHeight,
         });
       }
-      return page.screenshot({ path: options.filePath, fullPage: options.fullPageImage, captureBeyondViewport: options.fullPageImage });
+      return page.screenshot({ path: options.filePath, fullPage: options.fullPageImage, captureBeyondViewport: options.fullPageImage || false });
     }, 'screenshot');
 
     if (options.scaleImage) {
