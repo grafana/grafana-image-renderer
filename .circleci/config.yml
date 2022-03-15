@@ -215,7 +215,7 @@ workflows:
           name: package-<< matrix.arch >>
           matrix:
             parameters:
-              arch: [linux-x64-glibc, darwin-x64-unknown, win32-x64-unknown]
+              arch: [linux-x64-glibc, darwin-x64-unknown, darwin-arm64-unknown, win32-x64-unknown]
       - package:
           filters: *filter-only-master
           requires:
@@ -234,6 +234,7 @@ workflows:
             - build
             - package-linux-x64-glibc
             - package-darwin-x64-unknown
+            - package-darwin-arm64-unknown
             - package-win32-x64-unknown
             - package-linux-x64-glibc-no-chromium
           filters: *filter-only-master
@@ -260,7 +261,7 @@ workflows:
           name: package-<< matrix.arch >>
           matrix:
             parameters:
-              arch: [linux-x64-glibc, darwin-x64-unknown, win32-x64-unknown]
+              arch: [linux-x64-glibc, darwin-x64-unknown, darwin-arm64-unknown, win32-x64-unknown]
               skip_signing_errors: [true]
 
       - package:
