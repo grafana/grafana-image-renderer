@@ -13,6 +13,7 @@ if (!commit) {
 }
 
 const outputPath = path.join(outputFolder, 'plugin.json')
+const rootPluginJsonPath = path.resolve('./plugin.json');
 
 
 enum PluginVersion {
@@ -72,11 +73,11 @@ const verifyChecksums = (map: Record<string, string>) => {
 };
 
 const getReleaseVersion = (): string => {
-  const rootPluginJson = JSON.parse(fs.readFileSync('./plugin.json'));
+  const rootPluginJson = JSON.parse(fs.readFileSync(rootPluginJsonPath));
   const version = rootPluginJson?.info?.version;
 
   if (!version || typeof version !== 'string' || !version.length) {
-    throw new Error('expected to find version in root plugin.json');
+    throw new Error(`expected to find version in root plugin.json (${rootPluginJsonPath})`);
   }
   return `v${version}`;
 };
