@@ -1,10 +1,19 @@
+import path = require("path");
 const fs = require('fs');
 
-const commit = process.argv[2];
+const outputFolder = process.argv[2]
+const commit = process.argv[3];
+
+if (!outputFolder) {
+  throw new Error('expected output folder as the first arg')
+}
 
 if (!commit) {
-  throw new Error('expected commit in args');
+  throw new Error('usage: `yarn run create-gcom-plugin-json <COMMIT_HASH>`');
 }
+
+const outputPath = path.join(outputFolder, 'plugin.json')
+
 
 enum PluginVersion {
   'darwin-amd64' = 'darwin-amd64',
@@ -95,10 +104,15 @@ const run = async () => {
   const artifactsToChecksumMap = await getFileNamesToChecksumMap(releaseVersion);
   verifyChecksums(artifactsToChecksumMap);
 
-  console.log(`Fetched artifact checksums ${JSON.stringify(artifactsToChecksumMap)}`);
+  console.log(`Fetched artifact checksums ${JSON.stringify(artifactsToChecksumMap, null, 2)}`);
 
   const pluginJson = createGcomPluginJson(artifactsToChecksumMap, releaseVersion);
-  fs.writeFileSync('./release/plugin.json', JSON.stringify(pluginJson, null, 2));
+  if (!fs.existsSync(outputFolder)) {
+    fs.mkdirSync(outputFolder)
+  }
+  fs.writeFileSync(outputPath, JSON.stringify(pluginJson, null, 2));
+
+  console.log("Done! Path: " + path.resolve(outputPath))
 };
 
 run();
