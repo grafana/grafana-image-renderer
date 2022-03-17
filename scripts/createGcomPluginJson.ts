@@ -9,7 +9,7 @@ if (!outputFolder) {
 }
 
 if (!commit) {
-  throw new Error('usage: `yarn run create-gcom-plugin-json <COMMIT_HASH>`');
+  throw new Error(`usage: 'yarn run create-gcom-plugin-json <COMMIT_HASH>'`);
 }
 
 const outputPath = path.join(outputFolder, 'plugin.json')
@@ -57,7 +57,7 @@ const getFileNamesToChecksumMap = async (releaseVersion: string): Promise<Record
       if (artifact.startsWith(artifactPrefix)) {
         return { ...acc, [artifact.substring(artifactPrefix.length)]: checksum };
       } else {
-        throw new Error('expected artifact name to start with artifact/ ' + artifact);
+        throw new Error(`expected artifact name to start with "artifact/". actual: ${artifact}`);
       }
     }, {});
 };
@@ -67,7 +67,7 @@ const verifyChecksums = (map: Record<string, string>) => {
   const fileNamesInChecksumMap = Object.keys(map);
   for (const expectedFileName of expectedFileNames) {
     if (!fileNamesInChecksumMap.includes(expectedFileName)) {
-      throw new Error('failed to find ' + expectedFileName + ' in the checksum map');
+      throw new Error(`expected to find ${expectedFileName} in the checksum map. actual: [${fileNamesInChecksumMap.join(', ')}]`);
     }
   }
 };
@@ -77,7 +77,7 @@ const getReleaseVersion = (): string => {
   const version = rootPluginJson?.info?.version;
 
   if (!version || typeof version !== 'string' || !version.length) {
-    throw new Error(`expected to find version in root plugin.json (${rootPluginJsonPath})`);
+    throw new Error(`expected to find value for "info.version" in root plugin.json (${rootPluginJsonPath})`);
   }
   return `v${version}`;
 };
@@ -90,7 +90,7 @@ const createGcomPluginJson = (map: Record<string, string>, releaseVersion: strin
       const fileName = pluginVersionToFileName[ver];
       const md5 = map[fileName];
       if (!md5 || !md5.length) {
-        throw new Error('expected non-empty md5 checksum for ' + ver);
+        throw new Error(`expected non-empty md5 checksum for plugin version ${ver} with filename ${fileName}`);
       }
 
       return { [ver]: { md5, url: fileUrl(releaseVersion, fileName) } };
@@ -113,7 +113,7 @@ const run = async () => {
   }
   fs.writeFileSync(outputPath, JSON.stringify(pluginJson, null, 2));
 
-  console.log("Done! Path: " + path.resolve(outputPath))
+  console.log(`Done! Path: ${path.resolve(outputPath)}`)
 };
 
 run();
