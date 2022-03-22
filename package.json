@@ -16,7 +16,8 @@
     "watch": "tsc-watch --onSuccess \"node build/app.js server --config=dev.json\"",
     "watch:debug": "tsc-watch --onSuccess \"cross-env DEBUG=puppeteer-cluster:* node build/app.js server --config=dev.json\"",
     "build": "tsc",
-    "start": "node build/app.js --config=dev.json"
+    "start": "node build/app.js --config=dev.json",
+    "create-gcom-plugin-json": "ts-node scripts/createGcomPluginJson.ts ./scripts/tmp"
   },
   "dependencies": {
     "@grpc/grpc-js": "^1.0",
@@ -48,6 +49,8 @@
     "eslint": "^7.32.0",
     "eslint-config-prettier": "^8.3.0",
     "eslint-plugin-jsdoc": "^36.1.0",
+    "axios": "0.26.0",
+    "ts-node": "10.5.0",
     "eslint-plugin-prettier": "^4.0.0",
     "eslint-plugin-react": "^7.26.1",
     "eslint-plugin-react-hooks": "^4.2.0",
