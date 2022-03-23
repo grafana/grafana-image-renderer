@@ -1,3 +1,8 @@
+## 3.4.2 (2022-03-23)
+
+- Security: upgrade dependencies [#337](https://github.com/grafana/grafana-image-renderer/pull/337), [AgnesToulet](https://github.com/AgnesToulet)
+- Fix: set captureBeyondViewport to false by default to fix rendering old panels [#335](https://github.com/grafana/grafana-image-renderer/pull/335), [AgnesToulet](https://github.com/AgnesToulet)
+
 ## 3.4.1 (2022-02-23)
 
 - Fix: replace `sharp` with `jimp` to resolve issues with installing native dependencies [#325](https://github.com/grafana/grafana-image-renderer/pull/325), [ArturWierzbicki](https://github.com/ArturWierzbicki)
