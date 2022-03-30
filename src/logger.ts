@@ -34,6 +34,12 @@ export class ConsoleLogger implements Logger {
         formatters.push(winston.format.colorize());
       }
 
+      if (config.console.timestamp.enabled) {
+        // Can also inherit Grafana datetime format from env variables
+        const format = config.console.timestamp.format;
+        formatters.push(winston.format.timestamp({ format }));
+      }
+
       if (config.console.json) {
         formatters.push(winston.format.json());
       } else {

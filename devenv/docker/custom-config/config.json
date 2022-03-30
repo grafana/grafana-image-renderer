@@ -13,7 +13,11 @@
       "level": "debug",
       "console": {
         "json": true,
-        "colorize": false
+        "colorize": false,
+        "timestamp": {
+          "enabled": true,
+          "format": "YYYY-MM-DD hh:mm:ss Z"
+        }
       }
     }
   },
