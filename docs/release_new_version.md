@@ -18,44 +18,9 @@
 
 ## Publish plugin to Grafana.com
 
-1. Download `md5sums.txt` from the GitHub release of the version you want to publish.
+1. Once the GitHub release is created, run `yarn run create-gcom-plugin-json <release commit>`.
 
-### Alternative 1 - Open a PR in grafana-plugin-repository (preferred way for now)
-
-1. Checkout [grafana-plugin-repository](https://github.com/grafana/grafana-plugin-repository)
-2. Update repo.json with new plugin version JSON payload providing `version`, `commit`, `url` and `download` payload with download URL's and MD5 checksums. See [PR](https://github.com/grafana/grafana-plugin-repository/pull/480) for an example.
-3. Commit, push and open a PR
-4. Wait for the PR to be merged and then push version to grafana.com
-    ```bash
-    gcom /plugins -d slug=grafana-image-renderer -d version=1.0.5
-    ```
-
-### Alternative 2 - Push directly to grafana.com
-
-plugin_version.json:
-
-```json
-{
-  "url": "https://github.com/grafana/grafana-image-renderer",
-  "commit": "a32a8a1f538cf5138319616704dd769f8cf7c116",
-  "download": {
-    "darwin-amd64": {
-      "url": "https://github.com/grafana/grafana-image-renderer/releases/download/v1.0.1/plugin-darwin-x64-unknown.zip",
-      "md5": "329d4d5020f8e626d3661d1aae21d810"
-    },
-    "linux-amd64": {
-      "url": "https://github.com/grafana/grafana-image-renderer/releases/download/v1.0.1/plugin-linux-x64-glibc.zip",
-      "md5": "6f36cffad5b55e339ba29ae1ec369abf"
-    },
-    "windows-amd64": {
-      "url": "https://github.com/grafana/grafana-image-renderer/releases/download/v1.0.1/plugin-win32-x64-unknown.zip",
-      "md5": "d1f7c0a407eeb198d82358a94d884778"
-    }
-  }
-}
-```
-
-Push to grafana.com:
+2. Push to grafana.com:
 ```bash
-JSON=$(cat plugin_version.json) gcom /plugins -X POST -H "Content-Type: application/json" -d $JSON
+JSON=$(cat ./scripts/tmp/plugin.json) gcom /plugins -X POST -H "Content-Type: application/json" -d $JSON
 ```
