@@ -63,3 +63,15 @@ export interface CheckHealthResponse {
   message?: string;
   jsonDetails?: Buffer;
 }
+
+export interface GRPCSanitizeRequest {
+  filename: string;
+  content: Buffer;
+  domPurifyConfig: Buffer;
+  allowAllLinksInSvgUseTags: boolean;
+}
+
+export interface GRPCSanitizeResponse {
+  error: string;
+  sanitized: Buffer;
+}

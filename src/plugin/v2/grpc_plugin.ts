@@ -5,7 +5,7 @@ import { GrpcPlugin } from '../../node-plugin';
 import { Logger } from '../../logger';
 import { PluginConfig } from '../../config';
 import { createBrowser, Browser } from '../../browser';
-import { HTTPHeaders, ImageRenderOptions, RenderOptions } from '../../types';
+import { HTTPHeaders, ImageRenderOptions, RenderOptions, SanitizeRequest } from '../../types';
 import {
   RenderRequest,
   RenderResponse,
@@ -16,7 +16,10 @@ import {
   CollectMetricsRequest,
   CollectMetricsResponse,
   HealthStatus,
+  GRPCSanitizeRequest,
+  GRPCSanitizeResponse,
 } from './types';
+import { createSanitizer, Sanitizer } from '../../sanitizer/Sanitizer';
 
 const rendererV2PackageDef = protoLoader.loadSync(__dirname + '/../../../proto/rendererv2.proto', {
   keepCase: true,
@@ -34,8 +37,17 @@ const pluginV2PackageDef = protoLoader.loadSync(__dirname + '/../../../proto/plu
   oneofs: true,
 });
 
+const sanitizerPackageDef = protoLoader.loadSync(__dirname + '/../../../proto/sanitizer.proto', {
+  keepCase: true,
+  longs: String,
+  enums: String,
+  defaults: true,
+  oneofs: true,
+});
+
 const rendererV2ProtoDescriptor = grpc.loadPackageDefinition(rendererV2PackageDef);
 const pluginV2ProtoDescriptor = grpc.loadPackageDefinition(pluginV2PackageDef);
+const sanitizerProtoDescriptor = grpc.loadPackageDefinition(sanitizerPackageDef);
 
 export class RenderGRPCPluginV2 implements GrpcPlugin {
   constructor(private config: PluginConfig, private log: Logger) {
@@ -45,13 +57,16 @@ export class RenderGRPCPluginV2 implements GrpcPlugin {
   async grpcServer(server: grpc.Server) {
     const metrics = setupMetrics();
     const browser = createBrowser(this.config.rendering, this.log, metrics);
-    const pluginService = new PluginGRPCServer(browser, this.log);
+    const pluginService = new PluginGRPCServer(browser, this.log, createSanitizer());
 
     const rendererServiceDef = rendererV2ProtoDescriptor['pluginextensionv2']['Renderer']['service'];
     server.addService(rendererServiceDef, pluginService as any);
 
     const pluginServiceDef = pluginV2ProtoDescriptor['pluginv2']['Diagnostics']['service'];
     server.addService(pluginServiceDef, pluginService as any);
+
+    const sanitizerServiceDef = sanitizerProtoDescriptor['pluginextensionv2']['Sanitizer']['service'];
+    server.addService(sanitizerServiceDef, pluginService as any);
 
     metrics.up.set(1);
 
@@ -76,7 +91,7 @@ export class RenderGRPCPluginV2 implements GrpcPlugin {
 class PluginGRPCServer {
   private browserVersion: string | undefined;
 
-  constructor(private browser: Browser, private log: Logger) {}
+  constructor(private browser: Browser, private log: Logger, private sanitizer: Sanitizer) {}
 
   async start(browserVersion?: string) {
     this.browserVersion = browserVersion;
@@ -177,6 +192,27 @@ class PluginGRPCServer {
   async collectMetrics(_: grpc.ServerUnaryCall<CollectMetricsRequest, any>, callback: grpc.sendUnaryData<CollectMetricsResponse>) {
     const payload = Buffer.from(promClient.register.metrics());
     callback(null, { metrics: { prometheus: payload } });
+  }
+
+  async sanitize(call: grpc.ServerUnaryCall<GRPCSanitizeRequest, any>, callback: grpc.sendUnaryData<GRPCSanitizeResponse>) {
+    const grpcReq = call.request;
+
+    const req: SanitizeRequest = {
+      filename: grpcReq.filename,
+      domPurifyConfig: JSON.parse(grpcReq.domPurifyConfig.toString()),
+      content: grpcReq.content.toString(),
+      allowAllLinksInSvgUseTags: grpcReq.allowAllLinksInSvgUseTags,
+    };
+
+    this.log.debug('Sanitize request received', 'contentLength', req.content.length, 'name', grpcReq.filename);
+
+    try {
+      const sanitizeResponse = this.sanitizer.sanitize(req);
+      callback(null, { error: '', sanitized: Buffer.from(sanitizeResponse.sanitized, 'binary') });
+    } catch (e) {
+      this.log.error('Sanitization failed', 'contentLength', req.content.length, 'name', grpcReq.filename, 'error', e.stack);
+      callback(null, { error: e.stack, sanitized: Buffer.from('', 'binary') });
+    }
   }
 }
 

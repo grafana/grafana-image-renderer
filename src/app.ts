@@ -7,6 +7,7 @@ import { ConsoleLogger, PluginLogger } from './logger';
 import * as minimist from 'minimist';
 import { defaultPluginConfig, defaultServiceConfig, readJSONFileSync, PluginConfig, ServiceConfig } from './config';
 import { serve } from './node-plugin';
+import { createSanitizer } from './sanitizer/Sanitizer';
 
 const chromeFolderPrefix = 'chrome-';
 
@@ -67,7 +68,9 @@ async function main() {
     populateServiceConfigFromEnv(config, env);
 
     const logger = new ConsoleLogger(config.service.logging);
-    const server = new HttpServer(config, logger);
+
+    const sanitizer = createSanitizer();
+    const server = new HttpServer(config, logger, sanitizer);
     await server.start();
   } else {
     console.log('Unknown command');

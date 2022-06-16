@@ -1,3 +1,5 @@
+import * as DOMPurify from 'dompurify';
+
 export interface HTTPHeaders {
   'Accept-Language'?: string;
   [header: string]: string | undefined;
@@ -25,3 +27,15 @@ export interface ImageRenderOptions extends RenderOptions {
   fullPageImage?: boolean;
   scaleImage?: number;
 }
+
+export type SanitizeRequest = {
+  filename: string;
+  content: string;
+  contentType?: string;
+  domPurifyConfig?: DOMPurify.Config;
+  allowAllLinksInSvgUseTags?: boolean;
+};
+
+export type SanitizeResponse = {
+  sanitized: string;
+};

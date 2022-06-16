@@ -9,13 +9,15 @@ import { Logger } from '../logger';
 import { Browser, createBrowser } from '../browser';
 import { ServiceConfig } from '../config';
 import { setupHttpServerMetrics } from './metrics_middleware';
-import { HTTPHeaders, ImageRenderOptions, RenderOptions } from '../types';
+import { HTTPHeaders, ImageRenderOptions, RenderOptions, SanitizeRequest } from '../types';
+import { Sanitizer } from '../sanitizer/Sanitizer';
+import * as bodyParser from 'body-parser';
 
 export class HttpServer {
   app: express.Express;
   browser: Browser;
 
-  constructor(private config: ServiceConfig, private log: Logger) {}
+  constructor(private config: ServiceConfig, private log: Logger, private sanitizer: Sanitizer) {}
 
   async start() {
     this.app = express();
@@ -35,6 +37,7 @@ export class HttpServer {
         stream: this.log.errorWriter,
       })
     );
+    this.app.use(bodyParser.json());
 
     if (this.config.service.metrics.enabled) {
       setupHttpServerMetrics(this.app, this.config.service.metrics, this.log);
@@ -49,6 +52,7 @@ export class HttpServer {
 
     this.app.get('/render', asyncMiddleware(this.render));
     this.app.get('/render/csv', asyncMiddleware(this.renderCSV));
+    this.app.post('/render/sanitize', asyncMiddleware(this.sanitize));
     this.app.use((err, req, res, next) => {
       if (err.stack) {
         this.log.error('Request failed', 'url', req.url, 'stack', err.stack);
@@ -144,6 +148,28 @@ export class HttpServer {
         }
       }
     });
+  };
+
+  sanitize = async (req: express.Request<any, { error: string }, SanitizeRequest>, res: express.Response<{ error: string }>) => {
+    const content = req?.body?.content;
+    if (typeof content !== 'string') {
+      throw boom.badRequest('missing content!');
+    }
+
+    this.log.debug('Sanitize request received', 'contentLength', content.length, 'name', req.body.filename);
+
+    try {
+      const sanitizeResponse = this.sanitizer.sanitize(req.body);
+      res.writeHead(200, {
+        'Content-Disposition': `attachment;filename=${req.body.filename ?? 'sanitized'}`,
+        'Content-Length': sanitizeResponse.sanitized.length,
+        'Content-Type': req.body.contentType ?? 'application/octet-stream',
+      });
+      return res.end(Buffer.from(sanitizeResponse.sanitized, 'binary'));
+    } catch (e) {
+      this.log.error('Sanitization failed', 'contentLength', content.length, 'name', req.body.filename, 'error', e.stack);
+      return res.status(500).json({ error: e.message });
+    }
   };
 
   renderCSV = async (req: express.Request<any, any, any, RenderOptions, any>, res: express.Response, next: express.NextFunction) => {
