@@ -1,3 +1,5 @@
+import { ConfigType } from '../../types';
+
 export interface StringList {
   values: string[];
 }
@@ -67,7 +69,8 @@ export interface CheckHealthResponse {
 export interface GRPCSanitizeRequest {
   filename: string;
   content: Buffer;
-  domPurifyConfig: Buffer;
+  configType: ConfigType;
+  config: Buffer;
   allowAllLinksInSvgUseTags: boolean;
 }
 

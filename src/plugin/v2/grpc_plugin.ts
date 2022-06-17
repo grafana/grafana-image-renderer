@@ -5,7 +5,7 @@ import { GrpcPlugin } from '../../node-plugin';
 import { Logger } from '../../logger';
 import { PluginConfig } from '../../config';
 import { createBrowser, Browser } from '../../browser';
-import { HTTPHeaders, ImageRenderOptions, RenderOptions, SanitizeRequest } from '../../types';
+import { HTTPHeaders, ImageRenderOptions, RenderOptions, SanitizeRequest, SanitizeRequestV2 } from '../../types';
 import {
   RenderRequest,
   RenderResponse,
@@ -197,18 +197,17 @@ class PluginGRPCServer {
   async sanitize(call: grpc.ServerUnaryCall<GRPCSanitizeRequest, any>, callback: grpc.sendUnaryData<GRPCSanitizeResponse>) {
     const grpcReq = call.request;
 
-    const req: SanitizeRequest = {
-      filename: grpcReq.filename,
-      domPurifyConfig: JSON.parse(grpcReq.domPurifyConfig.toString()),
-      content: grpcReq.content.toString(),
-      allowAllLinksInSvgUseTags: grpcReq.allowAllLinksInSvgUseTags,
+    const req: SanitizeRequestV2 = {
+      content: grpcReq.content,
+      config: JSON.parse(grpcReq.config.toString()),
+      configType: grpcReq.configType,
     };
 
     this.log.debug('Sanitize request received', 'contentLength', req.content.length, 'name', grpcReq.filename);
 
     try {
       const sanitizeResponse = this.sanitizer.sanitize(req);
-      callback(null, { error: '', sanitized: Buffer.from(sanitizeResponse.sanitized, 'binary') });
+      callback(null, { error: '', sanitized: sanitizeResponse.sanitized });
     } catch (e) {
       this.log.error('Sanitization failed', 'contentLength', req.content.length, 'name', grpcReq.filename, 'error', e.stack);
       callback(null, { error: e.stack, sanitized: Buffer.from('', 'binary') });

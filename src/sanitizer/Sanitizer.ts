@@ -1,6 +1,6 @@
 import * as DOMPurify from 'dompurify';
 import { JSDOM } from 'jsdom';
-import { SanitizeRequest, SanitizeResponse } from '../types';
+import { ConfigType, isDOMPurifyConfig, SanitizeRequestV2, SanitizeResponse } from '../types';
 
 const svgTags = {
   altGlyphDef: /(<\/?)altGlyphDef([> ])/gi,
@@ -58,12 +58,13 @@ export class Sanitizer {
     }
   };
 
-  private sanitizeSvg = (req: SanitizeRequest): SanitizeResponse => {
-    if (req.allowAllLinksInSvgUseTags !== true) {
+  private sanitizeSvg = (req: SanitizeRequestV2<ConfigType.DOMPurify>): SanitizeResponse => {
+    if (req.config.allowAllLinksInSvgUseTags !== true) {
       this.domPurify.addHook('afterSanitizeAttributes', this.sanitizeUseTagHook);
     }
 
-    let sanitized = this.domPurify.sanitize(req.content, req.domPurifyConfig ?? {}) as string;
+    const dirty = req.content.toString();
+    let sanitized = this.domPurify.sanitize(dirty, req.config.domPurifyConfig ?? {}) as string;
 
     // ensure tags have the correct capitalization, as dompurify converts them to lowercase
     Object.entries(svgTags).forEach(([regex, tag]) => {
@@ -71,16 +72,23 @@ export class Sanitizer {
     });
 
     this.domPurify.removeHook('afterSanitizeAttributes');
-    return { sanitized: [svgFilePrefix, sanitized].join('\n') };
+    return { sanitized: Buffer.from([svgFilePrefix, sanitized].join('\n')) };
   };
 
-  sanitize = (req: SanitizeRequest): SanitizeResponse => {
-    if (req.domPurifyConfig?.USE_PROFILES?.['svg']) {
+  sanitize = (req: SanitizeRequestV2): SanitizeResponse => {
+    const configType = req.configType;
+    if (!isDOMPurifyConfig(req)) {
+      throw new Error('unsupported config type: ' + configType);
+    }
+
+    if (req.config.domPurifyConfig?.USE_PROFILES?.['svg']) {
       return this.sanitizeSvg(req);
     }
 
+    const dirty = req.content.toString();
+    const sanitized = this.domPurify.sanitize(dirty, req.config.domPurifyConfig ?? {}) as string;
     return {
-      sanitized: this.domPurify.sanitize(req.content, req.domPurifyConfig ?? {}) as string,
+      sanitized: Buffer.from(sanitized),
     };
   };
 }
