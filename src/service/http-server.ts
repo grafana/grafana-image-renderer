@@ -55,8 +55,15 @@ export class HttpServer {
       } else {
         this.log.error('Request failed', 'url', req.url, 'error', err);
       }
-
-      return res.status(err.output.statusCode).json(err.output.payload);
+      
+      if (err.isBoom) {
+        return res.status(err.output.statusCode).json(err.output.payload);
+      } else {
+        return res.status(500).json({
+          statusCode: 500,
+          message: err.message,
+        });
+      }
     });
 
     if (this.config.service.host) {
