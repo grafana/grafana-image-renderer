@@ -177,7 +177,7 @@ jobs:
       - run:
           name: Run Veracode scan
           command: |
-            apk add curl
+            apk add --update-cache --upgrade curl
             # Increase heap size or the scanner will die.
             export _JAVA_OPTIONS=-Xmx4g
             mkdir -p ci/jobs/security_scan
