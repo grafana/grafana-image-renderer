@@ -40,7 +40,7 @@
     "winston": "^3.2.1",
     "jsdom": "19.0.0",
     "dompurify": "^2.3.8",
-    "body-parser": "^1.20.0"
+    "multer": "^1.4.5-lts.1"
   },
   "devDependencies": {
     "@grafana/eslint-config": "^2.5.0",
