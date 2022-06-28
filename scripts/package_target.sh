@@ -15,11 +15,6 @@ if [ $? != 0 ]; then
    echo "${?}\n". 1>&2 && exit 1
 fi
 
-if [ ${SKIP_CHROMIUM} = false ]; then
-    node scripts/download_chromium.js ${ARCH} ${OUT}
-else
-    echo "Skipping chromium download"
-fi
 
 if [ $? != 0 ]; then
    echo "${?}\n". 1>&2 && exit 1

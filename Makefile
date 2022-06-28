@@ -1,6 +1,6 @@
 .PHONY: all clean deps build clean_package package archive build_package docker-alpine docker-debian
 
-ARCH = darwin-x64-unknown
+ARCH = linux-x64-unknown
 SKIP_CHROMIUM =
 OUT =
 DOCKER_TAG = dev

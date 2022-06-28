@@ -1,7 +1,7 @@
 {
-  "type": "renderer",
-  "name": "Grafana Image Renderer",
-  "id": "grafana-image-renderer",
+  "type": "sanitizer",
+  "name": "Grafana Sanitizer",
+  "id": "grafana-sanitizer",
 
   "backend": true,
 
@@ -11,7 +11,7 @@
       "name": "Grafana Labs",
       "url": "https://grafana.com"
     },
-    "keywords": ["renderer", "png", "backend", "image"],
+    "keywords": ["sanitizer", "png", "backend", "image"],
     "logos": {
       "small": "img/icon.png",
       "large": "img/icon.png"
@@ -20,7 +20,7 @@
       {"name": "Project site", "url": "https://github.com/grafana/grafana-image-renderer"},
       {"name": "Apache License", "url": "https://github.com/grafana/grafana-image-renderer/blob/master/LICENSE"}
     ],
-    "version": "3.4.2",
+    "version": "1.0.0",
     "updated": "2022-03-23"
   },
   "dependencies": {
