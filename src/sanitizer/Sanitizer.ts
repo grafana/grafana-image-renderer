@@ -1,6 +1,6 @@
 import * as DOMPurify from 'dompurify';
 import { JSDOM } from 'jsdom';
-import { ConfigType, isDOMPurifyConfig, SanitizeRequest, SanitizeResponse } from '../types';
+import { ConfigType, isDOMPurifyConfig, SanitizeRequest, SanitizeResponse } from './types';
 
 const svgTags = {
   altGlyphDef: /(<\/?)altGlyphDef([> ])/gi,

@@ -5,7 +5,7 @@ import { GrpcPlugin } from '../../node-plugin';
 import { Logger } from '../../logger';
 import { PluginConfig } from '../../config';
 import { createBrowser, Browser } from '../../browser';
-import { HTTPHeaders, ImageRenderOptions, RenderOptions, SanitizeRequest } from '../../types';
+import { HTTPHeaders, ImageRenderOptions, RenderOptions } from '../../types';
 import {
   RenderRequest,
   RenderResponse,
@@ -20,6 +20,7 @@ import {
   GRPCSanitizeResponse,
 } from './types';
 import { createSanitizer, Sanitizer } from '../../sanitizer/Sanitizer';
+import { SanitizeRequest } from '../../sanitizer/types';
 
 const rendererV2PackageDef = protoLoader.loadSync(__dirname + '/../../../proto/rendererv2.proto', {
   keepCase: true,

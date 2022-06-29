@@ -1,4 +1,4 @@
-import { ConfigType } from '../../types';
+import { ConfigType } from '../../sanitizer/types';
 
 export interface StringList {
   values: string[];
