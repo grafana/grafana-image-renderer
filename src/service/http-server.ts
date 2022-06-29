@@ -63,7 +63,7 @@ export class HttpServer {
     this.app.get('/render', asyncMiddleware(this.render));
     this.app.get('/render/csv', asyncMiddleware(this.renderCSV));
     this.app.post(
-      '/render/sanitize',
+      '/sanitize',
       upload.fields([
         { name: SanitizeRequestPartName.file, maxCount: 1 },
         { name: SanitizeRequestPartName.config, maxCount: 1 },
