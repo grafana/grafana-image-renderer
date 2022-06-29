@@ -28,19 +28,11 @@ export interface ImageRenderOptions extends RenderOptions {
   scaleImage?: number;
 }
 
-export type SanitizeRequest = {
-  filename: string;
-  content: string;
-  contentType?: string;
-  domPurifyConfig?: DOMPurify.Config;
-  allowAllLinksInSvgUseTags?: boolean;
-};
-
 export enum ConfigType {
   DOMPurify = 'DOMPurify',
 }
 
-export const isDOMPurifyConfig = (req: SanitizeRequestV2): req is SanitizeRequestV2<ConfigType.DOMPurify> => req.configType === ConfigType.DOMPurify;
+export const isDOMPurifyConfig = (req: SanitizeRequest): req is SanitizeRequest<ConfigType.DOMPurify> => req.configType === ConfigType.DOMPurify;
 
 const allConfigTypes = Object.values(ConfigType);
 
@@ -51,11 +43,11 @@ export type ConfigTypeToConfig = {
   };
 };
 
-export const isSanitizeRequest = (obj: any): obj is SanitizeRequestV2 => {
+export const isSanitizeRequest = (obj: any): obj is SanitizeRequest => {
   return Boolean(obj?.content) && allConfigTypes.includes(obj.configType) && typeof obj.config === 'object';
 };
 
-export type SanitizeRequestV2<configType extends ConfigType = ConfigType> = {
+export type SanitizeRequest<configType extends ConfigType = ConfigType> = {
   content: Buffer;
   configType: configType;
   config: ConfigTypeToConfig[configType];

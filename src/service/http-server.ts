@@ -9,7 +9,7 @@ import { Logger } from '../logger';
 import { Browser, createBrowser } from '../browser';
 import { ServiceConfig } from '../config';
 import { setupHttpServerMetrics } from './metrics_middleware';
-import { HTTPHeaders, ImageRenderOptions, isSanitizeRequest, RenderOptions, SanitizeRequest } from '../types';
+import { HTTPHeaders, ImageRenderOptions, isSanitizeRequest, RenderOptions } from '../types';
 import { Sanitizer } from '../sanitizer/Sanitizer';
 import * as bodyParser from 'body-parser';
 import * as multer from 'multer';

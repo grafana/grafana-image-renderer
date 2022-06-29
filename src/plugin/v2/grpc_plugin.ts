@@ -5,7 +5,7 @@ import { GrpcPlugin } from '../../node-plugin';
 import { Logger } from '../../logger';
 import { PluginConfig } from '../../config';
 import { createBrowser, Browser } from '../../browser';
-import { HTTPHeaders, ImageRenderOptions, RenderOptions, SanitizeRequest, SanitizeRequestV2 } from '../../types';
+import { HTTPHeaders, ImageRenderOptions, RenderOptions, SanitizeRequest } from '../../types';
 import {
   RenderRequest,
   RenderResponse,
@@ -197,7 +197,7 @@ class PluginGRPCServer {
   async sanitize(call: grpc.ServerUnaryCall<GRPCSanitizeRequest, any>, callback: grpc.sendUnaryData<GRPCSanitizeResponse>) {
     const grpcReq = call.request;
 
-    const req: SanitizeRequestV2 = {
+    const req: SanitizeRequest = {
       content: grpcReq.content,
       config: JSON.parse(grpcReq.config.toString()),
       configType: grpcReq.configType,

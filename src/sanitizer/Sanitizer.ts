@@ -1,6 +1,6 @@
 import * as DOMPurify from 'dompurify';
 import { JSDOM } from 'jsdom';
-import { ConfigType, isDOMPurifyConfig, SanitizeRequestV2, SanitizeResponse } from '../types';
+import { ConfigType, isDOMPurifyConfig, SanitizeRequest, SanitizeResponse } from '../types';
 
 const svgTags = {
   altGlyphDef: /(<\/?)altGlyphDef([> ])/gi,
@@ -58,7 +58,7 @@ export class Sanitizer {
     }
   };
 
-  private sanitizeSvg = (req: SanitizeRequestV2<ConfigType.DOMPurify>): SanitizeResponse => {
+  private sanitizeSvg = (req: SanitizeRequest<ConfigType.DOMPurify>): SanitizeResponse => {
     if (req.config.allowAllLinksInSvgUseTags !== true) {
       this.domPurify.addHook('afterSanitizeAttributes', this.sanitizeUseTagHook);
     }
@@ -75,7 +75,7 @@ export class Sanitizer {
     return { sanitized: Buffer.from([svgFilePrefix, sanitized].join('\n')) };
   };
 
-  sanitize = (req: SanitizeRequestV2): SanitizeResponse => {
+  sanitize = (req: SanitizeRequest): SanitizeResponse => {
     const configType = req.configType;
     if (!isDOMPurifyConfig(req)) {
       throw new Error('unsupported config type: ' + configType);
