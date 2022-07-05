@@ -276,4 +276,4 @@ workflows:
 executors:
   scan_exec:
     docker:
-    - image: grafana/grafana-plugin-ci:latest
+    - image: grafana/grafana-plugin-ci:1.4.1-alpine
