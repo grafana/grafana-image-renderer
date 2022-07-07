@@ -10,12 +10,23 @@ import { Browser, createBrowser } from '../browser';
 import { ServiceConfig } from '../config';
 import { setupHttpServerMetrics } from './metrics_middleware';
 import { HTTPHeaders, ImageRenderOptions, RenderOptions } from '../types';
+import { Sanitizer } from '../sanitizer/Sanitizer';
+import * as bodyParser from 'body-parser';
+import * as multer from 'multer';
+import { isSanitizeRequest } from '../sanitizer/types';
+
+const upload = multer({ storage: multer.memoryStorage() });
+
+enum SanitizeRequestPartName {
+  'file' = 'file',
+  'config' = 'config',
+}
 
 export class HttpServer {
   app: express.Express;
   browser: Browser;
 
-  constructor(private config: ServiceConfig, private log: Logger) {}
+  constructor(private config: ServiceConfig, private log: Logger, private sanitizer: Sanitizer) {}
 
   async start() {
     this.app = express();
@@ -36,6 +47,8 @@ export class HttpServer {
       })
     );
 
+    this.app.use(bodyParser.json());
+
     if (this.config.service.metrics.enabled) {
       setupHttpServerMetrics(this.app, this.config.service.metrics, this.log);
     }
@@ -49,6 +62,14 @@ export class HttpServer {
 
     this.app.get('/render', asyncMiddleware(this.render));
     this.app.get('/render/csv', asyncMiddleware(this.renderCSV));
+    this.app.post(
+      '/sanitize',
+      upload.fields([
+        { name: SanitizeRequestPartName.file, maxCount: 1 },
+        { name: SanitizeRequestPartName.config, maxCount: 1 },
+      ]),
+      asyncMiddleware(this.sanitize)
+    );
     this.app.use((err, req, res, next) => {
       if (err.stack) {
         this.log.error('Request failed', 'url', req.url, 'stack', err.stack);
@@ -144,6 +165,44 @@ export class HttpServer {
         }
       }
     });
+  };
+
+  sanitize = async (req: express.Request<any, { error: string }>, res: express.Response<{ error: string }>) => {
+    const file = req.files?.[SanitizeRequestPartName.file]?.[0] as Express.Multer.File | undefined;
+    if (!file) {
+      throw boom.badRequest('missing file');
+    }
+
+    const configFile = req.files?.[SanitizeRequestPartName.config]?.[0] as Express.Multer.File | undefined;
+    if (!configFile) {
+      throw boom.badRequest('missing config');
+    }
+
+    const config = JSON.parse(configFile.buffer.toString());
+
+    const sanitizeReq = {
+      ...config,
+      content: file.buffer,
+    };
+
+    if (!isSanitizeRequest(sanitizeReq)) {
+      throw boom.badRequest('invalid request: ' + JSON.stringify(config));
+    }
+
+    this.log.debug('Sanitize request received', 'contentLength', file.size, 'name', file.filename, 'config', JSON.stringify(config));
+
+    try {
+      const sanitizeResponse = this.sanitizer.sanitize(sanitizeReq);
+      res.writeHead(200, {
+        'Content-Disposition': `attachment;filename=${file.filename ?? 'sanitized'}`,
+        'Content-Length': sanitizeResponse.sanitized.length,
+        'Content-Type': file.mimetype ?? 'application/octet-stream',
+      });
+      return res.end(sanitizeResponse.sanitized);
+    } catch (e) {
+      this.log.error('Sanitization failed', 'filesize', file.size, 'name', file.filename, 'error', e.stack);
+      return res.status(500).json({ error: e.message });
+    }
   };
 
   renderCSV = async (req: express.Request<any, any, any, RenderOptions, any>, res: express.Response, next: express.NextFunction) => {
