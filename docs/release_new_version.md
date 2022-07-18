@@ -24,3 +24,5 @@
 ```bash
 JSON=$(cat ./scripts/tmp/plugin.json) gcom /plugins -X POST -H "Content-Type: application/json" -d $JSON
 ```
+
+3. Inform HG team about the new release.
