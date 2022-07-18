@@ -234,7 +234,10 @@ export class HttpServer {
     const result = await this.browser.renderCSV(options);
 
     if (result.fileName) {
-      res.setHeader('Content-Disposition', `attachment; filename="${encodeURI(result.fileName)}"`);
+      if (!/^[\u0000-\u007f]*$/.test(result.fileName)) {
+        result.fileName = '';
+      }
+      res.setHeader('Content-Disposition', `attachment; filename="${result.fileName}"`);
     }
     res.sendFile(result.filePath, (err) => {
       if (err) {
