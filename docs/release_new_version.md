@@ -20,7 +20,7 @@
 
 1. Once the GitHub release is created, run `yarn run create-gcom-plugin-json <release commit>`.
 
-2. Push to grafana.com via `./push-to-gcom.sh` or:
+2. Push to grafana.com via `./scripts/push-to-gcom.sh` or:
 ```bash
 JSON=$(cat ./scripts/tmp/plugin.json) gcom /plugins -X POST -H "Content-Type: application/json" -d $JSON
 ```
