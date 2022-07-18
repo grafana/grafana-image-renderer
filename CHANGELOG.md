@@ -1,4 +1,4 @@
-## 3.5.0 (2022-07-07)
+## 3.5.0 (2022-07-18)
 
 - Added File Sanitization API with [DOMPurify](https://github.com/cure53/DOMPurify) as the backend. [#349](https://github.com/grafana/grafana-image-renderer/pull/349), [ArturWierzbicki](https://github.com/ArturWierzbicki)
 
