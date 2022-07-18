@@ -1,7 +1,7 @@
 ## 3.5.0 (2022-07-18)
 
 - Added File Sanitization API with [DOMPurify](https://github.com/cure53/DOMPurify) as the backend. [#349](https://github.com/grafana/grafana-image-renderer/pull/349), [ArturWierzbicki](https://github.com/ArturWierzbicki)
-- Security: upgrade dependencies [#356](https://github.com/grafana/grafana-image-renderer/pull/356), [AgnesToulet](https://github.com/AgnesToulet)
+- Security: upgrade dependencies [#356](https://github.com/grafana/grafana-image-renderer/pull/356), [#348](https://github.com/grafana/grafana-image-renderer/pull/348), [#347](https://github.com/grafana/grafana-image-renderer/pull/347),  [AgnesToulet](https://github.com/AgnesToulet)
 
 ## 3.4.2 (2022-03-23)
 
