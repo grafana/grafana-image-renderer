@@ -20,7 +20,21 @@
 
 1. Once the GitHub release is created, run `yarn run create-gcom-plugin-json <release commit>`.
 
-2. Push to grafana.com:
+2. Push to grafana.com via `./scripts/push-to-gcom.sh` or:
 ```bash
 JSON=$(cat ./scripts/tmp/plugin.json) gcom /plugins -X POST -H "Content-Type: application/json" -d $JSON
 ```
+
+Note: The command will time-out, but the plugin update process will continue in the background.
+
+```
+<html>
+<head><title>504 Gateway Time-out</title></head>
+<body>
+<center><h1>504 Gateway Time-out</h1></center>
+<hr><center>nginx/1.17.9</center>
+</body>
+</html>
+```
+
+3. Inform HG team about the new release.
