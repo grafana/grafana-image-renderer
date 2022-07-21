@@ -14,6 +14,7 @@ import { Sanitizer } from '../sanitizer/Sanitizer';
 import * as bodyParser from 'body-parser';
 import * as multer from 'multer';
 import { isSanitizeRequest } from '../sanitizer/types';
+import * as contentDisposition from 'content-disposition';
 
 const upload = multer({ storage: multer.memoryStorage() });
 
@@ -234,7 +235,7 @@ export class HttpServer {
     const result = await this.browser.renderCSV(options);
 
     if (result.fileName) {
-      res.setHeader('Content-Disposition', `attachment; filename="${result.fileName}"`);
+      res.setHeader('Content-Disposition', contentDisposition(result.fileName));
     }
     res.sendFile(result.filePath, (err) => {
       if (err) {
