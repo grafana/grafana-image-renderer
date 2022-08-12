@@ -320,10 +320,28 @@ export class Browser {
     }
 
     try {
+      await page.exposeFunction('logger', (name, value) => {
+        this.log.debug(name, value);
+      });
       await this.withTimingMetrics(() => {
         if (this.config.verboseLogging) {
           this.log.debug('Waiting for dashboard/panel to load', 'timeout', `${options.timeout}s`);
         }
+
+        if (options.fullPageImage) {
+          return page.waitForFunction(
+            () => {
+              const panelCount = document.querySelectorAll('[data-panelId]').length;
+              const totalPanelsRendered = document.querySelectorAll('.panel-content').length + document.querySelectorAll('.dashboard-row').length;
+              (window as any).logger(['Panels rendered: ', `${totalPanelsRendered} / ${panelCount}`]);
+              return totalPanelsRendered === panelCount;
+            },
+            {
+              timeout: options.timeout * 1000,
+            }
+          );
+        }
+
         return page.waitForFunction(
           () => {
             const panelCount = document.querySelectorAll('.panel').length || document.querySelectorAll('.panel-container').length;
@@ -353,6 +371,7 @@ export class Browser {
           height: scrollResult.scrollHeight,
         });
       }
+
       return page.screenshot({ path: options.filePath, fullPage: options.fullPageImage, captureBeyondViewport: options.fullPageImage || false });
     }, 'screenshot');
 

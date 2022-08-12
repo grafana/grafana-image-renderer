@@ -78,7 +78,11 @@ export class HttpServer {
         this.log.error('Request failed', 'url', req.url, 'error', err);
       }
 
-      return res.status(err.output.statusCode).json(err.output.payload);
+      if (err.output) {
+        return res.status(err.output.statusCode).json(err.output.payload);
+      }
+
+      return res.status(500).json(err);
     });
 
     if (this.config.service.host) {
