@@ -361,7 +361,6 @@ export class Browser {
           height: scrollResult.scrollHeight,
         });
       }
-
       return page.screenshot({ path: options.filePath, fullPage: options.fullPageImage, captureBeyondViewport: options.fullPageImage || false });
     }, 'screenshot');
 
