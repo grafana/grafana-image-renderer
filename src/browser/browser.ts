@@ -320,36 +320,26 @@ export class Browser {
     }
 
     try {
-      await page.exposeFunction('logger', (name, value) => {
-        this.log.debug(name, value);
-      });
       await this.withTimingMetrics(() => {
         if (this.config.verboseLogging) {
           this.log.debug('Waiting for dashboard/panel to load', 'timeout', `${options.timeout}s`);
         }
 
-        if (options.fullPageImage) {
-          return page.waitForFunction(
-            () => {
+        return page.waitForFunction(
+          (isFullPage) => {
+            if (isFullPage) {
               const panelCount = document.querySelectorAll('[data-panelId]').length;
               const totalPanelsRendered = document.querySelectorAll('.panel-content').length + document.querySelectorAll('.dashboard-row').length;
-              (window as any).logger(['Panels rendered: ', `${totalPanelsRendered} / ${panelCount}`]);
               return totalPanelsRendered === panelCount;
-            },
-            {
-              timeout: options.timeout * 1000,
             }
-          );
-        }
 
-        return page.waitForFunction(
-          () => {
             const panelCount = document.querySelectorAll('.panel').length || document.querySelectorAll('.panel-container').length;
             return (window as any).panelsRendered >= panelCount;
           },
           {
             timeout: options.timeout * 1000,
-          }
+          },
+          options.fullPageImage || false
         );
       }, 'panelsRendered');
     } catch (err) {
