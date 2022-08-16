@@ -17,6 +17,7 @@ export interface RenderRequest {
   headers: {
     [header: string]: StringList;
   };
+  authToken: string;
 }
 
 export interface RenderResponse {
@@ -33,6 +34,7 @@ export interface RenderCSVRequest {
   headers: {
     [header: string]: StringList;
   };
+  authToken: string;
 }
 
 export interface RenderCSVResponse {
@@ -72,6 +74,7 @@ export interface GRPCSanitizeRequest {
   configType: ConfigType;
   config: Buffer;
   allowAllLinksInSvgUseTags: boolean;
+  authToken: string;
 }
 
 export interface GRPCSanitizeResponse {

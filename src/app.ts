@@ -108,6 +108,10 @@ function populateServiceConfigFromEnv(config: ServiceConfig, env: NodeJS.Process
     config.service.port = parseInt(env['HTTP_PORT'] as string, 10);
   }
 
+  if (env['AUTH_TOKEN']) {
+    config.service.security.authToken = env['AUTH_TOKEN'];
+  }
+
   if (env['LOG_LEVEL']) {
     config.service.logging.level = env['LOG_LEVEL'] as string;
   }
