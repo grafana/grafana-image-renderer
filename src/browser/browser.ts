@@ -327,7 +327,17 @@ export class Browser {
 
         return page.waitForFunction(
           (isFullPage) => {
+            /**
+             * panelsRendered value is updated every time that a panel renders. It could happen multiple times in a same panel because scrolling. For full page screenshots
+             * we can reach panelsRendered >= panelCount condition even if we have panels that are still loading data and their panelsRenderer value is 0, generating
+             * a screenshot with loading panels. It's why the condition for full pages is different from a single panel.
+             */
             if (isFullPage) {
+              /**
+               * data-panelId is the total number of the panels in the dashboard. Rows included.
+               * panel-content only exists in non-row panels when the data is loaded.
+               * dashboard-row exists only in rows.
+               */
               const panelCount = document.querySelectorAll('[data-panelId]').length;
               const totalPanelsRendered = document.querySelectorAll('.panel-content').length + document.querySelectorAll('.dashboard-row').length;
               return totalPanelsRendered === panelCount;
