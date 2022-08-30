@@ -1,3 +1,9 @@
+## 3.6.1 (2022-08-30)
+
+- Chore: Update to Node 16 [#365](https://github.com/grafana/grafana-image-renderer/pull/365), [Clarity-89](https://github.com/Clarity-89)
+- Update waiting condition for full page screenshots [#362](https://github.com/grafana/grafana-image-renderer/pull/362), [spinillos](https://github.com/spinillos)
+- Fix invalid Content-Disposition [#357](https://github.com/grafana/grafana-image-renderer/pull/357), [spinillos](https://github.com/spinillos)
+
 ## 3.6.0 (2022-08-16)
 
 - Security: Add support for auth token [#364](https://github.com/grafana/grafana-image-renderer/pull/364), [xlson](https://github.com/xlson), [joanlopez](https://github.com/joanlopez)
