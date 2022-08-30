@@ -54,12 +54,17 @@ export interface LoggingConfig {
   console?: ConsoleLoggerConfig;
 }
 
+export interface SecurityConfig {
+  authToken: string;
+}
+
 export interface ServiceConfig {
   service: {
     host?: string;
     port: number;
     metrics: MetricsConfig;
     logging: LoggingConfig;
+    security: SecurityConfig;
   };
   rendering: RenderingConfig;
 }
@@ -70,6 +75,7 @@ export interface PluginConfig {
       host: string;
       port: number;
     };
+    security: SecurityConfig;
   };
   rendering: RenderingConfig;
 }
@@ -116,6 +122,9 @@ export const defaultServiceConfig: ServiceConfig = {
         colorize: false,
       },
     },
+    security: {
+      authToken: '-',
+    },
   },
   rendering: defaultRenderingConfig,
 };
@@ -125,6 +134,9 @@ export const defaultPluginConfig: PluginConfig = {
     grpc: {
       host: '127.0.0.1',
       port: 0,
+    },
+    security: {
+      authToken: '-',
     },
   },
   rendering: defaultRenderingConfig,

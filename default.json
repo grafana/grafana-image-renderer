@@ -15,6 +15,10 @@
         "json": true,
         "colorize": false
       }
+    },
+
+    "security": {
+      "authToken": "-"
     }
   },
   "rendering": {
