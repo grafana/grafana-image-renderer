@@ -1,3 +1,7 @@
+## 3.6.0 (2022-08-16)
+
+- Security: Add support for auth token [#364](https://github.com/grafana/grafana-image-renderer/pull/364), [xlson](https://github.com/xlson), [joanlopez](https://github.com/joanlopez)
+
 ## 3.5.0 (2022-07-18)
 
 - Added File Sanitization API with [DOMPurify](https://github.com/cure53/DOMPurify) as the backend. [#349](https://github.com/grafana/grafana-image-renderer/pull/349), [ArturWierzbicki](https://github.com/ArturWierzbicki)
