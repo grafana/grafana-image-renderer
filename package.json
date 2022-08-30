@@ -80,9 +80,6 @@
   },
   "bin": "build/app.js",
   "engines": {
-    "node": ">=14 <=16"
-  },
-  "volta": {
-    "node": "14.16.1"
+    "node": ">= 16"
   }
 }
