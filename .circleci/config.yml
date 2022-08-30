@@ -13,7 +13,7 @@ aliases:
 defaults: &defaults
   working_directory: ~/grafana-image-renderer
   docker:
-    - image: cimg/node:14.18.3
+    - image: cimg/node:16.17.0
 
 commands:
   install-grabpl:
