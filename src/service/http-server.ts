@@ -8,13 +8,14 @@ import * as promClient from 'prom-client';
 import { Logger } from '../logger';
 import { Browser, createBrowser } from '../browser';
 import { ServiceConfig } from '../config';
-import { setupHttpServerMetrics } from './metrics_middleware';
+import { setupHttpServerMetrics } from './metrics';
 import { HTTPHeaders, ImageRenderOptions, RenderOptions } from '../types';
 import { Sanitizer } from '../sanitizer/Sanitizer';
 import * as bodyParser from 'body-parser';
 import * as multer from 'multer';
 import { isSanitizeRequest } from '../sanitizer/types';
 import * as contentDisposition from 'content-disposition';
+import { asyncMiddleware, trustedUrlMiddleware, authTokenMiddleware } from './middlewares';
 
 const upload = multer({ storage: multer.memoryStorage() });
 
@@ -53,16 +54,26 @@ export class HttpServer {
     if (this.config.service.metrics.enabled) {
       setupHttpServerMetrics(this.app, this.config.service.metrics, this.log);
     }
+
     this.app.get('/', (req: express.Request, res: express.Response) => {
       res.send('Grafana Image Renderer');
     });
+
+    // Middlewares for /render endpoints
+    this.app.use('/render', authTokenMiddleware(this.config.service.security), trustedUrlMiddleware);
+
+    // Set up /render endpoints
+    this.app.get('/render', asyncMiddleware(this.render));
+    this.app.get('/render/csv', asyncMiddleware(this.renderCSV));
     this.app.get('/render/version', (req: express.Request, res: express.Response) => {
       const pluginInfo = require('../../plugin.json');
       res.send({ version: pluginInfo.info.version });
     });
 
-    this.app.get('/render', asyncMiddleware(this.render));
-    this.app.get('/render/csv', asyncMiddleware(this.renderCSV));
+    // Middlewares for /sanitize endpoints
+    this.app.use('/sanitize', authTokenMiddleware(this.config.service.security));
+
+    // Set up /sanitize endpoints
     this.app.post(
       '/sanitize',
       upload.fields([
@@ -71,6 +82,7 @@ export class HttpServer {
       ]),
       asyncMiddleware(this.sanitize)
     );
+
     this.app.use((err, req, res, next) => {
       if (err.stack) {
         this.log.error('Request failed', 'url', req.url, 'stack', err.stack);
@@ -258,14 +270,3 @@ export class HttpServer {
     });
   };
 }
-
-// wrapper for our async route handlers
-// probably you want to move it to a new file
-const asyncMiddleware = (fn) => (req, res, next) => {
-  Promise.resolve(fn(req, res, next)).catch((err) => {
-    if (!err.isBoom) {
-      return next(boom.badImplementation(err));
-    }
-    next(err);
-  });
-};

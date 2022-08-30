@@ -3,7 +3,7 @@ import * as protoLoader from '@grpc/proto-loader';
 import * as promClient from 'prom-client';
 import { GrpcPlugin } from '../../node-plugin';
 import { Logger } from '../../logger';
-import { PluginConfig } from '../../config';
+import { PluginConfig, SecurityConfig } from '../../config';
 import { createBrowser, Browser } from '../../browser';
 import { HTTPHeaders, ImageRenderOptions, RenderOptions } from '../../types';
 import {
@@ -21,6 +21,7 @@ import {
 } from './types';
 import { createSanitizer, Sanitizer } from '../../sanitizer/Sanitizer';
 import { SanitizeRequest } from '../../sanitizer/types';
+import { Status } from '@grpc/grpc-js/build/src/constants';
 
 const rendererV2PackageDef = protoLoader.loadSync(__dirname + '/../../../proto/rendererv2.proto', {
   keepCase: true,
@@ -58,7 +59,7 @@ export class RenderGRPCPluginV2 implements GrpcPlugin {
   async grpcServer(server: grpc.Server) {
     const metrics = setupMetrics();
     const browser = createBrowser(this.config.rendering, this.log, metrics);
-    const pluginService = new PluginGRPCServer(browser, this.log, createSanitizer());
+    const pluginService = new PluginGRPCServer(browser, this.log, createSanitizer(), this.config.plugin.security);
 
     const rendererServiceDef = rendererV2ProtoDescriptor['pluginextensionv2']['Renderer']['service'];
     server.addService(rendererServiceDef, pluginService as any);
@@ -92,7 +93,7 @@ export class RenderGRPCPluginV2 implements GrpcPlugin {
 class PluginGRPCServer {
   private browserVersion: string | undefined;
 
-  constructor(private browser: Browser, private log: Logger, private sanitizer: Sanitizer) {}
+  constructor(private browser: Browser, private log: Logger, private sanitizer: Sanitizer, private securityCfg: SecurityConfig) {}
 
   async start(browserVersion?: string) {
     this.browserVersion = browserVersion;
@@ -104,7 +105,16 @@ class PluginGRPCServer {
     const headers: HTTPHeaders = {};
 
     if (!req) {
-      throw new Error('Request cannot be null');
+      return callback({ code: Status.INVALID_ARGUMENT, details: 'Request cannot be null' });
+    }
+
+    const configToken = this.securityCfg.authToken || '';
+    if (!req.authToken || req.authToken !== configToken) {
+      return callback({ code: Status.UNAUTHENTICATED, details: 'Unauthorized request' });
+    }
+
+    if (req.url && !(req.url.startsWith('http://') || req.url.startsWith('https://'))) {
+      return callback({ code: Status.INVALID_ARGUMENT, details: 'Forbidden query url protocol' });
     }
 
     if (req.headers) {
@@ -145,7 +155,16 @@ class PluginGRPCServer {
     const headers: HTTPHeaders = {};
 
     if (!req) {
-      throw new Error('Request cannot be null');
+      return callback({ code: Status.INVALID_ARGUMENT, details: 'Request cannot be null' });
+    }
+
+    const configToken = this.securityCfg.authToken || '';
+    if (!req.authToken || req.authToken !== configToken) {
+      return callback({ code: Status.UNAUTHENTICATED, details: 'Unauthorized request' });
+    }
+
+    if (req.url && !(req.url.startsWith('http://') || req.url.startsWith('https://'))) {
+      return callback({ code: Status.INVALID_ARGUMENT, details: 'Forbidden query url protocol' });
     }
 
     if (req.headers) {
@@ -197,6 +216,11 @@ class PluginGRPCServer {
 
   async sanitize(call: grpc.ServerUnaryCall<GRPCSanitizeRequest, any>, callback: grpc.sendUnaryData<GRPCSanitizeResponse>) {
     const grpcReq = call.request;
+
+    const configToken = this.securityCfg.authToken || '';
+    if (!grpcReq.authToken || grpcReq.authToken !== configToken) {
+      return callback({ code: Status.UNAUTHENTICATED, details: 'Unauthorized request' });
+    }
 
     const req: SanitizeRequest = {
       content: grpcReq.content,
@@ -293,6 +317,10 @@ const populateConfigFromEnv = (config: PluginConfig) => {
 
   if (env['GF_PLUGIN_RENDERING_DUMPIO']) {
     config.rendering.dumpio = env['GF_PLUGIN_RENDERING_DUMPIO'] === 'true';
+  }
+
+  if (env['GF_PLUGIN_AUTH_TOKEN']) {
+    config.plugin.security.authToken = env['GF_PLUGIN_AUTH_TOKEN'];
   }
 };
 
