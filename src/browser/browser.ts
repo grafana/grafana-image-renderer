@@ -67,7 +67,7 @@ export class Browser {
     options.headers = headers;
 
     if (typeof options.timeout === 'string') {
-      options.timeout = parseInt((options.timeout as unknown) as string, 10);
+      options.timeout = parseInt(options.timeout as unknown as string, 10);
     }
 
     options.timeout = options.timeout || 30;

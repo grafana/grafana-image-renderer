@@ -210,7 +210,7 @@ class PluginGRPCServer {
   }
 
   async collectMetrics(_: grpc.ServerUnaryCall<CollectMetricsRequest, any>, callback: grpc.sendUnaryData<CollectMetricsResponse>) {
-    const payload = Buffer.from(promClient.register.metrics());
+    const payload = Buffer.from(await promClient.register.metrics());
     callback(null, { metrics: { prometheus: payload } });
   }
 
