@@ -1,7 +1,7 @@
 const path = require('path');
 const child_process = require('child_process');
 const Puppeteer = require('puppeteer');
-const { PUPPETEER_REVISIONS } = require('puppeteer/lib/cjs/puppeteer/revisions')
+const { PUPPETEER_REVISIONS } = require('../node_modules/puppeteer/lib/cjs/puppeteer/revisions')
 
 const archArg = process.argv[2];
 let [
