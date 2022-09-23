@@ -432,7 +432,7 @@ export class Browser {
       }
     });
 
-    await page._client.send('Page.setDownloadBehavior', { behavior: 'allow', downloadPath: downloadPath });
+    await page._client().send('Page.setDownloadBehavior', { behavior: 'allow', downloadPath: downloadPath });
 
     if (this.config.verboseLogging) {
       this.log.debug('Navigating and waiting for all network requests to finish', 'url', options.url);
