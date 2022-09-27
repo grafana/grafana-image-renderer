@@ -216,7 +216,8 @@ export class Browser {
         heights.dashboard.client,
         scrollDivSelector
       );
-      await page.waitForTimeout(scrollDelay);
+      
+      await new Promise(executor => setTimeout(executor, scrollDelay));
     }
 
     await page.evaluate((scrollDivSelector) => {
@@ -481,7 +482,7 @@ export class Browser {
     }
   }
 
-  addPageListeners(page: any) {
+  addPageListeners(page: puppeteer.Page) {
     page.on('error', this.logError);
     page.on('pageerror', this.logPageError);
     page.on('requestfailed', this.logRequestFailed);
@@ -494,16 +495,16 @@ export class Browser {
     }
   }
 
-  removePageListeners(page: any) {
-    page.removeListener('error', this.logError);
-    page.removeListener('pageerror', this.logPageError);
-    page.removeListener('requestfailed', this.logRequestFailed);
-    page.removeListener('console', this.logConsoleMessage);
+  removePageListeners(page: puppeteer.Page) {
+    page.off('error', this.logError);
+    page.off('pageerror', this.logPageError);
+    page.off('requestfailed', this.logRequestFailed);
+    page.off('console', this.logConsoleMessage);
 
     if (this.config.verboseLogging) {
-      page.removeListener('request', this.logRequest);
-      page.removeListener('requestfinished', this.logRequestFinished);
-      page.removeListener('close', this.logPageClosed);
+      page.off('request', this.logRequest);
+      page.off('requestfinished', this.logRequestFinished);
+      page.off('close', this.logPageClosed);
     }
   }
 
