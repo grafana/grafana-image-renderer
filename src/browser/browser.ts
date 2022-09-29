@@ -523,8 +523,8 @@ export class Browser {
     }
 
     const loc = msg.location();
-    if (msgType === 'error') {
-      this.log.error('Browser console error', 'msg', msg.text(), 'url', loc.url, 'line', loc.lineNumber, 'column', loc.columnNumber);
+    if (msgType === 'error' && msg.text() !== 'JSHandle@object') {
+        this.log.error('Browser console error', 'msg', msg.text(), 'url', loc.url, 'line', loc.lineNumber, 'column', loc.columnNumber);
       return;
     }
 
