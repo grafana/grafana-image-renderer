@@ -536,7 +536,7 @@ export class Browser {
   };
 
   logRequestFailed = (req: any) => {
-    this.log.error('Browser request failed', 'url', req.url(), 'method', req.method(), 'failure', req.failure().errorText);
+    this.log.error('Browser request failed', 'url', req.url(), 'method', req.method(), 'failure', req.failure()?.errorText);
   };
 
   logRequestFinished = (req: any) => {
