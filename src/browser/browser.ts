@@ -117,6 +117,10 @@ export class Browser {
     } else if (options.deviceScaleFactor > this.config.maxDeviceScaleFactor) {
       options.deviceScaleFactor = this.config.deviceScaleFactor;
     }
+
+    if(!options.fullPageImageDelayTime || options.fullPageImageDelayTime < 0) {
+      options.fullPageImageDelayTime = this.config.fullPageDelayTime
+    }
   }
 
   getLauncherOptions(options) {
@@ -341,7 +345,8 @@ export class Browser {
                */
               const panelCount = document.querySelectorAll('[data-panelId]').length;
               const totalPanelsRendered = document.querySelectorAll('.panel-content').length + document.querySelectorAll('.dashboard-row').length;
-              return totalPanelsRendered === panelCount;
+              const totalLoadingPanels = document.querySelectorAll('.panel-loading').length
+              return totalPanelsRendered === panelCount && totalLoadingPanels === 0;
             }
 
             const panelCount = document.querySelectorAll('.panel').length || document.querySelectorAll('.panel-container').length;
@@ -356,6 +361,8 @@ export class Browser {
     } catch (err) {
       this.log.error('Error while waiting for the panels to load', 'url', options.url, 'err', err.stack);
     }
+
+    await new Promise(r => setTimeout(r, options.fullPageImageDelayTime!! * 1000))
 
     if (!options.filePath) {
       options.filePath = uniqueFilename(os.tmpdir()) + '.png';

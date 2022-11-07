@@ -160,6 +160,8 @@ export class HttpServer {
       timezone: req.query.timezone,
       encoding: req.query.encoding,
       deviceScaleFactor: req.query.deviceScaleFactor,
+      fullPageImage: req.query.fullPageImage,
+      fullPageImageDelayTime: req.query.fullPageImageDelayTime,
       headers: headers,
     };
 
