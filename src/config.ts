@@ -35,7 +35,7 @@ export interface RenderingConfig {
   headed?: boolean;
   networkConditions?: NetworkConditions;
   emulateNetworkConditions: boolean;
-  fullPageDelayTime: number;
+  fullPageImageDelayTime: number;
 }
 
 export interface MetricsConfig {
@@ -105,7 +105,7 @@ const defaultRenderingConfig: RenderingConfig = {
   verboseLogging: false,
   dumpio: false,
   timingMetrics: false,
-  fullPageDelayTime: 0,
+  fullPageImageDelayTime: 0,
 };
 
 export const defaultServiceConfig: ServiceConfig = {

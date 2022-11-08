@@ -119,7 +119,7 @@ export class Browser {
     }
 
     if(!options.fullPageImageDelayTime || options.fullPageImageDelayTime < 0) {
-      options.fullPageImageDelayTime = this.config.fullPageDelayTime
+      options.fullPageImageDelayTime = this.config.fullPageImageDelayTime;
     }
   }
 
@@ -362,7 +362,7 @@ export class Browser {
       this.log.error('Error while waiting for the panels to load', 'url', options.url, 'err', err.stack);
     }
 
-    await new Promise(r => setTimeout(r, options.fullPageImageDelayTime!! * 1000))
+    await new Promise(r => setTimeout(r, options.fullPageImageDelayTime!! * 1000));
 
     if (!options.filePath) {
       options.filePath = uniqueFilename(os.tmpdir()) + '.png';
