@@ -1,3 +1,10 @@
+## 3.6.2 (2022-10-22)
+
+- Log errors related to JSHandle@object as debug [#376](https://github.com/grafana/grafana-image-renderer/pull/376), [spinillos](https://github.com/spinillos)
+- Chore: Update Puppeteer deprecated functions [#375](https://github.com/grafana/grafana-image-renderer/pull/375), [spinillos](https://github.com/spinillos)
+- Fix: Update _client with _client() to avoid to fail when creating a CSV [#372](https://github.com/grafana/grafana-image-renderer/pull/372), [spinillos](https://github.com/spinillos)
+- Chore: Update all dependencies [#369](https://github.com/grafana/grafana-image-renderer/pull/369), [DanCech](https://github.com/DanCech)
+
 ## 3.6.1 (2022-08-30)
 
 - Chore: Update to Node 16 [#365](https://github.com/grafana/grafana-image-renderer/pull/365), [Clarity-89](https://github.com/Clarity-89)
