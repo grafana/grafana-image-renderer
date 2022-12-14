@@ -250,9 +250,6 @@ workflows:
     jobs:
       - build:
           filters: *filter-not-release-or-master
-      - security_scan:
-          requires:
-            - build
       - package:
           filters: *filter-not-release-or-master
           requires:
@@ -262,7 +259,6 @@ workflows:
             parameters:
               arch: [linux-x64-glibc, darwin-x64-unknown, win32-x64-unknown]
               skip_signing_errors: [true]
-
       - package:
           filters: *filter-not-release-or-master
           requires:
