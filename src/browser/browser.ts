@@ -153,7 +153,6 @@ export class Browser {
       await client.send('Network.emulateNetworkConditions', this.config.networkConditions);
     }
 
-
     if (options.renderKey) {
       if (this.config.verboseLogging) {
         this.log.debug('Setting cookie for page', 'renderKey', options.renderKey, 'domain', options.domain);
@@ -550,7 +549,7 @@ export class Browser {
   };
 
   private async setPageZoomLevel(page: puppeteer.Page, zoomLevel: number) {
-    this.log.debug('Setting zoom level to: ' + zoomLevel);
+    this.log.debug('Setting zoom level', 'zoomLevel', zoomLevel);
     await page.evaluate((zoomLevel: number) => {
       (document.body.style as any).zoom = zoomLevel;
     }, zoomLevel);
