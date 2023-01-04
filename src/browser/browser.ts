@@ -549,7 +549,9 @@ export class Browser {
   };
 
   private async setPageZoomLevel(page: puppeteer.Page, zoomLevel: number) {
-    this.log.debug('Setting zoom level', 'zoomLevel', zoomLevel);
+    if (this.config.verboseLogging) {
+      this.log.debug('Setting zoom level', 'zoomLevel', zoomLevel);
+    }
     await page.evaluate((zoomLevel: number) => {
       (document.body.style as any).zoom = zoomLevel;
     }, zoomLevel);
