@@ -152,8 +152,8 @@ function populateServiceConfigFromEnv(config: ServiceConfig, env: NodeJS.Process
     config.rendering.dumpio = env['RENDERING_DUMPIO'] === 'true';
   }
 
-  if (env['VIEWPORT_PAGE_ZOOM_LEVEL']) {
-    config.rendering.pageZoomLevel = parseFloat(env['GF_PLUGIN_RENDERING_VIEWPORT_PAGE_ZOOM_LEVEL'] as string);
+  if (env['RENDERING_VIEWPORT_PAGE_ZOOM_LEVEL']) {
+    config.rendering.pageZoomLevel = parseFloat(env['RENDERING_VIEWPORT_PAGE_ZOOM_LEVEL'] as string);
   }
 
   if (env['RENDERING_ARGS']) {
