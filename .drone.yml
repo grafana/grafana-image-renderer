@@ -1,0 +1,77 @@
+---grafana/grafana-plugin-ci:1.4.1-alpine
+kind: pipeline
+type: ssh
+name: defaults
+steps:
+  - name: grabpl
+    commands:
+      - VERSION=2.1.1
+      - curl -fLO https://grafana-downloads.storage.googleapis.com/grafana-build-pipeline/v${VERSION}/grabpl
+      - chmod +x grabpl
+      - mv grabpl /tmp
+---
+kind: pipeline
+type: docker
+name: defaults
+steps:
+  - name: node
+    image: cimg/node:16.17.0
+  - name: plugin
+    image: grafana/grafana-plugin-ci:1.4.1-alpine
+---
+kind: pipeline
+type: ssh
+name: security-scan
+depends_on:
+  - plugin
+steps:
+  - name: Run Veracode scan
+    commands:
+      - apk add curl
+      - export _JAVA_OPTIONS=-Xmx4g
+      - mkdir -p ci/jobs/security_scan
+      - curl -sSL https://download.sourceclear.com/ci.sh | sh | tee ci/jobs/security_scan/sourclear_scan.out
+---
+kind: pipeline
+type: ssh
+name: Build branches and PRs
+depends_on:
+  - grabpl
+  - node
+trigger:
+  event:
+    exclude:
+      - tags
+    include:
+      - pull_request
+  branch:
+    exclude:
+      - master
+steps:
+  - name: Yarn install
+    commands:
+      - yarn install --frozen-lockfile --no-progress
+  - name: package-linux-x64-glibc
+    commands:
+      - ./scripts/package_target.sh linux-x64-glibc
+      - /tmp/grabpl build-plugin-manifest ./dist/plugin-linux-x64-glibc
+      - exit $?
+      - ./scripts/archive_target.sh linux-x64-glibc
+  - name: package-darwin-x64-unknown
+    commands:
+      - ./scripts/package_target.sh darwin-x64-unknown
+      - /tmp/grabpl build-plugin-manifest ./dist/plugin-darwin-x64-unknown
+      - exit $?
+      - ./scripts/archive_target.sh darwin-x64-unknown
+  - name: package-win32-x64-unknown
+    commands:
+      - ./scripts/package_target.sh win32-x64-unknown
+      - /tmp/grabpl build-plugin-manifest ./dist/plugin-win32-x64-unknown
+      - exit $?
+      - ./scripts/archive_target.sh win32-x64-unknown
+  - name: package-linux-x64-glibc-no-chromium
+    commands:
+      - ./scripts/package_target.sh package-linux-x64-glibc-no-chromium true plugin-linux-x64-glibc-no-chromium
+      - /tmp/grabpl build-plugin-manifest ./dist/plugin-linux-x64-glibc-no-chromium
+      - exit $?
+      - ./scripts/archive_target.sh win32-x64-unknown plugin-linux-x64-glibc-no-chromium
