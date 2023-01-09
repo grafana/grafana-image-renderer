@@ -1,4 +1,4 @@
----grafana/grafana-plugin-ci:1.4.1-alpine
+---
 kind: pipeline
 type: ssh
 name: defaults
