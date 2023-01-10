@@ -35,3 +35,26 @@ def prs_pipeline():
             ]
         ),
     ]
+
+def master_pipeline():
+    trigger = {
+        'branch': [
+            'master',
+        ],
+    }
+
+    return [
+        pipeline(
+            name='',
+            trigger=trigger,
+            steps=[
+                download_grabpl_step(),
+                install_deps_step(),
+                build_step(),
+                package_step(arch='linux-x64-glibc', skip_errors=False),
+                package_step(arch='darwin-x64-unknown', skip_errors=False),
+                package_step(arch='win32-x64-unknown', skip_errors=False),
+                package_step(arch='linux-x64-glibc', name='package-linux-x64-glibc-no-chromium', skip_chromium=True, override_output='plugin-linux-x64-glibc-no-chromium', skip_errors=False),
+            ]
+        )
+    ]

@@ -12,6 +12,7 @@ load('scripts/drone/vault.star', 'secrets')
 def main(ctx):
     return (
         prs_pipeline()
+        + master_pipeline()
         + security_pipeline()
         + secrets()
     )
