@@ -19,7 +19,7 @@ def publish_to_docker():
 def publish_gh_release():
     return {
         'name': 'publish_to_github',
-        'image': ci_image,
+        'image': 'cibuilds/github:0.13.0',
         'commands': [
             'sh scripts/generate_md5sum.sh',
             'sh scripts/publish_github_release.sh',

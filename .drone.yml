@@ -282,7 +282,7 @@ steps:
     path: /var/run/docker.sock
 
 - name: publish_to_github
-  image: grafana/grafana-plugin-ci:1.6.1-alpine
+  image: cibuilds/github:0.13.0
   commands:
   - sh scripts/generate_md5sum.sh
   - sh scripts/publish_github_release.sh
@@ -407,6 +407,6 @@ get:
 
 ---
 kind: signature
-hmac: 912e7d76388a20cb582fa5ee5ff07e397ebb2a2ba135496088505b8fd1ca56e1
+hmac: 29bf7bc795cfe4cd05fef04dd7dd1e3bcf163c11eda7a39afe2f722f8a2d8c88
 
 ...

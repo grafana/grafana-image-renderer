@@ -23,7 +23,6 @@ git config user.name "Drone Automation"
 git tag v"${VERSION}"
 git push origin v"${VERSION}"
 ghr \
-  -t "${GITHUB_TOKEN}" \
   -u "${DRONE_REPO_OWNER}" \
   -r "${DRONE_REPO_NAME}" \
   -c "${DRONE_COMMIT_SHA}" \
