@@ -39,10 +39,10 @@ docker-debian:
 # This repository's configuration is protected (https://readme.drone.io/signature/).
 # Use this make target to regenerate the configuration YAML files when
 # you modify starlark files.
-drone: $(DRONE)
-	$(DRONE) starlark --format
-	$(DRONE) lint .drone.yml --trusted
-	$(DRONE) --server https://drone.grafana.net sign --save grafana/grafana-image-renderer
+drone:
+	drone starlark --format
+	drone lint .drone.yml --trusted
+	drone --server https://drone.grafana.net sign --save grafana/grafana-image-renderer
 
 format-drone:
 	black --include '\.star$$' -S scripts/drone/ .drone.star

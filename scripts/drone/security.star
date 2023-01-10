@@ -18,7 +18,6 @@ def security_scan_step():
         ],
         'failure': 'ignore',
         'depends_on': [
-            'tbd',
         ],
     }
 

@@ -100,8 +100,6 @@ steps:
   - mkdir -p ci/jobs/security_scan
   - curl -sSL https://download.sourceclear.com/ci.sh | sh -s scan --skip-compile --quick --allow-dirty
   failure: ignore
-  depends_on:
-  - tbd
 
 volumes:
 - name: docker
@@ -143,5 +141,9 @@ name: dockerconfigjson
 get:
   path: secret/data/common/gcr
   name: .dockerconfigjson
+
+---
+kind: signature
+hmac: 38af1cd681ac5c675b15e9641783a1b2cdd4e7b00fb827ccee68a7dc187de52b
 
 ...
