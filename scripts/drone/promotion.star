@@ -32,3 +32,13 @@ def publish_release():
             'package-linux-x64-glibc-no-chromium',
         ],
     }
+
+def publish_to_grafana():
+    return {
+        'name': 'publish_to_grafana',
+        'image': ci_image,
+        'commands': [
+            'yarn run create-gcom-plugin-json ${DRONE_COMMIT}',
+            'sh scripts/push-to-gcom.sh',
+        ],
+    }

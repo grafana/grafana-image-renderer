@@ -291,6 +291,12 @@ steps:
   - name: docker
     path: /var/run/docker.sock
 
+- name: publish_to_grafana
+  image: grafana/grafana-plugin-ci:1.6.1-alpine
+  commands:
+  - yarn run create-gcom-plugin-json ${DRONE_COMMIT}
+  - sh scripts/push-to-gcom.sh
+
 volumes:
 - name: docker
   host:
@@ -380,6 +386,6 @@ get:
 
 ---
 kind: signature
-hmac: 200b516235d013bfb7a92622c12321bc54aa90804210cf0be826ba53ff61c310
+hmac: a36fc006c7574cb3a415cc2116795d0ff65ab0bd1bf06e7397bccb7dd6788312
 
 ...
