@@ -196,6 +196,24 @@ platform:
   arch: amd64
 
 steps:
+- name: jq-install
+  image: grafana/grafana-plugin-ci:1.6.1-alpine
+  commands:
+  - apk add --update --no-cache jq
+
+- name: md5-checksums
+  image: grafana/grafana-plugin-ci:1.6.1-alpine
+  commands:
+  - sh scripts/generate_md5sum.sh
+
+- name: publish_to_github
+  image: cibuilds/github:0.12
+  commands:
+  - sh scripts/publish_github_release.sh
+  depends_on:
+  - jq-install
+  - md5-checksums
+
 - name: publish_to_docker
   image: google/cloud-sdk:412.0.0
   commands:
@@ -209,6 +227,8 @@ steps:
   volumes:
   - name: docker
     path: /var/run/docker.sock
+  depends_on:
+  - publish_to_github
 
 volumes:
 - name: docker
@@ -299,6 +319,6 @@ get:
 
 ---
 kind: signature
-hmac: 8dbd19aee3815cdbdad89870324a05db00d1a66dff9147e66fbe94066e8d51a9
+hmac: cdefa224219b42dd8ee8ed699eeb8378be7ab6aa6eb3e88e9516ed3107ced29a
 
 ...
