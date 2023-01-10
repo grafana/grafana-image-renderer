@@ -16,21 +16,21 @@ steps:
   - chmod +x bin/grabpl
 
 - name: yarn-install
-  image: grafana/grafana-plugin-ci:1.6.1
+  image: grafana/grafana-plugin-ci:1.6.1-alpine
   commands:
   - yarn install --frozen-lockfile --no-progress
   depends_on:
   - grabpl
 
 - name: yarn-build
-  image: grafana/grafana-plugin-ci:1.6.1
+  image: grafana/grafana-plugin-ci:1.6.1-alpine
   commands:
   - yarn build
   depends_on:
   - yarn-install
 
 - name: package-linux-x64-glibc
-  image: grafana/grafana-plugin-ci:1.6.1
+  image: grafana/grafana-plugin-ci:1.6.1-alpine
   commands:
   - sh scripts/package_target.sh linux-x64-glibc
   - /bin/grabpl build-plugin-manifest ./dist/plugin-linux-x64-glibc || true
@@ -39,7 +39,7 @@ steps:
   - yarn-build
 
 - name: package-darwin-x64-unknown
-  image: grafana/grafana-plugin-ci:1.6.1
+  image: grafana/grafana-plugin-ci:1.6.1-alpine
   commands:
   - sh scripts/package_target.sh darwin-x64-unknown
   - /bin/grabpl build-plugin-manifest ./dist/plugin-darwin-x64-unknown || true
@@ -48,7 +48,7 @@ steps:
   - yarn-build
 
 - name: package-win32-x64-unknown
-  image: grafana/grafana-plugin-ci:1.6.1
+  image: grafana/grafana-plugin-ci:1.6.1-alpine
   commands:
   - sh scripts/package_target.sh win32-x64-unknown
   - /bin/grabpl build-plugin-manifest ./dist/plugin-win32-x64-unknown || true
@@ -57,7 +57,7 @@ steps:
   - yarn-build
 
 - name: package-linux-x64-glibc-no-chromium
-  image: grafana/grafana-plugin-ci:1.6.1
+  image: grafana/grafana-plugin-ci:1.6.1-alpine
   commands:
   - sh scripts/package_target.sh linux-x64-glibc true plugin-linux-x64-glibc-no-chromium
   - /bin/grabpl build-plugin-manifest ./dist/plugin-linux-x64-glibc-no-chromium || true
@@ -97,21 +97,21 @@ steps:
   - chmod +x bin/grabpl
 
 - name: yarn-install
-  image: grafana/grafana-plugin-ci:1.6.1
+  image: grafana/grafana-plugin-ci:1.6.1-alpine
   commands:
   - yarn install --frozen-lockfile --no-progress
   depends_on:
   - grabpl
 
 - name: yarn-build
-  image: grafana/grafana-plugin-ci:1.6.1
+  image: grafana/grafana-plugin-ci:1.6.1-alpine
   commands:
   - yarn build
   depends_on:
   - yarn-install
 
 - name: package-linux-x64-glibc
-  image: grafana/grafana-plugin-ci:1.6.1
+  image: grafana/grafana-plugin-ci:1.6.1-alpine
   commands:
   - sh scripts/package_target.sh linux-x64-glibc
   - /bin/grabpl build-plugin-manifest ./dist/plugin-linux-x64-glibc
@@ -120,7 +120,7 @@ steps:
   - yarn-build
 
 - name: package-darwin-x64-unknown
-  image: grafana/grafana-plugin-ci:1.6.1
+  image: grafana/grafana-plugin-ci:1.6.1-alpine
   commands:
   - sh scripts/package_target.sh darwin-x64-unknown
   - /bin/grabpl build-plugin-manifest ./dist/plugin-darwin-x64-unknown
@@ -129,7 +129,7 @@ steps:
   - yarn-build
 
 - name: package-win32-x64-unknown
-  image: grafana/grafana-plugin-ci:1.6.1
+  image: grafana/grafana-plugin-ci:1.6.1-alpine
   commands:
   - sh scripts/package_target.sh win32-x64-unknown
   - /bin/grabpl build-plugin-manifest ./dist/plugin-win32-x64-unknown
@@ -138,7 +138,7 @@ steps:
   - yarn-build
 
 - name: package-linux-x64-glibc-no-chromium
-  image: grafana/grafana-plugin-ci:1.6.1
+  image: grafana/grafana-plugin-ci:1.6.1-alpine
   commands:
   - sh scripts/package_target.sh linux-x64-glibc true plugin-linux-x64-glibc-no-chromium
   - /bin/grabpl build-plugin-manifest ./dist/plugin-linux-x64-glibc-no-chromium
@@ -172,7 +172,7 @@ platform:
 
 steps:
 - name: security-scan
-  image: grafana/grafana-plugin-ci:1.6.1
+  image: grafana/grafana-plugin-ci:1.6.1-alpine
   commands:
   - echo "Starting veracode scan..."
   - apk add curl
@@ -225,6 +225,6 @@ get:
 
 ---
 kind: signature
-hmac: a6c9c5e782ea202e8390ef5c763f9d44e32c171f6c5ee7bcddcaf1bf5431dc96
+hmac: 0ddabfbde64d8dc5f08930d2352efd194f80e47e528b576c10beddac5708df3f
 
 ...

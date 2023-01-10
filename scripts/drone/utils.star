@@ -3,7 +3,7 @@ load(
     'pull_secret',
 )
 
-ci_image = 'grafana/grafana-plugin-ci:1.6.1'
+ci_image = 'grafana/grafana-plugin-ci:1.6.1-alpine'
 
 def pipeline(
     name,
