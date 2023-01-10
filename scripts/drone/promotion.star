@@ -16,6 +16,14 @@ def publish_to_docker():
         'volumes': [{'name': 'docker', 'path': '/var/run/docker.sock'}],
     }
 
+def package_steps():
+    return [
+        'package-linux-x64-glibc',
+        'package-darwin-x64-unknown',
+        'package-win32-x64-unknown',
+        'package-linux-x64-glibc-no-chromium',
+    ]
+
 def publish_release():
     return {
         'name': 'publish_to_github',
@@ -25,12 +33,7 @@ def publish_release():
             'sh scripts/generate_md5sum.sh',
             'sh scripts/publish_github_release.sh',
         ],
-        'depends_on': [
-            'package-linux-x64-glibc',
-            'package-darwin-x64-unknown',
-            'package-win32-x64-unknown',
-            'package-linux-x64-glibc-no-chromium',
-        ],
+        'depends_on': package_steps(),
     }
 
 def publish_to_grafana():
@@ -41,4 +44,5 @@ def publish_to_grafana():
             'yarn run create-gcom-plugin-json ${DRONE_COMMIT}',
             'sh scripts/push-to-gcom.sh',
         ],
+        'depends_on': package_steps(),
     }

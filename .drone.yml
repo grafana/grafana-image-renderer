@@ -185,6 +185,8 @@ node:
 trigger:
   branch:
   - master
+  event:
+  - push
 
 ---
 kind: pipeline
@@ -296,6 +298,11 @@ steps:
   commands:
   - yarn run create-gcom-plugin-json ${DRONE_COMMIT}
   - sh scripts/push-to-gcom.sh
+  depends_on:
+  - package-linux-x64-glibc
+  - package-darwin-x64-unknown
+  - package-win32-x64-unknown
+  - package-linux-x64-glibc-no-chromium
 
 volumes:
 - name: docker
@@ -386,6 +393,6 @@ get:
 
 ---
 kind: signature
-hmac: a36fc006c7574cb3a415cc2116795d0ff65ab0bd1bf06e7397bccb7dd6788312
+hmac: a16378c5dff9652d12170ef6772d6ef4026a0fe3a376f7c652dda22ac3d08376
 
 ...
