@@ -223,4 +223,8 @@ get:
   path: secret/data/common/gcr
   name: .dockerconfigjson
 
+---
+kind: signature
+hmac: 95818b246d4aeea7bf1a2b9132bf445927f712bef20d9e6fd63f0f292029beff
+
 ...
