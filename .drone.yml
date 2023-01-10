@@ -270,7 +270,6 @@ steps:
 - name: publish_to_github
   image: grafana/grafana-plugin-ci:1.6.1-alpine
   commands:
-  - apk add --update --no-cache jq
   - sh scripts/generate_md5sum.sh
   - sh scripts/publish_github_release.sh
   depends_on:
@@ -393,6 +392,6 @@ get:
 
 ---
 kind: signature
-hmac: a16378c5dff9652d12170ef6772d6ef4026a0fe3a376f7c652dda22ac3d08376
+hmac: 42c8e9537ca0762b597ac85ac13cb08e5a6dbe43c8487174d82a19602a9208d5
 
 ...

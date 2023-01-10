@@ -29,7 +29,6 @@ def publish_release():
         'name': 'publish_to_github',
         'image': ci_image,
         'commands': [
-            'apk add --update --no-cache jq',
             'sh scripts/generate_md5sum.sh',
             'sh scripts/publish_github_release.sh',
         ],
