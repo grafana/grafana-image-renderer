@@ -1,8 +1,4 @@
-load(
-    'scripts/drone/utils.star',
-    'pipeline',
-    'ci_image',
-)
+load('scripts/drone/utils.star', 'pipeline', 'ci_image')
 
 def security_scan_step():
     return {
@@ -17,10 +13,7 @@ def security_scan_step():
             'curl -sSL https://download.sourceclear.com/ci.sh | sh -s scan --skip-compile --quick --allow-dirty',
         ],
         'failure': 'ignore',
-        'depends_on': [
-        ],
     }
-
 
 def security_pipeline():
     trigger = {

@@ -3,7 +3,6 @@ pull_secret = 'dockerconfigjson'
 def from_secret(secret):
     return {'from_secret': secret}
 
-
 def vault_secret(name, path, key):
     return {
         'kind': 'secret',
@@ -13,7 +12,6 @@ def vault_secret(name, path, key):
             'name': key,
         },
     }
-
 
 def secrets():
     return [
