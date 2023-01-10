@@ -4,7 +4,7 @@ load('scripts/drone/vault.star', 'from_secret')
 def publish_to_docker():
     return {
         'name': 'publish_to_docker',
-        'image': 'google/cloud-sdk',
+        'image': 'google/cloud-sdk:412.0.0-alpine',
         'environment': {
             'IMAGE_NAME': docker_image,
             'DOCKER_USER': from_secret('docker_user'),

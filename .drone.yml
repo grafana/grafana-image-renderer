@@ -196,7 +196,7 @@ platform:
 
 steps:
 - name: publish_to_docker
-  image: google/cloud-sdk
+  image: google/cloud-sdk:412.0.0-alpine
   commands:
   - sh scripts/build_push_docker.sh master
   environment:
@@ -295,6 +295,6 @@ get:
 
 ---
 kind: signature
-hmac: 31cd127c4247fd7008c696a0d88b6cf5ee5cda9a792a5ba4664ef6d6ee9c5c16
+hmac: a058ecff06ecdf31816ed1a320f5e319e855aa5338b45024eb6a18ce215d8a97
 
 ...
