@@ -1,6 +1,6 @@
 load('scripts/drone/utils.star', 'pipeline')
 load('scripts/drone/grabpl.star', 'download_grabpl_step')
-load('scripts/drone/step.star', 'install_deps_step', 'build_step', 'package_step', 'install_release_deps_step', 'generate_md5_checksums')
+load('scripts/drone/step.star', 'install_deps_step', 'build_step', 'package_step')
 load('scripts/drone/promotion.star', 'publish_to_docker', 'publish_release')
 
 def common_steps(skip_errors):
@@ -51,8 +51,6 @@ def promotion_pipeline():
     }
 
     steps=[
-        install_release_deps_step(),
-        generate_md5_checksums(),
         publish_release(),
         publish_to_docker(),
     ]

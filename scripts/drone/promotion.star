@@ -24,10 +24,8 @@ def publish_release():
         'name': 'publish_to_github',
         'image': 'cibuilds/github:0.12',
         'commands': [
+            'apk add --update --no-cache jq',
+            'sh scripts/generate_md5sum.sh',
             'sh scripts/publish_github_release.sh',
         ],
-        'depends_on': [
-            'jq-install',
-            'md5-checksums',
-        ]
     }
