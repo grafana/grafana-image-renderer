@@ -201,7 +201,7 @@ steps:
   - sh scripts/build_push_docker.sh master
   environment:
     DOCKER_PASS:
-      from_secret: docker_user
+      from_secret: docker_pass
     DOCKER_USER:
       from_secret: docker_user
     IMAGE_NAME: grafana/grafana-image-renderer
@@ -295,6 +295,6 @@ get:
 
 ---
 kind: signature
-hmac: 31cd127c4247fd7008c696a0d88b6cf5ee5cda9a792a5ba4664ef6d6ee9c5c16
+hmac: aa6917b257279b824652a096c4dae2f970c97c84c9b1d8869fe5b0fb680880a2
 
 ...
