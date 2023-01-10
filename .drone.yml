@@ -16,21 +16,21 @@ steps:
   - chmod +x bin/grabpl
 
 - name: yarn-install
-  image: grafana/grafana-plugin-ci:1.6.1-alpine
+  image: grafana/grafana-plugin-ci:1.6.1
   commands:
   - yarn install --frozen-lockfile --no-progress
   depends_on:
   - grabpl
 
 - name: yarn-build
-  image: grafana/grafana-plugin-ci:1.6.1-alpine
+  image: grafana/grafana-plugin-ci:1.6.1
   commands:
   - yarn build
   depends_on:
   - yarn-install
 
 - name: package-linux-x64-glibc
-  image: grafana/grafana-plugin-ci:1.6.1-alpine
+  image: grafana/grafana-plugin-ci:1.6.1
   commands:
   - ls
   - ls ./scripts
@@ -41,7 +41,7 @@ steps:
   - yarn-build
 
 - name: package-darwin-x64-unknown
-  image: grafana/grafana-plugin-ci:1.6.1-alpine
+  image: grafana/grafana-plugin-ci:1.6.1
   commands:
   - ls
   - ls ./scripts
@@ -52,7 +52,7 @@ steps:
   - yarn-build
 
 - name: package-win32-x64-unknown
-  image: grafana/grafana-plugin-ci:1.6.1-alpine
+  image: grafana/grafana-plugin-ci:1.6.1
   commands:
   - ls
   - ls ./scripts
@@ -63,7 +63,7 @@ steps:
   - yarn-build
 
 - name: package-linux-x64-glibc-no-chromium
-  image: grafana/grafana-plugin-ci:1.6.1-alpine
+  image: grafana/grafana-plugin-ci:1.6.1
   commands:
   - ls
   - ls ./scripts
@@ -105,21 +105,21 @@ steps:
   - chmod +x bin/grabpl
 
 - name: yarn-install
-  image: grafana/grafana-plugin-ci:1.6.1-alpine
+  image: grafana/grafana-plugin-ci:1.6.1
   commands:
   - yarn install --frozen-lockfile --no-progress
   depends_on:
   - grabpl
 
 - name: yarn-build
-  image: grafana/grafana-plugin-ci:1.6.1-alpine
+  image: grafana/grafana-plugin-ci:1.6.1
   commands:
   - yarn build
   depends_on:
   - yarn-install
 
 - name: package-linux-x64-glibc
-  image: grafana/grafana-plugin-ci:1.6.1-alpine
+  image: grafana/grafana-plugin-ci:1.6.1
   commands:
   - ls
   - ls ./scripts
@@ -130,7 +130,7 @@ steps:
   - yarn-build
 
 - name: package-darwin-x64-unknown
-  image: grafana/grafana-plugin-ci:1.6.1-alpine
+  image: grafana/grafana-plugin-ci:1.6.1
   commands:
   - ls
   - ls ./scripts
@@ -141,7 +141,7 @@ steps:
   - yarn-build
 
 - name: package-win32-x64-unknown
-  image: grafana/grafana-plugin-ci:1.6.1-alpine
+  image: grafana/grafana-plugin-ci:1.6.1
   commands:
   - ls
   - ls ./scripts
@@ -152,7 +152,7 @@ steps:
   - yarn-build
 
 - name: package-linux-x64-glibc-no-chromium
-  image: grafana/grafana-plugin-ci:1.6.1-alpine
+  image: grafana/grafana-plugin-ci:1.6.1
   commands:
   - ls
   - ls ./scripts
@@ -188,7 +188,7 @@ platform:
 
 steps:
 - name: security-scan
-  image: grafana/grafana-plugin-ci:1.6.1-alpine
+  image: grafana/grafana-plugin-ci:1.6.1
   commands:
   - echo "Starting veracode scan..."
   - apk add curl
@@ -241,6 +241,6 @@ get:
 
 ---
 kind: signature
-hmac: a35bf5dd39c9ec47e72d7b3a7e58afb4b3d28210e99414512d3f515af9890dae
+hmac: 03eba8ca1b666c377ab526817e88774dc46ea3ee5a5c54f392f7fcc559ad1254
 
 ...
