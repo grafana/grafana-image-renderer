@@ -1,22 +1,8 @@
-load(
-    'scripts/drone/utils.star',
-    'ci_image',
-)
-
-load(
-    'scripts/drone/grabpl.star',
-    'download_grabpl_step',
-)
-
-load(
-    'scripts/drone/promotion.star',
-    'publish_to_docker',
-)
-
-load(
-    'scripts/drone/utils.star',
-    'pipeline',
-)
+load('scripts/drone/utils.star', 'ci_image')
+load('scripts/drone/grabpl.star', 'download_grabpl_step')
+load('scripts/drone/promotion.star', 'publish_to_docker')
+load('scripts/drone/utils.star', 'pipeline')
+load('scripts/drone/vault.star', 'from_secret')
 
 def install_deps_step():
     return {
@@ -71,6 +57,9 @@ def package_step(arch, name='', skip_chromium=False, override_output='', skip_er
         'depends_on': [
             'yarn-build',
         ],
+        'environment': {
+            'GRAFANA_API_KEY': from_secret('grafana_api_key'),
+        }
     }
 
     return step

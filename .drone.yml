@@ -35,6 +35,9 @@ steps:
   - sh scripts/package_target.sh linux-x64-glibc
   - bin/grabpl build-plugin-manifest ./dist/plugin-linux-x64-glibc || true
   - sh scripts/archive_target.sh linux-x64-glibc
+  environment:
+    GRAFANA_API_KEY:
+      from_secret: grafana_api_key
   depends_on:
   - yarn-build
 
@@ -44,6 +47,9 @@ steps:
   - sh scripts/package_target.sh darwin-x64-unknown
   - bin/grabpl build-plugin-manifest ./dist/plugin-darwin-x64-unknown || true
   - sh scripts/archive_target.sh darwin-x64-unknown
+  environment:
+    GRAFANA_API_KEY:
+      from_secret: grafana_api_key
   depends_on:
   - yarn-build
 
@@ -53,6 +59,9 @@ steps:
   - sh scripts/package_target.sh win32-x64-unknown
   - bin/grabpl build-plugin-manifest ./dist/plugin-win32-x64-unknown || true
   - sh scripts/archive_target.sh win32-x64-unknown
+  environment:
+    GRAFANA_API_KEY:
+      from_secret: grafana_api_key
   depends_on:
   - yarn-build
 
@@ -62,6 +71,9 @@ steps:
   - sh scripts/package_target.sh linux-x64-glibc true plugin-linux-x64-glibc-no-chromium
   - bin/grabpl build-plugin-manifest ./dist/plugin-linux-x64-glibc-no-chromium || true
   - sh scripts/archive_target.sh linux-x64-glibc plugin-linux-x64-glibc-no-chromium
+  environment:
+    GRAFANA_API_KEY:
+      from_secret: grafana_api_key
   depends_on:
   - yarn-build
 
@@ -116,6 +128,9 @@ steps:
   - sh scripts/package_target.sh linux-x64-glibc
   - bin/grabpl build-plugin-manifest ./dist/plugin-linux-x64-glibc
   - sh scripts/archive_target.sh linux-x64-glibc
+  environment:
+    GRAFANA_API_KEY:
+      from_secret: grafana_api_key
   depends_on:
   - yarn-build
 
@@ -125,6 +140,9 @@ steps:
   - sh scripts/package_target.sh darwin-x64-unknown
   - bin/grabpl build-plugin-manifest ./dist/plugin-darwin-x64-unknown
   - sh scripts/archive_target.sh darwin-x64-unknown
+  environment:
+    GRAFANA_API_KEY:
+      from_secret: grafana_api_key
   depends_on:
   - yarn-build
 
@@ -134,6 +152,9 @@ steps:
   - sh scripts/package_target.sh win32-x64-unknown
   - bin/grabpl build-plugin-manifest ./dist/plugin-win32-x64-unknown
   - sh scripts/archive_target.sh win32-x64-unknown
+  environment:
+    GRAFANA_API_KEY:
+      from_secret: grafana_api_key
   depends_on:
   - yarn-build
 
@@ -143,6 +164,9 @@ steps:
   - sh scripts/package_target.sh linux-x64-glibc true plugin-linux-x64-glibc-no-chromium
   - bin/grabpl build-plugin-manifest ./dist/plugin-linux-x64-glibc-no-chromium
   - sh scripts/archive_target.sh linux-x64-glibc plugin-linux-x64-glibc-no-chromium
+  environment:
+    GRAFANA_API_KEY:
+      from_secret: grafana_api_key
   depends_on:
   - yarn-build
 
@@ -224,7 +248,15 @@ get:
   name: .dockerconfigjson
 
 ---
+kind: secret
+name: grafana_api_key
+
+get:
+  path: infra/data/ci/drone-plugins
+  name: grafana_api_key
+
+---
 kind: signature
-hmac: 05a230dac5d0a3e4e8eb3f9102395ca5a46afc77ccbab34b364f2399889b619a
+hmac: 64dada0b78c9a63599c32666b217d486d1acd7bd11f692597bfdea5f969269d2
 
 ...
