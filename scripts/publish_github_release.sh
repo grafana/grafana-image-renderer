@@ -20,8 +20,12 @@ fi
 
 git config user.email "eng@grafana.com"
 git config user.name "Drone Automation"
+
+echo "Pushing tag v${VERSION}..."
 git tag v"${VERSION}"
 git push origin v"${VERSION}"
+
+echo "Pushing multiple artifacts to release v${VERSION}..."
 ghr \
   -u "${DRONE_REPO_OWNER}" \
   -r "${DRONE_REPO_NAME}" \
