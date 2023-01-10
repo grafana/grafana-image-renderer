@@ -49,6 +49,8 @@ def package_step(arch, name='', skip_chromium=False, override_output='', skip_er
         'name': name,
         'image': ci_image,
         'commands': [
+            'ls',
+            'ls ./scripts',
             pkg_cmd,
             bpm_cmd,
             arc_cmd,

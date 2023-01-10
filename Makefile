@@ -43,6 +43,3 @@ drone:
 	drone starlark --format
 	drone lint .drone.yml --trusted
 	drone --server https://drone.grafana.net sign --save grafana/grafana-image-renderer
-
-format-drone:
-	black --include '\.star$$' -S scripts/drone/ .drone.star
