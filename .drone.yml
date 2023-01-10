@@ -95,6 +95,7 @@ trigger:
 ---
 kind: pipeline
 type: docker
+name: build-master
 
 platform:
   os: linux
@@ -295,6 +296,6 @@ get:
 
 ---
 kind: signature
-hmac: aa6917b257279b824652a096c4dae2f970c97c84c9b1d8869fe5b0fb680880a2
+hmac: a435985cc3d937d74cdefce5f937764a62a3a4b6349667dbc4330f698f04bcf3
 
 ...

@@ -38,7 +38,7 @@ def master_pipeline():
 
     return [
         pipeline(
-            name='',
+            name='build-master',
             trigger=trigger,
             steps=common_steps(False)
         )
