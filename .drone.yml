@@ -95,6 +95,7 @@ trigger:
 ---
 kind: pipeline
 type: docker
+name: test-master
 
 platform:
   os: linux
@@ -201,7 +202,7 @@ steps:
   - sh scripts/build_push_docker.sh master
   environment:
     DOCKER_PASS:
-      from_secret: docker_user
+      from_secret: docker_pass
     DOCKER_USER:
       from_secret: docker_user
     IMAGE_NAME: grafana/grafana-image-renderer
@@ -295,6 +296,6 @@ get:
 
 ---
 kind: signature
-hmac: a058ecff06ecdf31816ed1a320f5e319e855aa5338b45024eb6a18ce215d8a97
+hmac: 88861d9c58f23ca35c8706cc6707510923f495047140898716e187b5ae10054a
 
 ...
