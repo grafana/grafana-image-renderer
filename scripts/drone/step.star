@@ -63,28 +63,3 @@ def package_step(arch, name='', skip_chromium=False, override_output='', skip_er
     }
 
     return step
-
-def promotion():
-    trigger = {
-        'target': [
-            'production',
-        ],
-        'event': [
-            'promote',
-        ]
-    }
-
-    steps=[
-        download_grabpl_step(),
-        install_deps_step(),
-        build_step(),
-        publish_to_docker()
-    ]
-
-    return [
-        pipeline(
-            name='publish_docker',
-            trigger=trigger,
-            steps=steps
-        )
-    ]

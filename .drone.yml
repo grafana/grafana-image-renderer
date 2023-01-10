@@ -188,6 +188,44 @@ trigger:
 ---
 kind: pipeline
 type: docker
+name: release
+
+platform:
+  os: linux
+  arch: amd64
+
+steps:
+- name: publish_to_docker
+  image: google/cloud-sdk
+  commands:
+  - sh scripts/build_push_docker.sh master
+  environment:
+    DOCKER_PASS:
+      from_secret: docker_user
+    DOCKER_USER:
+      from_secret: docker_user
+    IMAGE_NAME: grafana/grafana-image-renderer
+
+volumes:
+- name: docker
+  host:
+    path: /var/run/docker.sock
+
+image_pull_secrets:
+- dockerconfigjson
+
+node:
+  type: no-parallel
+
+trigger:
+  event:
+  - promote
+  target:
+  - release
+
+---
+kind: pipeline
+type: docker
 name: perform-srcclr-scan
 
 platform:
@@ -257,6 +295,6 @@ get:
 
 ---
 kind: signature
-hmac: 64dada0b78c9a63599c32666b217d486d1acd7bd11f692597bfdea5f969269d2
+hmac: 31cd127c4247fd7008c696a0d88b6cf5ee5cda9a792a5ba4664ef6d6ee9c5c16
 
 ...
