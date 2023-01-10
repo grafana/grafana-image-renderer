@@ -10,12 +10,11 @@ else
 fi
 
 echo "building ${TAG}"
-docker build -t ${IMAGE_NAME}:${TAG} .
-
 echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
-docker push ${IMAGE_NAME}:${TAG}
-
+tags=()
+tags+=${IMAGE_NAME}:${TAG}
 if [[ $TAG != *"beta"* ]] && [[ $TAG != *"master"* ]]; then
-  docker tag ${IMAGE_NAME}:${TAG} ${IMAGE_NAME}:latest
-  docker push ${IMAGE_NAME}:latest
+  tags+={IMAGE_NAME}:latest
 fi
+
+docker buildx build --platform linux/amd64,linux/arm64 --push -t ${tags[@]} .
