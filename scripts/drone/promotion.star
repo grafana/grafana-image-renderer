@@ -1,4 +1,4 @@
-load('scripts/drone/utils.star', 'docker_image', 'ci_image')
+load('scripts/drone/utils.star', 'docker_image', 'ci_image', 'publisher_image')
 load('scripts/drone/vault.star', 'from_secret')
 
 def publish_to_docker():
@@ -16,15 +16,7 @@ def publish_to_docker():
         'volumes': [{'name': 'docker', 'path': '/var/run/docker.sock'}],
     }
 
-def package_steps():
-    return [
-        'package-linux-x64-glibc',
-        'package-darwin-x64-unknown',
-        'package-win32-x64-unknown',
-        'package-linux-x64-glibc-no-chromium',
-    ]
-
-def publish_release():
+def publish_gh_release():
     return {
         'name': 'publish_to_github',
         'image': ci_image,
@@ -32,16 +24,31 @@ def publish_release():
             'sh scripts/generate_md5sum.sh',
             'sh scripts/publish_github_release.sh',
         ],
-        'depends_on': package_steps(),
+        'environment': {
+            'IMAGE_NAME': docker_image,
+            'DOCKER_USER': from_secret('docker_user'),
+            'DOCKER_PASS': from_secret('docker_pass'),
+        },
+        'depends_on': [
+            'package-linux-x64-glibc',
+            'package-darwin-x64-unknown',
+            'package-win32-x64-unknown',
+            'package-linux-x64-glibc-no-chromium',
+        ],
     }
 
-def publish_to_grafana():
+def publish_to_gcom():
     return {
-        'name': 'publish_to_grafana',
+        'name': 'publish_to_gcom',
         'image': ci_image,
         'commands': [
             'yarn run create-gcom-plugin-json ${DRONE_COMMIT}',
             'sh scripts/push-to-gcom.sh',
         ],
-        'depends_on': package_steps(),
+        'environment': {
+            'GCOM_URL': from_secret('gcom_url'),
+            'GCOM_UAGENT': from_secret('gcom_uagent'),
+            'GCOM_PUBLISH_TOKEN': from_secret('gcom_publish_token'),
+        },
+        'depends_on': ['publish_to_github'],
     }

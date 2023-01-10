@@ -267,17 +267,6 @@ steps:
   depends_on:
   - yarn-build
 
-- name: publish_to_github
-  image: grafana/grafana-plugin-ci:1.6.1-alpine
-  commands:
-  - sh scripts/generate_md5sum.sh
-  - sh scripts/publish_github_release.sh
-  depends_on:
-  - package-linux-x64-glibc
-  - package-darwin-x64-unknown
-  - package-win32-x64-unknown
-  - package-linux-x64-glibc-no-chromium
-
 - name: publish_to_docker
   image: google/cloud-sdk:412.0.0
   commands:
@@ -292,16 +281,37 @@ steps:
   - name: docker
     path: /var/run/docker.sock
 
-- name: publish_to_grafana
+- name: publish_to_github
   image: grafana/grafana-plugin-ci:1.6.1-alpine
   commands:
-  - yarn run create-gcom-plugin-json ${DRONE_COMMIT}
-  - sh scripts/push-to-gcom.sh
+  - sh scripts/generate_md5sum.sh
+  - sh scripts/publish_github_release.sh
+  environment:
+    DOCKER_PASS:
+      from_secret: docker_pass
+    DOCKER_USER:
+      from_secret: docker_user
+    IMAGE_NAME: grafana/grafana-image-renderer
   depends_on:
   - package-linux-x64-glibc
   - package-darwin-x64-unknown
   - package-win32-x64-unknown
   - package-linux-x64-glibc-no-chromium
+
+- name: publish_to_gcom
+  image: grafana/grafana-plugin-ci:1.6.1-alpine
+  commands:
+  - yarn run create-gcom-plugin-json ${DRONE_COMMIT}
+  - sh scripts/push-to-gcom.sh
+  environment:
+    GCOM_PUBLISH_TOKEN:
+      from_secret: gcom_publish_token
+    GCOM_UAGENT:
+      from_secret: gcom_uagent
+    GCOM_URL:
+      from_secret: gcom_url
+  depends_on:
+  - publish_to_github
 
 volumes:
 - name: docker
@@ -376,6 +386,14 @@ get:
 
 ---
 kind: secret
+name: gcom_publish_token
+
+get:
+  path: infra/data/ci/drone-plugins
+  name: gcom_publish_token
+
+---
+kind: secret
 name: grafana_api_key
 
 get:
@@ -392,6 +410,6 @@ get:
 
 ---
 kind: signature
-hmac: 42c8e9537ca0762b597ac85ac13cb08e5a6dbe43c8487174d82a19602a9208d5
+hmac: 3444d9d29bcdbebe61fda66f9094607f9b82eb14eafef088eec1817624bbe304
 
 ...
