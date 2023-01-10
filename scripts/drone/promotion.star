@@ -1,4 +1,4 @@
-load('scripts/drone/utils.star', 'docker_image')
+load('scripts/drone/utils.star', 'docker_image', 'ci_image')
 load('scripts/drone/vault.star', 'from_secret')
 
 def publish_to_docker():
@@ -22,7 +22,7 @@ def publish_to_docker():
 def publish_release():
     return {
         'name': 'publish_to_github',
-        'image': 'cibuilds/github:0.12',
+        'image': ci_image,
         'commands': [
             'apk add --update --no-cache jq',
             'sh scripts/generate_md5sum.sh',

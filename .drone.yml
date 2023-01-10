@@ -196,8 +196,77 @@ platform:
   arch: amd64
 
 steps:
+- name: grabpl
+  image: byrnedo/alpine-curl:0.1.8
+  commands:
+  - mkdir -p bin
+  - curl -fL -o bin/grabpl https://grafana-downloads.storage.googleapis.com/grafana-build-pipeline/v3.0.20/grabpl
+  - chmod +x bin/grabpl
+
+- name: yarn-install
+  image: grafana/grafana-plugin-ci:1.6.1-alpine
+  commands:
+  - yarn install --frozen-lockfile --no-progress
+  depends_on:
+  - grabpl
+
+- name: yarn-build
+  image: grafana/grafana-plugin-ci:1.6.1-alpine
+  commands:
+  - yarn build
+  depends_on:
+  - yarn-install
+
+- name: package-linux-x64-glibc
+  image: grafana/grafana-plugin-ci:1.6.1-alpine
+  commands:
+  - sh scripts/package_target.sh linux-x64-glibc
+  - bin/grabpl build-plugin-manifest ./dist/plugin-linux-x64-glibc
+  - sh scripts/archive_target.sh linux-x64-glibc
+  environment:
+    GRAFANA_API_KEY:
+      from_secret: grafana_api_key
+  depends_on:
+  - yarn-build
+
+- name: package-darwin-x64-unknown
+  image: grafana/grafana-plugin-ci:1.6.1-alpine
+  commands:
+  - sh scripts/package_target.sh darwin-x64-unknown
+  - bin/grabpl build-plugin-manifest ./dist/plugin-darwin-x64-unknown
+  - sh scripts/archive_target.sh darwin-x64-unknown
+  environment:
+    GRAFANA_API_KEY:
+      from_secret: grafana_api_key
+  depends_on:
+  - yarn-build
+
+- name: package-win32-x64-unknown
+  image: grafana/grafana-plugin-ci:1.6.1-alpine
+  commands:
+  - sh scripts/package_target.sh win32-x64-unknown
+  - bin/grabpl build-plugin-manifest ./dist/plugin-win32-x64-unknown
+  - sh scripts/archive_target.sh win32-x64-unknown
+  environment:
+    GRAFANA_API_KEY:
+      from_secret: grafana_api_key
+  depends_on:
+  - yarn-build
+
+- name: package-linux-x64-glibc-no-chromium
+  image: grafana/grafana-plugin-ci:1.6.1-alpine
+  commands:
+  - sh scripts/package_target.sh linux-x64-glibc true plugin-linux-x64-glibc-no-chromium
+  - bin/grabpl build-plugin-manifest ./dist/plugin-linux-x64-glibc-no-chromium
+  - sh scripts/archive_target.sh linux-x64-glibc plugin-linux-x64-glibc-no-chromium
+  environment:
+    GRAFANA_API_KEY:
+      from_secret: grafana_api_key
+  depends_on:
+  - yarn-build
+
 - name: publish_to_github
-  image: cibuilds/github:0.12
+  image: grafana/grafana-plugin-ci:1.6.1-alpine
   commands:
   - apk add --update --no-cache jq
   - sh scripts/generate_md5sum.sh
@@ -276,27 +345,19 @@ trigger:
 
 ---
 kind: secret
-name: github_token
-
-get:
-  path: infra/data/ci/drone-plugins
-  name: github_token
-
----
-kind: secret
-name: srcclr_api_token
-
-get:
-  path: infra/data/ci/drone-plugins
-  name: srcclr_api_token
-
----
-kind: secret
 name: dockerconfigjson
 
 get:
   path: secret/data/common/gcr
   name: .dockerconfigjson
+
+---
+kind: secret
+name: github_token
+
+get:
+  path: infra/data/ci/drone-plugins
+  name: github_token
 
 ---
 kind: secret
@@ -307,7 +368,15 @@ get:
   name: grafana_api_key
 
 ---
+kind: secret
+name: srcclr_api_token
+
+get:
+  path: infra/data/ci/drone-plugins
+  name: srcclr_api_token
+
+---
 kind: signature
-hmac: 53963655468642e3c08a7e60c18ea2cafe0e41919b7df49e3de09ba550678836
+hmac: 1ed0688166414a198c40f5bca3b351f8637310923c76e16d54de9d5b7c0b52f0
 
 ...

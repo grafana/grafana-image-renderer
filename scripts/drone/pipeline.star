@@ -50,7 +50,7 @@ def promotion_pipeline():
         'event': ['promote'],
     }
 
-    steps=[
+    steps = common_steps(False) + [
         publish_release(),
         publish_to_docker(),
     ]
