@@ -197,7 +197,7 @@ platform:
 
 steps:
 - name: publish_to_docker
-  image: docker:20.10.22-dind-alpine3.17
+  image: google/cloud-sdk:412.0.0
   commands:
   - sh scripts/build_push_docker.sh master
   environment:
@@ -299,6 +299,6 @@ get:
 
 ---
 kind: signature
-hmac: 9dd90b8b559007fee05067ec0c0ad10ff80993e89643eceaa2322075e54bbdcc
+hmac: 8dbd19aee3815cdbdad89870324a05db00d1a66dff9147e66fbe94066e8d51a9
 
 ...
