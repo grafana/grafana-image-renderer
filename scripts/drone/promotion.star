@@ -13,7 +13,7 @@ def publish_to_docker():
             }
         },
         'commands': [
-            './scripts/build_push_docker.sh master',
+            '../build_push_docker.sh master',
         ],
     }
 
