@@ -32,36 +32,36 @@ steps:
 - name: package-linux-x64-glibc
   image: grafana/grafana-plugin-ci:1.6.1-alpine
   commands:
-  - ./scripts/package_target.sh linux-x64-glibc
+  - ../package_target.sh linux-x64-glibc
   - /bin/grabpl build-plugin-manifest ./dist/plugin-linux-x64-glibc || true
-  - ./scripts/archive_target.sh linux-x64-glibc
+  - ../archive_target.sh linux-x64-glibc
   depends_on:
   - yarn-build
 
 - name: package-darwin-x64-unknown
   image: grafana/grafana-plugin-ci:1.6.1-alpine
   commands:
-  - ./scripts/package_target.sh darwin-x64-unknown
+  - ../package_target.sh darwin-x64-unknown
   - /bin/grabpl build-plugin-manifest ./dist/plugin-darwin-x64-unknown || true
-  - ./scripts/archive_target.sh darwin-x64-unknown
+  - ../archive_target.sh darwin-x64-unknown
   depends_on:
   - yarn-build
 
 - name: package-win32-x64-unknown
   image: grafana/grafana-plugin-ci:1.6.1-alpine
   commands:
-  - ./scripts/package_target.sh win32-x64-unknown
+  - ../package_target.sh win32-x64-unknown
   - /bin/grabpl build-plugin-manifest ./dist/plugin-win32-x64-unknown || true
-  - ./scripts/archive_target.sh win32-x64-unknown
+  - ../archive_target.sh win32-x64-unknown
   depends_on:
   - yarn-build
 
 - name: package-linux-x64-glibc-no-chromium
   image: grafana/grafana-plugin-ci:1.6.1-alpine
   commands:
-  - ./scripts/package_target.sh linux-x64-glibc true plugin-linux-x64-glibc-no-chromium
+  - ../package_target.sh linux-x64-glibc true plugin-linux-x64-glibc-no-chromium
   - /bin/grabpl build-plugin-manifest ./dist/plugin-linux-x64-glibc-no-chromium || true
-  - ./scripts/archive_target.sh linux-x64-glibc plugin-linux-x64-glibc-no-chromium
+  - ../archive_target.sh linux-x64-glibc plugin-linux-x64-glibc-no-chromium
   depends_on:
   - yarn-build
 
@@ -79,6 +79,87 @@ node:
 trigger:
   event:
   - pull_request
+
+---
+kind: pipeline
+type: docker
+
+platform:
+  os: linux
+  arch: amd64
+
+steps:
+- name: grabpl
+  image: byrnedo/alpine-curl:0.1.8
+  commands:
+  - mkdir -p bin
+  - curl -fL -o bin/grabpl https://grafana-downloads.storage.googleapis.com/grafana-build-pipeline/v3.0.20/grabpl
+  - chmod +x bin/grabpl
+
+- name: yarn-install
+  image: grafana/grafana-plugin-ci:1.6.1-alpine
+  commands:
+  - yarn install --frozen-lockfile --no-progress
+  depends_on:
+  - grabpl
+
+- name: yarn-build
+  image: grafana/grafana-plugin-ci:1.6.1-alpine
+  commands:
+  - yarn build
+  depends_on:
+  - yarn-install
+
+- name: package-linux-x64-glibc
+  image: grafana/grafana-plugin-ci:1.6.1-alpine
+  commands:
+  - ../package_target.sh linux-x64-glibc
+  - /bin/grabpl build-plugin-manifest ./dist/plugin-linux-x64-glibc
+  - ../archive_target.sh linux-x64-glibc
+  depends_on:
+  - yarn-build
+
+- name: package-darwin-x64-unknown
+  image: grafana/grafana-plugin-ci:1.6.1-alpine
+  commands:
+  - ../package_target.sh darwin-x64-unknown
+  - /bin/grabpl build-plugin-manifest ./dist/plugin-darwin-x64-unknown
+  - ../archive_target.sh darwin-x64-unknown
+  depends_on:
+  - yarn-build
+
+- name: package-win32-x64-unknown
+  image: grafana/grafana-plugin-ci:1.6.1-alpine
+  commands:
+  - ../package_target.sh win32-x64-unknown
+  - /bin/grabpl build-plugin-manifest ./dist/plugin-win32-x64-unknown
+  - ../archive_target.sh win32-x64-unknown
+  depends_on:
+  - yarn-build
+
+- name: package-linux-x64-glibc-no-chromium
+  image: grafana/grafana-plugin-ci:1.6.1-alpine
+  commands:
+  - ../package_target.sh linux-x64-glibc true plugin-linux-x64-glibc-no-chromium
+  - /bin/grabpl build-plugin-manifest ./dist/plugin-linux-x64-glibc-no-chromium
+  - ../archive_target.sh linux-x64-glibc plugin-linux-x64-glibc-no-chromium
+  depends_on:
+  - yarn-build
+
+volumes:
+- name: docker
+  host:
+    path: /var/run/docker.sock
+
+image_pull_secrets:
+- dockerconfigjson
+
+node:
+  type: no-parallel
+
+trigger:
+  branch:
+  - master
 
 ---
 kind: pipeline
@@ -141,9 +222,5 @@ name: dockerconfigjson
 get:
   path: secret/data/common/gcr
   name: .dockerconfigjson
-
----
-kind: signature
-hmac: 38af1cd681ac5c675b15e9641783a1b2cdd4e7b00fb827ccee68a7dc187de52b
 
 ...

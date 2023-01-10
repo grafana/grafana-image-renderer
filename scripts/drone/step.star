@@ -3,6 +3,21 @@ load(
     'ci_image',
 )
 
+load(
+    'scripts/drone/grabpl.star',
+    'download_grabpl_step',
+)
+
+load(
+    'scripts/drone/promotion.star',
+    'publish_to_docker',
+)
+
+load(
+    'scripts/drone/utils.star',
+    'pipeline',
+)
+
 def install_deps_step():
     return {
         'name': 'yarn-install',
@@ -79,8 +94,8 @@ def promotion():
 
     return [
         pipeline(
-            name='publish_docker'
-            trigger=trigger
+            name='publish_docker',
+            trigger=trigger,
             steps=steps
         )
     ]
