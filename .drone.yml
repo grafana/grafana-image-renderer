@@ -32,36 +32,36 @@ steps:
 - name: package-linux-x64-glibc
   image: grafana/grafana-plugin-ci:1.6.1-alpine
   commands:
-  - ../package_target.sh linux-x64-glibc
+  - sh scripts/package_target.sh linux-x64-glibc
   - /bin/grabpl build-plugin-manifest ./dist/plugin-linux-x64-glibc || true
-  - ../archive_target.sh linux-x64-glibc
+  - sh scripts/archive_target.sh linux-x64-glibc
   depends_on:
   - yarn-build
 
 - name: package-darwin-x64-unknown
   image: grafana/grafana-plugin-ci:1.6.1-alpine
   commands:
-  - ../package_target.sh darwin-x64-unknown
+  - sh scripts/package_target.sh darwin-x64-unknown
   - /bin/grabpl build-plugin-manifest ./dist/plugin-darwin-x64-unknown || true
-  - ../archive_target.sh darwin-x64-unknown
+  - sh scripts/archive_target.sh darwin-x64-unknown
   depends_on:
   - yarn-build
 
 - name: package-win32-x64-unknown
   image: grafana/grafana-plugin-ci:1.6.1-alpine
   commands:
-  - ../package_target.sh win32-x64-unknown
+  - sh scripts/package_target.sh win32-x64-unknown
   - /bin/grabpl build-plugin-manifest ./dist/plugin-win32-x64-unknown || true
-  - ../archive_target.sh win32-x64-unknown
+  - sh scripts/archive_target.sh win32-x64-unknown
   depends_on:
   - yarn-build
 
 - name: package-linux-x64-glibc-no-chromium
   image: grafana/grafana-plugin-ci:1.6.1-alpine
   commands:
-  - ../package_target.sh linux-x64-glibc true plugin-linux-x64-glibc-no-chromium
+  - sh scripts/package_target.sh linux-x64-glibc true plugin-linux-x64-glibc-no-chromium
   - /bin/grabpl build-plugin-manifest ./dist/plugin-linux-x64-glibc-no-chromium || true
-  - ../archive_target.sh linux-x64-glibc plugin-linux-x64-glibc-no-chromium
+  - sh scripts/archive_target.sh linux-x64-glibc plugin-linux-x64-glibc-no-chromium
   depends_on:
   - yarn-build
 
@@ -113,36 +113,36 @@ steps:
 - name: package-linux-x64-glibc
   image: grafana/grafana-plugin-ci:1.6.1-alpine
   commands:
-  - ../package_target.sh linux-x64-glibc
+  - sh scripts/package_target.sh linux-x64-glibc
   - /bin/grabpl build-plugin-manifest ./dist/plugin-linux-x64-glibc
-  - ../archive_target.sh linux-x64-glibc
+  - sh scripts/archive_target.sh linux-x64-glibc
   depends_on:
   - yarn-build
 
 - name: package-darwin-x64-unknown
   image: grafana/grafana-plugin-ci:1.6.1-alpine
   commands:
-  - ../package_target.sh darwin-x64-unknown
+  - sh scripts/package_target.sh darwin-x64-unknown
   - /bin/grabpl build-plugin-manifest ./dist/plugin-darwin-x64-unknown
-  - ../archive_target.sh darwin-x64-unknown
+  - sh scripts/archive_target.sh darwin-x64-unknown
   depends_on:
   - yarn-build
 
 - name: package-win32-x64-unknown
   image: grafana/grafana-plugin-ci:1.6.1-alpine
   commands:
-  - ../package_target.sh win32-x64-unknown
+  - sh scripts/package_target.sh win32-x64-unknown
   - /bin/grabpl build-plugin-manifest ./dist/plugin-win32-x64-unknown
-  - ../archive_target.sh win32-x64-unknown
+  - sh scripts/archive_target.sh win32-x64-unknown
   depends_on:
   - yarn-build
 
 - name: package-linux-x64-glibc-no-chromium
   image: grafana/grafana-plugin-ci:1.6.1-alpine
   commands:
-  - ../package_target.sh linux-x64-glibc true plugin-linux-x64-glibc-no-chromium
+  - sh scripts/package_target.sh linux-x64-glibc true plugin-linux-x64-glibc-no-chromium
   - /bin/grabpl build-plugin-manifest ./dist/plugin-linux-x64-glibc-no-chromium
-  - ../archive_target.sh linux-x64-glibc plugin-linux-x64-glibc-no-chromium
+  - sh scripts/archive_target.sh linux-x64-glibc plugin-linux-x64-glibc-no-chromium
   depends_on:
   - yarn-build
 
@@ -225,6 +225,6 @@ get:
 
 ---
 kind: signature
-hmac: 95818b246d4aeea7bf1a2b9132bf445927f712bef20d9e6fd63f0f292029beff
+hmac: 0ddabfbde64d8dc5f08930d2352efd194f80e47e528b576c10beddac5708df3f
 
 ...

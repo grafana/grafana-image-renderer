@@ -4,8 +4,7 @@
 # 3. Run `make drone`
 # More information about this process here: https://github.com/grafana/deployment_tools/blob/master/docs/infrastructure/drone/signing.md
 
-load('scripts/drone/prs.star', 'prs_pipeline')
-load('scripts/drone/prs.star', 'master_pipeline')
+load('scripts/drone/prs.star', 'prs_pipeline', 'master_pipeline')
 load('scripts/drone/security.star', 'security_pipeline')
 load('scripts/drone/vault.star', 'secrets')
 

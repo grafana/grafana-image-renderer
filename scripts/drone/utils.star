@@ -6,7 +6,6 @@ load(
 ci_image = 'grafana/grafana-plugin-ci:1.6.1-alpine'
 docker_image = 'grafana/grafana-image-renderer'
 
-
 def pipeline(
     name,
     trigger,
