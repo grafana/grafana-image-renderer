@@ -271,6 +271,11 @@ steps:
   - apk add --update --no-cache jq
   - sh scripts/generate_md5sum.sh
   - sh scripts/publish_github_release.sh
+  depends_on:
+  - package-linux-x64-glibc
+  - package-darwin-x64-unknown
+  - package-win32-x64-unknown
+  - package-linux-x64-glibc-no-chromium
 
 - name: publish_to_docker
   image: google/cloud-sdk:412.0.0
@@ -285,8 +290,6 @@ steps:
   volumes:
   - name: docker
     path: /var/run/docker.sock
-  depends_on:
-  - publish_to_github
 
 volumes:
 - name: docker
@@ -377,6 +380,6 @@ get:
 
 ---
 kind: signature
-hmac: 1ed0688166414a198c40f5bca3b351f8637310923c76e16d54de9d5b7c0b52f0
+hmac: 200b516235d013bfb7a92622c12321bc54aa90804210cf0be826ba53ff61c310
 
 ...

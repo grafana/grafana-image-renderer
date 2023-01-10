@@ -14,9 +14,6 @@ def publish_to_docker():
             'sh scripts/build_push_docker.sh master',
         ],
         'volumes': [{'name': 'docker', 'path': '/var/run/docker.sock'}],
-        'depends_on': [
-            'publish_to_github',
-        ]
     }
 
 def publish_release():
@@ -27,5 +24,11 @@ def publish_release():
             'apk add --update --no-cache jq',
             'sh scripts/generate_md5sum.sh',
             'sh scripts/publish_github_release.sh',
+        ],
+        'depends_on': [
+            'package-linux-x64-glibc',
+            'package-darwin-x64-unknown',
+            'package-win32-x64-unknown',
+            'package-linux-x64-glibc-no-chromium',
         ],
     }
