@@ -25,9 +25,7 @@ def publish_gh_release():
             'sh scripts/publish_github_release.sh',
         ],
         'environment': {
-            'IMAGE_NAME': docker_image,
-            'DOCKER_USER': from_secret('docker_user'),
-            'DOCKER_PASS': from_secret('docker_pass'),
+            'GITHUB_TOKEN': from_secret('github_token'),
         },
         'depends_on': [
             'package-linux-x64-glibc',

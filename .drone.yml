@@ -287,11 +287,8 @@ steps:
   - sh scripts/generate_md5sum.sh
   - sh scripts/publish_github_release.sh
   environment:
-    DOCKER_PASS:
-      from_secret: docker_pass
-    DOCKER_USER:
-      from_secret: docker_user
-    IMAGE_NAME: grafana/grafana-image-renderer
+    GITHUB_TOKEN:
+      from_secret: github_token
   depends_on:
   - package-linux-x64-glibc
   - package-darwin-x64-unknown
@@ -410,6 +407,6 @@ get:
 
 ---
 kind: signature
-hmac: 3444d9d29bcdbebe61fda66f9094607f9b82eb14eafef088eec1817624bbe304
+hmac: 912e7d76388a20cb582fa5ee5ff07e397ebb2a2ba135496088505b8fd1ca56e1
 
 ...
