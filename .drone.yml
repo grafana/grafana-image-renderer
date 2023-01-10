@@ -206,6 +206,9 @@ steps:
     DOCKER_USER:
       from_secret: docker_user
     IMAGE_NAME: grafana/grafana-image-renderer
+  volumes:
+  - name: docker
+    path: /var/run/docker.sock
 
 volumes:
 - name: docker
@@ -296,6 +299,6 @@ get:
 
 ---
 kind: signature
-hmac: 158a5f8ccd546595e8ae5d73d91ce1805dfa48484482010a1ae91672139805c1
+hmac: 9dd90b8b559007fee05067ec0c0ad10ff80993e89643eceaa2322075e54bbdcc
 
 ...

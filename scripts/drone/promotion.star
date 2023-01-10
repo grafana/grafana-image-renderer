@@ -13,6 +13,7 @@ def publish_to_docker():
         'commands': [
             'sh scripts/build_push_docker.sh master',
         ],
+        'volumes': [{'name': 'docker', 'path': '/var/run/docker.sock'}],
     }
 
 def publish_release():
