@@ -203,7 +203,7 @@ steps:
   depends_on:
   - yarn-build
 
-- name: publish_to_docker
+- name: publish_to_docker_master
   image: google/cloud-sdk:412.0.0
   commands:
   - sh scripts/build_push_docker.sh master
@@ -329,20 +329,6 @@ steps:
   depends_on:
   - yarn-build
 
-- name: publish_to_docker
-  image: google/cloud-sdk:412.0.0
-  commands:
-  - sh scripts/build_push_docker.sh
-  environment:
-    DOCKER_PASS:
-      from_secret: docker_pass
-    DOCKER_USER:
-      from_secret: docker_user
-    IMAGE_NAME: grafana/grafana-image-renderer
-  volumes:
-  - name: docker
-    path: /var/run/docker.sock
-
 - name: publish_to_github
   image: cibuilds/github:0.13.0
   commands:
@@ -356,6 +342,22 @@ steps:
   - package-darwin-x64-unknown
   - package-win32-x64-unknown
   - package-linux-x64-glibc-no-chromium
+
+- name: publish_to_docker
+  image: google/cloud-sdk:412.0.0
+  commands:
+  - sh scripts/build_push_docker.sh
+  environment:
+    DOCKER_PASS:
+      from_secret: docker_pass
+    DOCKER_USER:
+      from_secret: docker_user
+    IMAGE_NAME: grafana/grafana-image-renderer
+  volumes:
+  - name: docker
+    path: /var/run/docker.sock
+  depends_on:
+  - publish_to_github
 
 - name: publish_to_gcom
   image: grafana/grafana-plugin-ci:1.6.1-alpine
@@ -433,6 +435,6 @@ get:
 
 ---
 kind: signature
-hmac: 36c52cfc80bf193859f112b30491d0eb811765cfe81cf0c047c154ca3ab4ec8f
+hmac: 2f8b0d424bdf31b5cf14233702e70f2c3bc8297525d89d08810a049289551865
 
 ...
