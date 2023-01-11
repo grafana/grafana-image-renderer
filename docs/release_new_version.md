@@ -22,14 +22,10 @@
 
 ## Publish plugin to Grafana.com
 
-1. Once the GitHub release is created, run `yarn run create-gcom-plugin-json <release commit>`.
+Since the [migration to Drone](https://github.com/grafana/grafana-image-renderer/pull/394), this step that historically
+was needed to be performed manually is no longer required and is automatically performed by `publish_to_gcom` step.
 
-2. Push to grafana.com via `./scripts/push-to-gcom.sh` or:
-```bash
-JSON=$(cat ./scripts/tmp/plugin.json) gcom /plugins -X POST -H "Content-Type: application/json" -d $JSON
-```
-
-Note: The command will time-out, but the plugin update process will continue in the background.
+**Note:** The step will time out, but the plugin update process will continue in the background.
 
 ```
 <html>
@@ -41,4 +37,4 @@ Note: The command will time-out, but the plugin update process will continue in 
 </html>
 ```
 
-3. Inform HG team about the new release.
+Finally, please recall to inform HG team about the new release.
