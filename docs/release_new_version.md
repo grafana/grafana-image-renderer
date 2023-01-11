@@ -8,13 +8,17 @@
 1. Update `version` and `updated` properties in plugin.json.
 2. Update CHANGELOG.md.
 3. Merge/push changes to master.
-4. Commit is built in [CircleCI](https://circleci.com/gh/grafana/grafana-image-renderer).
+4. Commit is built in [Drone](https://drone.grafana.net/grafana/grafana-image-renderer).
 
-## Approve Release
+## Promote release
 
-1. Open [CircleCI](https://circleci.com/gh/grafana/grafana-image-renderer) and find your commit.
-2. Click on `build-master` workflow link for your commit and verify build and package steps are successful (green).
-4. Click on `approve-release` and approve to create GitHub release and publish docker image to Docker Hub.
+1. Open [Drone](https://drone.grafana.net/grafana/grafana-image-renderer) and find the build for your commit.
+2. Click on the `...` from the top-right corner to display the menu, then click on `Promote`.
+3. Fill the `Create deployment` form with the values below, and click on `Deploy`:
+    - `Type` = `Promote`
+    - `Target` = `release` *(write it manually)*
+    - *(no parameters needed)*
+4. Once you've clicked on `Deploy` it will trigger a new pipeline with the release steps.
 
 ## Publish plugin to Grafana.com
 
