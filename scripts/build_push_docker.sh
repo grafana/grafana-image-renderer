@@ -6,6 +6,7 @@ TAG=''
 if [ "$1" = "master" ]; then
   TAG="master-$(git rev-parse --short HEAD)"
 else
+  git fetch --tags
   TAG=$(git describe --tags --abbrev=0 | cut -d "v" -f 2)
 fi
 
