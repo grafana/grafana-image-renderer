@@ -1,7 +1,18 @@
 load('scripts/drone/utils.star', 'docker_image', 'ci_image', 'publisher_image')
 load('scripts/drone/vault.star', 'from_secret')
 
-def publish_to_docker():
+def publish_to_docker_master():
+    return publish_to_docker(master=True)
+
+def publish_to_docker_release():
+    return publish_to_docker(master=False)
+
+def publish_to_docker(master):
+    cmd = 'sh scripts/build_push_docker.sh'
+
+    if master:
+        cmd += ' master'
+
     return {
         'name': 'publish_to_docker',
         'image': 'google/cloud-sdk:412.0.0',
@@ -10,9 +21,7 @@ def publish_to_docker():
             'DOCKER_USER': from_secret('docker_user'),
             'DOCKER_PASS': from_secret('docker_pass'),
         },
-        'commands': [
-            'sh scripts/build_push_docker.sh master',
-        ],
+        'commands': [cmd],
         'volumes': [{'name': 'docker', 'path': '/var/run/docker.sock'}],
     }
 

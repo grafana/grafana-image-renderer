@@ -54,12 +54,29 @@ def package_step(arch, name='', skip_chromium=False, override_output='', skip_er
             bpm_cmd,
             arc_cmd,
         ],
-        'depends_on': [
-            'yarn-build',
-        ],
+        'depends_on': ['yarn-build'],
         'environment': {
             'GRAFANA_API_KEY': from_secret('grafana_api_key'),
         }
     }
 
     return step
+
+def security_scan_step():
+    return {
+        'name': 'security-scan',
+        'image': ci_image,
+        'commands': [
+            'echo "Starting veracode scan..."',
+            'apk add curl',
+            '# Increase heap size or the scanner will die.',
+            'export _JAVA_OPTIONS=-Xmx4g',
+            'mkdir -p ci/jobs/security_scan',
+            'curl -sSL https://download.sourceclear.com/ci.sh | sh -s scan --skip-compile --quick --allow-dirty',
+        ],
+        'depends_on': ['yarn-build'],
+        'environment': {
+            'SRCCLR_API_TOKEN': from_secret('srcclr_api_token'),
+        },
+        'failure': 'ignore',
+    }

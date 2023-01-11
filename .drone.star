@@ -5,7 +5,6 @@
 # More information about this process here: https://github.com/grafana/deployment_tools/blob/master/docs/infrastructure/drone/signing.md
 
 load('scripts/drone/pipeline.star', 'prs_pipeline', 'master_pipeline', 'promotion_pipeline')
-load('scripts/drone/security.star', 'security_pipeline')
 load('scripts/drone/vault.star', 'secrets')
 
 
@@ -14,6 +13,5 @@ def main(ctx):
         prs_pipeline()
         + master_pipeline()
         + promotion_pipeline()
-        + security_pipeline()
         + secrets()
     )
