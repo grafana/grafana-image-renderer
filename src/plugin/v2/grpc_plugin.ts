@@ -295,6 +295,10 @@ const populateConfigFromEnv = (config: PluginConfig) => {
     config.rendering.maxDeviceScaleFactor = parseFloat(env['GF_PLUGIN_RENDERING_VIEWPORT_MAX_DEVICE_SCALE_FACTOR'] as string);
   }
 
+  if (env['GF_PLUGIN_RENDERING_VIEWPORT_PAGE_ZOOM_LEVEL']) {
+    config.rendering.pageZoomLevel = parseFloat(env['GF_PLUGIN_RENDERING_VIEWPORT_PAGE_ZOOM_LEVEL'] as string);
+  }
+
   if (env['GF_PLUGIN_RENDERING_MODE']) {
     config.rendering.mode = env['GF_PLUGIN_RENDERING_MODE'] as string;
   }

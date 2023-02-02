@@ -1,3 +1,8 @@
+## 3.6.3 (2023-01-11)
+
+- Add support for page zooming option [#387](https://github.com/grafana/grafana-image-renderer/pull/387), [kaffarell](https://github.com/kaffarell)
+- Migrate from CircleCI to Drone [#394](https://github.com/grafana/grafana-image-renderer/pull/394), [spinillos](https://github.com/spinillos), [joanlopez](https://github.com/joanlopez)
+
 ## 3.6.2 (2022-10-22)
 
 - Log errors related to JSHandle@object as debug [#376](https://github.com/grafana/grafana-image-renderer/pull/376), [spinillos](https://github.com/spinillos)

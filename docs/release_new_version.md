@@ -8,24 +8,24 @@
 1. Update `version` and `updated` properties in plugin.json.
 2. Update CHANGELOG.md.
 3. Merge/push changes to master.
-4. Commit is built in [CircleCI](https://circleci.com/gh/grafana/grafana-image-renderer).
+4. Commit is built in [Drone](https://drone.grafana.net/grafana/grafana-image-renderer).
 
-## Approve Release
+## Promote release
 
-1. Open [CircleCI](https://circleci.com/gh/grafana/grafana-image-renderer) and find your commit.
-2. Click on `build-master` workflow link for your commit and verify build and package steps are successful (green).
-4. Click on `approve-release` and approve to create GitHub release and publish docker image to Docker Hub.
+1. Open [Drone](https://drone.grafana.net/grafana/grafana-image-renderer) and find the build for your commit.
+2. Click on the `...` from the top-right corner to display the menu, then click on `Promote`.
+3. Fill the `Create deployment` form with the values below, and click on `Deploy`:
+    - `Type` = `Promote`
+    - `Target` = `release` *(write it manually)*
+    - *(no parameters needed)*
+4. Once you've clicked on `Deploy` it will trigger a new pipeline with the release steps.
 
 ## Publish plugin to Grafana.com
 
-1. Once the GitHub release is created, run `yarn run create-gcom-plugin-json <release commit>`.
+Since the [migration to Drone](https://github.com/grafana/grafana-image-renderer/pull/394), this step that historically
+was needed to be performed manually is no longer required and is automatically performed by `publish_to_gcom` step.
 
-2. Push to grafana.com via `./scripts/push-to-gcom.sh` or:
-```bash
-JSON=$(cat ./scripts/tmp/plugin.json) gcom /plugins -X POST -H "Content-Type: application/json" -d $JSON
-```
-
-Note: The command will time-out, but the plugin update process will continue in the background.
+**Note:** The step will time out, but the plugin update process will continue in the background.
 
 ```
 <html>
@@ -37,4 +37,4 @@ Note: The command will time-out, but the plugin update process will continue in 
 </html>
 ```
 
-3. Inform HG team about the new release.
+Finally, please recall to inform HG team about the new release.
