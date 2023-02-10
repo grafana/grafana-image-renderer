@@ -1,3 +1,8 @@
+## 3.6.4 (2023-02-10)
+
+- Add Snyk workflow [#402](https://github.com/grafana/grafana-image-renderer/pull/402), [SadFaceSmith](https://github.com/SadFaceSmith)
+- Fix null error [#403](https://github.com/grafana/grafana-image-renderer/pull/403), [spinillos](https://github.com/spinillos)
+
 ## 3.6.3 (2023-01-11)
 
 - Add support for page zooming option [#387](https://github.com/grafana/grafana-image-renderer/pull/387), [kaffarell](https://github.com/kaffarell)
