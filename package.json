@@ -28,7 +28,7 @@
     "express": "^4.16.3",
     "express-prom-bundle": "^6.5.0",
     "google-protobuf": "3.21.0",
-    "jimp": "0.16.1",
+    "jimp": "^0.16.13",
     "jsdom": "20.0.0",
     "lodash": "^4.17.21",
     "minimist": "^1.2.6",
