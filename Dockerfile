@@ -6,9 +6,6 @@ ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD="true"
 WORKDIR /usr/src/app
 
 RUN \
-  echo "http://dl-cdn.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories && \
-  echo "http://dl-cdn.alpinelinux.org/alpine/edge/main" >> /etc/apk/repositories && \
-  echo "http://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories && \
   apk --no-cache upgrade && \
   apk add --no-cache udev ttf-opensans unifont chromium ca-certificates dumb-init && \
   rm -rf /tmp/*
