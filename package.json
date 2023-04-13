@@ -61,7 +61,7 @@
     "eslint-plugin-react-hooks": "4.6.0",
     "husky": "8.0.1",
     "lint-staged": "13.0.3",
-    "pkg": "5.8.0",
+    "pkg": "5.8.1",
     "prettier": "2.7.1",
     "ts-node": "10.9.1",
     "tsc-watch": "5.0.3",
