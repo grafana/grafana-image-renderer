@@ -109,7 +109,8 @@ function populateServiceConfigFromEnv(config: ServiceConfig, env: NodeJS.Process
   }
 
   if (env['AUTH_TOKEN']) {
-    config.service.security.authToken = env['AUTH_TOKEN'];
+    const authToken = env['AUTH_TOKEN'] as string;
+    config.service.security.authToken = authToken.includes(' ') ? authToken.split(' ') : authToken;
   }
 
   if (env['LOG_LEVEL']) {
