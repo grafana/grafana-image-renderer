@@ -151,7 +151,7 @@ export const readJSONFileSync = (filePath: string): any => {
 
 export const isAuthTokenValid = (config: SecurityConfig, reqAuthToken: string): boolean => {
   let configToken = config.authToken || [''];
-  if (typeof configToken == "string") {
+  if (typeof configToken === "string") {
     configToken = [configToken]
   }
 
