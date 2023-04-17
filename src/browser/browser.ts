@@ -118,8 +118,8 @@ export class Browser {
       options.deviceScaleFactor = this.config.deviceScaleFactor;
     }
 
-    if(!options.fullPageImageDelayTime || options.fullPageImageDelayTime < 0) {
-      options.fullPageImageDelayTime = this.config.fullPageImageDelayTime;
+    if (!options.fullPageImageDelaySeconds || options.fullPageImageDelaySeconds < 0) {
+      options.fullPageImageDelaySeconds = this.config.fullPageImageDelaySeconds;
     }
   }
 
@@ -220,8 +220,8 @@ export class Browser {
         heights.dashboard.client,
         scrollDivSelector
       );
-      
-      await new Promise(executor => setTimeout(executor, scrollDelay));
+
+      await new Promise((executor) => setTimeout(executor, scrollDelay));
     }
 
     await page.evaluate((scrollDivSelector) => {
@@ -344,7 +344,7 @@ export class Browser {
                */
               const panelCount = document.querySelectorAll('[data-panelId]').length;
               const totalPanelsRendered = document.querySelectorAll('.panel-content').length + document.querySelectorAll('.dashboard-row').length;
-              const totalLoadingPanels = document.querySelectorAll('.panel-loading').length
+              const totalLoadingPanels = document.querySelectorAll('.panel-loading').length;
               return totalPanelsRendered === panelCount && totalLoadingPanels === 0;
             }
 
@@ -361,7 +361,7 @@ export class Browser {
       this.log.error('Error while waiting for the panels to load', 'url', options.url, 'err', err.stack);
     }
 
-    await new Promise(r => setTimeout(r, options.fullPageImageDelayTime!! * 1000));
+    await new Promise((r) => setTimeout(r, options.fullPageImageDelaySeconds!! * 1000));
 
     if (!options.filePath) {
       options.filePath = uniqueFilename(os.tmpdir()) + '.png';
@@ -532,7 +532,7 @@ export class Browser {
 
     const loc = msg.location();
     if (msgType === 'error' && msg.text() !== 'JSHandle@object') {
-        this.log.error('Browser console error', 'msg', msg.text(), 'url', loc.url, 'line', loc.lineNumber, 'column', loc.columnNumber);
+      this.log.error('Browser console error', 'msg', msg.text(), 'url', loc.url, 'line', loc.lineNumber, 'column', loc.columnNumber);
       return;
     }
 
@@ -544,10 +544,10 @@ export class Browser {
   };
 
   logRequestFailed = (req: any) => {
-    let failureError = ""
+    let failureError = '';
     const failure = req?.failure();
     if (failure) {
-      failureError = failure.errorText
+      failureError = failure.errorText;
     }
     this.log.error('Browser request failed', 'url', req.url(), 'method', req.method(), 'failure', failureError);
   };

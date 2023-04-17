@@ -161,7 +161,7 @@ export class HttpServer {
       encoding: req.query.encoding,
       deviceScaleFactor: req.query.deviceScaleFactor,
       fullPageImage: req.query.fullPageImage,
-      fullPageImageDelayTime: req.query.fullPageImageDelayTime,
+      fullPageImageDelaySeconds: req.query.fullPageImageDelaySeconds,
       headers: headers,
     };
 

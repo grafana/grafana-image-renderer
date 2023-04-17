@@ -26,5 +26,5 @@ export interface ImageRenderOptions extends RenderOptions {
   scaleImage?: number;
 
   // Used when you need extra time before take full page screenshot.
-  fullPageImageDelayTime?: number;
+  fullPageImageDelaySeconds?: number;
 }

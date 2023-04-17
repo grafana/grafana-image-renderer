@@ -36,7 +36,7 @@ export interface RenderingConfig {
   headed?: boolean;
   networkConditions?: NetworkConditions;
   emulateNetworkConditions: boolean;
-  fullPageImageDelayTime: number;
+  fullPageImageDelaySeconds: number;
 }
 
 export interface MetricsConfig {
@@ -107,7 +107,7 @@ const defaultRenderingConfig: RenderingConfig = {
   verboseLogging: false,
   dumpio: false,
   timingMetrics: false,
-  fullPageImageDelayTime: 0,
+  fullPageImageDelaySeconds: 0,
 };
 
 export const defaultServiceConfig: ServiceConfig = {
@@ -153,9 +153,9 @@ export const readJSONFileSync = (filePath: string): any => {
 
 export const isAuthTokenValid = (config: SecurityConfig, reqAuthToken: string): boolean => {
   let configToken = config.authToken || [''];
-  if (typeof configToken === "string") {
-    configToken = [configToken]
+  if (typeof configToken === 'string') {
+    configToken = [configToken];
   }
 
-  return reqAuthToken !== "" && configToken.includes(reqAuthToken)
-}
+  return reqAuthToken !== '' && configToken.includes(reqAuthToken);
+};
