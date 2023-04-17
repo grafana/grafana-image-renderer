@@ -56,7 +56,7 @@ export interface LoggingConfig {
 }
 
 export interface SecurityConfig {
-  authToken: string;
+  authToken: string | string[];
 }
 
 export interface ServiceConfig {
@@ -148,3 +148,12 @@ export const readJSONFileSync = (filePath: string): any => {
   const rawdata = fs.readFileSync(filePath, 'utf8');
   return JSON.parse(rawdata);
 };
+
+export const isAuthTokenValid = (config: SecurityConfig, reqAuthToken: string): boolean => {
+  let configToken = config.authToken || [''];
+  if (typeof configToken === "string") {
+    configToken = [configToken]
+  }
+
+  return reqAuthToken !== "" && configToken.includes(reqAuthToken)
+}

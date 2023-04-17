@@ -1,7 +1,7 @@
 import express = require('express');
 import * as boom from '@hapi/boom';
 import { ImageRenderOptions } from '../types';
-import { SecurityConfig } from '../config';
+import { SecurityConfig, isAuthTokenValid } from '../config';
 
 export const asyncMiddleware = (fn) => (req, res, next) => {
   Promise.resolve(fn(req, res, next)).catch((err) => {
@@ -28,10 +28,8 @@ export const trustedUrlMiddleware = (
 
 export const authTokenMiddleware = (config: SecurityConfig) => {
   return (req: express.Request<any, any, any, ImageRenderOptions, any>, res: express.Response, next: express.NextFunction) => {
-    const cfgToken = config.authToken || '';
     const headerToken = req.header('X-Auth-Token');
-
-    if (headerToken === undefined || headerToken !== cfgToken) {
+    if (headerToken === undefined || !isAuthTokenValid(config, headerToken)) {
       return next(boom.unauthorized('Unauthorized request'));
     }
 
