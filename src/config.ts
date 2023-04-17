@@ -27,6 +27,7 @@ export interface RenderingConfig {
   maxWidth: number;
   maxHeight: number;
   maxDeviceScaleFactor: number;
+  pageZoomLevel: number;
   mode: string;
   clustering: ClusteringConfig;
   verboseLogging: boolean;
@@ -56,7 +57,7 @@ export interface LoggingConfig {
 }
 
 export interface SecurityConfig {
-  authToken: string;
+  authToken: string | string[];
 }
 
 export interface ServiceConfig {
@@ -94,6 +95,7 @@ const defaultRenderingConfig: RenderingConfig = {
   maxWidth: 3000,
   maxHeight: 3000,
   maxDeviceScaleFactor: 4,
+  pageZoomLevel: 1,
   mode: 'default',
   clustering: {
     monitor: false,
@@ -148,3 +150,12 @@ export const readJSONFileSync = (filePath: string): any => {
   const rawdata = fs.readFileSync(filePath, 'utf8');
   return JSON.parse(rawdata);
 };
+
+export const isAuthTokenValid = (config: SecurityConfig, reqAuthToken: string): boolean => {
+  let configToken = config.authToken || [''];
+  if (typeof configToken === "string") {
+    configToken = [configToken]
+  }
+
+  return reqAuthToken !== "" && configToken.includes(reqAuthToken)
+}

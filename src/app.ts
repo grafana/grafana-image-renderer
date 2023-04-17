@@ -109,7 +109,8 @@ function populateServiceConfigFromEnv(config: ServiceConfig, env: NodeJS.Process
   }
 
   if (env['AUTH_TOKEN']) {
-    config.service.security.authToken = env['AUTH_TOKEN'];
+    const authToken = env['AUTH_TOKEN'] as string;
+    config.service.security.authToken = authToken.includes(' ') ? authToken.split(' ') : authToken;
   }
 
   if (env['LOG_LEVEL']) {
@@ -150,6 +151,10 @@ function populateServiceConfigFromEnv(config: ServiceConfig, env: NodeJS.Process
 
   if (env['RENDERING_DUMPIO']) {
     config.rendering.dumpio = env['RENDERING_DUMPIO'] === 'true';
+  }
+
+  if (env['RENDERING_VIEWPORT_PAGE_ZOOM_LEVEL']) {
+    config.rendering.pageZoomLevel = parseFloat(env['RENDERING_VIEWPORT_PAGE_ZOOM_LEVEL'] as string);
   }
 
   if (env['RENDERING_ARGS']) {

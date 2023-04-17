@@ -289,7 +289,6 @@ export class Browser {
         }
 
         await this.setViewport(page, options);
-
         await this.preparePage(page, options);
         await this.setTimezone(page, options);
 
@@ -367,6 +366,8 @@ export class Browser {
     if (!options.filePath) {
       options.filePath = uniqueFilename(os.tmpdir()) + '.png';
     }
+
+    await this.setPageZoomLevel(page, this.config.pageZoomLevel);
 
     if (this.config.verboseLogging) {
       this.log.debug('Taking screenshot', 'filePath', options.filePath);
@@ -543,7 +544,12 @@ export class Browser {
   };
 
   logRequestFailed = (req: any) => {
-    this.log.error('Browser request failed', 'url', req.url(), 'method', req.method(), 'failure', req.failure().errorText);
+    let failureError = ""
+    const failure = req?.failure();
+    if (failure) {
+      failureError = failure.errorText
+    }
+    this.log.error('Browser request failed', 'url', req.url(), 'method', req.method(), 'failure', failureError);
   };
 
   logRequestFinished = (req: any) => {
@@ -553,4 +559,13 @@ export class Browser {
   logPageClosed = () => {
     this.log.debug('Browser page closed');
   };
+
+  private async setPageZoomLevel(page: puppeteer.Page, zoomLevel: number) {
+    if (this.config.verboseLogging) {
+      this.log.debug('Setting zoom level', 'zoomLevel', zoomLevel);
+    }
+    await page.evaluate((zoomLevel: number) => {
+      (document.body.style as any).zoom = zoomLevel;
+    }, zoomLevel);
+  }
 }

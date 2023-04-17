@@ -1,3 +1,25 @@
+## 3.7.0 (2023-04-17)
+- Security: can set array of auth tokens [#417](https://github.com/grafana/grafana-image-renderer/pull/417), [AgnesToulet](https://github.com/AgnesToulet)
+- Bump pkg from 5.8.0 to 5.8.1 [#415](https://github.com/grafana/grafana-image-renderer/pull/415), [AgnesToulet](https://github.com/AgnesToulet)
+- Bump jimp from 0.16.1 to 0.16.13 [#406](https://github.com/grafana/grafana-image-renderer/pull/406), [AgnesToulet](https://github.com/AgnesToulet)
+
+## 3.6.4 (2023-02-10)
+
+- Add Snyk workflow [#402](https://github.com/grafana/grafana-image-renderer/pull/402), [SadFaceSmith](https://github.com/SadFaceSmith)
+- Fix null error [#403](https://github.com/grafana/grafana-image-renderer/pull/403), [spinillos](https://github.com/spinillos)
+
+## 3.6.3 (2023-01-11)
+
+- Add support for page zooming option [#387](https://github.com/grafana/grafana-image-renderer/pull/387), [kaffarell](https://github.com/kaffarell)
+- Migrate from CircleCI to Drone [#394](https://github.com/grafana/grafana-image-renderer/pull/394), [spinillos](https://github.com/spinillos), [joanlopez](https://github.com/joanlopez)
+
+## 3.6.2 (2022-10-22)
+
+- Log errors related to JSHandle@object as debug [#376](https://github.com/grafana/grafana-image-renderer/pull/376), [spinillos](https://github.com/spinillos)
+- Chore: Update Puppeteer deprecated functions [#375](https://github.com/grafana/grafana-image-renderer/pull/375), [spinillos](https://github.com/spinillos)
+- Fix: Update _client with _client() to avoid to fail when creating a CSV [#372](https://github.com/grafana/grafana-image-renderer/pull/372), [spinillos](https://github.com/spinillos)
+- Chore: Update all dependencies [#369](https://github.com/grafana/grafana-image-renderer/pull/369), [DanCech](https://github.com/DanCech)
+
 ## 3.6.1 (2022-08-30)
 
 - Chore: Update to Node 16 [#365](https://github.com/grafana/grafana-image-renderer/pull/365), [Clarity-89](https://github.com/Clarity-89)
