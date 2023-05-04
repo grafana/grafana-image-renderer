@@ -5,7 +5,7 @@ import { RenderGRPCPluginV2 } from './plugin/v2/grpc_plugin';
 import { HttpServer } from './service/http-server';
 import { ConsoleLogger, PluginLogger } from './logger';
 import * as minimist from 'minimist';
-import { defaultPluginConfig, defaultServiceConfig, readJSONFileSync, PluginConfig, ServiceConfig } from './config';
+import { defaultPluginConfig, defaultServiceConfig, readJSONFileSync, PluginConfig, ServiceConfig, RenderingConfig } from './config';
 import { serve } from './node-plugin';
 import { createSanitizer } from './sanitizer/Sanitizer';
 
@@ -83,7 +83,6 @@ main().catch((err) => {
 });
 
 function populatePluginConfigFromEnv(config: PluginConfig, env: NodeJS.ProcessEnv) {
-  // Plugin env variables that needs to be initiated early
   if (env['GF_PLUGIN_GRPC_HOST']) {
     config.plugin.grpc.host = env['GF_PLUGIN_GRPC_HOST'] as string;
   }
@@ -91,15 +90,16 @@ function populatePluginConfigFromEnv(config: PluginConfig, env: NodeJS.ProcessEn
   if (env['GF_PLUGIN_GRPC_PORT']) {
     config.plugin.grpc.port = parseInt(env['GF_PLUGIN_GRPC_PORT'] as string, 10);
   }
+
+  if (env['GF_PLUGIN_AUTH_TOKEN']) {
+    const authToken = env['GF_PLUGIN_AUTH_TOKEN'] as string;
+    config.plugin.security.authToken = authToken.includes(' ') ? authToken.split(' ') : authToken;
+  }
+
+  populateRenderingConfigFromEnv(config.rendering, env, true)
 }
 
 function populateServiceConfigFromEnv(config: ServiceConfig, env: NodeJS.ProcessEnv) {
-  if (env['BROWSER_TZ']) {
-    config.rendering.timezone = env['BROWSER_TZ'];
-  } else {
-    config.rendering.timezone = env['TZ'];
-  }
-
   if (env['HTTP_HOST']) {
     config.service.host = env['HTTP_HOST'];
   }
@@ -117,53 +117,103 @@ function populateServiceConfigFromEnv(config: ServiceConfig, env: NodeJS.Process
     config.service.logging.level = env['LOG_LEVEL'] as string;
   }
 
-  if (env['IGNORE_HTTPS_ERRORS']) {
-    config.rendering.ignoresHttpsErrors = env['IGNORE_HTTPS_ERRORS'] === 'true';
-  }
-
-  if (env['CHROME_BIN']) {
-    config.rendering.chromeBin = env['CHROME_BIN'];
-  }
-
   if (env['ENABLE_METRICS']) {
     config.service.metrics.enabled = env['ENABLE_METRICS'] === 'true';
   }
 
-  if (env['RENDERING_MODE']) {
-    config.rendering.mode = env['RENDERING_MODE'] as string;
+  populateRenderingConfigFromEnv(config.rendering, env, false)
+}
+
+
+function populateRenderingConfigFromEnv(config: RenderingConfig, env: NodeJS.ProcessEnv, isPlugin: boolean) {
+  const pluginPrefix = isPlugin ? "GF_PLUGIN_" : ""
+  const pluginRenderingPrefix = isPlugin ? pluginPrefix + "RENDERING_" : ""
+
+  if (env[pluginPrefix + 'RENDERING_TIMEZONE']) {
+    config.timezone = env[pluginPrefix + 'RENDERING_TIMEZONE'];
+  } else if (env['BROWSER_TZ']) {
+    config.timezone = env['BROWSER_TZ'];
+  } else {
+    config.timezone = env['TZ'];
   }
 
-  if (env['RENDERING_CLUSTERING_MODE']) {
-    config.rendering.clustering.mode = env['RENDERING_CLUSTERING_MODE'] as string;
+  if (env[pluginRenderingPrefix + 'CHROME_BIN']) {
+    config.chromeBin = env[pluginRenderingPrefix + 'CHROME_BIN'];
   }
 
-  if (env['RENDERING_CLUSTERING_MAX_CONCURRENCY']) {
-    config.rendering.clustering.maxConcurrency = parseInt(env['RENDERING_CLUSTERING_MAX_CONCURRENCY'] as string, 10);
-  }
-
-  if (env['RENDERING_CLUSTERING_TIMEOUT']) {
-    config.rendering.clustering.timeout = parseInt(env['RENDERING_CLUSTERING_TIMEOUT'] as string, 10);
-  }
-
-  if (env['RENDERING_VERBOSE_LOGGING']) {
-    config.rendering.verboseLogging = env['RENDERING_VERBOSE_LOGGING'] === 'true';
-  }
-
-  if (env['RENDERING_DUMPIO']) {
-    config.rendering.dumpio = env['RENDERING_DUMPIO'] === 'true';
-  }
-
-  if (env['RENDERING_VIEWPORT_PAGE_ZOOM_LEVEL']) {
-    config.rendering.pageZoomLevel = parseFloat(env['RENDERING_VIEWPORT_PAGE_ZOOM_LEVEL'] as string);
-  }
-
-  if (env['RENDERING_ARGS']) {
-    const args = env['RENDERING_ARGS'] as string;
+  if (env[pluginPrefix + 'RENDERING_ARGS']) {
+    const args = env[pluginPrefix + 'RENDERING_ARGS'] as string;
     if (args.length > 0) {
       const argsList = args.split(',');
       if (argsList.length > 0) {
-        config.rendering.args = argsList;
+        config.args = argsList;
       }
     }
+  }
+
+  if (env[pluginRenderingPrefix + 'IGNORE_HTTPS_ERRORS']) {
+    config.ignoresHttpsErrors = env[pluginRenderingPrefix + 'IGNORE_HTTPS_ERRORS'] === 'true';
+  }
+
+  // New for remote
+  if (env[pluginPrefix + 'RENDERING_LANGUAGE']) {
+    config.acceptLanguage = env[pluginPrefix + 'RENDERING_LANGUAGE'];
+  }
+
+  // New for remote
+  if (env[pluginPrefix + 'RENDERING_VIEWPORT_WIDTH']) {
+    config.width = parseInt(env[pluginPrefix + 'RENDERING_VIEWPORT_WIDTH'] as string, 10);
+  }
+
+  // New for remote
+  if (env[pluginPrefix + 'RENDERING_VIEWPORT_HEIGHT']) {
+    config.height = parseInt(env[pluginPrefix + 'RENDERING_VIEWPORT_HEIGHT'] as string, 10);
+  }
+
+  // New for remote
+  if (env[pluginPrefix + 'RENDERING_VIEWPORT_DEVICE_SCALE_FACTOR']) {
+    config.deviceScaleFactor = parseFloat(env[pluginPrefix + 'RENDERING_VIEWPORT_DEVICE_SCALE_FACTOR'] as string);
+  }
+
+  // New for remote
+  if (env[pluginPrefix + 'RENDERING_VIEWPORT_MAX_WIDTH']) {
+    config.maxWidth = parseInt(env[pluginPrefix + 'RENDERING_VIEWPORT_MAX_WIDTH'] as string, 10);
+  }
+
+  // New for remote
+  if (env[pluginPrefix + 'RENDERING_VIEWPORT_MAX_HEIGHT']) {
+    config.maxHeight = parseInt(env[pluginPrefix + 'RENDERING_VIEWPORT_MAX_HEIGHT'] as string, 10);
+  }
+
+  if (env[pluginPrefix + 'RENDERING_VIEWPORT_MAX_DEVICE_SCALE_FACTOR']) {
+    config.maxDeviceScaleFactor = parseFloat(env[pluginPrefix + 'RENDERING_VIEWPORT_MAX_DEVICE_SCALE_FACTOR'] as string);
+  }
+
+  if (env[pluginPrefix + 'RENDERING_VIEWPORT_PAGE_ZOOM_LEVEL']) {
+    config.pageZoomLevel = parseFloat(env[pluginPrefix + 'RENDERING_VIEWPORT_PAGE_ZOOM_LEVEL'] as string);
+  }
+
+  if (env[pluginPrefix + 'RENDERING_MODE']) {
+    config.mode = env[pluginPrefix + 'RENDERING_MODE'] as string;
+  }
+
+  if (env[pluginPrefix + 'RENDERING_CLUSTERING_MODE']) {
+    config.clustering.mode = env[pluginPrefix + 'RENDERING_CLUSTERING_MODE'] as string;
+  }
+
+  if (env[pluginPrefix + 'RENDERING_CLUSTERING_MAX_CONCURRENCY']) {
+    config.clustering.maxConcurrency = parseInt(env[pluginPrefix + 'RENDERING_CLUSTERING_MAX_CONCURRENCY'] as string, 10);
+  }
+
+  if (env[pluginPrefix + 'RENDERING_CLUSTERING_TIMEOUT']) {
+    config.clustering.timeout = parseInt(env[pluginPrefix + 'RENDERING_CLUSTERING_TIMEOUT'] as string, 10);
+  }
+
+  if (env[pluginPrefix + 'RENDERING_VERBOSE_LOGGING']) {
+    config.verboseLogging = env[pluginPrefix + 'RENDERING_VERBOSE_LOGGING'] === 'true';
+  }
+
+  if (env[pluginPrefix + 'RENDERING_DUMPIO']) {
+    config.dumpio = env[pluginPrefix + 'RENDERING_DUMPIO'] === 'true';
   }
 }

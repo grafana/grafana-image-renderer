@@ -28,7 +28,7 @@ export class HttpServer {
   app: express.Express;
   browser: Browser;
 
-  constructor(private config: ServiceConfig, private log: Logger, private sanitizer: Sanitizer) {}
+  constructor(private config: ServiceConfig, private log: Logger, private sanitizer: Sanitizer) { }
 
   async start() {
     this.app = express();
