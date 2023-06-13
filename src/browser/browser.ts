@@ -135,7 +135,7 @@ export class Browser {
       launcherOptions.executablePath = this.config.chromeBin;
     }
 
-    launcherOptions.headless = !this.config.headed;
+    launcherOptions.headless = !this.config.headed ? "new" : false;
 
     return launcherOptions;
   }
