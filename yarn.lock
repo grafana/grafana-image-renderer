@@ -110,10 +110,10 @@
     eslint-plugin-react-hooks "4.3.0"
     typescript "4.6.4"
 
-"@grpc/grpc-js@^1.7.0":
-  version "1.7.0"
-  resolved "https://registry.yarnpkg.com/@grpc/grpc-js/-/grpc-js-1.7.0.tgz#5a96bdbe51cce23faa38a4db6e43595a5c584849"
-  integrity sha512-wvKxal+40Xx11DXO2q5PfY3UiE25iwTb8SOz6A9IJII/V7d19x2ex0he+GJfVW0JZCaBjCPSjUB0yU9Ecm4WCw==
+"@grpc/grpc-js@^1.8.8":
+  version "1.8.8"
+  resolved "https://registry.yarnpkg.com/@grpc/grpc-js/-/grpc-js-1.8.8.tgz#a7c6765d0302f47ba67c0ce3cb79718d6b028248"
+  integrity sha512-4gfDqMLXTrorvYTKA1jL22zLvVwiHJ73t6Re1OHwdCFRjdGTDOVtSJuaWhtHaivyeDGg0LeCkmU77MTKoV3wPA==
   dependencies:
     "@grpc/proto-loader" "^0.7.0"
     "@types/node" ">=12.12.47"
