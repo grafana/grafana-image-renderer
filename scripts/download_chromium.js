@@ -1,7 +1,5 @@
 const path = require('path');
-const child_process = require('child_process');
-const Puppeteer = require('puppeteer');
-const {BrowserPlatform, Browser, install, resolveBuildId} = require('@puppeteer/browsers')
+const { BrowserPlatform, Browser, install, resolveBuildId } = require('@puppeteer/browsers')
 
 const archArg = process.argv[2];
 let [
@@ -20,12 +18,7 @@ if (platform === 'darwin') {
     platform = BrowserPlatform.MAC
 }
 
-//const outputPath = "dist/" + (process.argv[3] || `plugin-${archArg}`);
 const outputPath = path.resolve(process.cwd(), "dist", process.argv[3] || `plugin-${archArg}`);
-
-// const browserFetcher = Puppeteer.createBrowserFetcher({ platform });
-//const revision = PUPPETEER_REVISIONS.chromium;
-
 
 async function download() {
     const browserVersion = Browser.CHROME;

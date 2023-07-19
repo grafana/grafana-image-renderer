@@ -16,8 +16,7 @@ if [ $? != 0 ]; then
 fi
 
 if [ ${SKIP_CHROMIUM} = false ]; then
-#    node scripts/download_chromium.js ${ARCH} ${OUT}
-    node node_modules/puppeteer/install.js
+   node scripts/download_chromium.js ${ARCH} ${OUT}
 else
     echo "Skipping chromium download"
 fi
