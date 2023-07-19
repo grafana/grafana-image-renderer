@@ -1,7 +1,7 @@
 const path = require('path');
 const child_process = require('child_process');
 const Puppeteer = require('puppeteer');
-const {BrowserPlatform, Browser, install, resolveBuildId, BrowserTag} = require('@puppeteer/browsers')
+const {BrowserPlatform, Browser, install, resolveBuildId} = require('@puppeteer/browsers')
 
 const archArg = process.argv[2];
 let [
@@ -28,23 +28,16 @@ const outputPath = path.resolve(process.cwd(), "dist", process.argv[3] || `plugi
 
 
 async function download() {
-    const buildId = await resolveBuildId(Browser.CHROME, platform, 'latest')
-    console.log(`Installing ${Browser.CHROME} into ${outputPath}`);
+    const browserVersion = Browser.CHROME;
+    const buildId = await resolveBuildId(browserVersion, platform, 'latest')
+    console.log(`Installing ${browserVersion} into ${outputPath}`);
     return install({
         cacheDir: outputPath,
-        browser: Browser.CHROME,
+        browser: browserVersion,
         platform,
         buildId,
-        downloadProgressCallback: (
-            downloadedBytes,
-            totalBytes) => {
-            if (downloadedBytes % 1024 === 0) {
-            console.log(`Downloading ${downloadedBytes} out of ${totalBytes}`,);
-            }
-        }
     })
 }
-
 
 download().then(() => {
     console.log('Chrome downloaded into:', outputPath);
