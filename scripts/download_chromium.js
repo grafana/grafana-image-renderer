@@ -28,7 +28,7 @@ const outputPath = path.resolve(
     process.argv[3] || `plugin-${archArg}`,
 );
 
-const browserVersion = Browser.CHROME;
+const browserVersion = Browser.CHROMIUM
 
 async function download() {
     const buildId = await resolveBuildId(browserVersion, platform, 'latest');

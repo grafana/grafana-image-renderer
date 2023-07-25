@@ -1,0 +1,17 @@
+version: '2'
+
+services:
+  grafana:
+    image: grafana/grafana-enterprise:latest
+    ports:
+      - '3000:3000'
+    volumes:
+      - "./data/license.jwt:/var/lib/grafana/license.jwt"
+    environment:
+      GF_RENDERING_SERVER_URL: http://renderer:8081/render
+      GF_RENDERING_CALLBACK_URL: http://grafana:3000/
+      GF_LOG_FILTERS: rendering:debug
+  renderer:
+    image: renderer:latest
+    ports:
+      - 8081
