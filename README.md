@@ -110,9 +110,9 @@ The following example describes how to build and run the remote HTTP rendering s
 
 ## Security
 
-You can restrict access to the rendering endpoint by specifying a secret token. The token should be configured in the Grafana configuration file and the renderer configuration file. This token is important when you run the plugin in remote rendering mode.
+Access to the rendering endpoints is restricted to requests providing an auth token. This token should be configured in the Grafana configuration file and the renderer configuration file. This token is important when you run the plugin in remote rendering mode to avoid unauthorized file disclosure (see [CVE-2022-31176](https://github.com/grafana/grafana-image-renderer/security/advisories/GHSA-2cfh-233g-m4c5)).
 
-See [Grafana Image Rendering documentation](https://grafana.com/docs/grafana/latest/image-rendering/#security) to configure this secret token.
+See [Grafana Image Rendering documentation](https://grafana.com/docs/grafana/latest/image-rendering/#security) to configure this secret token. The default value `-` is configured on both Grafana and the image renderer when you get started but we strongly recommend you to update this to a more secure value.
 
 ## Configuration
 
