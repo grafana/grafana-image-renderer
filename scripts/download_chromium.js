@@ -1,10 +1,5 @@
+const { BrowserPlatform, Browser, install, resolveBuildId } = require('@puppeteer/browsers');
 const path = require('path');
-const {
-    BrowserPlatform,
-    Browser,
-    install,
-    resolveBuildId,
-} = require('@puppeteer/browsers');
 
 const archArg = process.argv[2];
 let [
@@ -19,16 +14,16 @@ if (platform === 'win32' && arch === 'x64') {
 }
 
 if (platform === 'darwin') {
-    platform = BrowserPlatform.MAC;
+    if (arch === 'arm64') {
+        platform = BrowserPlatform.MAC_ARM;
+    } else {
+        platform = BrowserPlatform.MAC;
+    }
 }
 
-const outputPath = path.resolve(
-    process.cwd(),
-    'dist',
-    process.argv[3] || `plugin-${archArg}`,
-);
+const outputPath = path.resolve(process.cwd(), 'dist', process.argv[3] || `plugin-${archArg}`);
 
-const browserVersion = Browser.CHROMIUM
+const browserVersion = Browser.CHROMIUM;
 
 async function download() {
     const buildId = await resolveBuildId(browserVersion, platform, 'latest');
