@@ -1,3 +1,10 @@
+## 3.7.2 (2023-07-27)
+- Chore: update all dependencies [#443](https://github.com/grafana/grafana-image-renderer/pull/443), [AgnesToulet](https://github.com/AgnesToulet)
+- Bump protobufjs from 7.1.1 to 7.2.4 [#438](https://github.com/grafana/grafana-image-renderer/pull/438), [dependabot[bot]](https://github.com/apps/dependabot)
+- Bump tough-cookie from 4.1.2 to 4.1.3 [#439](https://github.com/grafana/grafana-image-renderer/pull/439), [dependabot[bot]](https://github.com/apps/dependabot)
+- Bump semver from 6.3.0 to 6.3.1 [#440](https://github.com/grafana/grafana-image-renderer/pull/440), [dependabot[bot]](https://github.com/apps/dependabot)
+- Bump word-wrap from 1.2.3 to 1.2.4 [#441](https://github.com/grafana/grafana-image-renderer/pull/441), [dependabot[bot]](https://github.com/apps/dependabot)
+
 ## 3.7.1 (2023-05-15)
 - Docker: remove alpine edge repo [#413](https://github.com/grafana/grafana-image-renderer/pull/413), [sozercan](https://github.com/sozercan)
 - Bump yaml from 2.1.1 to 2.2.2 [#421](https://github.com/grafana/grafana-image-renderer/pull/421), [dependabot[bot]](https://github.com/apps/dependabot)
