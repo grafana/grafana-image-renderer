@@ -9,7 +9,7 @@ import { defaultPluginConfig, defaultServiceConfig, readJSONFileSync, PluginConf
 import { serve } from './node-plugin';
 import { createSanitizer } from './sanitizer/Sanitizer';
 
-const chromeFolderPrefix = 'chrome-';
+const chromeFolderPrefix = 'chromium';
 
 async function main() {
   const argv = minimist(process.argv.slice(2));

@@ -16,9 +16,9 @@ if [ $? != 0 ]; then
 fi
 
 if [ ${SKIP_CHROMIUM} = false ]; then
-    node scripts/download_chromium.js ${ARCH} ${OUT}
+   node scripts/download_chrome.js ${ARCH} ${OUT}
 else
-    echo "Skipping chromium download"
+    echo "Skipping chrome download"
 fi
 
 if [ $? != 0 ]; then
