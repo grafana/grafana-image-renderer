@@ -1,4 +1,4 @@
-## 4.0.0 (2023-08-22)
+## 3.8.0 (2023-08-22)
 - Puppeteer: upgrade to v21 [#433](https://github.com/grafana/grafana-image-renderer/pull/433), [Clarity-89](https://github.com/Clarity-89) 
 - Fix fullpage waitFor conditions [#446](https://github.com/grafana/grafana-image-renderer/pull/446), [AgnesToulet](https://github.com/AgnesToulet)
 
