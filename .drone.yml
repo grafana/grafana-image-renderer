@@ -16,21 +16,21 @@ steps:
   - chmod +x bin/grabpl
 
 - name: yarn-install
-  image: grafana/grafana-plugin-ci:1.6.1-alpine
+  image: grafana/grafana-plugin-ci:1.8.1-alpine
   commands:
   - yarn install --frozen-lockfile --no-progress
   depends_on:
   - grabpl
 
 - name: yarn-build
-  image: grafana/grafana-plugin-ci:1.6.1-alpine
+  image: grafana/grafana-plugin-ci:1.8.1-alpine
   commands:
   - yarn build
   depends_on:
   - yarn-install
 
 - name: security-scan
-  image: grafana/grafana-plugin-ci:1.6.1-alpine
+  image: grafana/grafana-plugin-ci:1.8.1-alpine
   commands:
   - echo "Starting veracode scan..."
   - apk add curl
@@ -46,7 +46,7 @@ steps:
   - yarn-build
 
 - name: package-linux-x64-glibc
-  image: grafana/grafana-plugin-ci:1.6.1-alpine
+  image: grafana/grafana-plugin-ci:1.8.1-alpine
   commands:
   - sh scripts/package_target.sh linux-x64-glibc
   - bin/grabpl build-plugin-manifest ./dist/plugin-linux-x64-glibc || true
@@ -58,7 +58,7 @@ steps:
   - yarn-build
 
 - name: package-darwin-x64-unknown
-  image: grafana/grafana-plugin-ci:1.6.1-alpine
+  image: grafana/grafana-plugin-ci:1.8.1-alpine
   commands:
   - sh scripts/package_target.sh darwin-x64-unknown
   - bin/grabpl build-plugin-manifest ./dist/plugin-darwin-x64-unknown || true
@@ -70,7 +70,7 @@ steps:
   - yarn-build
 
 - name: package-win32-x64-unknown
-  image: grafana/grafana-plugin-ci:1.6.1-alpine
+  image: grafana/grafana-plugin-ci:1.8.1-alpine
   commands:
   - sh scripts/package_target.sh win32-x64-unknown
   - bin/grabpl build-plugin-manifest ./dist/plugin-win32-x64-unknown || true
@@ -82,7 +82,7 @@ steps:
   - yarn-build
 
 - name: package-linux-x64-glibc-no-chromium
-  image: grafana/grafana-plugin-ci:1.6.1-alpine
+  image: grafana/grafana-plugin-ci:1.8.1-alpine
   commands:
   - sh scripts/package_target.sh linux-x64-glibc true plugin-linux-x64-glibc-no-chromium
   - bin/grabpl build-plugin-manifest ./dist/plugin-linux-x64-glibc-no-chromium || true
@@ -126,21 +126,21 @@ steps:
   - chmod +x bin/grabpl
 
 - name: yarn-install
-  image: grafana/grafana-plugin-ci:1.6.1-alpine
+  image: grafana/grafana-plugin-ci:1.8.1-alpine
   commands:
   - yarn install --frozen-lockfile --no-progress
   depends_on:
   - grabpl
 
 - name: yarn-build
-  image: grafana/grafana-plugin-ci:1.6.1-alpine
+  image: grafana/grafana-plugin-ci:1.8.1-alpine
   commands:
   - yarn build
   depends_on:
   - yarn-install
 
 - name: security-scan
-  image: grafana/grafana-plugin-ci:1.6.1-alpine
+  image: grafana/grafana-plugin-ci:1.8.1-alpine
   commands:
   - echo "Starting veracode scan..."
   - apk add curl
@@ -156,7 +156,7 @@ steps:
   - yarn-build
 
 - name: package-linux-x64-glibc
-  image: grafana/grafana-plugin-ci:1.6.1-alpine
+  image: grafana/grafana-plugin-ci:1.8.1-alpine
   commands:
   - sh scripts/package_target.sh linux-x64-glibc
   - bin/grabpl build-plugin-manifest ./dist/plugin-linux-x64-glibc
@@ -168,7 +168,7 @@ steps:
   - yarn-build
 
 - name: package-darwin-x64-unknown
-  image: grafana/grafana-plugin-ci:1.6.1-alpine
+  image: grafana/grafana-plugin-ci:1.8.1-alpine
   commands:
   - sh scripts/package_target.sh darwin-x64-unknown
   - bin/grabpl build-plugin-manifest ./dist/plugin-darwin-x64-unknown
@@ -180,7 +180,7 @@ steps:
   - yarn-build
 
 - name: package-win32-x64-unknown
-  image: grafana/grafana-plugin-ci:1.6.1-alpine
+  image: grafana/grafana-plugin-ci:1.8.1-alpine
   commands:
   - sh scripts/package_target.sh win32-x64-unknown
   - bin/grabpl build-plugin-manifest ./dist/plugin-win32-x64-unknown
@@ -192,7 +192,7 @@ steps:
   - yarn-build
 
 - name: package-linux-x64-glibc-no-chromium
-  image: grafana/grafana-plugin-ci:1.6.1-alpine
+  image: grafana/grafana-plugin-ci:1.8.1-alpine
   commands:
   - sh scripts/package_target.sh linux-x64-glibc true plugin-linux-x64-glibc-no-chromium
   - bin/grabpl build-plugin-manifest ./dist/plugin-linux-x64-glibc-no-chromium
@@ -252,21 +252,21 @@ steps:
   - chmod +x bin/grabpl
 
 - name: yarn-install
-  image: grafana/grafana-plugin-ci:1.6.1-alpine
+  image: grafana/grafana-plugin-ci:1.8.1-alpine
   commands:
   - yarn install --frozen-lockfile --no-progress
   depends_on:
   - grabpl
 
 - name: yarn-build
-  image: grafana/grafana-plugin-ci:1.6.1-alpine
+  image: grafana/grafana-plugin-ci:1.8.1-alpine
   commands:
   - yarn build
   depends_on:
   - yarn-install
 
 - name: security-scan
-  image: grafana/grafana-plugin-ci:1.6.1-alpine
+  image: grafana/grafana-plugin-ci:1.8.1-alpine
   commands:
   - echo "Starting veracode scan..."
   - apk add curl
@@ -282,7 +282,7 @@ steps:
   - yarn-build
 
 - name: package-linux-x64-glibc
-  image: grafana/grafana-plugin-ci:1.6.1-alpine
+  image: grafana/grafana-plugin-ci:1.8.1-alpine
   commands:
   - sh scripts/package_target.sh linux-x64-glibc
   - bin/grabpl build-plugin-manifest ./dist/plugin-linux-x64-glibc
@@ -294,7 +294,7 @@ steps:
   - yarn-build
 
 - name: package-darwin-x64-unknown
-  image: grafana/grafana-plugin-ci:1.6.1-alpine
+  image: grafana/grafana-plugin-ci:1.8.1-alpine
   commands:
   - sh scripts/package_target.sh darwin-x64-unknown
   - bin/grabpl build-plugin-manifest ./dist/plugin-darwin-x64-unknown
@@ -306,7 +306,7 @@ steps:
   - yarn-build
 
 - name: package-win32-x64-unknown
-  image: grafana/grafana-plugin-ci:1.6.1-alpine
+  image: grafana/grafana-plugin-ci:1.8.1-alpine
   commands:
   - sh scripts/package_target.sh win32-x64-unknown
   - bin/grabpl build-plugin-manifest ./dist/plugin-win32-x64-unknown
@@ -318,7 +318,7 @@ steps:
   - yarn-build
 
 - name: package-linux-x64-glibc-no-chromium
-  image: grafana/grafana-plugin-ci:1.6.1-alpine
+  image: grafana/grafana-plugin-ci:1.8.1-alpine
   commands:
   - sh scripts/package_target.sh linux-x64-glibc true plugin-linux-x64-glibc-no-chromium
   - bin/grabpl build-plugin-manifest ./dist/plugin-linux-x64-glibc-no-chromium
@@ -360,7 +360,7 @@ steps:
   - publish_to_github
 
 - name: publish_to_gcom
-  image: grafana/grafana-plugin-ci:1.6.1-alpine
+  image: grafana/grafana-plugin-ci:1.8.1-alpine
   commands:
   - yarn run create-gcom-plugin-json ${DRONE_COMMIT}
   - sh scripts/push-to-gcom.sh
