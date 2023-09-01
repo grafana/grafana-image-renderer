@@ -1,5 +1,6 @@
 import * as path from 'path';
 import * as _ from 'lodash';
+import * as os from 'os';
 import { RenderGRPCPluginV2 } from './plugin/v2/grpc_plugin';
 import { HttpServer } from './service/http-server';
 import { ConsoleLogger, PluginLogger } from './logger';
@@ -18,7 +19,8 @@ async function main() {
     const config: PluginConfig = defaultPluginConfig;
     populatePluginConfigFromEnv(config, env);
     if (!config.rendering.chromeBin && (process as any).pkg) {
-      config.rendering.chromeBin = [path.dirname(process.execPath), 'chrome', 'chrome.exe'].join(path.sep);
+      const ext = os.platform() === 'win32' ? '.exe' : ''
+      config.rendering.chromeBin = [path.dirname(process.execPath), 'chrome', `chrome${ext}`].join(path.sep);
       logger.debug(`Setting chromeBin to ${config.rendering.chromeBin}`);
     }
 
