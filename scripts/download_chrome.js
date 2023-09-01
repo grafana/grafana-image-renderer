@@ -45,7 +45,8 @@ download().then(() => {
 
     // All the chrome files should be in the plugin 'chrome' folder
     // This is used to set the puppeteer.executablePath
-    const out = childProcess.execFileSync('find', [`${outputPath}/chrome`, '-type', 'f', '-name', 'chrome.exe', '-exec', 'dirname', '{}', '\;']);
+    const ext = platform === BrowserPlatform.WIN64 ? '.exe' : '';
+    const out = childProcess.execFileSync('find', [`${outputPath}/chrome`, '-type', 'f', '-name', `chrome${ext}`, '-exec', 'dirname', '{}', '\;']);
     const chromeBinDir = out.toString().trim()
     
     console.log(`Moving ${chromeBinDir} content into ${outputPath}/chrome`);
