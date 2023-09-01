@@ -27,7 +27,7 @@ const outputPath = path.resolve(process.cwd(), 'dist', process.argv[3] || `plugi
 const browserVersion = Browser.CHROME;
 
 // Clean up download folder if exists
-childProcess.execSync(`rm -rf "${outputPath}/chrome"`);
+childProcess.execFileSync('rm', ['-rf', `${outputPath}/chrome`]);
 
 async function download() {
     const buildId = await resolveBuildId(browserVersion, platform, 'latest');
@@ -45,11 +45,11 @@ download().then(() => {
 
     // All the chrome files should be in the plugin 'chrome' folder
     // This is used to set the puppeteer.executablePath
-    const out = childProcess.execSync(`find ${outputPath}/chrome -type f -name chrome.exe -exec dirname "{}" \;`);
+    const out = childProcess.execFileSync('find', [`${outputPath}/chrome`, '-type', 'f', '-name', 'chrome.exe', '-exec', 'dirname', '{}', '\;']);
     const chromeBinDir = out.toString().trim()
     
-    console.log(`Moving ${chromeBinDir} content into ${outputPath}/chrome`)
-    childProcess.execSync(`mv ${chromeBinDir} ${outputPath}/tmp`)
-    childProcess.execSync(`rm -r "${outputPath}/chrome"`);
-    childProcess.execSync(`mv "${outputPath}/tmp" "${outputPath}/chrome"`);
+    console.log(`Moving ${chromeBinDir} content into ${outputPath}/chrome`);
+    childProcess.execFileSync('mv', [chromeBinDir, `${outputPath}/tmp`]);
+    childProcess.execFileSync('rm', ['-r', `${outputPath}/chrome`]);
+    childProcess.execFileSync('mv', [`${outputPath}/tmp`, `${outputPath}/chrome`]);
 });
