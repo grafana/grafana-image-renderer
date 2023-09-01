@@ -1,5 +1,4 @@
 import * as path from 'path';
-import * as puppeteer from 'puppeteer';
 import * as _ from 'lodash';
 import { RenderGRPCPluginV2 } from './plugin/v2/grpc_plugin';
 import { HttpServer } from './service/http-server';
@@ -8,8 +7,6 @@ import * as minimist from 'minimist';
 import { defaultPluginConfig, defaultServiceConfig, readJSONFileSync, PluginConfig, ServiceConfig } from './config';
 import { serve } from './node-plugin';
 import { createSanitizer } from './sanitizer/Sanitizer';
-
-const chromeFolderPrefix = 'chromium';
 
 async function main() {
   const argv = minimist(process.argv.slice(2));
@@ -21,20 +18,8 @@ async function main() {
     const config: PluginConfig = defaultPluginConfig;
     populatePluginConfigFromEnv(config, env);
     if (!config.rendering.chromeBin && (process as any).pkg) {
-      //@ts-ignore
-      const executablePath = puppeteer.executablePath() as string;
-
-      if (executablePath.includes(chromeFolderPrefix)) {
-        const parts = executablePath.split(path.sep);
-        while (!parts[0].startsWith(chromeFolderPrefix)) {
-          parts.shift();
-        }
-
-        config.rendering.chromeBin = [path.dirname(process.execPath), ...parts].join(path.sep);
-      } else {
-        // local chrome installation in dev mode
-        config.rendering.chromeBin = env['PUPPETEER_EXECUTABLE_PATH'];
-      }
+      config.rendering.chromeBin = [path.dirname(process.execPath), 'chrome', 'chrome.exe'].join(path.sep);
+      logger.debug(`Setting chromeBin to ${config.rendering.chromeBin}`);
     }
 
     await serve({
@@ -90,6 +75,10 @@ function populatePluginConfigFromEnv(config: PluginConfig, env: NodeJS.ProcessEn
 
   if (env['GF_PLUGIN_GRPC_PORT']) {
     config.plugin.grpc.port = parseInt(env['GF_PLUGIN_GRPC_PORT'] as string, 10);
+  }
+
+  if (env['GF_PLUGIN_RENDERING_CHROME_BIN']) {
+    config.rendering.chromeBin = env['GF_PLUGIN_RENDERING_CHROME_BIN'];
   }
 }
 

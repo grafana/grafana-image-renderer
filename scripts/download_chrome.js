@@ -1,4 +1,5 @@
 const { BrowserPlatform, Browser, install, resolveBuildId } = require('@puppeteer/browsers');
+const childProcess = require('child_process');
 const path = require('path');
 
 const archArg = process.argv[2];
@@ -25,6 +26,9 @@ const outputPath = path.resolve(process.cwd(), 'dist', process.argv[3] || `plugi
 
 const browserVersion = Browser.CHROME;
 
+// Clean up download folder if exists
+childProcess.execSync(`rm -rf "${outputPath}/chrome"`);
+
 async function download() {
     const buildId = await resolveBuildId(browserVersion, platform, 'latest');
     console.log(`Installing ${browserVersion} into ${outputPath}`);
@@ -38,4 +42,14 @@ async function download() {
 
 download().then(() => {
     console.log(`${browserVersion} downloaded into:`, outputPath);
+
+    // All the chrome files should be in the plugin 'chrome' folder
+    // This is used to set the puppeteer.executablePath
+    const out = childProcess.execSync(`find ${outputPath}/chrome -type f -name chrome.exe -exec dirname "{}" \;`);
+    const chromeBinDir = out.toString().trim()
+    
+    console.log(`Moving ${chromeBinDir} content into ${outputPath}/chrome`)
+    childProcess.execSync(`mv ${chromeBinDir} ${outputPath}/tmp`)
+    childProcess.execSync(`rm -r "${outputPath}/chrome"`);
+    childProcess.execSync(`mv "${outputPath}/tmp" "${outputPath}/chrome"`);
 });
