@@ -1,6 +1,7 @@
 import * as path from 'path';
 import * as _ from 'lodash';
-import * as os from 'os';
+import * as fs from 'fs';
+import { Browser, computeExecutablePath } from '@puppeteer/browsers';
 import { RenderGRPCPluginV2 } from './plugin/v2/grpc_plugin';
 import { HttpServer } from './service/http-server';
 import { ConsoleLogger, PluginLogger } from './logger';
@@ -19,8 +20,17 @@ async function main() {
     const config: PluginConfig = defaultPluginConfig;
     populatePluginConfigFromEnv(config, env);
     if (!config.rendering.chromeBin && (process as any).pkg) {
-      const ext = os.platform() === 'win32' ? '.exe' : ''
-      config.rendering.chromeBin = [path.dirname(process.execPath), 'chrome', `chrome${ext}`].join(path.sep);
+      const execPath = path.dirname(process.execPath);
+      const chromeInfoFile = fs.readFileSync(path.resolve(execPath, 'chrome-info.json'), 'utf8');
+      const chromeInfo = JSON.parse(chromeInfoFile);
+
+      const executablePath = computeExecutablePath({
+        cacheDir: path.dirname(process.execPath),
+        browser: Browser.CHROME,
+        buildId: chromeInfo.buildId,
+      });
+
+      config.rendering.chromeBin = executablePath;
       logger.debug(`Setting chromeBin to ${config.rendering.chromeBin}`);
     }
 
@@ -65,7 +75,13 @@ async function main() {
 }
 
 main().catch((err) => {
-  console.error(err);
+  const errorLog = {
+    '@level': 'error',
+    '@message': 'failed to start grafana-image-renderer',
+    'error': err.message,
+    'trace': err.stack,
+  }
+  console.error(JSON.stringify(errorLog));
   process.exit(1);
 });
 
