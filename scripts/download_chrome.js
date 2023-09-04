@@ -1,5 +1,4 @@
 const { BrowserPlatform, Browser, install, resolveBuildId } = require('@puppeteer/browsers');
-const childProcess = require('child_process');
 const fs = require('fs')
 const path = require('path');
 
@@ -26,9 +25,6 @@ if (platform === 'darwin') {
 const outputPath = path.resolve(process.cwd(), 'dist', process.argv[3] || `plugin-${archArg}`);
 
 const browserVersion = Browser.CHROME;
-
-// Clean up download folder if exists
-childProcess.execFileSync('rm', ['-rf', `${outputPath}/chrome`]);
 
 async function download() {
     const buildId = await resolveBuildId(browserVersion, platform, 'latest');
