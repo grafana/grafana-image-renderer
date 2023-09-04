@@ -24,13 +24,11 @@ async function main() {
       const chromeInfoFile = fs.readFileSync(path.resolve(execPath, 'chrome-info.json'), 'utf8');
       const chromeInfo = JSON.parse(chromeInfoFile);
 
-      const executablePath = computeExecutablePath({
+     config.rendering.chromeBin = computeExecutablePath({
         cacheDir: path.dirname(process.execPath),
         browser: Browser.CHROME,
         buildId: chromeInfo.buildId,
       });
-
-      config.rendering.chromeBin = executablePath;
       logger.debug(`Setting chromeBin to ${config.rendering.chromeBin}`);
     }
 
