@@ -69,7 +69,6 @@ def security_scan_step():
         'commands': [
             '. ~/.init-nvm.sh',
             'echo "Starting veracode scan..."',
-            'apk add curl',
             '# Increase heap size or the scanner will die.',
             'export _JAVA_OPTIONS=-Xmx4g',
             'mkdir -p ci/jobs/security_scan',

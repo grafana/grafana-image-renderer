@@ -36,7 +36,6 @@ steps:
 - commands:
   - . ~/.init-nvm.sh
   - echo "Starting veracode scan..."
-  - apk add curl
   - '# Increase heap size or the scanner will die.'
   - export _JAVA_OPTIONS=-Xmx4g
   - mkdir -p ci/jobs/security_scan
@@ -145,7 +144,6 @@ steps:
 - commands:
   - . ~/.init-nvm.sh
   - echo "Starting veracode scan..."
-  - apk add curl
   - '# Increase heap size or the scanner will die.'
   - export _JAVA_OPTIONS=-Xmx4g
   - mkdir -p ci/jobs/security_scan
@@ -268,7 +266,6 @@ steps:
 - commands:
   - . ~/.init-nvm.sh
   - echo "Starting veracode scan..."
-  - apk add curl
   - '# Increase heap size or the scanner will die.'
   - export _JAVA_OPTIONS=-Xmx4g
   - mkdir -p ci/jobs/security_scan
@@ -417,6 +414,6 @@ kind: secret
 name: srcclr_api_token
 ---
 kind: signature
-hmac: b03164ce61d2258d792d56825dcbc0112eb05852e343d2c39b2a94c10e55274d
+hmac: e6b99f052740c6862015a124564b85182f9877f4eccc159334a40000faf3a008
 
 ...
