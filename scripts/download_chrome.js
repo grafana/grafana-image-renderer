@@ -1,4 +1,5 @@
 const { BrowserPlatform, Browser, install, resolveBuildId } = require('@puppeteer/browsers');
+const fs = require('fs')
 const path = require('path');
 
 const archArg = process.argv[2];
@@ -36,6 +37,9 @@ async function download() {
     });
 }
 
-download().then(() => {
+download().then(browser => {
     console.log(`${browserVersion} downloaded into:`, outputPath);
+
+    const chromeInfo = { buildId: browser.buildId };
+    return fs.writeFileSync(path.resolve(outputPath, 'chrome-info.json'), JSON.stringify(chromeInfo));
 });
