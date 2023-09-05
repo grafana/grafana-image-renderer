@@ -23,13 +23,13 @@ steps:
   - yarn install --frozen-lockfile --no-progress
   depends_on:
   - grabpl
-  image: grafana/grafana-plugin-ci:1.8.1-alpine
+  image: grafana/grafana-plugin-ci:1.9.0
   name: yarn-install
 - commands:
   - yarn build
   depends_on:
   - yarn-install
-  image: grafana/grafana-plugin-ci:1.8.1-alpine
+  image: grafana/grafana-plugin-ci:1.9.0
   name: yarn-build
 - commands:
   - echo "Starting veracode scan..."
@@ -45,7 +45,7 @@ steps:
     SRCCLR_API_TOKEN:
       from_secret: srcclr_api_token
   failure: ignore
-  image: grafana/grafana-plugin-ci:1.8.1-alpine
+  image: grafana/grafana-plugin-ci:1.9.0
   name: security-scan
 - commands:
   - sh scripts/package_target.sh linux-x64-glibc
@@ -56,7 +56,7 @@ steps:
   environment:
     GRAFANA_API_KEY:
       from_secret: grafana_api_key
-  image: grafana/grafana-plugin-ci:1.8.1-alpine
+  image: grafana/grafana-plugin-ci:1.9.0
   name: package-linux-x64-glibc
 - commands:
   - sh scripts/package_target.sh darwin-x64-unknown
@@ -67,7 +67,7 @@ steps:
   environment:
     GRAFANA_API_KEY:
       from_secret: grafana_api_key
-  image: grafana/grafana-plugin-ci:1.8.1-alpine
+  image: grafana/grafana-plugin-ci:1.9.0
   name: package-darwin-x64-unknown
 - commands:
   - sh scripts/package_target.sh win32-x64-unknown
@@ -78,7 +78,7 @@ steps:
   environment:
     GRAFANA_API_KEY:
       from_secret: grafana_api_key
-  image: grafana/grafana-plugin-ci:1.8.1-alpine
+  image: grafana/grafana-plugin-ci:1.9.0
   name: package-win32-x64-unknown
 - commands:
   - sh scripts/package_target.sh linux-x64-glibc true plugin-linux-x64-glibc-no-chromium
@@ -90,7 +90,7 @@ steps:
   environment:
     GRAFANA_API_KEY:
       from_secret: grafana_api_key
-  image: grafana/grafana-plugin-ci:1.8.1-alpine
+  image: grafana/grafana-plugin-ci:1.9.0
   name: package-linux-x64-glibc-no-chromium
 trigger:
   event:
@@ -125,13 +125,13 @@ steps:
   - yarn install --frozen-lockfile --no-progress
   depends_on:
   - grabpl
-  image: grafana/grafana-plugin-ci:1.8.1-alpine
+  image: grafana/grafana-plugin-ci:1.9.0
   name: yarn-install
 - commands:
   - yarn build
   depends_on:
   - yarn-install
-  image: grafana/grafana-plugin-ci:1.8.1-alpine
+  image: grafana/grafana-plugin-ci:1.9.0
   name: yarn-build
 - commands:
   - echo "Starting veracode scan..."
@@ -147,7 +147,7 @@ steps:
     SRCCLR_API_TOKEN:
       from_secret: srcclr_api_token
   failure: ignore
-  image: grafana/grafana-plugin-ci:1.8.1-alpine
+  image: grafana/grafana-plugin-ci:1.9.0
   name: security-scan
 - commands:
   - sh scripts/package_target.sh linux-x64-glibc
@@ -158,7 +158,7 @@ steps:
   environment:
     GRAFANA_API_KEY:
       from_secret: grafana_api_key
-  image: grafana/grafana-plugin-ci:1.8.1-alpine
+  image: grafana/grafana-plugin-ci:1.9.0
   name: package-linux-x64-glibc
 - commands:
   - sh scripts/package_target.sh darwin-x64-unknown
@@ -169,7 +169,7 @@ steps:
   environment:
     GRAFANA_API_KEY:
       from_secret: grafana_api_key
-  image: grafana/grafana-plugin-ci:1.8.1-alpine
+  image: grafana/grafana-plugin-ci:1.9.0
   name: package-darwin-x64-unknown
 - commands:
   - sh scripts/package_target.sh win32-x64-unknown
@@ -180,7 +180,7 @@ steps:
   environment:
     GRAFANA_API_KEY:
       from_secret: grafana_api_key
-  image: grafana/grafana-plugin-ci:1.8.1-alpine
+  image: grafana/grafana-plugin-ci:1.9.0
   name: package-win32-x64-unknown
 - commands:
   - sh scripts/package_target.sh linux-x64-glibc true plugin-linux-x64-glibc-no-chromium
@@ -191,7 +191,7 @@ steps:
   environment:
     GRAFANA_API_KEY:
       from_secret: grafana_api_key
-  image: grafana/grafana-plugin-ci:1.8.1-alpine
+  image: grafana/grafana-plugin-ci:1.9.0
   name: package-linux-x64-glibc-no-chromium
 - commands:
   - sh scripts/build_push_docker.sh master
@@ -241,13 +241,13 @@ steps:
   - yarn install --frozen-lockfile --no-progress
   depends_on:
   - grabpl
-  image: grafana/grafana-plugin-ci:1.8.1-alpine
+  image: grafana/grafana-plugin-ci:1.9.0
   name: yarn-install
 - commands:
   - yarn build
   depends_on:
   - yarn-install
-  image: grafana/grafana-plugin-ci:1.8.1-alpine
+  image: grafana/grafana-plugin-ci:1.9.0
   name: yarn-build
 - commands:
   - echo "Starting veracode scan..."
@@ -263,7 +263,7 @@ steps:
     SRCCLR_API_TOKEN:
       from_secret: srcclr_api_token
   failure: ignore
-  image: grafana/grafana-plugin-ci:1.8.1-alpine
+  image: grafana/grafana-plugin-ci:1.9.0
   name: security-scan
 - commands:
   - sh scripts/package_target.sh linux-x64-glibc
@@ -274,7 +274,7 @@ steps:
   environment:
     GRAFANA_API_KEY:
       from_secret: grafana_api_key
-  image: grafana/grafana-plugin-ci:1.8.1-alpine
+  image: grafana/grafana-plugin-ci:1.9.0
   name: package-linux-x64-glibc
 - commands:
   - sh scripts/package_target.sh darwin-x64-unknown
@@ -285,7 +285,7 @@ steps:
   environment:
     GRAFANA_API_KEY:
       from_secret: grafana_api_key
-  image: grafana/grafana-plugin-ci:1.8.1-alpine
+  image: grafana/grafana-plugin-ci:1.9.0
   name: package-darwin-x64-unknown
 - commands:
   - sh scripts/package_target.sh win32-x64-unknown
@@ -296,7 +296,7 @@ steps:
   environment:
     GRAFANA_API_KEY:
       from_secret: grafana_api_key
-  image: grafana/grafana-plugin-ci:1.8.1-alpine
+  image: grafana/grafana-plugin-ci:1.9.0
   name: package-win32-x64-unknown
 - commands:
   - sh scripts/package_target.sh linux-x64-glibc true plugin-linux-x64-glibc-no-chromium
@@ -307,7 +307,7 @@ steps:
   environment:
     GRAFANA_API_KEY:
       from_secret: grafana_api_key
-  image: grafana/grafana-plugin-ci:1.8.1-alpine
+  image: grafana/grafana-plugin-ci:1.9.0
   name: package-linux-x64-glibc-no-chromium
 - commands:
   - sh scripts/generate_md5sum.sh
@@ -349,7 +349,7 @@ steps:
       from_secret: gcom_uagent
     GCOM_URL:
       from_secret: gcom_url
-  image: grafana/grafana-plugin-ci:1.8.1-alpine
+  image: grafana/grafana-plugin-ci:1.9.0
   name: publish_to_gcom
 trigger:
   branch:
