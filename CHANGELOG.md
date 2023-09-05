@@ -1,3 +1,8 @@
+## 3.8.0 (2023-08-22)
+- Puppeteer: upgrade to v21 [#433](https://github.com/grafana/grafana-image-renderer/pull/433), [Clarity-89](https://github.com/Clarity-89) 
+- Fix fullpage waitFor conditions [#446](https://github.com/grafana/grafana-image-renderer/pull/446), [AgnesToulet](https://github.com/AgnesToulet)
+
+
 ## 3.7.2 (2023-07-27)
 - Chore: update all dependencies [#443](https://github.com/grafana/grafana-image-renderer/pull/443), [AgnesToulet](https://github.com/AgnesToulet)
 - Bump protobufjs from 7.1.1 to 7.2.4 [#438](https://github.com/grafana/grafana-image-renderer/pull/438), [dependabot[bot]](https://github.com/apps/dependabot)
