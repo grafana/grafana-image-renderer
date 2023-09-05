@@ -1,4 +1,4 @@
-load('scripts/drone/utils.star', 'docker_image', 'ci_image', 'publisher_image')
+load('scripts/drone/utils.star', 'docker_image', 'ci_image')
 load('scripts/drone/vault.star', 'from_secret')
 
 def publish_gh_release():
@@ -49,6 +49,7 @@ def publish_to_gcom():
         'name': 'publish_to_gcom',
         'image': ci_image,
         'commands': [
+            '. ~/.init-nvm.sh',
             'yarn run create-gcom-plugin-json ${DRONE_COMMIT}',
             'sh scripts/push-to-gcom.sh',
         ],
