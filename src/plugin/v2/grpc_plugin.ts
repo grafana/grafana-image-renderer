@@ -240,10 +240,6 @@ class PluginGRPCServer {
 const populateConfigFromEnv = (config: PluginConfig) => {
   const env = Object.assign({}, process.env);
 
-  if (env['GF_PLUGIN_RENDERING_CHROME_BIN']) {
-    config.rendering.chromeBin = env['GF_PLUGIN_RENDERING_CHROME_BIN'];
-  }
-
   if (env['GF_PLUGIN_RENDERING_ARGS']) {
     const args = env['GF_PLUGIN_RENDERING_ARGS'] as string;
     if (args.length > 0) {
