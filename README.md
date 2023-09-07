@@ -56,35 +56,35 @@ The following example shows how you can run Grafana and the remote HTTP renderin
 
 1. Create a `docker-compose.yml` with the following content:
 
-```yaml
-version: '2'
+    ```yaml
+    version: '2'
 
-services:
-  grafana:
-    image: grafana/grafana:latest
-    ports:
-      - '3000:3000'
-    environment:
-      GF_RENDERING_SERVER_URL: http://renderer:8081/render
-      GF_RENDERING_CALLBACK_URL: http://grafana:3000/
-      GF_LOG_FILTERS: rendering:debug
-  renderer:
-    image: grafana/grafana-image-renderer:latest
-    ports:
-      - 8081
-```
+    services:
+      grafana:
+        image: grafana/grafana:latest
+        ports:
+          - '3000:3000'
+        environment:
+          GF_RENDERING_SERVER_URL: http://renderer:8081/render
+          GF_RENDERING_CALLBACK_URL: http://grafana:3000/
+          GF_LOG_FILTERS: rendering:debug
+      renderer:
+        image: grafana/grafana-image-renderer:latest
+        ports:
+          - 8081
+    ```
 
 1. Next, run docker compose.
 
-```bash
-docker-compose up
-```
+    ```bash
+    docker-compose up
+    ```
 
 ### Run as standalone Node.js application
 
 The following example describes how to build and run the remote HTTP rendering service as a standalone Node.js application and configure Grafana appropriately.
 
-1. Clone the [Grafana image renderer plugin](https://grafana.com/grafana/plugins/grafana-image-renderer) Git repository.
+1. Clone the [Grafana image renderer plugin](https://github.com/grafana/grafana-image-renderer/) Git repository.
 1. Install dependencies and build:
 
    ```bash
@@ -107,6 +107,12 @@ The following example describes how to build and run the remote HTTP rendering s
    ```
 
 1. Restart Grafana.
+
+## Security
+
+Access to the rendering endpoints is restricted to requests providing an auth token. This token should be configured in the Grafana configuration file and the renderer configuration file. This token is important when you run the plugin in remote rendering mode to avoid unauthorized file disclosure (see [CVE-2022-31176](https://github.com/grafana/grafana-image-renderer/security/advisories/GHSA-2cfh-233g-m4c5)).
+
+See [Grafana Image Rendering documentation](https://grafana.com/docs/grafana/latest/image-rendering/#security) to configure this secret token. The default value `-` is configured on both Grafana and the image renderer when you get started but we strongly recommend you to update this to a more secure value.
 
 ## Configuration
 

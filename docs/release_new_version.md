@@ -8,54 +8,33 @@
 1. Update `version` and `updated` properties in plugin.json.
 2. Update CHANGELOG.md.
 3. Merge/push changes to master.
-4. Commit is built in [CircleCI](https://circleci.com/gh/grafana/grafana-image-renderer).
+4. Commit is built in [Drone](https://drone.grafana.net/grafana/grafana-image-renderer).
 
-## Approve Release
+## Promote release
 
-1. Open [CircleCI](https://circleci.com/gh/grafana/grafana-image-renderer) and find your commit.
-2. Click on `build-master` workflow link for your commit and verify build and package steps are successful (green).
-4. Click on `approve-release` and approve to create GitHub release and publish docker image to Docker Hub.
+1. Open [Drone](https://drone.grafana.net/grafana/grafana-image-renderer) and find the build for your commit.
+2. Click on the `...` from the top-right corner to display the menu, then click on `Promote`.
+3. Fill the `Create deployment` form with the values below, and click on `Deploy`:
+    - `Type` = `Promote`
+    - `Target` = `release` *(write it manually)*
+    - *(no parameters needed)*
+4. Once you've clicked on `Deploy` it will trigger a new pipeline with the release steps.
 
 ## Publish plugin to Grafana.com
 
-1. Download `md5sums.txt` from the GitHub release of the version you want to publish.
+Since the [migration to Drone](https://github.com/grafana/grafana-image-renderer/pull/394), this step that historically
+was needed to be performed manually is no longer required and is automatically performed by `publish_to_gcom` step.
 
-### Alternative 1 - Open a PR in grafana-plugin-repository (preferred way for now)
+**Note:** The step will time out, but the plugin update process will continue in the background.
 
-1. Checkout [grafana-plugin-repository](https://github.com/grafana/grafana-plugin-repository)
-2. Update repo.json with new plugin version JSON payload providing `version`, `commit`, `url` and `download` payload with download URL's and MD5 checksums. See [PR](https://github.com/grafana/grafana-plugin-repository/pull/480) for an example.
-3. Commit, push and open a PR
-4. Wait for the PR to be merged and then push version to grafana.com
-    ```bash
-    gcom /plugins -d slug=grafana-image-renderer -d version=1.0.5
-    ```
-
-### Alternative 2 - Push directly to grafana.com
-
-plugin_version.json:
-
-```json
-{
-  "url": "https://github.com/grafana/grafana-image-renderer",
-  "commit": "a32a8a1f538cf5138319616704dd769f8cf7c116",
-  "download": {
-    "darwin-amd64": {
-      "url": "https://github.com/grafana/grafana-image-renderer/releases/download/v1.0.1/plugin-darwin-x64-unknown.zip",
-      "md5": "329d4d5020f8e626d3661d1aae21d810"
-    },
-    "linux-amd64": {
-      "url": "https://github.com/grafana/grafana-image-renderer/releases/download/v1.0.1/plugin-linux-x64-glibc.zip",
-      "md5": "6f36cffad5b55e339ba29ae1ec369abf"
-    },
-    "windows-amd64": {
-      "url": "https://github.com/grafana/grafana-image-renderer/releases/download/v1.0.1/plugin-win32-x64-unknown.zip",
-      "md5": "d1f7c0a407eeb198d82358a94d884778"
-    }
-  }
-}
+```
+<html>
+<head><title>504 Gateway Time-out</title></head>
+<body>
+<center><h1>504 Gateway Time-out</h1></center>
+<hr><center>nginx/1.17.9</center>
+</body>
+</html>
 ```
 
-Push to grafana.com:
-```bash
-JSON=$(cat plugin_version.json) gcom /plugins -X POST -H "Content-Type: application/json" -d $JSON
-```
+Finally, please recall to inform HG team about the new release.

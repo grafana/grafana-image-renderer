@@ -8,37 +8,27 @@ import * as promClient from 'prom-client';
 import { Logger } from '../logger';
 import { Browser, createBrowser } from '../browser';
 import { ServiceConfig } from '../config';
-import { setupHttpServerMetrics } from './metrics_middleware';
-import { RenderOptions, RenderCSVOptions, HTTPHeaders, Metrics } from '../browser/browser';
+import { setupHttpServerMetrics } from './metrics';
+import { HTTPHeaders, ImageRenderOptions, RenderOptions } from '../types';
+import { Sanitizer } from '../sanitizer/Sanitizer';
+import * as bodyParser from 'body-parser';
+import * as multer from 'multer';
+import { isSanitizeRequest } from '../sanitizer/types';
+import * as contentDisposition from 'content-disposition';
+import { asyncMiddleware, trustedUrlMiddleware, authTokenMiddleware } from './middlewares';
 
-export interface RenderRequest {
-  url: string;
-  width: number;
-  height: number;
-  deviceScaleFactor: number;
-  filePath: string;
-  renderKey: string;
-  domain: string;
-  timeout: number;
-  timezone: string;
-  encoding: string;
-}
+const upload = multer({ storage: multer.memoryStorage() });
 
-export interface RenderCSVRequest {
-  url: string;
-  filePath: string;
-  renderKey: string;
-  domain: string;
-  timeout: number;
-  timezone: string;
-  encoding: string;
+enum SanitizeRequestPartName {
+  'file' = 'file',
+  'config' = 'config',
 }
 
 export class HttpServer {
   app: express.Express;
   browser: Browser;
 
-  constructor(private config: ServiceConfig, private log: Logger) {}
+  constructor(private config: ServiceConfig, private log: Logger, private sanitizer: Sanitizer) {}
 
   async start() {
     this.app = express();
@@ -59,19 +49,40 @@ export class HttpServer {
       })
     );
 
+    this.app.use(bodyParser.json());
+
     if (this.config.service.metrics.enabled) {
       setupHttpServerMetrics(this.app, this.config.service.metrics, this.log);
     }
+
     this.app.get('/', (req: express.Request, res: express.Response) => {
       res.send('Grafana Image Renderer');
     });
+
+    // Middlewares for /render endpoints
+    this.app.use('/render', authTokenMiddleware(this.config.service.security), trustedUrlMiddleware);
+
+    // Set up /render endpoints
+    this.app.get('/render', asyncMiddleware(this.render));
+    this.app.get('/render/csv', asyncMiddleware(this.renderCSV));
     this.app.get('/render/version', (req: express.Request, res: express.Response) => {
       const pluginInfo = require('../../plugin.json');
       res.send({ version: pluginInfo.info.version });
     });
 
-    this.app.get('/render', asyncMiddleware(this.render));
-    this.app.get('/render/csv', asyncMiddleware(this.renderCSV));
+    // Middlewares for /sanitize endpoints
+    this.app.use('/sanitize', authTokenMiddleware(this.config.service.security));
+
+    // Set up /sanitize endpoints
+    this.app.post(
+      '/sanitize',
+      upload.fields([
+        { name: SanitizeRequestPartName.file, maxCount: 1 },
+        { name: SanitizeRequestPartName.config, maxCount: 1 },
+      ]),
+      asyncMiddleware(this.sanitize)
+    );
+
     this.app.use((err, req, res, next) => {
       if (err.stack) {
         this.log.error('Request failed', 'url', req.url, 'stack', err.stack);
@@ -79,7 +90,11 @@ export class HttpServer {
         this.log.error('Request failed', 'url', req.url, 'error', err);
       }
 
-      return res.status(err.output.statusCode).json(err.output.payload);
+      if (err.output) {
+        return res.status(err.output.statusCode).json(err.output.payload);
+      }
+
+      return res.status(500).json(err);
     });
 
     if (this.config.service.host) {
@@ -123,7 +138,7 @@ export class HttpServer {
     await this.browser.start();
   }
 
-  render = async (req: express.Request<any, any, any, RenderRequest, any>, res: express.Response, next: express.NextFunction) => {
+  render = async (req: express.Request<any, any, any, ImageRenderOptions, any>, res: express.Response, next: express.NextFunction) => {
     if (!req.query.url) {
       throw boom.badRequest('Missing url parameter');
     }
@@ -134,7 +149,7 @@ export class HttpServer {
       headers['Accept-Language'] = (req.headers['Accept-Language'] as string[]).join(';');
     }
 
-    const options: RenderOptions = {
+    const options: ImageRenderOptions = {
       url: req.query.url,
       width: req.query.width,
       height: req.query.height,
@@ -169,7 +184,45 @@ export class HttpServer {
     });
   };
 
-  renderCSV = async (req: express.Request<any, any, any, RenderCSVRequest, any>, res: express.Response, next: express.NextFunction) => {
+  sanitize = async (req: express.Request<any, { error: string }>, res: express.Response<{ error: string }>) => {
+    const file = req.files?.[SanitizeRequestPartName.file]?.[0] as Express.Multer.File | undefined;
+    if (!file) {
+      throw boom.badRequest('missing file');
+    }
+
+    const configFile = req.files?.[SanitizeRequestPartName.config]?.[0] as Express.Multer.File | undefined;
+    if (!configFile) {
+      throw boom.badRequest('missing config');
+    }
+
+    const config = JSON.parse(configFile.buffer.toString());
+
+    const sanitizeReq = {
+      ...config,
+      content: file.buffer,
+    };
+
+    if (!isSanitizeRequest(sanitizeReq)) {
+      throw boom.badRequest('invalid request: ' + JSON.stringify(config));
+    }
+
+    this.log.debug('Sanitize request received', 'contentLength', file.size, 'name', file.filename, 'config', JSON.stringify(config));
+
+    try {
+      const sanitizeResponse = this.sanitizer.sanitize(sanitizeReq);
+      res.writeHead(200, {
+        'Content-Disposition': `attachment;filename=${file.filename ?? 'sanitized'}`,
+        'Content-Length': sanitizeResponse.sanitized.length,
+        'Content-Type': file.mimetype ?? 'application/octet-stream',
+      });
+      return res.end(sanitizeResponse.sanitized);
+    } catch (e) {
+      this.log.error('Sanitization failed', 'filesize', file.size, 'name', file.filename, 'error', e.stack);
+      return res.status(500).json({ error: e.message });
+    }
+  };
+
+  renderCSV = async (req: express.Request<any, any, any, RenderOptions, any>, res: express.Response, next: express.NextFunction) => {
     if (!req.query.url) {
       throw boom.badRequest('Missing url parameter');
     }
@@ -180,7 +233,7 @@ export class HttpServer {
       headers['Accept-Language'] = (req.headers['Accept-Language'] as string[]).join(';');
     }
 
-    const options: RenderCSVOptions = {
+    const options: RenderOptions = {
       url: req.query.url,
       filePath: req.query.filePath,
       timeout: req.query.timeout,
@@ -198,7 +251,7 @@ export class HttpServer {
     const result = await this.browser.renderCSV(options);
 
     if (result.fileName) {
-      res.setHeader('Content-Disposition', `attachment; filename="${result.fileName}"`);
+      res.setHeader('Content-Disposition', contentDisposition(result.fileName));
     }
     res.sendFile(result.filePath, (err) => {
       if (err) {
@@ -217,14 +270,3 @@ export class HttpServer {
     });
   };
 }
-
-// wrapper for our async route handlers
-// probably you want to move it to a new file
-const asyncMiddleware = (fn) => (req, res, next) => {
-  Promise.resolve(fn(req, res, next)).catch((err) => {
-    if (!err.isBoom) {
-      return next(boom.badImplementation(err));
-    }
-    next(err);
-  });
-};

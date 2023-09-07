@@ -1,3 +1,75 @@
+## 3.8.0 (2023-08-22)
+- Puppeteer: upgrade to v21 [#433](https://github.com/grafana/grafana-image-renderer/pull/433), [Clarity-89](https://github.com/Clarity-89) 
+- Fix fullpage waitFor conditions [#446](https://github.com/grafana/grafana-image-renderer/pull/446), [AgnesToulet](https://github.com/AgnesToulet)
+
+
+## 3.7.2 (2023-07-27)
+- Chore: update all dependencies [#443](https://github.com/grafana/grafana-image-renderer/pull/443), [AgnesToulet](https://github.com/AgnesToulet)
+- Bump protobufjs from 7.1.1 to 7.2.4 [#438](https://github.com/grafana/grafana-image-renderer/pull/438), [dependabot[bot]](https://github.com/apps/dependabot)
+- Bump tough-cookie from 4.1.2 to 4.1.3 [#439](https://github.com/grafana/grafana-image-renderer/pull/439), [dependabot[bot]](https://github.com/apps/dependabot)
+- Bump semver from 6.3.0 to 6.3.1 [#440](https://github.com/grafana/grafana-image-renderer/pull/440), [dependabot[bot]](https://github.com/apps/dependabot)
+- Bump word-wrap from 1.2.3 to 1.2.4 [#441](https://github.com/grafana/grafana-image-renderer/pull/441), [dependabot[bot]](https://github.com/apps/dependabot)
+
+## 3.7.1 (2023-05-15)
+- Docker: remove alpine edge repo [#413](https://github.com/grafana/grafana-image-renderer/pull/413), [sozercan](https://github.com/sozercan)
+- Bump yaml from 2.1.1 to 2.2.2 [#421](https://github.com/grafana/grafana-image-renderer/pull/421), [dependabot[bot]](https://github.com/apps/dependabot)
+
+## 3.7.0 (2023-04-17)
+- Security: can set array of auth tokens [#417](https://github.com/grafana/grafana-image-renderer/pull/417), [AgnesToulet](https://github.com/AgnesToulet)
+- Bump pkg from 5.8.0 to 5.8.1 [#415](https://github.com/grafana/grafana-image-renderer/pull/415), [AgnesToulet](https://github.com/AgnesToulet)
+- Bump jimp from 0.16.1 to 0.16.13 [#406](https://github.com/grafana/grafana-image-renderer/pull/406), [AgnesToulet](https://github.com/AgnesToulet)
+
+## 3.6.4 (2023-02-10)
+
+- Add Snyk workflow [#402](https://github.com/grafana/grafana-image-renderer/pull/402), [SadFaceSmith](https://github.com/SadFaceSmith)
+- Fix null error [#403](https://github.com/grafana/grafana-image-renderer/pull/403), [spinillos](https://github.com/spinillos)
+
+## 3.6.3 (2023-01-11)
+
+- Add support for page zooming option [#387](https://github.com/grafana/grafana-image-renderer/pull/387), [kaffarell](https://github.com/kaffarell)
+- Migrate from CircleCI to Drone [#394](https://github.com/grafana/grafana-image-renderer/pull/394), [spinillos](https://github.com/spinillos), [joanlopez](https://github.com/joanlopez)
+
+## 3.6.2 (2022-10-22)
+
+- Log errors related to JSHandle@object as debug [#376](https://github.com/grafana/grafana-image-renderer/pull/376), [spinillos](https://github.com/spinillos)
+- Chore: Update Puppeteer deprecated functions [#375](https://github.com/grafana/grafana-image-renderer/pull/375), [spinillos](https://github.com/spinillos)
+- Fix: Update _client with _client() to avoid to fail when creating a CSV [#372](https://github.com/grafana/grafana-image-renderer/pull/372), [spinillos](https://github.com/spinillos)
+- Chore: Update all dependencies [#369](https://github.com/grafana/grafana-image-renderer/pull/369), [DanCech](https://github.com/DanCech)
+
+## 3.6.1 (2022-08-30)
+
+- Chore: Update to Node 16 [#365](https://github.com/grafana/grafana-image-renderer/pull/365), [Clarity-89](https://github.com/Clarity-89)
+- Update waiting condition for full page screenshots [#362](https://github.com/grafana/grafana-image-renderer/pull/362), [spinillos](https://github.com/spinillos)
+- Fix invalid Content-Disposition [#357](https://github.com/grafana/grafana-image-renderer/pull/357), [spinillos](https://github.com/spinillos)
+
+## 3.6.0 (2022-08-16)
+
+- Security: Add support for auth token [#364](https://github.com/grafana/grafana-image-renderer/pull/364), [xlson](https://github.com/xlson), [joanlopez](https://github.com/joanlopez)
+
+## 3.5.0 (2022-07-18)
+
+- Added File Sanitization API with [DOMPurify](https://github.com/cure53/DOMPurify) as the backend. [#349](https://github.com/grafana/grafana-image-renderer/pull/349), [ArturWierzbicki](https://github.com/ArturWierzbicki)
+- Security: upgrade dependencies [#356](https://github.com/grafana/grafana-image-renderer/pull/356), [#348](https://github.com/grafana/grafana-image-renderer/pull/348), [#347](https://github.com/grafana/grafana-image-renderer/pull/347),  [AgnesToulet](https://github.com/AgnesToulet)
+
+## 3.4.2 (2022-03-23)
+
+- Security: upgrade dependencies [#337](https://github.com/grafana/grafana-image-renderer/pull/337), [AgnesToulet](https://github.com/AgnesToulet)
+- Fix: set captureBeyondViewport to false by default to fix rendering old panels [#335](https://github.com/grafana/grafana-image-renderer/pull/335), [AgnesToulet](https://github.com/AgnesToulet)
+
+## 3.4.1 (2022-02-23)
+
+- Fix: replace `sharp` with `jimp` to resolve issues with installing native dependencies [#325](https://github.com/grafana/grafana-image-renderer/pull/325), [ArturWierzbicki](https://github.com/ArturWierzbicki)
+
+## 3.4.0 (2022-02-17)
+
+- Support new concurrency mode: contextPerRenderKey [#314](https://github.com/grafana/grafana-image-renderer/pull/314), [ArturWierzbicki](https://github.com/ArturWierzbicki)
+- Support full height dashboards and scaled thumbnails [#312](https://github.com/grafana/grafana-image-renderer/pull/312), [ryantxu](https://github.com/ryantxu)
+
+## 3.3.0 (2021-11-18)
+
+- Chore: Bump pkg from 5.3.3 to 5.4.1 [#305](https://github.com/grafana/grafana-image-renderer/pull/305), [AgnesToulet](https://github.com/AgnesToulet)
+- Configuration: Add timeout setting for clustered mode [#303](https://github.com/grafana/grafana-image-renderer/pull/303), [AgnesToulet](https://github.com/AgnesToulet)
+
 ## 3.2.1 (2021-10-07)
 
 - Chore: Upgrade dev dependencies [#294](https://github.com/grafana/grafana-image-renderer/pull/294), [AgnesToulet](https://github.com/AgnesToulet)

@@ -1,12 +1,14 @@
 import * as path from 'path';
-import * as puppeteer from 'puppeteer';
 import * as _ from 'lodash';
+import * as fs from 'fs';
+import { Browser, computeExecutablePath } from '@puppeteer/browsers';
 import { RenderGRPCPluginV2 } from './plugin/v2/grpc_plugin';
 import { HttpServer } from './service/http-server';
 import { ConsoleLogger, PluginLogger } from './logger';
 import * as minimist from 'minimist';
 import { defaultPluginConfig, defaultServiceConfig, readJSONFileSync, PluginConfig, ServiceConfig } from './config';
 import { serve } from './node-plugin';
+import { createSanitizer } from './sanitizer/Sanitizer';
 
 async function main() {
   const argv = minimist(process.argv.slice(2));
@@ -18,13 +20,16 @@ async function main() {
     const config: PluginConfig = defaultPluginConfig;
     populatePluginConfigFromEnv(config, env);
     if (!config.rendering.chromeBin && (process as any).pkg) {
-      //@ts-ignore
-      const parts = puppeteer.executablePath().split(path.sep);
-      while (!parts[0].startsWith('chrome-')) {
-        parts.shift();
-      }
+      const execPath = path.dirname(process.execPath);
+      const chromeInfoFile = fs.readFileSync(path.resolve(execPath, 'chrome-info.json'), 'utf8');
+      const chromeInfo = JSON.parse(chromeInfoFile);
 
-      config.rendering.chromeBin = [path.dirname(process.execPath), ...parts].join(path.sep);
+     config.rendering.chromeBin = computeExecutablePath({
+        cacheDir: path.dirname(process.execPath),
+        browser: Browser.CHROME,
+        buildId: chromeInfo.buildId,
+      });
+      logger.debug(`Setting chromeBin to ${config.rendering.chromeBin}`);
     }
 
     await serve({
@@ -58,7 +63,9 @@ async function main() {
     populateServiceConfigFromEnv(config, env);
 
     const logger = new ConsoleLogger(config.service.logging);
-    const server = new HttpServer(config, logger);
+
+    const sanitizer = createSanitizer();
+    const server = new HttpServer(config, logger, sanitizer);
     await server.start();
   } else {
     console.log('Unknown command');
@@ -66,7 +73,13 @@ async function main() {
 }
 
 main().catch((err) => {
-  console.error(err);
+  const errorLog = {
+    '@level': 'error',
+    '@message': 'failed to start grafana-image-renderer',
+    'error': err.message,
+    'trace': err.stack,
+  }
+  console.error(JSON.stringify(errorLog));
   process.exit(1);
 });
 
@@ -78,6 +91,10 @@ function populatePluginConfigFromEnv(config: PluginConfig, env: NodeJS.ProcessEn
 
   if (env['GF_PLUGIN_GRPC_PORT']) {
     config.plugin.grpc.port = parseInt(env['GF_PLUGIN_GRPC_PORT'] as string, 10);
+  }
+
+  if (env['GF_PLUGIN_RENDERING_CHROME_BIN']) {
+    config.rendering.chromeBin = env['GF_PLUGIN_RENDERING_CHROME_BIN'];
   }
 }
 
@@ -94,6 +111,11 @@ function populateServiceConfigFromEnv(config: ServiceConfig, env: NodeJS.Process
 
   if (env['HTTP_PORT']) {
     config.service.port = parseInt(env['HTTP_PORT'] as string, 10);
+  }
+
+  if (env['AUTH_TOKEN']) {
+    const authToken = env['AUTH_TOKEN'] as string;
+    config.service.security.authToken = authToken.includes(' ') ? authToken.split(' ') : authToken;
   }
 
   if (env['LOG_LEVEL']) {
@@ -124,12 +146,20 @@ function populateServiceConfigFromEnv(config: ServiceConfig, env: NodeJS.Process
     config.rendering.clustering.maxConcurrency = parseInt(env['RENDERING_CLUSTERING_MAX_CONCURRENCY'] as string, 10);
   }
 
+  if (env['RENDERING_CLUSTERING_TIMEOUT']) {
+    config.rendering.clustering.timeout = parseInt(env['RENDERING_CLUSTERING_TIMEOUT'] as string, 10);
+  }
+
   if (env['RENDERING_VERBOSE_LOGGING']) {
     config.rendering.verboseLogging = env['RENDERING_VERBOSE_LOGGING'] === 'true';
   }
 
   if (env['RENDERING_DUMPIO']) {
     config.rendering.dumpio = env['RENDERING_DUMPIO'] === 'true';
+  }
+
+  if (env['RENDERING_VIEWPORT_PAGE_ZOOM_LEVEL']) {
+    config.rendering.pageZoomLevel = parseFloat(env['RENDERING_VIEWPORT_PAGE_ZOOM_LEVEL'] as string);
   }
 
   if (env['RENDERING_ARGS']) {

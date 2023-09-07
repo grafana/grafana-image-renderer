@@ -1,3 +1,5 @@
+import { ConfigType } from '../../sanitizer/types';
+
 export interface StringList {
   values: string[];
 }
@@ -15,6 +17,7 @@ export interface RenderRequest {
   headers: {
     [header: string]: StringList;
   };
+  authToken: string;
 }
 
 export interface RenderResponse {
@@ -31,6 +34,7 @@ export interface RenderCSVRequest {
   headers: {
     [header: string]: StringList;
   };
+  authToken: string;
 }
 
 export interface RenderCSVResponse {
@@ -62,4 +66,18 @@ export interface CheckHealthResponse {
   status: HealthStatus;
   message?: string;
   jsonDetails?: Buffer;
+}
+
+export interface GRPCSanitizeRequest {
+  filename: string;
+  content: Buffer;
+  configType: ConfigType;
+  config: Buffer;
+  allowAllLinksInSvgUseTags: boolean;
+  authToken: string;
+}
+
+export interface GRPCSanitizeResponse {
+  error: string;
+  sanitized: Buffer;
 }

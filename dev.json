@@ -30,11 +30,22 @@
     "maxWidth": 1980,
     "maxHeight": 8000,
     "maxDeviceScaleFactor": 10,
+    "headed": false,
 
     "mode": "default",
+    "emulateNetworkConditions": false,
+    "networkConditions": {
+      "downloadThroughput": 4000000,
+      "uploadThroughput": 4000000,
+      "latency": 100,
+      "offline": false
+    },
+
     "clustering": {
+      "monitor": true,
       "mode": "browser",
-      "maxConcurrency": 5
+      "maxConcurrency": 5,
+      "timeout": 30
     },
 
     "verboseLogging": true,

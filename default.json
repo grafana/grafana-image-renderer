@@ -15,6 +15,10 @@
         "json": true,
         "colorize": false
       }
+    },
+
+    "security": {
+      "authToken": "-"
     }
   },
   "rendering": {
@@ -30,11 +34,16 @@
     "maxWidth": 3080,
     "maxHeight": 3000,
     "maxDeviceScaleFactor": 4,
+    "pageZoomLevel": 1,
+    "headed": false,
 
     "mode": "default",
+    "emulateNetworkConditions": false,
     "clustering": {
+      "monitor": false,
       "mode": "browser",
-      "maxConcurrency": 5
+      "maxConcurrency": 5,
+      "timeout": 30
     },
 
     "verboseLogging": false,
