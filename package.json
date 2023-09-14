@@ -69,7 +69,10 @@
     "typescript": "4.8.3"
   },
   "resolutions": {
-    "jpeg-js": "^0.4.4"
+    "jpeg-js": "^0.4.4",
+    "xml2js": "^0.6.2",
+    "semver": "^7.5.2",
+    "eslint-plugin-jsdoc": "^46.7.0"
   },
   "lint-staged": {
     "*.ts": [
