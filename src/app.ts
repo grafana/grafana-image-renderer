@@ -15,6 +15,9 @@ async function main() {
   const env = Object.assign({}, process.env);
   const command = argv._[0];
 
+  // See https://github.com/grafana/grafana-image-renderer/issues/460
+  process.env["PUPPETEER_DISABLE_HEADLESS_WARNING"] = "true"
+
   if (command === undefined) {
     const logger = new PluginLogger();
     const config: PluginConfig = defaultPluginConfig;
@@ -24,7 +27,7 @@ async function main() {
       const chromeInfoFile = fs.readFileSync(path.resolve(execPath, 'chrome-info.json'), 'utf8');
       const chromeInfo = JSON.parse(chromeInfoFile);
 
-     config.rendering.chromeBin = computeExecutablePath({
+      config.rendering.chromeBin = computeExecutablePath({
         cacheDir: path.dirname(process.execPath),
         browser: Browser.CHROME,
         buildId: chromeInfo.buildId,
