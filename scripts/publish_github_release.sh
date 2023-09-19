@@ -4,7 +4,7 @@ set -e
 
 git fetch --tags
 
-RELEASE_NOTES=$(awk 'BEGIN {FS="##"; RS=""} FNR==2 {print; exit}' CHANGELOG.md)
+RELEASE_NOTES=$(awk 'BEGIN {FS="##"; RS=""} FNR==1 {print; exit}' CHANGELOG.md)
 VERSION=$(cat plugin.json|jq '.info.version'| sed s/\"//g)
 PRERELEASE=''
 LATEST_TAG=$(git describe --tags --abbrev=0)
