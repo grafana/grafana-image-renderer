@@ -1,3 +1,6 @@
+## 3.8.2 (2023-09-21)
+- Browser: Revert to old headless mode to fix usage with Kubernetes [#459](https://github.com/grafana/grafana-image-renderer/pull/459), [AgnesToulet](https://github.com/AgnesToulet)
+
 ## 3.8.1 (2023-09-18)
 - Fix check condition to avoid timeouts in invalid panels [#299](https://github.com/grafana/grafana-image-renderer/pull/299), [spinillos](https://github.com/spinillos) 
 - Plugin: fix Chrome path [#451](https://github.com/grafana/grafana-image-renderer/pull/451), [AgnesToulet](https://github.com/AgnesToulet)
