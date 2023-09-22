@@ -1,211 +1,211 @@
 ---
+clone:
+  retries: 3
+depends_on: []
+image_pull_secrets:
+- dockerconfigjson
 kind: pipeline
-type: docker
 name: test-pr
-
+node:
+  type: no-parallel
 platform:
-  os: linux
   arch: amd64
-
+  os: linux
+services: []
 steps:
-- name: grabpl
-  image: byrnedo/alpine-curl:0.1.8
-  commands:
+- commands:
   - mkdir -p bin
   - curl -fL -o bin/grabpl https://grafana-downloads.storage.googleapis.com/grafana-build-pipeline/v3.0.20/grabpl
   - chmod +x bin/grabpl
-
-- name: yarn-install
-  image: grafana/grafana-plugin-ci:1.6.1-alpine
-  commands:
+  image: byrnedo/alpine-curl:0.1.8
+  name: grabpl
+- commands:
+  - . ~/.init-nvm.sh
   - yarn install --frozen-lockfile --no-progress
   depends_on:
   - grabpl
-
-- name: yarn-build
-  image: grafana/grafana-plugin-ci:1.6.1-alpine
-  commands:
+  image: grafana/grafana-plugin-ci:1.9.0
+  name: yarn-install
+- commands:
+  - . ~/.init-nvm.sh
   - yarn build
   depends_on:
   - yarn-install
-
-- name: security-scan
-  image: grafana/grafana-plugin-ci:1.6.1-alpine
-  commands:
+  image: grafana/grafana-plugin-ci:1.9.0
+  name: yarn-build
+- commands:
+  - . ~/.init-nvm.sh
   - echo "Starting veracode scan..."
-  - apk add curl
-  - "# Increase heap size or the scanner will die."
+  - '# Increase heap size or the scanner will die.'
   - export _JAVA_OPTIONS=-Xmx4g
   - mkdir -p ci/jobs/security_scan
-  - curl -sSL https://download.sourceclear.com/ci.sh | sh -s scan --skip-compile --quick --allow-dirty
+  - curl -sSL https://download.sourceclear.com/ci.sh | sh -s scan --skip-compile --quick
+    --allow-dirty
+  depends_on:
+  - yarn-build
   environment:
     SRCCLR_API_TOKEN:
       from_secret: srcclr_api_token
   failure: ignore
-  depends_on:
-  - yarn-build
-
-- name: package-linux-x64-glibc
-  image: grafana/grafana-plugin-ci:1.6.1-alpine
-  commands:
+  image: grafana/grafana-plugin-ci:1.9.0
+  name: security-scan
+- commands:
+  - . ~/.init-nvm.sh
   - sh scripts/package_target.sh linux-x64-glibc
   - bin/grabpl build-plugin-manifest ./dist/plugin-linux-x64-glibc || true
   - sh scripts/archive_target.sh linux-x64-glibc
+  depends_on:
+  - yarn-build
   environment:
     GRAFANA_API_KEY:
       from_secret: grafana_api_key
-  depends_on:
-  - yarn-build
-
-- name: package-darwin-x64-unknown
-  image: grafana/grafana-plugin-ci:1.6.1-alpine
-  commands:
+  image: grafana/grafana-plugin-ci:1.9.0
+  name: package-linux-x64-glibc
+- commands:
+  - . ~/.init-nvm.sh
   - sh scripts/package_target.sh darwin-x64-unknown
   - bin/grabpl build-plugin-manifest ./dist/plugin-darwin-x64-unknown || true
   - sh scripts/archive_target.sh darwin-x64-unknown
+  depends_on:
+  - yarn-build
   environment:
     GRAFANA_API_KEY:
       from_secret: grafana_api_key
-  depends_on:
-  - yarn-build
-
-- name: package-win32-x64-unknown
-  image: grafana/grafana-plugin-ci:1.6.1-alpine
-  commands:
+  image: grafana/grafana-plugin-ci:1.9.0
+  name: package-darwin-x64-unknown
+- commands:
+  - . ~/.init-nvm.sh
   - sh scripts/package_target.sh win32-x64-unknown
   - bin/grabpl build-plugin-manifest ./dist/plugin-win32-x64-unknown || true
   - sh scripts/archive_target.sh win32-x64-unknown
+  depends_on:
+  - yarn-build
   environment:
     GRAFANA_API_KEY:
       from_secret: grafana_api_key
-  depends_on:
-  - yarn-build
-
-- name: package-linux-x64-glibc-no-chromium
-  image: grafana/grafana-plugin-ci:1.6.1-alpine
-  commands:
+  image: grafana/grafana-plugin-ci:1.9.0
+  name: package-win32-x64-unknown
+- commands:
+  - . ~/.init-nvm.sh
   - sh scripts/package_target.sh linux-x64-glibc true plugin-linux-x64-glibc-no-chromium
-  - bin/grabpl build-plugin-manifest ./dist/plugin-linux-x64-glibc-no-chromium || true
+  - bin/grabpl build-plugin-manifest ./dist/plugin-linux-x64-glibc-no-chromium ||
+    true
   - sh scripts/archive_target.sh linux-x64-glibc plugin-linux-x64-glibc-no-chromium
+  depends_on:
+  - yarn-build
   environment:
     GRAFANA_API_KEY:
       from_secret: grafana_api_key
-  depends_on:
-  - yarn-build
-
-volumes:
-- name: docker
-  host:
-    path: /var/run/docker.sock
-
-image_pull_secrets:
-- dockerconfigjson
-
-node:
-  type: no-parallel
-
+  image: grafana/grafana-plugin-ci:1.9.0
+  name: package-linux-x64-glibc-no-chromium
 trigger:
   event:
   - pull_request
-
----
-kind: pipeline
 type: docker
+volumes:
+- host:
+    path: /var/run/docker.sock
+  name: docker
+---
+clone:
+  retries: 3
+depends_on: []
+image_pull_secrets:
+- dockerconfigjson
+kind: pipeline
 name: test-master
-
+node:
+  type: no-parallel
 platform:
-  os: linux
   arch: amd64
-
+  os: linux
+services: []
 steps:
-- name: grabpl
-  image: byrnedo/alpine-curl:0.1.8
-  commands:
+- commands:
   - mkdir -p bin
   - curl -fL -o bin/grabpl https://grafana-downloads.storage.googleapis.com/grafana-build-pipeline/v3.0.20/grabpl
   - chmod +x bin/grabpl
-
-- name: yarn-install
-  image: grafana/grafana-plugin-ci:1.6.1-alpine
-  commands:
+  image: byrnedo/alpine-curl:0.1.8
+  name: grabpl
+- commands:
+  - . ~/.init-nvm.sh
   - yarn install --frozen-lockfile --no-progress
   depends_on:
   - grabpl
-
-- name: yarn-build
-  image: grafana/grafana-plugin-ci:1.6.1-alpine
-  commands:
+  image: grafana/grafana-plugin-ci:1.9.0
+  name: yarn-install
+- commands:
+  - . ~/.init-nvm.sh
   - yarn build
   depends_on:
   - yarn-install
-
-- name: security-scan
-  image: grafana/grafana-plugin-ci:1.6.1-alpine
-  commands:
+  image: grafana/grafana-plugin-ci:1.9.0
+  name: yarn-build
+- commands:
+  - . ~/.init-nvm.sh
   - echo "Starting veracode scan..."
-  - apk add curl
-  - "# Increase heap size or the scanner will die."
+  - '# Increase heap size or the scanner will die.'
   - export _JAVA_OPTIONS=-Xmx4g
   - mkdir -p ci/jobs/security_scan
-  - curl -sSL https://download.sourceclear.com/ci.sh | sh -s scan --skip-compile --quick --allow-dirty
+  - curl -sSL https://download.sourceclear.com/ci.sh | sh -s scan --skip-compile --quick
+    --allow-dirty
+  depends_on:
+  - yarn-build
   environment:
     SRCCLR_API_TOKEN:
       from_secret: srcclr_api_token
   failure: ignore
-  depends_on:
-  - yarn-build
-
-- name: package-linux-x64-glibc
-  image: grafana/grafana-plugin-ci:1.6.1-alpine
-  commands:
+  image: grafana/grafana-plugin-ci:1.9.0
+  name: security-scan
+- commands:
+  - . ~/.init-nvm.sh
   - sh scripts/package_target.sh linux-x64-glibc
   - bin/grabpl build-plugin-manifest ./dist/plugin-linux-x64-glibc
   - sh scripts/archive_target.sh linux-x64-glibc
+  depends_on:
+  - yarn-build
   environment:
     GRAFANA_API_KEY:
       from_secret: grafana_api_key
-  depends_on:
-  - yarn-build
-
-- name: package-darwin-x64-unknown
-  image: grafana/grafana-plugin-ci:1.6.1-alpine
-  commands:
+  image: grafana/grafana-plugin-ci:1.9.0
+  name: package-linux-x64-glibc
+- commands:
+  - . ~/.init-nvm.sh
   - sh scripts/package_target.sh darwin-x64-unknown
   - bin/grabpl build-plugin-manifest ./dist/plugin-darwin-x64-unknown
   - sh scripts/archive_target.sh darwin-x64-unknown
+  depends_on:
+  - yarn-build
   environment:
     GRAFANA_API_KEY:
       from_secret: grafana_api_key
-  depends_on:
-  - yarn-build
-
-- name: package-win32-x64-unknown
-  image: grafana/grafana-plugin-ci:1.6.1-alpine
-  commands:
+  image: grafana/grafana-plugin-ci:1.9.0
+  name: package-darwin-x64-unknown
+- commands:
+  - . ~/.init-nvm.sh
   - sh scripts/package_target.sh win32-x64-unknown
   - bin/grabpl build-plugin-manifest ./dist/plugin-win32-x64-unknown
   - sh scripts/archive_target.sh win32-x64-unknown
+  depends_on:
+  - yarn-build
   environment:
     GRAFANA_API_KEY:
       from_secret: grafana_api_key
-  depends_on:
-  - yarn-build
-
-- name: package-linux-x64-glibc-no-chromium
-  image: grafana/grafana-plugin-ci:1.6.1-alpine
-  commands:
+  image: grafana/grafana-plugin-ci:1.9.0
+  name: package-win32-x64-unknown
+- commands:
+  - . ~/.init-nvm.sh
   - sh scripts/package_target.sh linux-x64-glibc true plugin-linux-x64-glibc-no-chromium
   - bin/grabpl build-plugin-manifest ./dist/plugin-linux-x64-glibc-no-chromium
   - sh scripts/archive_target.sh linux-x64-glibc plugin-linux-x64-glibc-no-chromium
+  depends_on:
+  - yarn-build
   environment:
     GRAFANA_API_KEY:
       from_secret: grafana_api_key
-  depends_on:
-  - yarn-build
-
-- name: publish_to_docker_master
-  image: google/cloud-sdk:412.0.0
-  commands:
+  image: grafana/grafana-plugin-ci:1.9.0
+  name: package-linux-x64-glibc-no-chromium
+- commands:
   - sh scripts/build_push_docker.sh master
   environment:
     DOCKER_PASS:
@@ -213,157 +213,154 @@ steps:
     DOCKER_USER:
       from_secret: docker_user
     IMAGE_NAME: grafana/grafana-image-renderer
+  image: google/cloud-sdk:412.0.0
+  name: publish_to_docker_master
   volumes:
   - name: docker
     path: /var/run/docker.sock
-
-volumes:
-- name: docker
-  host:
-    path: /var/run/docker.sock
-
-image_pull_secrets:
-- dockerconfigjson
-
-node:
-  type: no-parallel
-
 trigger:
   branch:
   - master
   event:
   - push
-
----
-kind: pipeline
 type: docker
+volumes:
+- host:
+    path: /var/run/docker.sock
+  name: docker
+---
+clone:
+  retries: 3
+depends_on: []
+image_pull_secrets:
+- dockerconfigjson
+kind: pipeline
 name: release
-
+node:
+  type: no-parallel
 platform:
-  os: linux
   arch: amd64
-
+  os: linux
+services: []
 steps:
-- name: grabpl
-  image: byrnedo/alpine-curl:0.1.8
-  commands:
+- commands:
   - mkdir -p bin
   - curl -fL -o bin/grabpl https://grafana-downloads.storage.googleapis.com/grafana-build-pipeline/v3.0.20/grabpl
   - chmod +x bin/grabpl
-
-- name: yarn-install
-  image: grafana/grafana-plugin-ci:1.6.1-alpine
-  commands:
+  image: byrnedo/alpine-curl:0.1.8
+  name: grabpl
+- commands:
+  - . ~/.init-nvm.sh
   - yarn install --frozen-lockfile --no-progress
   depends_on:
   - grabpl
-
-- name: yarn-build
-  image: grafana/grafana-plugin-ci:1.6.1-alpine
-  commands:
+  image: grafana/grafana-plugin-ci:1.9.0
+  name: yarn-install
+- commands:
+  - . ~/.init-nvm.sh
   - yarn build
   depends_on:
   - yarn-install
-
-- name: security-scan
-  image: grafana/grafana-plugin-ci:1.6.1-alpine
-  commands:
+  image: grafana/grafana-plugin-ci:1.9.0
+  name: yarn-build
+- commands:
+  - . ~/.init-nvm.sh
   - echo "Starting veracode scan..."
-  - apk add curl
-  - "# Increase heap size or the scanner will die."
+  - '# Increase heap size or the scanner will die.'
   - export _JAVA_OPTIONS=-Xmx4g
   - mkdir -p ci/jobs/security_scan
-  - curl -sSL https://download.sourceclear.com/ci.sh | sh -s scan --skip-compile --quick --allow-dirty
+  - curl -sSL https://download.sourceclear.com/ci.sh | sh -s scan --skip-compile --quick
+    --allow-dirty
+  depends_on:
+  - yarn-build
   environment:
     SRCCLR_API_TOKEN:
       from_secret: srcclr_api_token
   failure: ignore
-  depends_on:
-  - yarn-build
-
-- name: package-linux-x64-glibc
-  image: grafana/grafana-plugin-ci:1.6.1-alpine
-  commands:
+  image: grafana/grafana-plugin-ci:1.9.0
+  name: security-scan
+- commands:
+  - . ~/.init-nvm.sh
   - sh scripts/package_target.sh linux-x64-glibc
   - bin/grabpl build-plugin-manifest ./dist/plugin-linux-x64-glibc
   - sh scripts/archive_target.sh linux-x64-glibc
+  depends_on:
+  - yarn-build
   environment:
     GRAFANA_API_KEY:
       from_secret: grafana_api_key
-  depends_on:
-  - yarn-build
-
-- name: package-darwin-x64-unknown
-  image: grafana/grafana-plugin-ci:1.6.1-alpine
-  commands:
+  image: grafana/grafana-plugin-ci:1.9.0
+  name: package-linux-x64-glibc
+- commands:
+  - . ~/.init-nvm.sh
   - sh scripts/package_target.sh darwin-x64-unknown
   - bin/grabpl build-plugin-manifest ./dist/plugin-darwin-x64-unknown
   - sh scripts/archive_target.sh darwin-x64-unknown
+  depends_on:
+  - yarn-build
   environment:
     GRAFANA_API_KEY:
       from_secret: grafana_api_key
-  depends_on:
-  - yarn-build
-
-- name: package-win32-x64-unknown
-  image: grafana/grafana-plugin-ci:1.6.1-alpine
-  commands:
+  image: grafana/grafana-plugin-ci:1.9.0
+  name: package-darwin-x64-unknown
+- commands:
+  - . ~/.init-nvm.sh
   - sh scripts/package_target.sh win32-x64-unknown
   - bin/grabpl build-plugin-manifest ./dist/plugin-win32-x64-unknown
   - sh scripts/archive_target.sh win32-x64-unknown
+  depends_on:
+  - yarn-build
   environment:
     GRAFANA_API_KEY:
       from_secret: grafana_api_key
-  depends_on:
-  - yarn-build
-
-- name: package-linux-x64-glibc-no-chromium
-  image: grafana/grafana-plugin-ci:1.6.1-alpine
-  commands:
+  image: grafana/grafana-plugin-ci:1.9.0
+  name: package-win32-x64-unknown
+- commands:
+  - . ~/.init-nvm.sh
   - sh scripts/package_target.sh linux-x64-glibc true plugin-linux-x64-glibc-no-chromium
   - bin/grabpl build-plugin-manifest ./dist/plugin-linux-x64-glibc-no-chromium
   - sh scripts/archive_target.sh linux-x64-glibc plugin-linux-x64-glibc-no-chromium
+  depends_on:
+  - yarn-build
   environment:
     GRAFANA_API_KEY:
       from_secret: grafana_api_key
-  depends_on:
-  - yarn-build
-
-- name: publish_to_github
-  image: cibuilds/github:0.13.0
-  commands:
+  image: grafana/grafana-plugin-ci:1.9.0
+  name: package-linux-x64-glibc-no-chromium
+- commands:
   - sh scripts/generate_md5sum.sh
   - sh scripts/publish_github_release.sh
-  environment:
-    GITHUB_TOKEN:
-      from_secret: github_token
   depends_on:
   - package-linux-x64-glibc
   - package-darwin-x64-unknown
   - package-win32-x64-unknown
   - package-linux-x64-glibc-no-chromium
-
-- name: publish_to_docker
-  image: google/cloud-sdk:412.0.0
-  commands:
+  environment:
+    GITHUB_TOKEN:
+      from_secret: github_token
+  image: cibuilds/github:0.13.0
+  name: publish_to_github
+- commands:
   - sh scripts/build_push_docker.sh
+  depends_on:
+  - publish_to_github
   environment:
     DOCKER_PASS:
       from_secret: docker_pass
     DOCKER_USER:
       from_secret: docker_user
     IMAGE_NAME: grafana/grafana-image-renderer
+  image: google/cloud-sdk:412.0.0
+  name: publish_to_docker
   volumes:
   - name: docker
     path: /var/run/docker.sock
-  depends_on:
-  - publish_to_github
-
-- name: publish_to_gcom
-  image: grafana/grafana-plugin-ci:1.6.1-alpine
-  commands:
+- commands:
+  - . ~/.init-nvm.sh
   - yarn run create-gcom-plugin-json ${DRONE_COMMIT}
   - sh scripts/push-to-gcom.sh
+  depends_on:
+  - publish_to_github
   environment:
     GCOM_PUBLISH_TOKEN:
       from_secret: gcom_publish_token
@@ -371,20 +368,8 @@ steps:
       from_secret: gcom_uagent
     GCOM_URL:
       from_secret: gcom_url
-  depends_on:
-  - publish_to_github
-
-volumes:
-- name: docker
-  host:
-    path: /var/run/docker.sock
-
-image_pull_secrets:
-- dockerconfigjson
-
-node:
-  type: no-parallel
-
+  image: grafana/grafana-plugin-ci:1.9.0
+  name: publish_to_gcom
 trigger:
   branch:
   - master
@@ -392,49 +377,43 @@ trigger:
   - promote
   target:
   - release
-
+type: docker
+volumes:
+- host:
+    path: /var/run/docker.sock
+  name: docker
 ---
+get:
+  name: .dockerconfigjson
+  path: secret/data/common/gcr
 kind: secret
 name: dockerconfigjson
-
-get:
-  path: secret/data/common/gcr
-  name: .dockerconfigjson
-
 ---
+get:
+  name: github_token
+  path: infra/data/ci/drone-plugins
 kind: secret
 name: github_token
-
-get:
-  path: infra/data/ci/drone-plugins
-  name: github_token
-
 ---
+get:
+  name: gcom_publish_token
+  path: infra/data/ci/drone-plugins
 kind: secret
 name: gcom_publish_token
-
-get:
-  path: infra/data/ci/drone-plugins
-  name: gcom_publish_token
-
 ---
+get:
+  name: grafana_api_key
+  path: infra/data/ci/drone-plugins
 kind: secret
 name: grafana_api_key
-
-get:
-  path: infra/data/ci/drone-plugins
-  name: grafana_api_key
-
 ---
+get:
+  name: srcclr_api_token
+  path: infra/data/ci/drone-plugins
 kind: secret
 name: srcclr_api_token
-
-get:
-  path: infra/data/ci/drone-plugins
-  name: srcclr_api_token
-
 ---
 kind: signature
-hmac: 2f8b0d424bdf31b5cf14233702e70f2c3bc8297525d89d08810a049289551865
+hmac: e6b99f052740c6862015a124564b85182f9877f4eccc159334a40000faf3a008
 
 ...

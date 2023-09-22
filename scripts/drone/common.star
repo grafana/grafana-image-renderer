@@ -1,7 +1,4 @@
 load('scripts/drone/utils.star', 'ci_image')
-load('scripts/drone/grabpl.star', 'download_grabpl_step')
-load('scripts/drone/promotion.star', 'publish_to_docker')
-load('scripts/drone/utils.star', 'pipeline')
 load('scripts/drone/vault.star', 'from_secret')
 
 def install_deps_step():
@@ -9,6 +6,7 @@ def install_deps_step():
         'name': 'yarn-install',
         'image': ci_image,
         'commands': [
+            '. ~/.init-nvm.sh',
             'yarn install --frozen-lockfile --no-progress',
         ],
         'depends_on': [
@@ -21,6 +19,7 @@ def build_step():
         'name': 'yarn-build',
         'image': ci_image,
         'commands': [
+            '. ~/.init-nvm.sh',
             'yarn build',
         ],
         'depends_on': [
@@ -50,6 +49,7 @@ def package_step(arch, name='', skip_chromium=False, override_output='', skip_er
         'name': name,
         'image': ci_image,
         'commands': [
+            '. ~/.init-nvm.sh',
             pkg_cmd,
             bpm_cmd,
             arc_cmd,
@@ -67,8 +67,8 @@ def security_scan_step():
         'name': 'security-scan',
         'image': ci_image,
         'commands': [
+            '. ~/.init-nvm.sh',
             'echo "Starting veracode scan..."',
-            'apk add curl',
             '# Increase heap size or the scanner will die.',
             'export _JAVA_OPTIONS=-Xmx4g',
             'mkdir -p ci/jobs/security_scan',
