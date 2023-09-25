@@ -1,3 +1,4 @@
+
 FROM node:20-alpine3.17 AS base
 
 ENV CHROME_BIN="/usr/bin/chromium-browser"
