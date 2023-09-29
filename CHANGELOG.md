@@ -1,3 +1,6 @@
+## 3.8.3 (2023-09-29)
+- Chore: Upgrade to Node 18 [#448](https://github.com/grafana/grafana-image-renderer/pull/448), [Clarity-89](https://github.com/Clarity-89)
+
 ## 3.8.2 (2023-09-21)
 - Browser: Revert to old headless mode to fix usage with Kubernetes [#459](https://github.com/grafana/grafana-image-renderer/pull/459), [AgnesToulet](https://github.com/AgnesToulet)
 
