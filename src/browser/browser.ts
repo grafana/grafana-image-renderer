@@ -352,7 +352,7 @@ export class Browser {
             }
 
             const panelCount = document.querySelectorAll('.panel').length || document.querySelectorAll('.panel-container').length;
-            return (window as any).panelsRendered >= panelCount || (window as any).panelsRendered === undefined;
+            return (window as any).panelsRendered >= panelCount;
           },
           {
             timeout: options.timeout * 1000,
