@@ -104,7 +104,7 @@ function populatePluginConfigFromEnv(config: PluginConfig, env: NodeJS.ProcessEn
 function populateServiceConfigFromEnv(config: ServiceConfig, env: NodeJS.ProcessEnv) {
   if (env['BROWSER_TZ']) {
     config.rendering.timezone = env['BROWSER_TZ'];
-  } else {
+  } else if (env['TZ']) {
     config.rendering.timezone = env['TZ'];
   }
 
