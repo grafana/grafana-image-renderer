@@ -1,3 +1,6 @@
+## 3.8.4 (2023-10-03)
+- Fix timezone config always overwritten [#463](https://github.com/grafana/grafana-image-renderer/pull/463), [zhichli](https://github.com/zhichli)
+
 ## 3.8.3 (2023-09-29)
 - Chore: Upgrade to Node 18 [#448](https://github.com/grafana/grafana-image-renderer/pull/448), [Clarity-89](https://github.com/Clarity-89)
 
