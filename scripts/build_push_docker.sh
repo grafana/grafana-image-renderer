@@ -12,10 +12,9 @@ fi
 
 echo "building ${TAG}"
 echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
-tags=()
-tags+=${IMAGE_NAME}:${TAG}
+tags=("-t ${IMAGE_NAME}:${TAG}")
 if [ -z "$(echo $TAG | grep -E "beta|master")" ]; then
-  tags+={IMAGE_NAME}:latest
+  tags+=("-t ${IMAGE_NAME}:latest")
 fi
 
-# docker buildx build --platform linux/amd64,linux/arm64 --push -t ${tags[@]} .
+docker buildx build --platform linux/amd64,linux/arm64 --push ${tags[@]} .
