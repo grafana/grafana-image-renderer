@@ -213,7 +213,7 @@ steps:
     DOCKER_USER:
       from_secret: docker_user
     IMAGE_NAME: grafana/grafana-image-renderer
-  image: google/cloud-sdk:412.0.0
+  image: google/cloud-sdk:449.0.0
   name: publish_to_docker_master
   volumes:
   - name: docker
@@ -350,7 +350,7 @@ steps:
     DOCKER_USER:
       from_secret: docker_user
     IMAGE_NAME: grafana/grafana-image-renderer
-  image: google/cloud-sdk:412.0.0
+  image: google/cloud-sdk:449.0.0
   name: publish_to_docker
   volumes:
   - name: docker
@@ -414,6 +414,6 @@ kind: secret
 name: srcclr_api_token
 ---
 kind: signature
-hmac: f130230eb86344632de732a9fa4fe1155c622537fbe3c61d9fc1d8b17a4cacea
+hmac: eeb3dd651cc32e9e32188e7f904e97131911d9699c7610c4b33a19098c257d9f
 
 ...
