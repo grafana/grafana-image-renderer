@@ -14,7 +14,7 @@ echo "building ${TAG}"
 echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
 tags=()
 tags+=${IMAGE_NAME}:${TAG}
-if [[ $TAG != *"beta"* ]] && [[ $TAG != *"master"* ]]; then
+if [ -z "$(echo $TAG | grep -E "beta|master")" ]; then
   tags+={IMAGE_NAME}:latest
 fi
 
