@@ -28,9 +28,9 @@ def build_step():
     }
 
 def package_step(arch, name='', skip_chromium=False, override_output='', skip_errors=True):
-    pkg_cmd = 'sh scripts/package_target.sh {}'.format(arch)
+    pkg_cmd = './scripts/package_target.sh {}'.format(arch)
     bpm_cmd = 'bin/grabpl build-plugin-manifest ./dist/'
-    arc_cmd = 'sh scripts/archive_target.sh {}'.format(arch)
+    arc_cmd = './scripts/archive_target.sh {}'.format(arch)
 
     if skip_chromium:
         pkg_cmd += ' true {}'.format(override_output)
