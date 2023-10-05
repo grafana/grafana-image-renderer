@@ -47,7 +47,7 @@ export class Browser {
     }
   }
 
-  async start(): Promise<void> {}
+  async start(): Promise<void> { }
 
   validateRenderOptions(options: RenderOptions) {
     if (options.url.startsWith(`socket://`)) {
@@ -216,7 +216,7 @@ export class Browser {
         heights.dashboard.client,
         scrollDivSelector
       );
-      
+
       await new Promise(executor => setTimeout(executor, scrollDelay));
     }
 
@@ -351,8 +351,8 @@ export class Browser {
               return totalPanelsRendered >= panelCount;
             }
 
-            const panelCount = document.querySelectorAll('.panel').length || document.querySelectorAll('.panel-container').length;
-            return (window as any).panelsRendered >= panelCount || (window as any).panelsRendered === undefined;
+            const panelCount = document.querySelectorAll('.panel-solo').length || document.querySelectorAll('[class$=\'panel-container\']').length;
+            return (window as any).panelsRendered >= panelCount || panelCount === 0
           },
           {
             timeout: options.timeout * 1000,
@@ -533,7 +533,7 @@ export class Browser {
 
     const loc = msg.location();
     if (msgType === 'error' && msg.text() !== 'JSHandle@object') {
-        this.log.error('Browser console error', 'msg', msg.text(), 'url', loc.url, 'line', loc.lineNumber, 'column', loc.columnNumber);
+      this.log.error('Browser console error', 'msg', msg.text(), 'url', loc.url, 'line', loc.lineNumber, 'column', loc.columnNumber);
       return;
     }
 
