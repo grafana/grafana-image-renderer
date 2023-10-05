@@ -213,7 +213,7 @@ steps:
     DOCKER_USER:
       from_secret: docker_user
     IMAGE_NAME: grafana/grafana-image-renderer
-  image: google/cloud-sdk:412.0.0
+  image: google/cloud-sdk:449.0.0
   name: publish_to_docker_master
   volumes:
   - name: docker
@@ -350,7 +350,7 @@ steps:
     DOCKER_USER:
       from_secret: docker_user
     IMAGE_NAME: grafana/grafana-image-renderer
-  image: google/cloud-sdk:412.0.0
+  image: google/cloud-sdk:449.0.0
   name: publish_to_docker
   volumes:
   - name: docker
