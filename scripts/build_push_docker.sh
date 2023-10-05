@@ -18,4 +18,4 @@ if [ -z "$(echo $TAG | grep -E "beta|master")" ]; then
   tags+={IMAGE_NAME}:latest
 fi
 
-docker buildx build --platform linux/amd64,linux/arm64 --push -t ${tags[@]} .
+# docker buildx build --platform linux/amd64,linux/arm64 --push -t ${tags[@]} .
