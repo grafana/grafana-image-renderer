@@ -1,3 +1,9 @@
+## 3.8.4 (2023-10-17)
+- Bump xml2js to 0.6.2 [#473](https://github.com/grafana/grafana-image-renderer/pull/473), [AgnesToulet](https://github.com/AgnesToulet)
+- Browser: Fix panel rendered waiting condition [#472](https://github.com/grafana/grafana-image-renderer/pull/472), [AgnesToulet](https://github.com/AgnesToulet)
+- Docker: Add build for arm64 [#468](https://github.com/grafana/grafana-image-renderer/pull/468), [michbeck100](https://github.com/michbeck100)
+- Fix timezone config always overwritten [#463](https://github.com/grafana/grafana-image-renderer/pull/463), [zhichli](https://github.com/zhichli)
+
 ## 3.8.3 (2023-09-29)
 - Chore: Upgrade to Node 18 [#448](https://github.com/grafana/grafana-image-renderer/pull/448), [Clarity-89](https://github.com/Clarity-89)
 
