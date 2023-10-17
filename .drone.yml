@@ -51,9 +51,9 @@ steps:
   name: security-scan
 - commands:
   - . ~/.init-nvm.sh
-  - sh scripts/package_target.sh linux-x64-glibc
+  - ./scripts/package_target.sh linux-x64-glibc
   - bin/grabpl build-plugin-manifest ./dist/plugin-linux-x64-glibc || true
-  - sh scripts/archive_target.sh linux-x64-glibc
+  - ./scripts/archive_target.sh linux-x64-glibc
   depends_on:
   - yarn-build
   environment:
@@ -63,9 +63,9 @@ steps:
   name: package-linux-x64-glibc
 - commands:
   - . ~/.init-nvm.sh
-  - sh scripts/package_target.sh darwin-x64-unknown
+  - ./scripts/package_target.sh darwin-x64-unknown
   - bin/grabpl build-plugin-manifest ./dist/plugin-darwin-x64-unknown || true
-  - sh scripts/archive_target.sh darwin-x64-unknown
+  - ./scripts/archive_target.sh darwin-x64-unknown
   depends_on:
   - yarn-build
   environment:
@@ -75,9 +75,9 @@ steps:
   name: package-darwin-x64-unknown
 - commands:
   - . ~/.init-nvm.sh
-  - sh scripts/package_target.sh win32-x64-unknown
+  - ./scripts/package_target.sh win32-x64-unknown
   - bin/grabpl build-plugin-manifest ./dist/plugin-win32-x64-unknown || true
-  - sh scripts/archive_target.sh win32-x64-unknown
+  - ./scripts/archive_target.sh win32-x64-unknown
   depends_on:
   - yarn-build
   environment:
@@ -87,10 +87,10 @@ steps:
   name: package-win32-x64-unknown
 - commands:
   - . ~/.init-nvm.sh
-  - sh scripts/package_target.sh linux-x64-glibc true plugin-linux-x64-glibc-no-chromium
+  - ./scripts/package_target.sh linux-x64-glibc true plugin-linux-x64-glibc-no-chromium
   - bin/grabpl build-plugin-manifest ./dist/plugin-linux-x64-glibc-no-chromium ||
     true
-  - sh scripts/archive_target.sh linux-x64-glibc plugin-linux-x64-glibc-no-chromium
+  - ./scripts/archive_target.sh linux-x64-glibc plugin-linux-x64-glibc-no-chromium
   depends_on:
   - yarn-build
   environment:
@@ -159,9 +159,9 @@ steps:
   name: security-scan
 - commands:
   - . ~/.init-nvm.sh
-  - sh scripts/package_target.sh linux-x64-glibc
+  - ./scripts/package_target.sh linux-x64-glibc
   - bin/grabpl build-plugin-manifest ./dist/plugin-linux-x64-glibc
-  - sh scripts/archive_target.sh linux-x64-glibc
+  - ./scripts/archive_target.sh linux-x64-glibc
   depends_on:
   - yarn-build
   environment:
@@ -171,9 +171,9 @@ steps:
   name: package-linux-x64-glibc
 - commands:
   - . ~/.init-nvm.sh
-  - sh scripts/package_target.sh darwin-x64-unknown
+  - ./scripts/package_target.sh darwin-x64-unknown
   - bin/grabpl build-plugin-manifest ./dist/plugin-darwin-x64-unknown
-  - sh scripts/archive_target.sh darwin-x64-unknown
+  - ./scripts/archive_target.sh darwin-x64-unknown
   depends_on:
   - yarn-build
   environment:
@@ -183,9 +183,9 @@ steps:
   name: package-darwin-x64-unknown
 - commands:
   - . ~/.init-nvm.sh
-  - sh scripts/package_target.sh win32-x64-unknown
+  - ./scripts/package_target.sh win32-x64-unknown
   - bin/grabpl build-plugin-manifest ./dist/plugin-win32-x64-unknown
-  - sh scripts/archive_target.sh win32-x64-unknown
+  - ./scripts/archive_target.sh win32-x64-unknown
   depends_on:
   - yarn-build
   environment:
@@ -195,9 +195,9 @@ steps:
   name: package-win32-x64-unknown
 - commands:
   - . ~/.init-nvm.sh
-  - sh scripts/package_target.sh linux-x64-glibc true plugin-linux-x64-glibc-no-chromium
+  - ./scripts/package_target.sh linux-x64-glibc true plugin-linux-x64-glibc-no-chromium
   - bin/grabpl build-plugin-manifest ./dist/plugin-linux-x64-glibc-no-chromium
-  - sh scripts/archive_target.sh linux-x64-glibc plugin-linux-x64-glibc-no-chromium
+  - ./scripts/archive_target.sh linux-x64-glibc plugin-linux-x64-glibc-no-chromium
   depends_on:
   - yarn-build
   environment:
@@ -206,14 +206,14 @@ steps:
   image: grafana/grafana-plugin-ci:1.9.0
   name: package-linux-x64-glibc-no-chromium
 - commands:
-  - sh scripts/build_push_docker.sh master
+  - ./scripts/build_push_docker.sh master
   environment:
     DOCKER_PASS:
       from_secret: docker_pass
     DOCKER_USER:
       from_secret: docker_user
     IMAGE_NAME: grafana/grafana-image-renderer
-  image: google/cloud-sdk:412.0.0
+  image: google/cloud-sdk:449.0.0
   name: publish_to_docker_master
   volumes:
   - name: docker
@@ -281,9 +281,9 @@ steps:
   name: security-scan
 - commands:
   - . ~/.init-nvm.sh
-  - sh scripts/package_target.sh linux-x64-glibc
+  - ./scripts/package_target.sh linux-x64-glibc
   - bin/grabpl build-plugin-manifest ./dist/plugin-linux-x64-glibc
-  - sh scripts/archive_target.sh linux-x64-glibc
+  - ./scripts/archive_target.sh linux-x64-glibc
   depends_on:
   - yarn-build
   environment:
@@ -293,9 +293,9 @@ steps:
   name: package-linux-x64-glibc
 - commands:
   - . ~/.init-nvm.sh
-  - sh scripts/package_target.sh darwin-x64-unknown
+  - ./scripts/package_target.sh darwin-x64-unknown
   - bin/grabpl build-plugin-manifest ./dist/plugin-darwin-x64-unknown
-  - sh scripts/archive_target.sh darwin-x64-unknown
+  - ./scripts/archive_target.sh darwin-x64-unknown
   depends_on:
   - yarn-build
   environment:
@@ -305,9 +305,9 @@ steps:
   name: package-darwin-x64-unknown
 - commands:
   - . ~/.init-nvm.sh
-  - sh scripts/package_target.sh win32-x64-unknown
+  - ./scripts/package_target.sh win32-x64-unknown
   - bin/grabpl build-plugin-manifest ./dist/plugin-win32-x64-unknown
-  - sh scripts/archive_target.sh win32-x64-unknown
+  - ./scripts/archive_target.sh win32-x64-unknown
   depends_on:
   - yarn-build
   environment:
@@ -317,9 +317,9 @@ steps:
   name: package-win32-x64-unknown
 - commands:
   - . ~/.init-nvm.sh
-  - sh scripts/package_target.sh linux-x64-glibc true plugin-linux-x64-glibc-no-chromium
+  - ./scripts/package_target.sh linux-x64-glibc true plugin-linux-x64-glibc-no-chromium
   - bin/grabpl build-plugin-manifest ./dist/plugin-linux-x64-glibc-no-chromium
-  - sh scripts/archive_target.sh linux-x64-glibc plugin-linux-x64-glibc-no-chromium
+  - ./scripts/archive_target.sh linux-x64-glibc plugin-linux-x64-glibc-no-chromium
   depends_on:
   - yarn-build
   environment:
@@ -328,8 +328,8 @@ steps:
   image: grafana/grafana-plugin-ci:1.9.0
   name: package-linux-x64-glibc-no-chromium
 - commands:
-  - sh scripts/generate_md5sum.sh
-  - sh scripts/publish_github_release.sh
+  - ./scripts/generate_md5sum.sh
+  - ./scripts/publish_github_release.sh
   depends_on:
   - package-linux-x64-glibc
   - package-darwin-x64-unknown
@@ -341,7 +341,7 @@ steps:
   image: cibuilds/github:0.13.0
   name: publish_to_github
 - commands:
-  - sh scripts/build_push_docker.sh
+  - ./scripts/build_push_docker.sh
   depends_on:
   - publish_to_github
   environment:
@@ -350,7 +350,7 @@ steps:
     DOCKER_USER:
       from_secret: docker_user
     IMAGE_NAME: grafana/grafana-image-renderer
-  image: google/cloud-sdk:412.0.0
+  image: google/cloud-sdk:449.0.0
   name: publish_to_docker
   volumes:
   - name: docker
@@ -358,7 +358,7 @@ steps:
 - commands:
   - . ~/.init-nvm.sh
   - yarn run create-gcom-plugin-json ${DRONE_COMMIT}
-  - sh scripts/push-to-gcom.sh
+  - ./scripts/push-to-gcom.sh
   depends_on:
   - publish_to_github
   environment:
@@ -414,6 +414,6 @@ kind: secret
 name: srcclr_api_token
 ---
 kind: signature
-hmac: e6b99f052740c6862015a124564b85182f9877f4eccc159334a40000faf3a008
+hmac: eeb3dd651cc32e9e32188e7f904e97131911d9699c7610c4b33a19098c257d9f
 
 ...

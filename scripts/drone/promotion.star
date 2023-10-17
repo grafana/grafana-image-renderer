@@ -6,8 +6,8 @@ def publish_gh_release():
         'name': 'publish_to_github',
         'image': 'cibuilds/github:0.13.0',
         'commands': [
-            'sh scripts/generate_md5sum.sh',
-            'sh scripts/publish_github_release.sh',
+            './scripts/generate_md5sum.sh',
+            './scripts/publish_github_release.sh',
         ],
         'environment': {
             'GITHUB_TOKEN': from_secret('github_token'),
@@ -34,13 +34,13 @@ def publish_to_docker_release():
 def publish_to_docker():
     return {
         'name': 'publish_to_docker',
-        'image': 'google/cloud-sdk:412.0.0',
+        'image': 'google/cloud-sdk:449.0.0',
         'environment': {
             'IMAGE_NAME': docker_image,
             'DOCKER_USER': from_secret('docker_user'),
             'DOCKER_PASS': from_secret('docker_pass'),
         },
-        'commands': ['sh scripts/build_push_docker.sh'],
+        'commands': ['./scripts/build_push_docker.sh'],
         'volumes': [{'name': 'docker', 'path': '/var/run/docker.sock'}],
     }
 
@@ -51,7 +51,7 @@ def publish_to_gcom():
         'commands': [
             '. ~/.init-nvm.sh',
             'yarn run create-gcom-plugin-json ${DRONE_COMMIT}',
-            'sh scripts/push-to-gcom.sh',
+            './scripts/push-to-gcom.sh',
         ],
         'environment': {
             'GCOM_URL': from_secret('gcom_url'),
