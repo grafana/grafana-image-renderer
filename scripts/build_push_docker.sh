@@ -11,12 +11,15 @@ else
 fi
 
 echo "building ${TAG}"
-docker build -t ${IMAGE_NAME}:${TAG} .
-
 echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
-docker push ${IMAGE_NAME}:${TAG}
-
+tags=("-t ${IMAGE_NAME}:${TAG}")
 if [ -z "$(echo $TAG | grep -E "beta|master")" ]; then
-  docker tag ${IMAGE_NAME}:${TAG} ${IMAGE_NAME}:latest
-  docker push ${IMAGE_NAME}:latest
+  tags+=("-t ${IMAGE_NAME}:latest")
 fi
+
+# The default Docker builder does not support multiple platforms, so this creates a non-default builder that does support multiple platforms.
+if ! docker buildx inspect | grep -E 'Driver:\s+docker-container' >/dev/null; then
+  docker buildx create --use
+fi
+
+docker buildx build --platform linux/amd64,linux/arm64 --push ${tags[@]} .

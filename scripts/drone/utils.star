@@ -1,6 +1,6 @@
 load('scripts/drone/vault.star', 'pull_secret')
 
-ci_image = 'grafana/grafana-plugin-ci:1.6.1-alpine'
+ci_image = 'grafana/grafana-plugin-ci:1.9.0'
 docker_image = 'grafana/grafana-image-renderer'
 publisher_image = 'grafana/integration-grafana-publisher:v9'
 
