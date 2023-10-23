@@ -47,7 +47,7 @@ export class Browser {
     }
   }
 
-  async start(): Promise<void> {}
+  async start(): Promise<void> { }
 
   validateRenderOptions(options: RenderOptions) {
     if (options.url.startsWith(`socket://`)) {
@@ -216,7 +216,7 @@ export class Browser {
         heights.dashboard.client,
         scrollDivSelector
       );
-      
+
       await new Promise(executor => setTimeout(executor, scrollDelay));
     }
 
@@ -339,12 +339,20 @@ export class Browser {
                * dashboard-row exists only in rows.
                */
               const panelCount = document.querySelectorAll('[data-panelId]').length;
-              const totalPanelsRendered = document.querySelectorAll('.panel-content').length + document.querySelectorAll('.dashboard-row').length;
-              return totalPanelsRendered === panelCount;
+              const panelsRendered = document.querySelectorAll('[class$=\'panel-content\']')
+              let panelsRenderedCount = 0
+              panelsRendered.forEach((value: Element) => {
+                if (value.childElementCount > 0) {
+                  panelsRenderedCount++
+                }
+              })
+
+              const totalPanelsRendered = panelsRenderedCount + document.querySelectorAll('.dashboard-row').length;
+              return totalPanelsRendered >= panelCount;
             }
 
-            const panelCount = document.querySelectorAll('.panel').length || document.querySelectorAll('.panel-container').length;
-            return (window as any).panelsRendered >= panelCount;
+            const panelCount = document.querySelectorAll('.panel-solo').length || document.querySelectorAll('[class$=\'panel-container\']').length;
+            return (window as any).panelsRendered >= panelCount || panelCount === 0
           },
           {
             timeout: options.timeout * 1000,
@@ -525,7 +533,7 @@ export class Browser {
 
     const loc = msg.location();
     if (msgType === 'error' && msg.text() !== 'JSHandle@object') {
-        this.log.error('Browser console error', 'msg', msg.text(), 'url', loc.url, 'line', loc.lineNumber, 'column', loc.columnNumber);
+      this.log.error('Browser console error', 'msg', msg.text(), 'url', loc.url, 'line', loc.lineNumber, 'column', loc.columnNumber);
       return;
     }
 

@@ -1,3 +1,35 @@
+## 3.8.4 (2023-10-17)
+- Bump xml2js to 0.6.2 [#473](https://github.com/grafana/grafana-image-renderer/pull/473), [AgnesToulet](https://github.com/AgnesToulet)
+- Browser: Fix panel rendered waiting condition [#472](https://github.com/grafana/grafana-image-renderer/pull/472), [AgnesToulet](https://github.com/AgnesToulet)
+- Docker: Add build for arm64 [#468](https://github.com/grafana/grafana-image-renderer/pull/468), [michbeck100](https://github.com/michbeck100)
+- Fix timezone config always overwritten [#463](https://github.com/grafana/grafana-image-renderer/pull/463), [zhichli](https://github.com/zhichli)
+
+## 3.8.3 (2023-09-29)
+- Chore: Upgrade to Node 18 [#448](https://github.com/grafana/grafana-image-renderer/pull/448), [Clarity-89](https://github.com/Clarity-89)
+
+## 3.8.2 (2023-09-21)
+- Browser: Revert to old headless mode to fix usage with Kubernetes [#459](https://github.com/grafana/grafana-image-renderer/pull/459), [AgnesToulet](https://github.com/AgnesToulet)
+
+## 3.8.1 (2023-09-18)
+- Fix check condition to avoid timeouts in invalid panels [#299](https://github.com/grafana/grafana-image-renderer/pull/299), [spinillos](https://github.com/spinillos) 
+- Plugin: fix Chrome path [#451](https://github.com/grafana/grafana-image-renderer/pull/451), [AgnesToulet](https://github.com/AgnesToulet)
+
+## 3.8.0 (2023-08-22)
+- Puppeteer: upgrade to v21 [#433](https://github.com/grafana/grafana-image-renderer/pull/433), [Clarity-89](https://github.com/Clarity-89) 
+- Fix fullpage waitFor conditions [#446](https://github.com/grafana/grafana-image-renderer/pull/446), [AgnesToulet](https://github.com/AgnesToulet)
+
+
+## 3.7.2 (2023-07-27)
+- Chore: update all dependencies [#443](https://github.com/grafana/grafana-image-renderer/pull/443), [AgnesToulet](https://github.com/AgnesToulet)
+- Bump protobufjs from 7.1.1 to 7.2.4 [#438](https://github.com/grafana/grafana-image-renderer/pull/438), [dependabot[bot]](https://github.com/apps/dependabot)
+- Bump tough-cookie from 4.1.2 to 4.1.3 [#439](https://github.com/grafana/grafana-image-renderer/pull/439), [dependabot[bot]](https://github.com/apps/dependabot)
+- Bump semver from 6.3.0 to 6.3.1 [#440](https://github.com/grafana/grafana-image-renderer/pull/440), [dependabot[bot]](https://github.com/apps/dependabot)
+- Bump word-wrap from 1.2.3 to 1.2.4 [#441](https://github.com/grafana/grafana-image-renderer/pull/441), [dependabot[bot]](https://github.com/apps/dependabot)
+
+## 3.7.1 (2023-05-15)
+- Docker: remove alpine edge repo [#413](https://github.com/grafana/grafana-image-renderer/pull/413), [sozercan](https://github.com/sozercan)
+- Bump yaml from 2.1.1 to 2.2.2 [#421](https://github.com/grafana/grafana-image-renderer/pull/421), [dependabot[bot]](https://github.com/apps/dependabot)
+
 ## 3.7.0 (2023-04-17)
 - Security: can set array of auth tokens [#417](https://github.com/grafana/grafana-image-renderer/pull/417), [AgnesToulet](https://github.com/AgnesToulet)
 - Bump pkg from 5.8.0 to 5.8.1 [#415](https://github.com/grafana/grafana-image-renderer/pull/415), [AgnesToulet](https://github.com/AgnesToulet)
