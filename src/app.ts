@@ -1,3 +1,4 @@
+import { sdk } from './instrumentation';
 import * as path from 'path';
 import * as _ from 'lodash';
 import * as fs from 'fs';
@@ -11,6 +12,9 @@ import { serve } from './node-plugin';
 import { createSanitizer } from './sanitizer/Sanitizer';
 
 async function main() {
+  // Start instrumentation
+  sdk.start();
+
   const argv = minimist(process.argv.slice(2));
   const env = Object.assign({}, process.env);
   const command = argv._[0];
