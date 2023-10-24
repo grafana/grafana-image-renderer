@@ -7,7 +7,7 @@ import morgan = require('morgan');
 import * as promClient from 'prom-client';
 import { Logger } from '../logger';
 import { Browser, createBrowser } from '../browser';
-import { ServiceConfig } from '../config';
+import { ServiceConfig } from './config';
 import { setupHttpServerMetrics } from './metrics';
 import { HTTPHeaders, ImageRenderOptions, RenderOptions } from '../types';
 import { Sanitizer } from '../sanitizer/Sanitizer';
