@@ -87,7 +87,8 @@ main().catch((err) => {
   process.exit(1);
 });
 
-const readJSONFileSync = (filePath: string): any => {
+function readJSONFileSync(filePath: string) {
   const rawdata = fs.readFileSync(filePath, 'utf8');
   return JSON.parse(rawdata);
 };
+

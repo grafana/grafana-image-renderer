@@ -76,5 +76,3 @@ export function populateServiceConfigFromEnv(config: ServiceConfig, env: NodeJS.
 
   populateRenderingConfigFromEnv(config.rendering, env, false)
 }
-
-
