@@ -129,10 +129,6 @@ export function populateRenderingConfigFromEnv(config: RenderingConfig, env: Nod
     config.mode = env[prefix + 'RENDERING_MODE'] as string;
   }
 
-  if (env[prefix + 'RENDERING_CLUSTERING_MONITOR']) {
-    config.clustering.monitor = env[prefix + 'RENDERING_CLUSTERING_MONITOR'] === 'true';
-  }
-
   if (env[prefix + 'RENDERING_CLUSTERING_MODE']) {
     config.clustering.mode = env[prefix + 'RENDERING_CLUSTERING_MODE'] as string;
   }
