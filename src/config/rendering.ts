@@ -93,32 +93,26 @@ export function populateRenderingConfigFromEnv(config: RenderingConfig, env: Nod
     config.timezone = env['TZ'];
   }
 
-  // New for remote
   if (env[prefix + 'RENDERING_LANGUAGE']) {
     config.acceptLanguage = env[prefix + 'RENDERING_LANGUAGE'];
   }
 
-  // New for remote
   if (env[prefix + 'RENDERING_VIEWPORT_WIDTH']) {
     config.width = parseInt(env[prefix + 'RENDERING_VIEWPORT_WIDTH'] as string, 10);
   }
 
-  // New for remote
   if (env[prefix + 'RENDERING_VIEWPORT_HEIGHT']) {
     config.height = parseInt(env[prefix + 'RENDERING_VIEWPORT_HEIGHT'] as string, 10);
   }
 
-  // New for remote
   if (env[prefix + 'RENDERING_VIEWPORT_DEVICE_SCALE_FACTOR']) {
     config.deviceScaleFactor = parseFloat(env[prefix + 'RENDERING_VIEWPORT_DEVICE_SCALE_FACTOR'] as string);
   }
 
-  // New for remote
   if (env[prefix + 'RENDERING_VIEWPORT_MAX_WIDTH']) {
     config.maxWidth = parseInt(env[prefix + 'RENDERING_VIEWPORT_MAX_WIDTH'] as string, 10);
   }
 
-  // New for remote
   if (env[prefix + 'RENDERING_VIEWPORT_MAX_HEIGHT']) {
     config.maxHeight = parseInt(env[prefix + 'RENDERING_VIEWPORT_MAX_HEIGHT'] as string, 10);
   }
@@ -135,7 +129,6 @@ export function populateRenderingConfigFromEnv(config: RenderingConfig, env: Nod
     config.mode = env[prefix + 'RENDERING_MODE'] as string;
   }
 
-  // New for both
   if (env[prefix + 'RENDERING_CLUSTERING_MONITOR']) {
     config.clustering.monitor = env[prefix + 'RENDERING_CLUSTERING_MONITOR'] === 'true';
   }
@@ -160,7 +153,6 @@ export function populateRenderingConfigFromEnv(config: RenderingConfig, env: Nod
     config.dumpio = env[prefix + 'RENDERING_DUMPIO'] === 'true';
   }
 
-  // New for both
   if (env[prefix + 'RENDERING_TIMING_METRICS']) {
     config.timingMetrics = env[prefix + 'RENDERING_TIMING_METRICS'] === 'true';
   }
