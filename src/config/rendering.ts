@@ -63,16 +63,73 @@ export const defaultRenderingConfig: RenderingConfig = {
   timingMetrics: false,
 };
 
-export function populateRenderingConfigFromEnv(config: RenderingConfig, env: NodeJS.ProcessEnv, isPlugin: boolean) {
-  const prefix = isPlugin ? "GF_PLUGIN_" : ""
-  const renderingPrefix = isPlugin ? prefix + "RENDERING_" : ""
+enum Mode {
+  Plugin = 'plugin',
+  Server = 'server',
+}
 
-  if (env[renderingPrefix + 'CHROME_BIN']) {
-    config.chromeBin = env[renderingPrefix + 'CHROME_BIN'];
+type Keys<T> = {
+  [K in keyof T]?: T[K] extends object ? (T[K] extends any[] ? string : Keys<T[K]>) : string;
+};
+
+const envConfig: Record<Mode, Keys<RenderingConfig>> = {
+  server: {
+    chromeBin: 'CHROME_BIN',
+    args: 'RENDERING_ARGS',
+    ignoresHttpsErrors: 'IGNORE_HTTPS_ERRORS',
+    timezone: 'BROWSER_TZ',
+    acceptLanguage: 'RENDERING_LANGUAGE',
+    width: 'RENDERING_VIEWPORT_WIDTH',
+    height: 'RENDERING_VIEWPORT_HEIGHT',
+    deviceScaleFactor: 'RENDERING_VIEWPORT_DEVICE_SCALE_FACTOR',
+    maxWidth: 'RENDERING_VIEWPORT_MAX_WIDTH',
+    maxHeight: 'RENDERING_VIEWPORT_MAX_HEIGHT',
+    maxDeviceScaleFactor: 'RENDERING_VIEWPORT_MAX_DEVICE_SCALE_FACTOR',
+    pageZoomLevel: 'RENDERING_VIEWPORT_PAGE_ZOOM_LEVEL',
+    mode: 'RENDERING_MODE',
+    clustering: {
+      mode: 'RENDERING_CLUSTERING_MODE',
+      maxConcurrency: 'RENDERING_CLUSTERING_MAX_CONCURRENCY',
+      timeout: 'RENDERING_CLUSTERING_TIMEOUT',
+    },
+    verboseLogging: 'RENDERING_VERBOSE_LOGGING',
+    dumpio: 'RENDERING_DUMPIO',
+    timingMetrics: 'RENDERING_TIMING_METRICS',
+  },
+  plugin: {
+    chromeBin: 'GF_PLUGIN_RENDERING_CHROME_BIN',
+    args: 'GF_PLUGIN_RENDERING_ARGS',
+    ignoresHttpsErrors: 'GF_PLUGIN_RENDERING_IGNORE_HTTPS_ERRORS',
+    timezone: 'GF_PLUGIN_RENDERING_TIMEZONE',
+    acceptLanguage: 'GF_PLUGIN_RENDERING_LANGUAGE',
+    width: 'GF_PLUGIN_RENDERING_VIEWPORT_WIDTH',
+    height: 'GF_PLUGIN_RENDERING_VIEWPORT_HEIGHT',
+    deviceScaleFactor: 'GF_PLUGIN_RENDERING_VIEWPORT_DEVICE_SCALE_FACTOR',
+    maxWidth: 'GF_PLUGIN_RENDERING_VIEWPORT_MAX_WIDTH',
+    maxHeight: 'GF_PLUGIN_RENDERING_VIEWPORT_MAX_HEIGHT',
+    maxDeviceScaleFactor: 'GF_PLUGIN_RENDERING_VIEWPORT_MAX_DEVICE_SCALE_FACTOR',
+    pageZoomLevel: 'GF_PLUGIN_RENDERING_VIEWPORT_PAGE_ZOOM_LEVEL',
+    mode: 'GF_PLUGIN_RENDERING_MODE',
+    clustering: {
+      mode: 'GF_PLUGIN_RENDERING_CLUSTERING_MODE',
+      maxConcurrency: 'GF_PLUGIN_RENDERING_CLUSTERING_MAX_CONCURRENCY',
+      timeout: 'GF_PLUGIN_RENDERING_CLUSTERING_TIMEOUT',
+    },
+    verboseLogging: 'GF_PLUGIN_RENDERING_VERBOSE_LOGGING',
+    dumpio: 'GF_PLUGIN_RENDERING_DUMPIO',
+    timingMetrics: 'GF_PLUGIN_RENDERING_TIMING_METRICS',
+  },
+};
+
+export function populateRenderingConfigFromEnv(config: RenderingConfig, env: NodeJS.ProcessEnv, isPlugin: boolean) {
+  const envKeys = envConfig[isPlugin ? Mode.Plugin : Mode.Server];
+
+  if (env[envKeys.chromeBin!]) {
+    config.chromeBin = env[envKeys.chromeBin!];
   }
 
-  if (env[prefix + 'RENDERING_ARGS']) {
-    const args = env[prefix + 'RENDERING_ARGS'] as string;
+  if (env[envKeys.args!]) {
+    const args = env[envKeys.args!] as string;
     if (args.length > 0) {
       const argsList = args.split(',');
       if (argsList.length > 0) {
@@ -81,75 +138,73 @@ export function populateRenderingConfigFromEnv(config: RenderingConfig, env: Nod
     }
   }
 
-  if (env[renderingPrefix + 'IGNORE_HTTPS_ERRORS']) {
-    config.ignoresHttpsErrors = env[renderingPrefix + 'IGNORE_HTTPS_ERRORS'] === 'true';
+  if (env[envKeys.ignoresHttpsErrors!]) {
+    config.ignoresHttpsErrors = env[envKeys.ignoresHttpsErrors!] === 'true';
   }
 
-  if (env[prefix + 'RENDERING_TIMEZONE']) {
-    config.timezone = env[prefix + 'RENDERING_TIMEZONE'];
-  } else if (env['BROWSER_TZ']) {
-    config.timezone = env['BROWSER_TZ'];
+  if (env[envKeys.timezone!]) {
+    config.timezone = env[envKeys.timezone!];
   } else if (env['TZ']) {
     config.timezone = env['TZ'];
   }
 
-  if (env[prefix + 'RENDERING_LANGUAGE']) {
-    config.acceptLanguage = env[prefix + 'RENDERING_LANGUAGE'];
+  if (env[envKeys.acceptLanguage!]) {
+    config.acceptLanguage = env[envKeys.acceptLanguage!];
   }
 
-  if (env[prefix + 'RENDERING_VIEWPORT_WIDTH']) {
-    config.width = parseInt(env[prefix + 'RENDERING_VIEWPORT_WIDTH'] as string, 10);
+  if (env[envKeys.width!]) {
+    config.width = parseInt(env[envKeys.width!] as string, 10);
   }
 
-  if (env[prefix + 'RENDERING_VIEWPORT_HEIGHT']) {
-    config.height = parseInt(env[prefix + 'RENDERING_VIEWPORT_HEIGHT'] as string, 10);
+  if (env[envKeys.height!]) {
+    config.height = parseInt(env[envKeys.height!] as string, 10);
   }
 
-  if (env[prefix + 'RENDERING_VIEWPORT_DEVICE_SCALE_FACTOR']) {
-    config.deviceScaleFactor = parseFloat(env[prefix + 'RENDERING_VIEWPORT_DEVICE_SCALE_FACTOR'] as string);
+  if (env[envKeys.deviceScaleFactor!]) {
+    config.deviceScaleFactor = parseFloat(env[envKeys.deviceScaleFactor!] as string);
   }
 
-  if (env[prefix + 'RENDERING_VIEWPORT_MAX_WIDTH']) {
-    config.maxWidth = parseInt(env[prefix + 'RENDERING_VIEWPORT_MAX_WIDTH'] as string, 10);
+  if (env[envKeys.maxWidth!]) {
+    config.maxWidth = parseInt(env[envKeys.maxWidth!] as string, 10);
   }
 
-  if (env[prefix + 'RENDERING_VIEWPORT_MAX_HEIGHT']) {
-    config.maxHeight = parseInt(env[prefix + 'RENDERING_VIEWPORT_MAX_HEIGHT'] as string, 10);
+  if (env[envKeys.maxHeight!]) {
+    config.maxHeight = parseInt(env[envKeys.maxHeight!] as string, 10);
   }
 
-  if (env[prefix + 'RENDERING_VIEWPORT_MAX_DEVICE_SCALE_FACTOR']) {
-    config.maxDeviceScaleFactor = parseFloat(env[prefix + 'RENDERING_VIEWPORT_MAX_DEVICE_SCALE_FACTOR'] as string);
+  if (env[envKeys.maxDeviceScaleFactor!]) {
+    config.maxDeviceScaleFactor = parseFloat(env[envKeys.maxDeviceScaleFactor!] as string);
   }
 
-  if (env[prefix + 'RENDERING_VIEWPORT_PAGE_ZOOM_LEVEL']) {
-    config.pageZoomLevel = parseFloat(env[prefix + 'RENDERING_VIEWPORT_PAGE_ZOOM_LEVEL'] as string);
+  if (env[envKeys.pageZoomLevel!]) {
+    config.pageZoomLevel = parseFloat(env[envKeys.pageZoomLevel!] as string);
   }
 
-  if (env[prefix + 'RENDERING_MODE']) {
-    config.mode = env[prefix + 'RENDERING_MODE'] as string;
+  if (env[envKeys.mode!]) {
+    config.mode = env[envKeys.mode!] as string;
   }
 
-  if (env[prefix + 'RENDERING_CLUSTERING_MODE']) {
-    config.clustering.mode = env[prefix + 'RENDERING_CLUSTERING_MODE'] as string;
+  if (env[envKeys.clustering?.mode!]) {
+    config.clustering.mode = env[envKeys.clustering?.mode!] as string;
   }
 
-  if (env[prefix + 'RENDERING_CLUSTERING_MAX_CONCURRENCY']) {
-    config.clustering.maxConcurrency = parseInt(env[prefix + 'RENDERING_CLUSTERING_MAX_CONCURRENCY'] as string, 10);
+  if (env[envKeys.clustering?.maxConcurrency!]) {
+    config.clustering.maxConcurrency = parseInt(env[envKeys.clustering?.maxConcurrency!] as string, 10);
   }
 
-  if (env[prefix + 'RENDERING_CLUSTERING_TIMEOUT']) {
-    config.clustering.timeout = parseInt(env[prefix + 'RENDERING_CLUSTERING_TIMEOUT'] as string, 10);
+  if (env[envKeys.clustering?.timeout!]) {
+    config.clustering.timeout = parseInt(env[envKeys.clustering?.timeout!] as string, 10);
   }
 
-  if (env[prefix + 'RENDERING_VERBOSE_LOGGING']) {
-    config.verboseLogging = env[prefix + 'RENDERING_VERBOSE_LOGGING'] === 'true';
+  if (env[envKeys.verboseLogging!]) {
+    config.verboseLogging = env[envKeys.verboseLogging!] === 'true';
   }
 
-  if (env[prefix + 'RENDERING_DUMPIO']) {
-    config.dumpio = env[prefix + 'RENDERING_DUMPIO'] === 'true';
+  if (env[envKeys.dumpio!]) {
+    config.dumpio = env[envKeys.dumpio!] === 'true';
   }
 
-  if (env[prefix + 'RENDERING_TIMING_METRICS']) {
-    config.timingMetrics = env[prefix + 'RENDERING_TIMING_METRICS'] === 'true';
+  if (env[envKeys.timingMetrics!]) {
+    config.timingMetrics = env[envKeys.timingMetrics!] === 'true';
   }
 }
