@@ -102,7 +102,7 @@ describe('Test validateRenderOptions', () => {
     let options: RenderOptions = {
       url: 'http://localhost',
       filePath: '',
-      timeout: 5,
+      timeout: 0,
       renderKey: '',
       domain: '',
     };
