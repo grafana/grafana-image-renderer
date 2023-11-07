@@ -1,5 +1,5 @@
-import { SecurityConfig } from '../../config/security'
-import { defaultRenderingConfig, populateRenderingConfigFromEnv, RenderingConfig } from '../../config/rendering'
+import { SecurityConfig } from '../../config/security';
+import { defaultRenderingConfig, populateRenderingConfigFromEnv, Mode, RenderingConfig } from '../../config/rendering';
 
 export interface PluginConfig {
   plugin: {
@@ -39,5 +39,5 @@ export function populatePluginConfigFromEnv(config: PluginConfig, env: NodeJS.Pr
     config.plugin.security.authToken = authToken.includes(' ') ? authToken.split(' ') : authToken;
   }
 
-  populateRenderingConfigFromEnv(config.rendering, env, true)
+  populateRenderingConfigFromEnv(config.rendering, env, Mode.Plugin);
 }

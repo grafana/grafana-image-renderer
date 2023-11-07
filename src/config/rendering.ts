@@ -63,7 +63,7 @@ export const defaultRenderingConfig: RenderingConfig = {
   timingMetrics: false,
 };
 
-enum Mode {
+export enum Mode {
   Plugin = 'plugin',
   Server = 'server',
 }
@@ -121,8 +121,8 @@ const envConfig: Record<Mode, Keys<RenderingConfig>> = {
   },
 };
 
-export function populateRenderingConfigFromEnv(config: RenderingConfig, env: NodeJS.ProcessEnv, isPlugin: boolean) {
-  const envKeys = envConfig[isPlugin ? Mode.Plugin : Mode.Server];
+export function populateRenderingConfigFromEnv(config: RenderingConfig, env: NodeJS.ProcessEnv, mode: Mode) {
+  const envKeys = envConfig[mode];
 
   if (env[envKeys.chromeBin!]) {
     config.chromeBin = env[envKeys.chromeBin!];

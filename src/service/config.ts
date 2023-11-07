@@ -1,5 +1,5 @@
-import { defaultRenderingConfig, populateRenderingConfigFromEnv, RenderingConfig } from "../config/rendering";
-import { SecurityConfig } from "../config/security";
+import { defaultRenderingConfig, populateRenderingConfigFromEnv, Mode, RenderingConfig } from '../config/rendering';
+import { SecurityConfig } from '../config/security';
 
 export interface MetricsConfig {
   enabled: boolean;
@@ -74,5 +74,5 @@ export function populateServiceConfigFromEnv(config: ServiceConfig, env: NodeJS.
     config.service.metrics.enabled = env['ENABLE_METRICS'] === 'true';
   }
 
-  populateRenderingConfigFromEnv(config.rendering, env, false)
+  populateRenderingConfigFromEnv(config.rendering, env, Mode.Server);
 }
