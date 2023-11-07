@@ -115,7 +115,7 @@ def tests_step():
     return {
         'name': 'yarn-test',
         'image': ci_image,
-        'depends_on': ['wait-for-grafana'],
+        'depends_on': ['wait-for-grafana', 'yarn-build'],
         'commands': [
             '. ~/.init-nvm.sh',
             'yarn test',
