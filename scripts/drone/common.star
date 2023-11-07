@@ -54,7 +54,7 @@ def package_step(arch, name='', skip_chromium=False, override_output='', skip_er
             bpm_cmd,
             arc_cmd,
         ],
-        'depends_on': ['yarn-build'],
+        'depends_on': ['yarn-test'],
         'environment': {
             'GRAFANA_API_KEY': from_secret('grafana_api_key'),
         }
@@ -79,4 +79,36 @@ def security_scan_step():
             'SRCCLR_API_TOKEN': from_secret('srcclr_api_token'),
         },
         'failure': 'ignore',
+    }
+
+def e2e_volumes():
+    return [
+        {'name': 'dashboards', 'path': '$${DRONE_WORKSPACE}/devenv/docker/test/dashboards'},
+        {'name': 'dashboard_provider', 'path': '$${DRONE_WORKSPACE}/devenv/docker/test/dashboards.yaml'},
+        {'name': 'datasource_provider', 'path': '$${DRONE_WORKSPACE}/devenv/docker/test/datasources.yaml'},
+    ]
+
+def e2e_grafana_setup_step():
+    return {
+        'name': 'e2e_grafana_setup',
+        'image': 'grafana/grafana-enterprise:latest',
+        'environment': {
+            'GF_FEATURE_TOGGLES_ENABLE': 'renderAuthJWT',
+        },
+        'volumes': [
+            {'name': 'dashboards', 'path': '/usr/share/grafana/dashboards'},
+            {'name': 'dashboard_provider', 'path': '/etc/grafana/provisioning/dashboards/dashboards.yaml'},
+            {'name': 'datasource_provider', 'path': '/etc/grafana/provisioning/datasources/datasources.yaml'},
+        ],
+        'depends_on': ['yarn-build'],
+    }
+
+def tests_step():
+    return {
+        'name': 'yarn-test',
+        'image': ci_image,
+        'depends_on': ['e2e_grafana_setup'],
+        'commands': [
+            'yarn test',
+        ],
     }

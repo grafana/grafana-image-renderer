@@ -33,6 +33,25 @@ steps:
   - yarn-install
   image: grafana/grafana-plugin-ci:1.9.0
   name: yarn-build
+- depends_on:
+  - yarn-build
+  environment:
+    GF_FEATURE_TOGGLES_ENABLE: renderAuthJWT
+  image: grafana/grafana-enterprise:latest
+  name: e2e_grafana_setup
+  volumes:
+  - name: dashboards
+    path: /usr/share/grafana/dashboards
+  - name: dashboard_provider
+    path: /etc/grafana/provisioning/dashboards/dashboards.yaml
+  - name: datasource_provider
+    path: /etc/grafana/provisioning/datasources/datasources.yaml
+- commands:
+  - yarn test
+  depends_on:
+  - e2e_grafana_setup
+  image: grafana/grafana-plugin-ci:1.9.0
+  name: yarn-test
 - commands:
   - . ~/.init-nvm.sh
   - echo "Starting veracode scan..."
@@ -55,7 +74,7 @@ steps:
   - bin/grabpl build-plugin-manifest ./dist/plugin-linux-x64-glibc || true
   - ./scripts/archive_target.sh linux-x64-glibc
   depends_on:
-  - yarn-build
+  - yarn-test
   environment:
     GRAFANA_API_KEY:
       from_secret: grafana_api_key
@@ -67,7 +86,7 @@ steps:
   - bin/grabpl build-plugin-manifest ./dist/plugin-darwin-x64-unknown || true
   - ./scripts/archive_target.sh darwin-x64-unknown
   depends_on:
-  - yarn-build
+  - yarn-test
   environment:
     GRAFANA_API_KEY:
       from_secret: grafana_api_key
@@ -79,7 +98,7 @@ steps:
   - bin/grabpl build-plugin-manifest ./dist/plugin-win32-x64-unknown || true
   - ./scripts/archive_target.sh win32-x64-unknown
   depends_on:
-  - yarn-build
+  - yarn-test
   environment:
     GRAFANA_API_KEY:
       from_secret: grafana_api_key
@@ -92,7 +111,7 @@ steps:
     true
   - ./scripts/archive_target.sh linux-x64-glibc plugin-linux-x64-glibc-no-chromium
   depends_on:
-  - yarn-build
+  - yarn-test
   environment:
     GRAFANA_API_KEY:
       from_secret: grafana_api_key
@@ -106,6 +125,12 @@ volumes:
 - host:
     path: /var/run/docker.sock
   name: docker
+- name: dashboards
+  path: $${DRONE_WORKSPACE}/devenv/docker/test/dashboards
+- name: dashboard_provider
+  path: $${DRONE_WORKSPACE}/devenv/docker/test/dashboards.yaml
+- name: datasource_provider
+  path: $${DRONE_WORKSPACE}/devenv/docker/test/datasources.yaml
 ---
 clone:
   retries: 3
@@ -141,6 +166,25 @@ steps:
   - yarn-install
   image: grafana/grafana-plugin-ci:1.9.0
   name: yarn-build
+- depends_on:
+  - yarn-build
+  environment:
+    GF_FEATURE_TOGGLES_ENABLE: renderAuthJWT
+  image: grafana/grafana-enterprise:latest
+  name: e2e_grafana_setup
+  volumes:
+  - name: dashboards
+    path: /usr/share/grafana/dashboards
+  - name: dashboard_provider
+    path: /etc/grafana/provisioning/dashboards/dashboards.yaml
+  - name: datasource_provider
+    path: /etc/grafana/provisioning/datasources/datasources.yaml
+- commands:
+  - yarn test
+  depends_on:
+  - e2e_grafana_setup
+  image: grafana/grafana-plugin-ci:1.9.0
+  name: yarn-test
 - commands:
   - . ~/.init-nvm.sh
   - echo "Starting veracode scan..."
@@ -163,7 +207,7 @@ steps:
   - bin/grabpl build-plugin-manifest ./dist/plugin-linux-x64-glibc
   - ./scripts/archive_target.sh linux-x64-glibc
   depends_on:
-  - yarn-build
+  - yarn-test
   environment:
     GRAFANA_API_KEY:
       from_secret: grafana_api_key
@@ -175,7 +219,7 @@ steps:
   - bin/grabpl build-plugin-manifest ./dist/plugin-darwin-x64-unknown
   - ./scripts/archive_target.sh darwin-x64-unknown
   depends_on:
-  - yarn-build
+  - yarn-test
   environment:
     GRAFANA_API_KEY:
       from_secret: grafana_api_key
@@ -187,7 +231,7 @@ steps:
   - bin/grabpl build-plugin-manifest ./dist/plugin-win32-x64-unknown
   - ./scripts/archive_target.sh win32-x64-unknown
   depends_on:
-  - yarn-build
+  - yarn-test
   environment:
     GRAFANA_API_KEY:
       from_secret: grafana_api_key
@@ -199,7 +243,7 @@ steps:
   - bin/grabpl build-plugin-manifest ./dist/plugin-linux-x64-glibc-no-chromium
   - ./scripts/archive_target.sh linux-x64-glibc plugin-linux-x64-glibc-no-chromium
   depends_on:
-  - yarn-build
+  - yarn-test
   environment:
     GRAFANA_API_KEY:
       from_secret: grafana_api_key
@@ -207,6 +251,8 @@ steps:
   name: package-linux-x64-glibc-no-chromium
 - commands:
   - ./scripts/build_push_docker.sh master
+  depends_on:
+  - yarn-test
   environment:
     DOCKER_PASS:
       from_secret: docker_pass
@@ -228,6 +274,12 @@ volumes:
 - host:
     path: /var/run/docker.sock
   name: docker
+- name: dashboards
+  path: $${DRONE_WORKSPACE}/devenv/docker/test/dashboards
+- name: dashboard_provider
+  path: $${DRONE_WORKSPACE}/devenv/docker/test/dashboards.yaml
+- name: datasource_provider
+  path: $${DRONE_WORKSPACE}/devenv/docker/test/datasources.yaml
 ---
 clone:
   retries: 3
@@ -263,6 +315,25 @@ steps:
   - yarn-install
   image: grafana/grafana-plugin-ci:1.9.0
   name: yarn-build
+- depends_on:
+  - yarn-build
+  environment:
+    GF_FEATURE_TOGGLES_ENABLE: renderAuthJWT
+  image: grafana/grafana-enterprise:latest
+  name: e2e_grafana_setup
+  volumes:
+  - name: dashboards
+    path: /usr/share/grafana/dashboards
+  - name: dashboard_provider
+    path: /etc/grafana/provisioning/dashboards/dashboards.yaml
+  - name: datasource_provider
+    path: /etc/grafana/provisioning/datasources/datasources.yaml
+- commands:
+  - yarn test
+  depends_on:
+  - e2e_grafana_setup
+  image: grafana/grafana-plugin-ci:1.9.0
+  name: yarn-test
 - commands:
   - . ~/.init-nvm.sh
   - echo "Starting veracode scan..."
@@ -285,7 +356,7 @@ steps:
   - bin/grabpl build-plugin-manifest ./dist/plugin-linux-x64-glibc
   - ./scripts/archive_target.sh linux-x64-glibc
   depends_on:
-  - yarn-build
+  - yarn-test
   environment:
     GRAFANA_API_KEY:
       from_secret: grafana_api_key
@@ -297,7 +368,7 @@ steps:
   - bin/grabpl build-plugin-manifest ./dist/plugin-darwin-x64-unknown
   - ./scripts/archive_target.sh darwin-x64-unknown
   depends_on:
-  - yarn-build
+  - yarn-test
   environment:
     GRAFANA_API_KEY:
       from_secret: grafana_api_key
@@ -309,7 +380,7 @@ steps:
   - bin/grabpl build-plugin-manifest ./dist/plugin-win32-x64-unknown
   - ./scripts/archive_target.sh win32-x64-unknown
   depends_on:
-  - yarn-build
+  - yarn-test
   environment:
     GRAFANA_API_KEY:
       from_secret: grafana_api_key
@@ -321,7 +392,7 @@ steps:
   - bin/grabpl build-plugin-manifest ./dist/plugin-linux-x64-glibc-no-chromium
   - ./scripts/archive_target.sh linux-x64-glibc plugin-linux-x64-glibc-no-chromium
   depends_on:
-  - yarn-build
+  - yarn-test
   environment:
     GRAFANA_API_KEY:
       from_secret: grafana_api_key
@@ -382,6 +453,12 @@ volumes:
 - host:
     path: /var/run/docker.sock
   name: docker
+- name: dashboards
+  path: $${DRONE_WORKSPACE}/devenv/docker/test/dashboards
+- name: dashboard_provider
+  path: $${DRONE_WORKSPACE}/devenv/docker/test/dashboards.yaml
+- name: datasource_provider
+  path: $${DRONE_WORKSPACE}/devenv/docker/test/datasources.yaml
 ---
 get:
   name: .dockerconfigjson
@@ -414,6 +491,6 @@ kind: secret
 name: srcclr_api_token
 ---
 kind: signature
-hmac: eeb3dd651cc32e9e32188e7f904e97131911d9699c7610c4b33a19098c257d9f
+hmac: 454866c4f78fe3c467909a9ad74453e3aee9d7efe870fdcabf5e1b8a0ca88392
 
 ...

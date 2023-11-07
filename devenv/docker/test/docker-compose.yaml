@@ -14,7 +14,6 @@ services:
       - "./dashboards.yaml:/etc/grafana/provisioning/dashboards/dashboards.yaml"
       - ./dashboards:/usr/share/grafana/dashboards
       - ./datasources_docker.yaml:/etc/grafana/provisioning/datasources/datasources.yaml
-      - ./grafana.db:/var/lib/grafana/grafana.db
   # renderer:
   #   image: custom-grafana-image-renderer
   #   ports:
