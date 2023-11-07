@@ -1,12 +1,14 @@
 import { ConsoleLogger } from '../logger';
+import { RenderOptions } from '../types';
 import { Browser } from './browser';
 import * as promClient from 'prom-client';
 
-jest.mock('../logger')
+jest.mock('../logger');
 
 const renderingConfig = {
   args: ['--no-sandbox', '--disable-gpu'],
   ignoresHttpsErrors: false,
+  acceptLanguage: 'fr-CA',
   width: 1000,
   height: 500,
   deviceScaleFactor: 1,
@@ -25,7 +27,7 @@ const renderingConfig = {
   dumpio: false,
   timingMetrics: false,
   emulateNetworkConditions: false,
-}
+};
 
 const browser = new Browser(renderingConfig, new ConsoleLogger({ level: 'info' }), {
   durationHistogram: new promClient.Histogram({
@@ -36,18 +38,77 @@ const browser = new Browser(renderingConfig, new ConsoleLogger({ level: 'info' }
   }),
 });
 
+describe('Test validateRenderOptions', () => {
+  it('should fail when passing a socket URL', () => {
+    const fn = () => {
+      browser.validateRenderOptions({
+        url: 'socket://localhost',
+        filePath: '',
+        timeout: 0,
+        renderKey: '',
+        domain: '',
+      });
+    };
 
-test('validateRenderOptions should fail when passing an URL in socket mode', () => {
-  const fn = () => {
-    browser.validateRenderOptions({
-      url: 'socket://localhost',
+    expect(fn).toThrow(Error);
+  });
+
+  it('should use accept-language header if it exists', () => {
+    let options: RenderOptions = {
+      url: 'http://localhost',
+      filePath: '',
+      timeout: 0,
+      renderKey: '',
+      headers: {
+        'Accept-Language': 'en-US',
+      },
+      domain: '',
+    };
+
+    browser.validateRenderOptions(options);
+
+    expect(options.headers?.['Accept-Language']).toEqual('en-US');
+  });
+
+  it('should use acceptLanguage configuration if no header is given', () => {
+    let options: RenderOptions = {
+      url: 'http://localhost',
       filePath: '',
       timeout: 0,
       renderKey: '',
       domain: '',
-    });
-  };
+    };
 
-  expect(fn).toThrow(Error);
-})
+    browser.validateRenderOptions(options);
 
+    expect(options.headers?.['Accept-Language']).toEqual(renderingConfig.acceptLanguage);
+  });
+
+  it('should use timeout option if given', () => {
+    let options: RenderOptions = {
+      url: 'http://localhost',
+      filePath: '',
+      timeout: 5,
+      renderKey: '',
+      domain: '',
+    };
+
+    browser.validateRenderOptions(options);
+
+    expect(options.timeout).toEqual(5);
+  });
+
+  it('should use default timeout if none is given', () => {
+    let options: RenderOptions = {
+      url: 'http://localhost',
+      filePath: '',
+      timeout: 5,
+      renderKey: '',
+      domain: '',
+    };
+
+    browser.validateRenderOptions(options);
+
+    expect(options.timeout).toEqual(30);
+  });
+});

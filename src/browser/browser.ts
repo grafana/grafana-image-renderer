@@ -1,5 +1,5 @@
 import * as os from 'os';
-import uniqueFilename from 'unique-filename';
+import * as uniqueFilename from 'unique-filename';
 import * as puppeteer from 'puppeteer';
 import * as chokidar from 'chokidar';
 import * as path from 'path';

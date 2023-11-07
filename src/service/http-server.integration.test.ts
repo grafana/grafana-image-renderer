@@ -1,12 +1,12 @@
-import request from 'supertest';
-import * as jwt from 'jsonwebtoken';
 import * as fs from 'fs';
+import * as jwt from 'jsonwebtoken';
+import * as path from 'path';
+import * as request from 'supertest';
 
 import { HttpServer } from './http-server';
 import { ConsoleLogger } from '../logger';
 import { ServiceConfig } from '../config';
 import { createSanitizer } from '../sanitizer/Sanitizer';
-import path from 'path';
 
 const dashboardUid = 'd10881ec-0d35-4909-8de7-6ab563a9ab29';
 const panelIds = {
@@ -28,7 +28,7 @@ const renderKey = jwt.sign(
   { algorithm: 'HS512' }
 );
 
-const goldenFilesFolder = './src/test/integrations/testdata';
+const goldenFilesFolder = './src/testdata';
 const serviceConfig: ServiceConfig = {
   service: {
     host: undefined,
@@ -52,6 +52,7 @@ const serviceConfig: ServiceConfig = {
   rendering: {
     args: ['--no-sandbox', '--disable-gpu'],
     ignoresHttpsErrors: false,
+    timezone: 'Europe/Paris',
     width: 500,
     height: 300,
     deviceScaleFactor: 1,
@@ -79,6 +80,7 @@ const sanitizer = createSanitizer();
 const server = new HttpServer(serviceConfig, new ConsoleLogger(serviceConfig.service.logging), sanitizer);
 
 beforeAll(() => {
+  process.env['PUPPETEER_DISABLE_HEADLESS_WARNING'] = 'true';
   return server.start();
 });
 
@@ -100,30 +102,67 @@ describe('Test /render', () => {
   });
 
   it('should respond with the graph panel screenshot', async () => {
-    const url = `${grafanaEndpoint}/${dashboardUid}?panelId=${panelIds.graph}&render=1&from=1698385036999&to=1698406636999`;
-    const filePath = path.join(__dirname, 'graph.png');
+    const url = `${grafanaEndpoint}/${dashboardUid}?panelId=${panelIds.graph}&render=1&from=1699333200000&to=1699344000000`;
     const response = await request(server.app)
-      .get(`/render?url=${url}&timeout=5&renderKey=${renderKey}&domain=localhost&width=500&height=300&deviceScaleFactor=1&filePath=${filePath}`)
+      .get(`/render?url=${encodeURIComponent(url)}&timeout=5&renderKey=${renderKey}&domain=localhost&width=500&height=300&deviceScaleFactor=1`)
       .set('X-Auth-Token', '-');
-    // .buffer()
-    // .parse((res, callback) => {
-    //   res.setEncoding('binary');
-    //   res.data = '';
-    //   res.on('data', (chunk) => {
-    //     res.data += chunk;
-    //   });
-    //   res.on('end', () => {
-    //     callback(null, Buffer.from(res.data, 'binary'));
-    //   });
-    // });
 
-    fs.writeFileSync('graph.png', response.body);
+    const goldenFilePath = path.join(goldenFilesFolder, 'graph.png');
+    if (process.env['UPDATE_GOLDEN'] === 'true') {
+      fs.writeFileSync(goldenFilePath, response.body);
+    }
 
     expect(response.statusCode).toEqual(200);
-    // expect(response.headers['content-disposition']).to.be.equal('attachment; filename=resume.csv');
-    // expect(response.headers['content-type']).to.be.equal('text/csv; charset=utf-8');
-    // expect(response.headers['content-length']).to.not.equal('0');
-    // console.log(response.body);
-    expect(response.body).toEqual(fs.readFileSync(goldenFilesFolder + '/graph.png'));
+    expect(response.headers['content-type']).toEqual('image/png');
+    expect(response.body).toEqual(fs.readFileSync(goldenFilePath));
   });
+
+  it('should respond with the table panel screenshot', async () => {
+    const url = `${grafanaEndpoint}/${dashboardUid}?panelId=${panelIds.table}&render=1&from=1699333200000&to=1699344000000`;
+    const response = await request(server.app)
+      .get(`/render?url=${encodeURIComponent(url)}&timeout=5&renderKey=${renderKey}&domain=localhost&width=500&height=300&deviceScaleFactor=1`)
+      .set('X-Auth-Token', '-');
+
+    const goldenFilePath = path.join(goldenFilesFolder, 'table.png');
+    if (process.env['UPDATE_GOLDEN'] === 'true') {
+      fs.writeFileSync(goldenFilePath, response.body);
+    }
+
+    expect(response.statusCode).toEqual(200);
+    expect(response.headers['content-type']).toEqual('image/png');
+    expect(response.body).toEqual(fs.readFileSync(goldenFilePath));
+  });
+
+  it('should respond with a panel error screenshot', async () => {
+    const url = `${grafanaEndpoint}/${dashboardUid}?panelId=${panelIds.error}&render=1&from=1699333200000&to=1699344000000`;
+    const response = await request(server.app)
+      .get(`/render?url=${encodeURIComponent(url)}&timeout=5&renderKey=${renderKey}&domain=localhost&width=500&height=300&deviceScaleFactor=1`)
+      .set('X-Auth-Token', '-');
+
+    const goldenFilePath = path.join(goldenFilesFolder, 'error.png');
+    if (process.env['UPDATE_GOLDEN'] === 'true') {
+      fs.writeFileSync(goldenFilePath, response.body);
+    }
+
+    expect(response.statusCode).toEqual(200);
+    expect(response.headers['content-type']).toEqual('image/png');
+    expect(response.body).toEqual(fs.readFileSync(goldenFilePath));
+  });
+
+  // TODO: this test currently doesn't pass because it takes a screenshot of the panel still loading and the position of the loading bar and the loading icon can vary
+  // it('should timeout when a panel is too slow to load', async () => {
+  //   const url = `${grafanaEndpoint}/${dashboardUid}?panelId=${panelIds.slow}&render=1&from=1699333200000&to=1699344000000`;
+  //   const response = await request(server.app)
+  //     .get(`/render?url=${encodeURIComponent(url)}&timeout=5&renderKey=${renderKey}&domain=localhost&width=500&height=300&deviceScaleFactor=1`)
+  //     .set('X-Auth-Token', '-');
+
+  //   const goldenFilePath = path.join(goldenFilesFolder, 'slow.png');
+  //   if (process.env['UPDATE_GOLDEN'] === 'true') {
+  //     fs.writeFileSync(goldenFilePath, response.body);
+  //   }
+
+  //   expect(response.statusCode).toEqual(200);
+  //   expect(response.headers['content-type']).toEqual('image/png');
+  //   expect(response.body).toEqual(fs.readFileSync(goldenFilePath));
+  // }, 30000);
 });

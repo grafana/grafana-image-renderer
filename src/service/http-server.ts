@@ -1,13 +1,13 @@
-import * as fs from 'fs';
-import * as path from 'path';
-import * as net from 'net';
-import express from 'express';
-import * as boom from '@hapi/boom';
-import morgan from 'morgan';
-import * as promClient from 'prom-client';
 import * as bodyParser from 'body-parser';
-import multer from 'multer';
+import * as boom from '@hapi/boom';
 import * as contentDisposition from 'content-disposition';
+import * as express from 'express';
+import * as fs from 'fs';
+import * as morgan from 'morgan';
+import * as multer from 'multer';
+import * as net from 'net';
+import * as path from 'path';
+import * as promClient from 'prom-client';
 
 import { Logger } from '../logger';
 import { Browser, createBrowser } from '../browser';
