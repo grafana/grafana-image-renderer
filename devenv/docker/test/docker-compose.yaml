@@ -1,0 +1,29 @@
+version: '2'
+
+services:
+  grafana:
+    image: grafana/grafana:10.2.0
+    ports:
+      - 3000:3000
+    environment:
+      GF_FEATURE_TOGGLES_ENABLE: renderAuthJWT
+    #   GF_RENDERING_SERVER_URL: http://renderer:8081/render
+    #   GF_RENDERING_CALLBACK_URL: http://grafana:3000/
+    #   GF_LOG_FILTERS: rendering:debug
+    volumes:
+      - "./dashboards.yaml:/etc/grafana/provisioning/dashboards/dashboards.yaml"
+      - ./dashboards:/usr/share/grafana/dashboards
+      - ./datasources_docker.yaml:/etc/grafana/provisioning/datasources/datasources.yaml
+      - ./grafana.db:/var/lib/grafana/grafana.db
+  # renderer:
+  #   image: custom-grafana-image-renderer
+  #   ports:
+  #     - 8081:8081
+  #   environment:
+  #     ENABLE_METRICS: 'true'
+  #     BROWSER_TZ: 'America/Adak'
+  #     RENDERING_VIEWPORT_DEVICE_SCALE_FACTOR: 4
+  #     RENDERING_MODE: clustered
+  #     RENDERING_VERBOSE_LOGGING: 'true'
+  #     RENDERING_DUMPIO: 'true'
+  #     RENDERING_TIMING_METRICS: 'true'

@@ -1,4 +1,4 @@
-import winston = require('winston');
+import * as winston from 'winston';
 import { LoggingConfig } from './config';
 
 export interface LogWriter {
