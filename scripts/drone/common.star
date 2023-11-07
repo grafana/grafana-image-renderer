@@ -88,9 +88,9 @@ def e2e_volumes():
         {'name': 'datasource_provider', 'path': '$${DRONE_WORKSPACE}/devenv/docker/test/datasources.yaml'},
     ]
 
-def e2e_grafana_setup_step():
-    return {
-        'name': 'e2e_grafana_setup',
+def e2e_services():
+    return [{
+        'name': 'grafana',
         'image': 'grafana/grafana-enterprise:latest',
         'environment': {
             'GF_FEATURE_TOGGLES_ENABLE': 'renderAuthJWT',
@@ -100,14 +100,22 @@ def e2e_grafana_setup_step():
             {'name': 'dashboard_provider', 'path': '/etc/grafana/provisioning/dashboards/dashboards.yaml'},
             {'name': 'datasource_provider', 'path': '/etc/grafana/provisioning/datasources/datasources.yaml'},
         ],
-        'depends_on': ['yarn-build'],
+    }]
+
+def e2e_setup_step():
+    return {
+        'name': 'wait-for-grafana',
+        'image': 'jwilder/dockerize:0.6.1',
+        'commands': [
+            'dockerize -wait http://grafana:3000 -timeout 120s',
+        ]
     }
 
 def tests_step():
     return {
         'name': 'yarn-test',
         'image': ci_image,
-        'depends_on': ['e2e_grafana_setup'],
+        'depends_on': ['wait-for-grafana'],
         'commands': [
             'yarn test',
         ],

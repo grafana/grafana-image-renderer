@@ -11,7 +11,18 @@ node:
 platform:
   arch: amd64
   os: linux
-services: []
+services:
+- environment:
+    GF_FEATURE_TOGGLES_ENABLE: renderAuthJWT
+  image: grafana/grafana-enterprise:latest
+  name: grafana
+  volumes:
+  - name: dashboards
+    path: /usr/share/grafana/dashboards
+  - name: dashboard_provider
+    path: /etc/grafana/provisioning/dashboards/dashboards.yaml
+  - name: datasource_provider
+    path: /etc/grafana/provisioning/datasources/datasources.yaml
 steps:
 - commands:
   - mkdir -p bin
@@ -33,23 +44,14 @@ steps:
   - yarn-install
   image: grafana/grafana-plugin-ci:1.9.0
   name: yarn-build
-- depends_on:
-  - yarn-build
-  environment:
-    GF_FEATURE_TOGGLES_ENABLE: renderAuthJWT
-  image: grafana/grafana-enterprise:latest
-  name: e2e_grafana_setup
-  volumes:
-  - name: dashboards
-    path: /usr/share/grafana/dashboards
-  - name: dashboard_provider
-    path: /etc/grafana/provisioning/dashboards/dashboards.yaml
-  - name: datasource_provider
-    path: /etc/grafana/provisioning/datasources/datasources.yaml
+- commands:
+  - dockerize -wait http://grafana:3000 -timeout 120s
+  image: jwilder/dockerize:0.6.1
+  name: wait-for-grafana
 - commands:
   - yarn test
   depends_on:
-  - e2e_grafana_setup
+  - wait-for-grafana
   image: grafana/grafana-plugin-ci:1.9.0
   name: yarn-test
 - commands:
@@ -144,7 +146,18 @@ node:
 platform:
   arch: amd64
   os: linux
-services: []
+services:
+- environment:
+    GF_FEATURE_TOGGLES_ENABLE: renderAuthJWT
+  image: grafana/grafana-enterprise:latest
+  name: grafana
+  volumes:
+  - name: dashboards
+    path: /usr/share/grafana/dashboards
+  - name: dashboard_provider
+    path: /etc/grafana/provisioning/dashboards/dashboards.yaml
+  - name: datasource_provider
+    path: /etc/grafana/provisioning/datasources/datasources.yaml
 steps:
 - commands:
   - mkdir -p bin
@@ -166,23 +179,14 @@ steps:
   - yarn-install
   image: grafana/grafana-plugin-ci:1.9.0
   name: yarn-build
-- depends_on:
-  - yarn-build
-  environment:
-    GF_FEATURE_TOGGLES_ENABLE: renderAuthJWT
-  image: grafana/grafana-enterprise:latest
-  name: e2e_grafana_setup
-  volumes:
-  - name: dashboards
-    path: /usr/share/grafana/dashboards
-  - name: dashboard_provider
-    path: /etc/grafana/provisioning/dashboards/dashboards.yaml
-  - name: datasource_provider
-    path: /etc/grafana/provisioning/datasources/datasources.yaml
+- commands:
+  - dockerize -wait http://grafana:3000 -timeout 120s
+  image: jwilder/dockerize:0.6.1
+  name: wait-for-grafana
 - commands:
   - yarn test
   depends_on:
-  - e2e_grafana_setup
+  - wait-for-grafana
   image: grafana/grafana-plugin-ci:1.9.0
   name: yarn-test
 - commands:
@@ -293,7 +297,18 @@ node:
 platform:
   arch: amd64
   os: linux
-services: []
+services:
+- environment:
+    GF_FEATURE_TOGGLES_ENABLE: renderAuthJWT
+  image: grafana/grafana-enterprise:latest
+  name: grafana
+  volumes:
+  - name: dashboards
+    path: /usr/share/grafana/dashboards
+  - name: dashboard_provider
+    path: /etc/grafana/provisioning/dashboards/dashboards.yaml
+  - name: datasource_provider
+    path: /etc/grafana/provisioning/datasources/datasources.yaml
 steps:
 - commands:
   - mkdir -p bin
@@ -315,23 +330,14 @@ steps:
   - yarn-install
   image: grafana/grafana-plugin-ci:1.9.0
   name: yarn-build
-- depends_on:
-  - yarn-build
-  environment:
-    GF_FEATURE_TOGGLES_ENABLE: renderAuthJWT
-  image: grafana/grafana-enterprise:latest
-  name: e2e_grafana_setup
-  volumes:
-  - name: dashboards
-    path: /usr/share/grafana/dashboards
-  - name: dashboard_provider
-    path: /etc/grafana/provisioning/dashboards/dashboards.yaml
-  - name: datasource_provider
-    path: /etc/grafana/provisioning/datasources/datasources.yaml
+- commands:
+  - dockerize -wait http://grafana:3000 -timeout 120s
+  image: jwilder/dockerize:0.6.1
+  name: wait-for-grafana
 - commands:
   - yarn test
   depends_on:
-  - e2e_grafana_setup
+  - wait-for-grafana
   image: grafana/grafana-plugin-ci:1.9.0
   name: yarn-test
 - commands:
@@ -491,6 +497,6 @@ kind: secret
 name: srcclr_api_token
 ---
 kind: signature
-hmac: 454866c4f78fe3c467909a9ad74453e3aee9d7efe870fdcabf5e1b8a0ca88392
+hmac: 7cac86119c95b1ad6b52afd0b24a7ac3d2676fe7b4c9a53bdc25916265d04521
 
 ...
