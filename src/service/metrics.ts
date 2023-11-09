@@ -3,7 +3,7 @@ import * as promClient from 'prom-client';
 import * as onFinished from 'on-finished';
 import express = require('express');
 
-import { MetricsConfig } from '../config';
+import { MetricsConfig } from './config';
 import { Logger } from '../logger';
 
 export const setupHttpServerMetrics = (app: express.Express, config: MetricsConfig, log: Logger) => {

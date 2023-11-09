@@ -1,7 +1,7 @@
 import express = require('express');
 import * as boom from '@hapi/boom';
 import { ImageRenderOptions } from '../types';
-import { SecurityConfig, isAuthTokenValid } from '../config';
+import { SecurityConfig, isAuthTokenValid } from '../config/security';
 
 export const asyncMiddleware = (fn) => (req, res, next) => {
   Promise.resolve(fn(req, res, next)).catch((err) => {

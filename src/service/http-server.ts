@@ -7,7 +7,7 @@ import morgan = require('morgan');
 import * as promClient from 'prom-client';
 import { Logger } from '../logger';
 import { Browser, createBrowser } from '../browser';
-import { ServiceConfig } from '../config';
+import { ServiceConfig } from './config';
 import { setupHttpServerMetrics } from './metrics';
 import { HTTPHeaders, ImageRenderOptions, RenderOptions } from '../types';
 import { Sanitizer } from '../sanitizer/Sanitizer';
@@ -28,7 +28,7 @@ export class HttpServer {
   app: express.Express;
   browser: Browser;
 
-  constructor(private config: ServiceConfig, private log: Logger, private sanitizer: Sanitizer) {}
+  constructor(private config: ServiceConfig, private log: Logger, private sanitizer: Sanitizer) { }
 
   async start() {
     this.app = express();

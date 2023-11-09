@@ -1,5 +1,5 @@
 import winston = require('winston');
-import { LoggingConfig } from './config';
+import { LoggingConfig } from './service/config';
 
 export interface LogWriter {
   write(message, encoding);

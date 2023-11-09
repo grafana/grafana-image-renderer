@@ -1,4 +1,4 @@
-import { RenderingConfig } from '../config';
+import { RenderingConfig } from '../config/rendering';
 import { Logger } from '../logger';
 import { Browser, Metrics } from './browser';
 import { ClusteredBrowser } from './clustered';
