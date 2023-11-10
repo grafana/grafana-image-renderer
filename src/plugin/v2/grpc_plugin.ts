@@ -3,7 +3,8 @@ import * as protoLoader from '@grpc/proto-loader';
 import * as promClient from 'prom-client';
 import { GrpcPlugin } from '../../node-plugin';
 import { Logger } from '../../logger';
-import { PluginConfig, SecurityConfig, isAuthTokenValid } from '../../config';
+import { PluginConfig } from './config';
+import { SecurityConfig, isAuthTokenValid } from '../../config/security';
 import { createBrowser, Browser } from '../../browser';
 import { HTTPHeaders, ImageRenderOptions, RenderOptions } from '../../types';
 import {
@@ -52,9 +53,7 @@ const pluginV2ProtoDescriptor = grpc.loadPackageDefinition(pluginV2PackageDef);
 const sanitizerProtoDescriptor = grpc.loadPackageDefinition(sanitizerPackageDef);
 
 export class RenderGRPCPluginV2 implements GrpcPlugin {
-  constructor(private config: PluginConfig, private log: Logger) {
-    populateConfigFromEnv(this.config);
-  }
+  constructor(private config: PluginConfig, private log: Logger) { }
 
   async grpcServer(server: grpc.Server) {
     const metrics = setupMetrics();
@@ -236,91 +235,6 @@ class PluginGRPCServer {
     }
   }
 }
-
-const populateConfigFromEnv = (config: PluginConfig) => {
-  const env = Object.assign({}, process.env);
-
-  if (env['GF_PLUGIN_RENDERING_ARGS']) {
-    const args = env['GF_PLUGIN_RENDERING_ARGS'] as string;
-    if (args.length > 0) {
-      const argsList = args.split(',');
-      if (argsList.length > 0) {
-        config.rendering.args = argsList;
-      }
-    }
-  }
-
-  if (env['GF_PLUGIN_RENDERING_IGNORE_HTTPS_ERRORS']) {
-    config.rendering.ignoresHttpsErrors = env['GF_PLUGIN_RENDERING_IGNORE_HTTPS_ERRORS'] === 'true';
-  }
-
-  if (env['GF_PLUGIN_RENDERING_TIMEZONE']) {
-    config.rendering.timezone = env['GF_PLUGIN_RENDERING_TIMEZONE'];
-  } else {
-    config.rendering.timezone = env['TZ'];
-  }
-
-  if (env['GF_PLUGIN_RENDERING_LANGUAGE']) {
-    config.rendering.acceptLanguage = env['GF_PLUGIN_RENDERING_LANGUAGE'];
-  }
-
-  if (env['GF_PLUGIN_RENDERING_VIEWPORT_WIDTH']) {
-    config.rendering.width = parseInt(env['GF_PLUGIN_RENDERING_VIEWPORT_WIDTH'] as string, 10);
-  }
-
-  if (env['GF_PLUGIN_RENDERING_VIEWPORT_HEIGHT']) {
-    config.rendering.height = parseInt(env['GF_PLUGIN_RENDERING_VIEWPORT_HEIGHT'] as string, 10);
-  }
-
-  if (env['GF_PLUGIN_RENDERING_VIEWPORT_DEVICE_SCALE_FACTOR']) {
-    config.rendering.deviceScaleFactor = parseFloat(env['GF_PLUGIN_RENDERING_VIEWPORT_DEVICE_SCALE_FACTOR'] as string);
-  }
-
-  if (env['GF_PLUGIN_RENDERING_VIEWPORT_MAX_WIDTH']) {
-    config.rendering.maxWidth = parseInt(env['GF_PLUGIN_RENDERING_VIEWPORT_MAX_WIDTH'] as string, 10);
-  }
-
-  if (env['GF_PLUGIN_RENDERING_VIEWPORT_MAX_HEIGHT']) {
-    config.rendering.maxHeight = parseInt(env['GF_PLUGIN_RENDERING_VIEWPORT_MAX_HEIGHT'] as string, 10);
-  }
-
-  if (env['GF_PLUGIN_RENDERING_VIEWPORT_MAX_DEVICE_SCALE_FACTOR']) {
-    config.rendering.maxDeviceScaleFactor = parseFloat(env['GF_PLUGIN_RENDERING_VIEWPORT_MAX_DEVICE_SCALE_FACTOR'] as string);
-  }
-
-  if (env['GF_PLUGIN_RENDERING_VIEWPORT_PAGE_ZOOM_LEVEL']) {
-    config.rendering.pageZoomLevel = parseFloat(env['GF_PLUGIN_RENDERING_VIEWPORT_PAGE_ZOOM_LEVEL'] as string);
-  }
-
-  if (env['GF_PLUGIN_RENDERING_MODE']) {
-    config.rendering.mode = env['GF_PLUGIN_RENDERING_MODE'] as string;
-  }
-
-  if (env['GF_PLUGIN_RENDERING_CLUSTERING_MODE']) {
-    config.rendering.clustering.mode = env['GF_PLUGIN_RENDERING_CLUSTERING_MODE'] as string;
-  }
-
-  if (env['GF_PLUGIN_RENDERING_CLUSTERING_MAX_CONCURRENCY']) {
-    config.rendering.clustering.maxConcurrency = parseInt(env['GF_PLUGIN_RENDERING_CLUSTERING_MAX_CONCURRENCY'] as string, 10);
-  }
-
-  if (env['GF_PLUGIN_RENDERING_CLUSTERING_TIMEOUT']) {
-    config.rendering.clustering.timeout = parseInt(env['GF_PLUGIN_RENDERING_CLUSTERING_TIMEOUT'] as string, 10);
-  }
-
-  if (env['GF_PLUGIN_RENDERING_VERBOSE_LOGGING']) {
-    config.rendering.verboseLogging = env['GF_PLUGIN_RENDERING_VERBOSE_LOGGING'] === 'true';
-  }
-
-  if (env['GF_PLUGIN_RENDERING_DUMPIO']) {
-    config.rendering.dumpio = env['GF_PLUGIN_RENDERING_DUMPIO'] === 'true';
-  }
-
-  if (env['GF_PLUGIN_AUTH_TOKEN']) {
-    const authToken = env['GF_PLUGIN_AUTH_TOKEN'] as string;
-    config.plugin.security.authToken = authToken.includes(' ') ? authToken.split(' ') : authToken;
-  }
-};
 
 interface PluginMetrics {
   up: promClient.Gauge;

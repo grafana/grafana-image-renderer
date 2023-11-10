@@ -2,7 +2,7 @@ import * as puppeteer from 'puppeteer';
 import { ImageRenderOptions, RenderOptions } from '../types';
 import { Browser, RenderResponse, RenderCSVResponse, Metrics } from './browser';
 import { Logger } from '../logger';
-import { RenderingConfig } from '../config';
+import { RenderingConfig } from '../config/rendering';
 
 export class ReusableBrowser extends Browser {
   browser: puppeteer.Browser;

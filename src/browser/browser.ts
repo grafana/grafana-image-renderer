@@ -7,7 +7,7 @@ import * as fs from 'fs';
 import * as promClient from 'prom-client';
 import * as Jimp from 'jimp';
 import { Logger } from '../logger';
-import { RenderingConfig } from '../config';
+import { RenderingConfig } from '../config/rendering';
 import { ImageRenderOptions, RenderOptions } from '../types';
 
 export interface Metrics {

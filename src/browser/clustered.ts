@@ -3,7 +3,7 @@ import { Cluster as PuppeteerCluster } from 'puppeteer-cluster';
 import { ImageRenderOptions, RenderOptions } from '../types';
 import { Browser, RenderResponse, RenderCSVResponse, Metrics } from './browser';
 import { Logger } from '../logger';
-import { RenderingConfig, ClusteringConfig } from '../config';
+import { RenderingConfig, ClusteringConfig } from '../config/rendering';
 
 enum RenderType {
   CSV = 'csv',
