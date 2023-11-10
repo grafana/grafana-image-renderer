@@ -51,7 +51,6 @@ steps:
   image: jwilder/dockerize:0.6.1
   name: wait-for-grafana
 - commands:
-  - . ~/.init-nvm.sh
   - yarn test
   depends_on:
   - wait-for-grafana
@@ -192,7 +191,6 @@ steps:
   image: jwilder/dockerize:0.6.1
   name: wait-for-grafana
 - commands:
-  - . ~/.init-nvm.sh
   - yarn test
   depends_on:
   - wait-for-grafana
@@ -349,7 +347,6 @@ steps:
   image: jwilder/dockerize:0.6.1
   name: wait-for-grafana
 - commands:
-  - . ~/.init-nvm.sh
   - yarn test
   depends_on:
   - wait-for-grafana
@@ -515,6 +512,6 @@ kind: secret
 name: srcclr_api_token
 ---
 kind: signature
-hmac: 38fefd7d5d7fde992c8faabfc9c21c265a678ce1fbc10b2a2d73b78e0a52d583
+hmac: b5b90d7c3e9a5e07713f03e56aaf06a09da1348d35f9a7e86cb253f72f905828
 
 ...

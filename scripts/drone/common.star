@@ -120,7 +120,6 @@ def tests_step():
         'image': 'grafana/docker-puppeteer:1.1.0',
         'depends_on': ['wait-for-grafana', 'yarn-build'],
         'commands': [
-            '. ~/.init-nvm.sh',
             'yarn test',
         ],
         'environment': {
