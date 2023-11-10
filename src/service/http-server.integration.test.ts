@@ -5,7 +5,7 @@ import * as request from 'supertest';
 
 import { HttpServer } from './http-server';
 import { ConsoleLogger } from '../logger';
-import { ServiceConfig } from '../config';
+import { ServiceConfig } from './config';
 import { createSanitizer } from '../sanitizer/Sanitizer';
 
 const dashboardUid = 'd10881ec-0d35-4909-8de7-6ab563a9ab29';
