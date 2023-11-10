@@ -12,10 +12,9 @@ def install_deps_step():
         'depends_on': [
             'grabpl',
         ],
-        'volumes': [{
-            'name': 'cache',
-            'path': '/root/.cache',
-        }]
+        'environment': {
+            'PUPPETEER_CACHE_DIR': '$${DRONE_WORKSPACE}',
+        },
     }
 
 def build_step():
@@ -124,8 +123,7 @@ def tests_step():
             '. ~/.init-nvm.sh',
             'yarn test',
         ],
-        'volumes': [{
-            'name': 'cache',
-            'path': '/root/.cache',
-        }]
+        'environment': {
+            'PUPPETEER_CACHE_DIR': '$${DRONE_WORKSPACE}',
+        },
     }

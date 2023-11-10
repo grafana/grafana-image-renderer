@@ -35,11 +35,10 @@ steps:
   - yarn install --frozen-lockfile --no-progress
   depends_on:
   - grabpl
+  environment:
+    PUPPETEER_CACHE_DIR: $${DRONE_WORKSPACE}
   image: grafana/grafana-plugin-ci:1.9.0
   name: yarn-install
-  volumes:
-  - name: cache
-    path: /root/.cache
 - commands:
   - . ~/.init-nvm.sh
   - yarn build
@@ -57,11 +56,10 @@ steps:
   depends_on:
   - wait-for-grafana
   - yarn-build
+  environment:
+    PUPPETEER_CACHE_DIR: $${DRONE_WORKSPACE}
   image: grafana/grafana-plugin-ci:1.9.0
   name: yarn-test
-  volumes:
-  - name: cache
-    path: /root/.cache
 - commands:
   - . ~/.init-nvm.sh
   - echo "Starting veracode scan..."
@@ -178,11 +176,10 @@ steps:
   - yarn install --frozen-lockfile --no-progress
   depends_on:
   - grabpl
+  environment:
+    PUPPETEER_CACHE_DIR: $${DRONE_WORKSPACE}
   image: grafana/grafana-plugin-ci:1.9.0
   name: yarn-install
-  volumes:
-  - name: cache
-    path: /root/.cache
 - commands:
   - . ~/.init-nvm.sh
   - yarn build
@@ -200,11 +197,10 @@ steps:
   depends_on:
   - wait-for-grafana
   - yarn-build
+  environment:
+    PUPPETEER_CACHE_DIR: $${DRONE_WORKSPACE}
   image: grafana/grafana-plugin-ci:1.9.0
   name: yarn-test
-  volumes:
-  - name: cache
-    path: /root/.cache
 - commands:
   - . ~/.init-nvm.sh
   - echo "Starting veracode scan..."
@@ -337,11 +333,10 @@ steps:
   - yarn install --frozen-lockfile --no-progress
   depends_on:
   - grabpl
+  environment:
+    PUPPETEER_CACHE_DIR: $${DRONE_WORKSPACE}
   image: grafana/grafana-plugin-ci:1.9.0
   name: yarn-install
-  volumes:
-  - name: cache
-    path: /root/.cache
 - commands:
   - . ~/.init-nvm.sh
   - yarn build
@@ -359,11 +354,10 @@ steps:
   depends_on:
   - wait-for-grafana
   - yarn-build
+  environment:
+    PUPPETEER_CACHE_DIR: $${DRONE_WORKSPACE}
   image: grafana/grafana-plugin-ci:1.9.0
   name: yarn-test
-  volumes:
-  - name: cache
-    path: /root/.cache
 - commands:
   - . ~/.init-nvm.sh
   - echo "Starting veracode scan..."
@@ -521,6 +515,6 @@ kind: secret
 name: srcclr_api_token
 ---
 kind: signature
-hmac: cf392c102f7e26988749856bf88ebc0a839646ef61bb124a49f68f00b69f2561
+hmac: 02d8fa14eb092182e00093ef84044f854813999c5581167169be8c2ff20a61c6
 
 ...
