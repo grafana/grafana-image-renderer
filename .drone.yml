@@ -37,6 +37,9 @@ steps:
   - grabpl
   image: grafana/grafana-plugin-ci:1.9.0
   name: yarn-install
+  volumes:
+  - name: cache
+    path: /root/.cache
 - commands:
   - . ~/.init-nvm.sh
   - yarn build
@@ -56,6 +59,9 @@ steps:
   - yarn-build
   image: grafana/grafana-plugin-ci:1.9.0
   name: yarn-test
+  volumes:
+  - name: cache
+    path: /root/.cache
 - commands:
   - . ~/.init-nvm.sh
   - echo "Starting veracode scan..."
@@ -174,6 +180,9 @@ steps:
   - grabpl
   image: grafana/grafana-plugin-ci:1.9.0
   name: yarn-install
+  volumes:
+  - name: cache
+    path: /root/.cache
 - commands:
   - . ~/.init-nvm.sh
   - yarn build
@@ -193,6 +202,9 @@ steps:
   - yarn-build
   image: grafana/grafana-plugin-ci:1.9.0
   name: yarn-test
+  volumes:
+  - name: cache
+    path: /root/.cache
 - commands:
   - . ~/.init-nvm.sh
   - echo "Starting veracode scan..."
@@ -327,6 +339,9 @@ steps:
   - grabpl
   image: grafana/grafana-plugin-ci:1.9.0
   name: yarn-install
+  volumes:
+  - name: cache
+    path: /root/.cache
 - commands:
   - . ~/.init-nvm.sh
   - yarn build
@@ -346,6 +361,9 @@ steps:
   - yarn-build
   image: grafana/grafana-plugin-ci:1.9.0
   name: yarn-test
+  volumes:
+  - name: cache
+    path: /root/.cache
 - commands:
   - . ~/.init-nvm.sh
   - echo "Starting veracode scan..."
@@ -503,6 +521,6 @@ kind: secret
 name: srcclr_api_token
 ---
 kind: signature
-hmac: c3b92d90ab01066eec99e315376fcfa46abb9e1f5e00c81abd8ad0437ca96db5
+hmac: cf392c102f7e26988749856bf88ebc0a839646ef61bb124a49f68f00b69f2561
 
 ...

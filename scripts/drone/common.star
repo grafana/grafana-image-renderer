@@ -12,6 +12,10 @@ def install_deps_step():
         'depends_on': [
             'grabpl',
         ],
+        'volumes': [{
+            'name': 'cache',
+            'path': '/root/.cache',
+        }]
     }
 
 def build_step():
@@ -120,4 +124,8 @@ def tests_step():
             '. ~/.init-nvm.sh',
             'yarn test',
         ],
+        'volumes': [{
+            'name': 'cache',
+            'path': '/root/.cache',
+        }]
     }
