@@ -13,7 +13,7 @@ def install_deps_step():
             'grabpl',
         ],
         'environment': {
-            'PUPPETEER_CACHE_DIR': '$${DRONE_WORKSPACE}',
+            'PUPPETEER_CACHE_DIR': '/drone/src/cache',
         },
     }
 
@@ -124,6 +124,6 @@ def tests_step():
             'yarn test',
         ],
         'environment': {
-            'PUPPETEER_CACHE_DIR': '$${DRONE_WORKSPACE}',
+            'PUPPETEER_CACHE_DIR': '/drone/src/cache',
         },
     }
