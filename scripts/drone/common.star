@@ -86,9 +86,9 @@ def security_scan_step():
 
 def e2e_volumes():
     return [
-        {'name': 'dashboards', 'path': '$${DRONE_WORKSPACE}/devenv/docker/test/dashboards'},
-        {'name': 'dashboard_provider', 'path': '$${DRONE_WORKSPACE}/devenv/docker/test/dashboards.yaml'},
-        {'name': 'datasource_provider', 'path': '$${DRONE_WORKSPACE}/devenv/docker/test/datasources.yaml'},
+        {'name': 'dashboards', 'path': '/drone/src/devenv/docker/test/dashboards'},
+        {'name': 'dashboard_provider', 'path': '/drone/src/devenv/docker/test/dashboards.yaml'},
+        {'name': 'datasource_provider', 'path': '/drone/src/devenv/docker/test/datasources.yaml'},
     ]
 
 def e2e_services():

@@ -135,11 +135,11 @@ volumes:
     path: /var/run/docker.sock
   name: docker
 - name: dashboards
-  path: $${DRONE_WORKSPACE}/devenv/docker/test/dashboards
+  path: /drone/src/devenv/docker/test/dashboards
 - name: dashboard_provider
-  path: $${DRONE_WORKSPACE}/devenv/docker/test/dashboards.yaml
+  path: /drone/src/devenv/docker/test/dashboards.yaml
 - name: datasource_provider
-  path: $${DRONE_WORKSPACE}/devenv/docker/test/datasources.yaml
+  path: /drone/src/devenv/docker/test/datasources.yaml
 ---
 clone:
   retries: 3
@@ -293,11 +293,11 @@ volumes:
     path: /var/run/docker.sock
   name: docker
 - name: dashboards
-  path: $${DRONE_WORKSPACE}/devenv/docker/test/dashboards
+  path: /drone/src/devenv/docker/test/dashboards
 - name: dashboard_provider
-  path: $${DRONE_WORKSPACE}/devenv/docker/test/dashboards.yaml
+  path: /drone/src/devenv/docker/test/dashboards.yaml
 - name: datasource_provider
-  path: $${DRONE_WORKSPACE}/devenv/docker/test/datasources.yaml
+  path: /drone/src/devenv/docker/test/datasources.yaml
 ---
 clone:
   retries: 3
@@ -481,11 +481,11 @@ volumes:
     path: /var/run/docker.sock
   name: docker
 - name: dashboards
-  path: $${DRONE_WORKSPACE}/devenv/docker/test/dashboards
+  path: /drone/src/devenv/docker/test/dashboards
 - name: dashboard_provider
-  path: $${DRONE_WORKSPACE}/devenv/docker/test/dashboards.yaml
+  path: /drone/src/devenv/docker/test/dashboards.yaml
 - name: datasource_provider
-  path: $${DRONE_WORKSPACE}/devenv/docker/test/datasources.yaml
+  path: /drone/src/devenv/docker/test/datasources.yaml
 ---
 get:
   name: .dockerconfigjson
@@ -518,6 +518,6 @@ kind: secret
 name: srcclr_api_token
 ---
 kind: signature
-hmac: 5a77f388b9aac3a7d600f3fdae02981905a9710963b06a369b6db12fca23c0f5
+hmac: b58a73668b38701e1c4b46d4339862d358e900e97e3ac31fdc18b4f31cc5170c
 
 ...
