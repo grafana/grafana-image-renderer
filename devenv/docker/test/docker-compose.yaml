@@ -2,7 +2,7 @@ version: '2'
 
 services:
   grafana:
-    image: grafana/grafana:10.2.0
+    image: grafana/grafana-enterprise:10.2.0
     ports:
       - 3000:3000
     environment:

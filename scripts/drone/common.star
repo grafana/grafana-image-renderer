@@ -97,6 +97,7 @@ def e2e_services():
         'image': 'grafana/grafana-enterprise:latest',
         'environment': {
             'GF_FEATURE_TOGGLES_ENABLE': 'renderAuthJWT',
+            'GF_LOG_LEVEL': 'debug',
         },
         'volumes': [
             {'name': 'dashboards', 'path': '/usr/share/grafana/dashboards'},
@@ -124,5 +125,6 @@ def tests_step():
         ],
         'environment': {
             'PUPPETEER_CACHE_DIR': '/drone/src/cache',
+            'CI': 'true',
         },
     }

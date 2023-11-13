@@ -15,7 +15,6 @@ const panelIds = {
   error: 3,
   slow: 4,
 };
-const grafanaEndpoint = 'http://grafana:3000/d-solo';
 const renderKey = jwt.sign(
   {
     renderUser: {
@@ -79,8 +78,15 @@ const serviceConfig: ServiceConfig = {
 const sanitizer = createSanitizer();
 const server = new HttpServer(serviceConfig, new ConsoleLogger(serviceConfig.service.logging), sanitizer);
 
+let grafanaEndpoint = 'http://localhost:3000/d-solo';
+
 beforeAll(() => {
   process.env['PUPPETEER_DISABLE_HEADLESS_WARNING'] = 'true';
+
+  if (process.env['CI'] === 'true') {
+    grafanaEndpoint = 'http://grafana:3000/d-solo';
+  }
+
   return server.start();
 });
 
