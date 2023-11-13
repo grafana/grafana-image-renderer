@@ -84,13 +84,6 @@ def security_scan_step():
         'failure': 'ignore',
     }
 
-def e2e_volumes():
-    return [
-        {'name': 'dashboards', 'host': {'path': '/drone/src/devenv/docker/test/dashboards'}},
-        {'name': 'dashboard_provider', 'host': {'path': '/drone/src/devenv/docker/test/dashboards.yaml'}},
-        {'name': 'datasource_provider', 'host': {'path': '/drone/src/devenv/docker/test/datasources.yaml'}},
-    ]
-
 def e2e_services():
     return [{
         'name': 'grafana',
@@ -98,12 +91,8 @@ def e2e_services():
         'environment': {
             'GF_FEATURE_TOGGLES_ENABLE': 'renderAuthJWT',
             'GF_LOG_LEVEL': 'debug',
+            'GF_PATHS_PROVISIONING': '/drone/src/scripts/drone/provisioning',
         },
-        'volumes': [
-            {'name': 'dashboards', 'path': '/usr/share/grafana/dashboards'},
-            {'name': 'dashboard_provider', 'path': '/etc/grafana/provisioning/dashboards/dashboards.yaml'},
-            {'name': 'datasource_provider', 'path': '/etc/grafana/provisioning/datasources/datasources.yaml'},
-        ],
     }]
 
 def e2e_setup_step():

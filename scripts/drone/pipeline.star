@@ -1,6 +1,6 @@
 load('scripts/drone/utils.star', 'pipeline')
 load('scripts/drone/grabpl.star', 'download_grabpl_step')
-load('scripts/drone/common.star', 'install_deps_step', 'build_step', 'package_step', 'security_scan_step', 'e2e_setup_step', 'e2e_services', 'e2e_volumes', 'tests_step')
+load('scripts/drone/common.star', 'install_deps_step', 'build_step', 'package_step', 'security_scan_step', 'e2e_setup_step', 'e2e_services', 'tests_step')
 load('scripts/drone/promotion.star', 'publish_to_docker_master', 'publish_to_docker_release', 'publish_gh_release', 'publish_to_gcom')
 
 def common_steps(skip_errors):
@@ -26,7 +26,6 @@ def prs_pipeline():
             },
             steps=common_steps(True),
             services=e2e_services(),
-            volumes=e2e_volumes(),
         ),
     ]
 
@@ -44,7 +43,6 @@ def master_pipeline():
             },
             steps=steps,
             services=e2e_services(),
-            volumes=e2e_volumes(),
         )
     ]
 
@@ -67,6 +65,5 @@ def promotion_pipeline():
             trigger=trigger,
             steps=steps,
             services=e2e_services(),
-            volumes=e2e_volumes(),
         )
     ]
