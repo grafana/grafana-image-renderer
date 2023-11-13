@@ -14,9 +14,8 @@ platform:
 services:
 - environment:
     GF_FEATURE_TOGGLES_ENABLE: renderAuthJWT
-    GF_LOG_LEVEL: debug
     GF_PATHS_PROVISIONING: /drone/src/scripts/drone/provisioning
-  image: grafana/grafana-enterprise:latest
+  image: grafana/grafana:latest
   name: grafana
 steps:
 - commands:
@@ -144,9 +143,8 @@ platform:
 services:
 - environment:
     GF_FEATURE_TOGGLES_ENABLE: renderAuthJWT
-    GF_LOG_LEVEL: debug
     GF_PATHS_PROVISIONING: /drone/src/scripts/drone/provisioning
-  image: grafana/grafana-enterprise:latest
+  image: grafana/grafana:latest
   name: grafana
 steps:
 - commands:
@@ -290,9 +288,8 @@ platform:
 services:
 - environment:
     GF_FEATURE_TOGGLES_ENABLE: renderAuthJWT
-    GF_LOG_LEVEL: debug
     GF_PATHS_PROVISIONING: /drone/src/scripts/drone/provisioning
-  image: grafana/grafana-enterprise:latest
+  image: grafana/grafana:latest
   name: grafana
 steps:
 - commands:
@@ -482,6 +479,6 @@ kind: secret
 name: srcclr_api_token
 ---
 kind: signature
-hmac: 4610d5ca6d59403fa9d7a905e7fc98fff26e8f2aa4a3c7996d50dece58a35485
+hmac: 04b8799d3398c960d625683670a4e01646d68d2545ad8bce801994ae8e27a15b
 
 ...
