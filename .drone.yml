@@ -134,12 +134,15 @@ volumes:
 - host:
     path: /var/run/docker.sock
   name: docker
-- name: dashboards
-  path: /drone/src/devenv/docker/test/dashboards
-- name: dashboard_provider
-  path: /drone/src/devenv/docker/test/dashboards.yaml
-- name: datasource_provider
-  path: /drone/src/devenv/docker/test/datasources.yaml
+- host:
+    path: /drone/src/devenv/docker/test/dashboards
+  name: dashboards
+- host:
+    path: /drone/src/devenv/docker/test/dashboards.yaml
+  name: dashboard_provider
+- host:
+    path: /drone/src/devenv/docker/test/datasources.yaml
+  name: datasource_provider
 ---
 clone:
   retries: 3
@@ -292,12 +295,15 @@ volumes:
 - host:
     path: /var/run/docker.sock
   name: docker
-- name: dashboards
-  path: /drone/src/devenv/docker/test/dashboards
-- name: dashboard_provider
-  path: /drone/src/devenv/docker/test/dashboards.yaml
-- name: datasource_provider
-  path: /drone/src/devenv/docker/test/datasources.yaml
+- host:
+    path: /drone/src/devenv/docker/test/dashboards
+  name: dashboards
+- host:
+    path: /drone/src/devenv/docker/test/dashboards.yaml
+  name: dashboard_provider
+- host:
+    path: /drone/src/devenv/docker/test/datasources.yaml
+  name: datasource_provider
 ---
 clone:
   retries: 3
@@ -480,12 +486,15 @@ volumes:
 - host:
     path: /var/run/docker.sock
   name: docker
-- name: dashboards
-  path: /drone/src/devenv/docker/test/dashboards
-- name: dashboard_provider
-  path: /drone/src/devenv/docker/test/dashboards.yaml
-- name: datasource_provider
-  path: /drone/src/devenv/docker/test/datasources.yaml
+- host:
+    path: /drone/src/devenv/docker/test/dashboards
+  name: dashboards
+- host:
+    path: /drone/src/devenv/docker/test/dashboards.yaml
+  name: dashboard_provider
+- host:
+    path: /drone/src/devenv/docker/test/datasources.yaml
+  name: datasource_provider
 ---
 get:
   name: .dockerconfigjson
@@ -518,6 +527,6 @@ kind: secret
 name: srcclr_api_token
 ---
 kind: signature
-hmac: b58a73668b38701e1c4b46d4339862d358e900e97e3ac31fdc18b4f31cc5170c
+hmac: 0e9193ca21acf39e3cbe1e4e72ff45ba5911e545d78b134d8f873d351aaf724a
 
 ...
