@@ -8,4 +8,4 @@ providers:
    allowUiUpdates: false
    updateIntervalSeconds: 60
    options:
-     path: /drone/src/devenv/scripts/drone/provisioning/dashboards
+     path: /drone/src/scripts/drone/provisioning/dashboards
