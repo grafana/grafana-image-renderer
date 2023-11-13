@@ -57,7 +57,7 @@ steps:
   - yarn-build
   environment:
     PUPPETEER_CACHE_DIR: /drone/src/cache
-  image: grafana/docker-puppeteer:1.1.0
+  image: grafana/docker-puppeteer:pre-node-20
   name: yarn-test
 - commands:
   - . ~/.init-nvm.sh
@@ -197,7 +197,7 @@ steps:
   - yarn-build
   environment:
     PUPPETEER_CACHE_DIR: /drone/src/cache
-  image: grafana/docker-puppeteer:1.1.0
+  image: grafana/docker-puppeteer:pre-node-20
   name: yarn-test
 - commands:
   - . ~/.init-nvm.sh
@@ -353,7 +353,7 @@ steps:
   - yarn-build
   environment:
     PUPPETEER_CACHE_DIR: /drone/src/cache
-  image: grafana/docker-puppeteer:1.1.0
+  image: grafana/docker-puppeteer:pre-node-20
   name: yarn-test
 - commands:
   - . ~/.init-nvm.sh
@@ -512,6 +512,6 @@ kind: secret
 name: srcclr_api_token
 ---
 kind: signature
-hmac: b5b90d7c3e9a5e07713f03e56aaf06a09da1348d35f9a7e86cb253f72f905828
+hmac: 6c081431814469b6b027f6d1f74e36b8f52b3122d582c99efce535ec66e0b95b
 
 ...

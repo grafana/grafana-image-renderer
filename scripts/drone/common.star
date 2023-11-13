@@ -117,7 +117,7 @@ def e2e_setup_step():
 def tests_step():
     return {
         'name': 'yarn-test',
-        'image': 'grafana/docker-puppeteer:1.1.0',
+        'image': 'grafana/docker-puppeteer:pre-node-20',
         'depends_on': ['wait-for-grafana', 'yarn-build'],
         'commands': [
             'yarn test',
