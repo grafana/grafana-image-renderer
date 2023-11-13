@@ -78,13 +78,16 @@ const serviceConfig: ServiceConfig = {
 const sanitizer = createSanitizer();
 const server = new HttpServer(serviceConfig, new ConsoleLogger(serviceConfig.service.logging), sanitizer);
 
-let grafanaEndpoint = 'http://localhost:3000/d-solo';
+let domain = 'localhost';
+function getGrafanaEndpoint(domain: string) {
+  return `http://${domain}:3000/d-solo`;
+}
 
 beforeAll(() => {
   process.env['PUPPETEER_DISABLE_HEADLESS_WARNING'] = 'true';
 
   if (process.env['CI'] === 'true') {
-    grafanaEndpoint = 'http://grafana:3000/d-solo';
+    domain = 'grafana';
   }
 
   return server.start();
@@ -108,9 +111,9 @@ describe('Test /render', () => {
   });
 
   it('should respond with the graph panel screenshot', async () => {
-    const url = `${grafanaEndpoint}/${dashboardUid}?panelId=${panelIds.graph}&render=1&from=1699333200000&to=1699344000000`;
+    const url = `${getGrafanaEndpoint(domain)}/${dashboardUid}?panelId=${panelIds.graph}&render=1&from=1699333200000&to=1699344000000`;
     const response = await request(server.app)
-      .get(`/render?url=${encodeURIComponent(url)}&timeout=5&renderKey=${renderKey}&domain=localhost&width=500&height=300&deviceScaleFactor=1`)
+      .get(`/render?url=${encodeURIComponent(url)}&timeout=5&renderKey=${renderKey}&domain=${domain}&width=500&height=300&deviceScaleFactor=1`)
       .set('X-Auth-Token', '-');
 
     const goldenFilePath = path.join(goldenFilesFolder, 'graph.png');
@@ -124,9 +127,9 @@ describe('Test /render', () => {
   });
 
   it('should respond with the table panel screenshot', async () => {
-    const url = `${grafanaEndpoint}/${dashboardUid}?panelId=${panelIds.table}&render=1&from=1699333200000&to=1699344000000`;
+    const url = `${getGrafanaEndpoint(domain)}/${dashboardUid}?panelId=${panelIds.table}&render=1&from=1699333200000&to=1699344000000`;
     const response = await request(server.app)
-      .get(`/render?url=${encodeURIComponent(url)}&timeout=5&renderKey=${renderKey}&domain=localhost&width=500&height=300&deviceScaleFactor=1`)
+      .get(`/render?url=${encodeURIComponent(url)}&timeout=5&renderKey=${renderKey}&domain=${domain}&width=500&height=300&deviceScaleFactor=1`)
       .set('X-Auth-Token', '-');
 
     const goldenFilePath = path.join(goldenFilesFolder, 'table.png');
@@ -140,9 +143,9 @@ describe('Test /render', () => {
   });
 
   it('should respond with a panel error screenshot', async () => {
-    const url = `${grafanaEndpoint}/${dashboardUid}?panelId=${panelIds.error}&render=1&from=1699333200000&to=1699344000000`;
+    const url = `${getGrafanaEndpoint(domain)}/${dashboardUid}?panelId=${panelIds.error}&render=1&from=1699333200000&to=1699344000000`;
     const response = await request(server.app)
-      .get(`/render?url=${encodeURIComponent(url)}&timeout=5&renderKey=${renderKey}&domain=localhost&width=500&height=300&deviceScaleFactor=1`)
+      .get(`/render?url=${encodeURIComponent(url)}&timeout=5&renderKey=${renderKey}&domain=${domain}&width=500&height=300&deviceScaleFactor=1`)
       .set('X-Auth-Token', '-');
 
     const goldenFilePath = path.join(goldenFilesFolder, 'error.png');
