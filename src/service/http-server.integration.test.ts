@@ -15,7 +15,7 @@ const panelIds = {
   error: 3,
   slow: 4,
 };
-const grafanaEndpoint = 'http://localhost:3000/d-solo';
+const grafanaEndpoint = 'http://grafana:3000/d-solo';
 const renderKey = jwt.sign(
   {
     renderUser: {
