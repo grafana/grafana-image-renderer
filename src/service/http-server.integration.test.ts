@@ -113,7 +113,7 @@ describe('Test /render', () => {
   it('should respond with the graph panel screenshot', async () => {
     const url = `${getGrafanaEndpoint(domain)}/${dashboardUid}?panelId=${panelIds.graph}&render=1&from=1699333200000&to=1699344000000`;
     const response = await request(server.app)
-      .get(`/render?url=${encodeURIComponent(url)}&timeout=5&renderKey=${renderKey}&domain=${domain}&width=500&height=300&deviceScaleFactor=2`)
+      .get(`/render?url=${encodeURIComponent(url)}&timeout=5&renderKey=${renderKey}&domain=${domain}&width=500&height=300&deviceScaleFactor=1`)
       .set('X-Auth-Token', '-');
 
     const goldenFilePath = path.join(goldenFilesFolder, 'graph.png');
@@ -123,7 +123,7 @@ describe('Test /render', () => {
 
     expect(response.statusCode).toEqual(200);
     expect(response.headers['content-type']).toEqual('image/png');
-    console.log(response.body.toString('hex'));
+    // console.log(response.body.toString('hex'));
     expect(response.body).toEqual(fs.readFileSync(goldenFilePath));
   });
 

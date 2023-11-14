@@ -174,6 +174,21 @@ export class Browser {
     page.on('dialog', acceptBeforeUnload);
   }
 
+  async getStyles(page: puppeteer.Page) {
+    const pageTitleSelector = "[class$='panel-title']";
+    await page.waitForSelector(pageTitleSelector);
+    const styles = await page.$eval("[class$='panel-title']", (el) => {
+      const stylesObject = getComputedStyle(el);
+      const styles = {};
+      for (const prop in stylesObject) {
+        styles[prop] = stylesObject[prop];
+      }
+      return stylesObject;
+    });
+
+    this.log.info('getstyles', 'styles', styles);
+  }
+
   async scrollToLoadAllPanels(page: puppeteer.Page, options: ImageRenderOptions): Promise<DashboardScrollingResult> {
     const scrollDivSelector = '[class="scrollbar-view"]';
     const scrollDelay = options.scrollDelay ?? 500;
@@ -360,6 +375,8 @@ export class Browser {
           options.fullPageImage || false
         );
       }, 'panelsRendered');
+
+      await this.getStyles(page);
     } catch (err) {
       this.log.error('Error while waiting for the panels to load', 'url', options.url, 'err', err.stack);
     }
