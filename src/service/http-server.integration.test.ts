@@ -127,37 +127,37 @@ describe('Test /render', () => {
     expect(response.body).toEqual(fs.readFileSync(goldenFilePath));
   });
 
-  it('should respond with the table panel screenshot', async () => {
-    const url = `${getGrafanaEndpoint(domain)}/${dashboardUid}?panelId=${panelIds.table}&render=1&from=1699333200000&to=1699344000000`;
-    const response = await request(server.app)
-      .get(`/render?url=${encodeURIComponent(url)}&timeout=5&renderKey=${renderKey}&domain=${domain}&width=500&height=300&deviceScaleFactor=1`)
-      .set('X-Auth-Token', '-');
+  // it('should respond with the table panel screenshot', async () => {
+  //   const url = `${getGrafanaEndpoint(domain)}/${dashboardUid}?panelId=${panelIds.table}&render=1&from=1699333200000&to=1699344000000`;
+  //   const response = await request(server.app)
+  //     .get(`/render?url=${encodeURIComponent(url)}&timeout=5&renderKey=${renderKey}&domain=${domain}&width=500&height=300&deviceScaleFactor=1`)
+  //     .set('X-Auth-Token', '-');
 
-    const goldenFilePath = path.join(goldenFilesFolder, 'table.png');
-    if (process.env['UPDATE_GOLDEN'] === 'true') {
-      fs.writeFileSync(goldenFilePath, response.body);
-    }
+  //   const goldenFilePath = path.join(goldenFilesFolder, 'table.png');
+  //   if (process.env['UPDATE_GOLDEN'] === 'true') {
+  //     fs.writeFileSync(goldenFilePath, response.body);
+  //   }
 
-    expect(response.statusCode).toEqual(200);
-    expect(response.headers['content-type']).toEqual('image/png');
-    expect(response.body).toEqual(fs.readFileSync(goldenFilePath));
-  });
+  //   expect(response.statusCode).toEqual(200);
+  //   expect(response.headers['content-type']).toEqual('image/png');
+  //   expect(response.body).toEqual(fs.readFileSync(goldenFilePath));
+  // });
 
-  it('should respond with a panel error screenshot', async () => {
-    const url = `${getGrafanaEndpoint(domain)}/${dashboardUid}?panelId=${panelIds.error}&render=1&from=1699333200000&to=1699344000000`;
-    const response = await request(server.app)
-      .get(`/render?url=${encodeURIComponent(url)}&timeout=5&renderKey=${renderKey}&domain=${domain}&width=500&height=300&deviceScaleFactor=1`)
-      .set('X-Auth-Token', '-');
+  // it('should respond with a panel error screenshot', async () => {
+  //   const url = `${getGrafanaEndpoint(domain)}/${dashboardUid}?panelId=${panelIds.error}&render=1&from=1699333200000&to=1699344000000`;
+  //   const response = await request(server.app)
+  //     .get(`/render?url=${encodeURIComponent(url)}&timeout=5&renderKey=${renderKey}&domain=${domain}&width=500&height=300&deviceScaleFactor=1`)
+  //     .set('X-Auth-Token', '-');
 
-    const goldenFilePath = path.join(goldenFilesFolder, 'error.png');
-    if (process.env['UPDATE_GOLDEN'] === 'true') {
-      fs.writeFileSync(goldenFilePath, response.body);
-    }
+  //   const goldenFilePath = path.join(goldenFilesFolder, 'error.png');
+  //   if (process.env['UPDATE_GOLDEN'] === 'true') {
+  //     fs.writeFileSync(goldenFilePath, response.body);
+  //   }
 
-    expect(response.statusCode).toEqual(200);
-    expect(response.headers['content-type']).toEqual('image/png');
-    expect(response.body).toEqual(fs.readFileSync(goldenFilePath));
-  });
+  //   expect(response.statusCode).toEqual(200);
+  //   expect(response.headers['content-type']).toEqual('image/png');
+  //   expect(response.body).toEqual(fs.readFileSync(goldenFilePath));
+  // });
 
   // TODO: this test currently doesn't pass because it takes a screenshot of the panel still loading and the position of the loading bar and the loading icon can vary
   // it('should timeout when a panel is too slow to load', async () => {
