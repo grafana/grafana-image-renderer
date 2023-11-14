@@ -180,10 +180,11 @@ export class Browser {
     const styles = await page.$eval("[class$='panel-title']", (el) => {
       const stylesObject = getComputedStyle(el);
       const styles = {};
-      for (const prop in stylesObject) {
-        styles[prop] = stylesObject[prop];
+      for (const i in Object.keys(stylesObject)) {
+        const prop = stylesObject[i];
+        if (stylesObject.hasOwnProperty(prop)) styles[prop] = stylesObject[prop];
       }
-      return stylesObject;
+      return styles;
     });
 
     this.log.info('getstyles', 'styles', styles);
