@@ -123,7 +123,7 @@ describe('Test /render', () => {
 
     expect(response.statusCode).toEqual(200);
     expect(response.headers['content-type']).toEqual('image/png');
-    console.log(response.body);
+    console.log(response.body.toString('hex'));
     expect(response.body).toEqual(fs.readFileSync(goldenFilePath));
   });
 
