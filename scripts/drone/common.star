@@ -87,7 +87,7 @@ def security_scan_step():
 def e2e_services():
     return [{
         'name': 'grafana',
-        'image': 'grafana/grafana:latest',
+        'image': 'grafana/grafana-enterprise:latest',
         'environment': {
             'GF_FEATURE_TOGGLES_ENABLE': 'renderAuthJWT',
             'GF_PATHS_PROVISIONING': '/drone/src/scripts/drone/provisioning',
