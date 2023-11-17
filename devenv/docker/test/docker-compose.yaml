@@ -8,6 +8,6 @@ services:
     environment:
       GF_FEATURE_TOGGLES_ENABLE: renderAuthJWT
     volumes:
-      - "./dashboards.yaml:/etc/grafana/provisioning/dashboards/dashboards.yaml"
-      - ./dashboards:/usr/share/grafana/dashboards
-      - ./datasources_docker.yaml:/etc/grafana/provisioning/datasources/datasources.yaml
+      - ./dashboards.yaml:/etc/grafana/provisioning/dashboards/dashboards.yaml
+      - ../../../scripts/drone/provisioning/dashboards:/usr/share/grafana/dashboards
+      - ../../../datasources/datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml
