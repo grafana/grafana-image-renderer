@@ -2,6 +2,8 @@ import * as fs from 'fs';
 import * as jwt from 'jsonwebtoken';
 import * as path from 'path';
 import * as request from 'supertest';
+import * as pixelmatch from 'pixelmatch';
+import * as fastPng from 'fast-png';
 
 import { HttpServer } from './http-server';
 import { ConsoleLogger } from '../logger';
@@ -75,6 +77,11 @@ const serviceConfig: ServiceConfig = {
   },
 };
 
+const imageWidth = 500;
+const imageHeight = 300;
+const imageDiffThreshold = 0.01 * imageHeight * imageWidth;
+const matchingThreshold = 0.3;
+
 const sanitizer = createSanitizer();
 const server = new HttpServer(serviceConfig, new ConsoleLogger(serviceConfig.service.logging), sanitizer);
 
@@ -91,6 +98,10 @@ beforeAll(() => {
   }
 
   return server.start();
+});
+
+afterAll(() => {
+  return server.close();
 });
 
 describe('Test /render/version', () => {
@@ -113,66 +124,108 @@ describe('Test /render', () => {
   it('should respond with the graph panel screenshot', async () => {
     const url = `${getGrafanaEndpoint(domain)}/${dashboardUid}?panelId=${panelIds.graph}&render=1&from=1699333200000&to=1699344000000`;
     const response = await request(server.app)
-      .get(`/render?url=${encodeURIComponent(url)}&timeout=5&renderKey=${renderKey}&domain=${domain}&width=500&height=300&deviceScaleFactor=1`)
+      .get(
+        `/render?url=${encodeURIComponent(
+          url
+        )}&timeout=5&renderKey=${renderKey}&domain=${domain}&width=${imageWidth}&height=${imageHeight}&deviceScaleFactor=1`
+      )
       .set('X-Auth-Token', '-');
-
-    const goldenFilePath = path.join(goldenFilesFolder, 'graph.png');
-    if (process.env['UPDATE_GOLDEN'] === 'true') {
-      fs.writeFileSync(goldenFilePath, response.body);
-    }
 
     expect(response.statusCode).toEqual(200);
     expect(response.headers['content-type']).toEqual('image/png');
-    // console.log(response.body.toString('hex'));
-    expect(response.body).toEqual(fs.readFileSync(goldenFilePath));
+
+    const pixelDiff = compareImage('graph', response.body);
+    expect(pixelDiff).toBeLessThan(imageDiffThreshold);
   });
 
-  // it('should respond with the table panel screenshot', async () => {
-  //   const url = `${getGrafanaEndpoint(domain)}/${dashboardUid}?panelId=${panelIds.table}&render=1&from=1699333200000&to=1699344000000`;
-  //   const response = await request(server.app)
-  //     .get(`/render?url=${encodeURIComponent(url)}&timeout=5&renderKey=${renderKey}&domain=${domain}&width=500&height=300&deviceScaleFactor=1`)
-  //     .set('X-Auth-Token', '-');
+  it('should respond with the table panel screenshot', async () => {
+    const url = `${getGrafanaEndpoint(domain)}/${dashboardUid}?panelId=${panelIds.table}&render=1&from=1699333200000&to=1699344000000`;
+    const response = await request(server.app)
+      .get(
+        `/render?url=${encodeURIComponent(
+          url
+        )}&timeout=5&renderKey=${renderKey}&domain=${domain}&width=${imageWidth}&height=${imageHeight}&deviceScaleFactor=1`
+      )
+      .set('X-Auth-Token', '-');
 
-  //   const goldenFilePath = path.join(goldenFilesFolder, 'table.png');
-  //   if (process.env['UPDATE_GOLDEN'] === 'true') {
-  //     fs.writeFileSync(goldenFilePath, response.body);
-  //   }
+    expect(response.statusCode).toEqual(200);
+    expect(response.headers['content-type']).toEqual('image/png');
 
-  //   expect(response.statusCode).toEqual(200);
-  //   expect(response.headers['content-type']).toEqual('image/png');
-  //   expect(response.body).toEqual(fs.readFileSync(goldenFilePath));
-  // });
+    const pixelDiff = compareImage('table', response.body);
+    expect(pixelDiff).toBeLessThan(imageDiffThreshold);
+  });
 
-  // it('should respond with a panel error screenshot', async () => {
-  //   const url = `${getGrafanaEndpoint(domain)}/${dashboardUid}?panelId=${panelIds.error}&render=1&from=1699333200000&to=1699344000000`;
-  //   const response = await request(server.app)
-  //     .get(`/render?url=${encodeURIComponent(url)}&timeout=5&renderKey=${renderKey}&domain=${domain}&width=500&height=300&deviceScaleFactor=1`)
-  //     .set('X-Auth-Token', '-');
+  it('should respond with a panel error screenshot', async () => {
+    const url = `${getGrafanaEndpoint(domain)}/${dashboardUid}?panelId=${panelIds.error}&render=1&from=1699333200000&to=1699344000000`;
+    const response = await request(server.app)
+      .get(
+        `/render?url=${encodeURIComponent(
+          url
+        )}&timeout=5&renderKey=${renderKey}&domain=${domain}&width=${imageWidth}&height=${imageHeight}&deviceScaleFactor=1`
+      )
+      .set('X-Auth-Token', '-');
 
-  //   const goldenFilePath = path.join(goldenFilesFolder, 'error.png');
-  //   if (process.env['UPDATE_GOLDEN'] === 'true') {
-  //     fs.writeFileSync(goldenFilePath, response.body);
-  //   }
+    expect(response.statusCode).toEqual(200);
+    expect(response.headers['content-type']).toEqual('image/png');
 
-  //   expect(response.statusCode).toEqual(200);
-  //   expect(response.headers['content-type']).toEqual('image/png');
-  //   expect(response.body).toEqual(fs.readFileSync(goldenFilePath));
-  // });
+    const pixelDiff = compareImage('error', response.body);
+    expect(pixelDiff).toBeLessThan(imageDiffThreshold);
+  });
 
-  // TODO: this test currently doesn't pass because it takes a screenshot of the panel still loading and the position of the loading bar and the loading icon can vary
-  // it('should timeout when a panel is too slow to load', async () => {
-  //   const url = `${grafanaEndpoint}/${dashboardUid}?panelId=${panelIds.slow}&render=1&from=1699333200000&to=1699344000000`;
-  //   const response = await request(server.app)
-  //     .get(`/render?url=${encodeURIComponent(url)}&timeout=5&renderKey=${renderKey}&domain=localhost&width=500&height=300&deviceScaleFactor=1`)
-  //     .set('X-Auth-Token', '-');
+  it('should timeout when a panel is too slow to load', async () => {
+    const url = `${getGrafanaEndpoint(domain)}/${dashboardUid}?panelId=${panelIds.slow}&render=1&from=1699333200000&to=1699344000000`;
+    const response = await request(server.app)
+      .get(
+        `/render?url=${encodeURIComponent(
+          url
+        )}&timeout=5&renderKey=${renderKey}&domain=localhost&width=${imageWidth}&height=${imageHeight}&deviceScaleFactor=1`
+      )
+      .set('X-Auth-Token', '-');
 
-  //   const goldenFilePath = path.join(goldenFilesFolder, 'slow.png');
-  //   if (process.env['UPDATE_GOLDEN'] === 'true') {
-  //     fs.writeFileSync(goldenFilePath, response.body);
-  //   }
+    expect(response.statusCode).toEqual(200);
+    expect(response.headers['content-type']).toEqual('image/png');
 
-  //   expect(response.statusCode).toEqual(200);
-  //   expect(response.headers['content-type']).toEqual('image/png');
-  //   expect(response.body).toEqual(fs.readFileSync(goldenFilePath));
-  // }, 30000);
+    const pixelDiff = compareImage('slow', response.body);
+    expect(pixelDiff).toBeLessThan(imageDiffThreshold);
+  }, 30000);
 });
+
+// compareImage returns the number of different pixels between the image stored in the test file and the one from the response body.
+// It updates the stored file and returns 0 if tests are run with UPDATE_GOLDEN=true.
+// It writes the diff file to /testdata if tests are run with SAVE_DIFF=true.
+function compareImage(testName: string, responseBody: any): number {
+  const goldenFilePath = path.join(goldenFilesFolder, `${testName}.png`);
+  if (process.env['UPDATE_GOLDEN'] === 'true') {
+    fs.writeFileSync(goldenFilePath, responseBody);
+    return 0;
+  }
+
+  let diff: { width: number; height: number; data: Uint8ClampedArray } | null = null;
+  if (process.env['SAVE_DIFF'] === 'true') {
+    diff = {
+      width: imageWidth,
+      height: imageHeight,
+      data: new Uint8ClampedArray(imageWidth * imageHeight * 4),
+    };
+  }
+
+  const responseImage = fastPng.decode(responseBody);
+  const expectedImage = fastPng.decode(fs.readFileSync(goldenFilePath));
+
+  const pixelDiff = pixelmatch(
+    responseImage.data as Uint8ClampedArray,
+    expectedImage.data as Uint8ClampedArray,
+    diff ? diff.data : null,
+    imageWidth,
+    imageHeight,
+    {
+      threshold: matchingThreshold,
+    }
+  );
+
+  if (diff && pixelDiff >= imageDiffThreshold) {
+    fs.writeFileSync(path.join(goldenFilesFolder, `diff_${testName}.png`), fastPng.encode(diff as fastPng.ImageData));
+  }
+
+  return pixelDiff;
+}

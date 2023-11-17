@@ -37,3 +37,5 @@ dist/**/*
 coverage
 
 scripts/tmp
+
+src/testdata/diff_*
