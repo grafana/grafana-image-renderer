@@ -14,7 +14,7 @@ FROM base as build
 
 COPY . ./
 
-RUN yarn install --pure-lockfile
+RUN yarn install --immutable
 RUN yarn run build
 
 EXPOSE 8081

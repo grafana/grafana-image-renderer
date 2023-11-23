@@ -14,7 +14,7 @@ deps: node_modules
 
 node_modules: package.json yarn.lock ## Install node modules.
 	@echo "install frontend dependencies"
-	yarn install --pure-lockfile --no-progress
+	yarn install --immutable --no-progress
 
 build:
 	yarn build

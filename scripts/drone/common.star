@@ -7,7 +7,7 @@ def install_deps_step():
         'image': ci_image,
         'commands': [
             '. ~/.init-nvm.sh',
-            'yarn install --frozen-lockfile --no-progress',
+            'yarn install --immutable --no-progress',
         ],
         'depends_on': [
             'grabpl',

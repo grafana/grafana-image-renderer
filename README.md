@@ -88,7 +88,7 @@ The following example describes how to build and run the remote HTTP rendering s
 1. Install dependencies and build:
 
    ```bash
-   yarn install --pure-lockfile
+   yarn install --immutable
    yarn run build
    ```
 
