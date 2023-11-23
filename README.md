@@ -56,29 +56,29 @@ The following example shows how you can run Grafana and the remote HTTP renderin
 
 1. Create a `docker-compose.yml` with the following content:
 
-    ```yaml
-    version: '2'
+   ```yaml
+   version: '2'
 
-    services:
-      grafana:
-        image: grafana/grafana:latest
-        ports:
-          - '3000:3000'
-        environment:
-          GF_RENDERING_SERVER_URL: http://renderer:8081/render
-          GF_RENDERING_CALLBACK_URL: http://grafana:3000/
-          GF_LOG_FILTERS: rendering:debug
-      renderer:
-        image: grafana/grafana-image-renderer:latest
-        ports:
-          - 8081
-    ```
+   services:
+     grafana:
+       image: grafana/grafana:latest
+       ports:
+         - '3000:3000'
+       environment:
+         GF_RENDERING_SERVER_URL: http://renderer:8081/render
+         GF_RENDERING_CALLBACK_URL: http://grafana:3000/
+         GF_LOG_FILTERS: rendering:debug
+     renderer:
+       image: grafana/grafana-image-renderer:latest
+       ports:
+         - 8081
+   ```
 
 1. Next, run docker compose.
 
-    ```bash
-    docker-compose up
-    ```
+   ```bash
+   docker-compose up
+   ```
 
 ### Run as standalone Node.js application
 
@@ -122,3 +122,26 @@ For available configuration settings, please refer to [Grafana Image Rendering d
 
 For troubleshooting help, refer to
 [Grafana Image Rendering troubleshooting documentation](https://grafana.com/docs/grafana/latest/image-rendering/troubleshooting/).
+
+## Testing
+
+In order to run the image-renderer automated test suites, you need to follow these steps:
+
+1. Run the test environment in Docker:
+
+```
+cd ./devenv/docker/test
+docker-compose up
+```
+
+2. Run the test suites from the root folder:
+
+```
+yarn test
+```
+
+_Notes:_
+
+If there are some expected changes in the reference image files (located in `/src/testdata`), run `yarn test-update` and push the updated references.
+
+If the tests are failing and you want to see the difference between the image you get and the reference image, run `yarn test-diff`. This will generate images (called `diff_<test case>.png`) containing the differences in the `/src/testdata` folder.
