@@ -1,3 +1,7 @@
+## 3.9.0 (2023-12-04)
+- Config: Improve consistency between plugin and server mode [#477](https://github.com/grafana/grafana-image-renderer/pull/477), [AgnesToulet](https://github.com/AgnesToulet)
+- Chore: Bump axios from 0.27.2 to 1.6.0 [#480](https://github.com/grafana/grafana-image-renderer/pull/480), [dependabot[bot]](https://github.com/apps/dependabot)
+
 ## 3.8.4 (2023-10-17)
 - Bump xml2js to 0.6.2 [#473](https://github.com/grafana/grafana-image-renderer/pull/473), [AgnesToulet](https://github.com/AgnesToulet)
 - Browser: Fix panel rendered waiting condition [#472](https://github.com/grafana/grafana-image-renderer/pull/472), [AgnesToulet](https://github.com/AgnesToulet)
