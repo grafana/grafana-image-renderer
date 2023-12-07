@@ -34,7 +34,7 @@ export class ReusableBrowser extends Browser {
 
       this.addPageListeners(page);
 
-      return await this.takeScreenshot(page, options);
+      return await this.capture(page, options);
     } finally {
       if (page) {
         this.removePageListeners(page);

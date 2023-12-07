@@ -20,6 +20,7 @@ export interface ImageRenderOptions extends RenderOptions {
   height: string | number;
   deviceScaleFactor?: string | number;
   scrollDelay?: number;
+  pdf?: boolean;
 
   // Runtime options derived from the input
   fullPageImage?: boolean;

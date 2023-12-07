@@ -83,7 +83,7 @@ export class ClusteredBrowser extends Browser {
             return await this.exportCSV(page, data.options);
           case RenderType.PNG:
           default:
-            return await this.takeScreenshot(page, data.options as ImageRenderOptions);
+            return await this.capture(page, data.options as ImageRenderOptions);
         }
       } finally {
         this.removePageListeners(page);

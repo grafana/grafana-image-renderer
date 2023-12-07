@@ -47,7 +47,7 @@ export class Browser {
     }
   }
 
-  async start(): Promise<void> { }
+  async start(): Promise<void> {}
 
   validateRenderOptions(options: RenderOptions) {
     if (options.url.startsWith(`socket://`)) {
@@ -92,6 +92,10 @@ export class Browser {
       options.fullPageImage = true;
       options.height = Math.floor(options.width * 0.75);
     }
+
+    // if (options.pdf) {
+    //   options.fullPageImage = true;
+    // }
 
     if (options.height < 10) {
       options.height = this.config.height;
@@ -217,7 +221,7 @@ export class Browser {
         scrollDivSelector
       );
 
-      await new Promise(executor => setTimeout(executor, scrollDelay));
+      await new Promise((executor) => setTimeout(executor, scrollDelay));
     }
 
     await page.evaluate((scrollDivSelector) => {
@@ -249,7 +253,7 @@ export class Browser {
 
       this.addPageListeners(page);
 
-      return await this.takeScreenshot(page, options);
+      return await this.capture(page, options);
     } finally {
       if (page) {
         this.removePageListeners(page);
@@ -269,7 +273,7 @@ export class Browser {
     });
   };
 
-  async takeScreenshot(page: puppeteer.Page, options: ImageRenderOptions): Promise<RenderResponse> {
+  async capture(page: puppeteer.Page, options: ImageRenderOptions): Promise<RenderResponse> {
     try {
       await this.withTimingMetrics(async () => {
         if (this.config.verboseLogging) {
@@ -319,56 +323,81 @@ export class Browser {
       }
     }
 
-    try {
-      await this.withTimingMetrics(() => {
-        if (this.config.verboseLogging) {
-          this.log.debug('Waiting for dashboard/panel to load', 'timeout', `${options.timeout}s`);
-        }
+    // try {
+    //   await this.withTimingMetrics(() => {
+    //     if (this.config.verboseLogging) {
+    //       this.log.debug('Waiting for dashboard/panel to load', 'timeout', `${options.timeout}s`);
+    //     }
 
-        return page.waitForFunction(
-          (isFullPage) => {
-            /**
-             * panelsRendered value is updated every time that a panel renders. It could happen multiple times in a same panel because scrolling. For full page screenshots
-             * we can reach panelsRendered >= panelCount condition even if we have panels that are still loading data and their panelsRenderer value is 0, generating
-             * a screenshot with loading panels. It's why the condition for full pages is different from a single panel.
-             */
-            if (isFullPage) {
-              /**
-               * data-panelId is the total number of the panels in the dashboard. Rows included.
-               * panel-content only exists in non-row panels when the data is loaded.
-               * dashboard-row exists only in rows.
-               */
-              const panelCount = document.querySelectorAll('[data-panelId]').length;
-              const panelsRendered = document.querySelectorAll('[class$=\'panel-content\']')
-              let panelsRenderedCount = 0
-              panelsRendered.forEach((value: Element) => {
-                if (value.childElementCount > 0) {
-                  panelsRenderedCount++
-                }
-              })
+    //     return page.waitForFunction(
+    //       (isFullPage) => {
+    //         /**
+    //          * panelsRendered value is updated every time that a panel renders. It could happen multiple times in a same panel because scrolling. For full page screenshots
+    //          * we can reach panelsRendered >= panelCount condition even if we have panels that are still loading data and their panelsRenderer value is 0, generating
+    //          * a screenshot with loading panels. It's why the condition for full pages is different from a single panel.
+    //          */
+    //         if (isFullPage) {
+    //           /**
+    //            * data-panelId is the total number of the panels in the dashboard. Rows included.
+    //            * panel-content only exists in non-row panels when the data is loaded.
+    //            * dashboard-row exists only in rows.
+    //            */
+    //           const panelCount = document.querySelectorAll('[data-panelId]').length;
+    //           const panelsRendered = document.querySelectorAll("[class$='panel-content']");
+    //           let panelsRenderedCount = 0;
+    //           panelsRendered.forEach((value: Element) => {
+    //             if (value.childElementCount > 0) {
+    //               panelsRenderedCount++;
+    //             }
+    //           });
 
-              const totalPanelsRendered = panelsRenderedCount + document.querySelectorAll('.dashboard-row').length;
-              return totalPanelsRendered >= panelCount;
-            }
+    //           const totalPanelsRendered = panelsRenderedCount + document.querySelectorAll('.dashboard-row').length;
+    //           return totalPanelsRendered >= panelCount;
+    //         }
 
-            const panelCount = document.querySelectorAll('.panel-solo').length || document.querySelectorAll('[class$=\'panel-container\']').length;
-            return (window as any).panelsRendered >= panelCount || panelCount === 0
-          },
-          {
-            timeout: options.timeout * 1000,
-          },
-          options.fullPageImage || false
-        );
-      }, 'panelsRendered');
-    } catch (err) {
-      this.log.error('Error while waiting for the panels to load', 'url', options.url, 'err', err.stack);
-    }
+    //         const panelCount = document.querySelectorAll('.panel-solo').length || document.querySelectorAll("[class$='panel-container']").length;
+    //         return (window as any).panelsRendered >= panelCount || panelCount === 0;
+    //       },
+    //       {
+    //         timeout: options.timeout * 1000,
+    //       },
+    //       options.fullPageImage || false
+    //     );
+    //   }, 'panelsRendered');
+    // } catch (err) {
+    //   this.log.error('Error while waiting for the panels to load', 'url', options.url, 'err', err.stack);
+    // }
 
     if (!options.filePath) {
       options.filePath = uniqueFilename(os.tmpdir()) + '.png';
     }
 
     await this.setPageZoomLevel(page, this.config.pageZoomLevel);
+
+    /**
+     * PDF Scenario
+     */
+    if (options.pdf) {
+      page.emulateMediaType('print');
+
+      if (this.config.verboseLogging) {
+        this.log.debug('Creating PDF', 'filePath', options.filePath);
+      }
+
+      await this.withTimingMetrics(async () => {
+        return page.pdf({
+          path: options.filePath,
+          width: '1240px',
+          height: '1754px',
+        });
+      }, 'pdf');
+
+      return { filePath: options.filePath };
+    }
+
+    /**
+     * Screenshot (Image)
+     */
 
     if (this.config.verboseLogging) {
       this.log.debug('Taking screenshot', 'filePath', options.filePath);
@@ -545,10 +574,10 @@ export class Browser {
   };
 
   logRequestFailed = (req: any) => {
-    let failureError = ""
+    let failureError = '';
     const failure = req?.failure();
     if (failure) {
-      failureError = failure.errorText
+      failureError = failure.errorText;
     }
     this.log.error('Browser request failed', 'url', req.url(), 'method', req.method(), 'failure', failureError);
   };

@@ -28,7 +28,7 @@ export class HttpServer {
   app: express.Express;
   browser: Browser;
 
-  constructor(private config: ServiceConfig, private log: Logger, private sanitizer: Sanitizer) { }
+  constructor(private config: ServiceConfig, private log: Logger, private sanitizer: Sanitizer) {}
 
   async start() {
     this.app = express();
@@ -161,6 +161,7 @@ export class HttpServer {
       encoding: req.query.encoding,
       deviceScaleFactor: req.query.deviceScaleFactor,
       headers: headers,
+      pdf: true,
     };
 
     this.log.debug('Render request received', 'url', options.url);
