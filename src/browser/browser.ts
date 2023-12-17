@@ -364,8 +364,9 @@ export class Browser {
       this.log.error('Error while waiting for the panels to load', 'url', options.url, 'err', err.stack);
     }
 
+    const isPDF = options.encoding === 'pdf';
     if (!options.filePath) {
-      options.filePath = uniqueFilename(os.tmpdir()) + '.png';
+      options.filePath = uniqueFilename(os.tmpdir()) + (isPDF ? '.pdf' : '.png');
     }
 
     await this.setPageZoomLevel(page, this.config.pageZoomLevel);
@@ -381,10 +382,21 @@ export class Browser {
           height: scrollResult.scrollHeight,
         });
       }
+
+      if (isPDF) {
+        return page.pdf({
+          path: options.filePath,
+          landscape: false,
+          format: 'Letter',
+          omitBackground: true,
+          printBackground: true, // ??
+        })
+      }
+
       return page.screenshot({ path: options.filePath, fullPage: options.fullPageImage, captureBeyondViewport: options.fullPageImage || false });
     }, 'screenshot');
 
-    if (options.scaleImage) {
+    if (options.scaleImage && !isPDF) {
       const scaled = `${options.filePath}_${Date.now()}_scaled.png`;
       const w = +options.width / options.scaleImage;
       const h = +options.height / options.scaleImage;
