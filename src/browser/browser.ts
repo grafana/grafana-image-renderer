@@ -9,6 +9,7 @@ import * as Jimp from 'jimp';
 import { Logger } from '../logger';
 import { RenderingConfig } from '../config/rendering';
 import { ImageRenderOptions, RenderOptions } from '../types';
+import { getPDFOptionsFromURL } from './pdf';
 
 export interface Metrics {
   durationHistogram: promClient.Histogram;
@@ -385,11 +386,8 @@ export class Browser {
 
       if (isPDF) {
         return page.pdf({
+          ...getPDFOptionsFromURL(options.url),
           path: options.filePath,
-          landscape: false,
-          format: 'Letter',
-          omitBackground: true,
-          printBackground: true, // ??
         })
       }
 
