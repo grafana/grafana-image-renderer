@@ -10,4 +10,4 @@ services:
     volumes:
       - ./dashboards.yaml:/etc/grafana/provisioning/dashboards/dashboards.yaml
       - ../../../scripts/drone/provisioning/dashboards:/usr/share/grafana/dashboards
-      - ../../../datasources/datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml
+      - ../../../scripts/drone/provisioning/datasources/datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml
