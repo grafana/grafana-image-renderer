@@ -68,10 +68,11 @@ const serviceConfig: ServiceConfig = {
       maxConcurrency: 5,
       timeout: 30,
     },
-    verboseLogging: true,
-    dumpio: true,
     timingMetrics: false,
     emulateNetworkConditions: false,
+    // Set to true to get more logs
+    verboseLogging: false, // true,
+    dumpio: false, // true,
     // Uncoment to see what's happening in the browser during the tests
     // headed: true,
   },

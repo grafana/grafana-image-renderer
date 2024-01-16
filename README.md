@@ -145,3 +145,23 @@ _Notes:_
 If there are some expected changes in the reference image files (located in `/src/testdata`), run `yarn test-update` and push the updated references.
 
 If the tests are failing and you want to see the difference between the image you get and the reference image, run `yarn test-diff`. This will generate images (called `diff_<test case>.png`) containing the differences in the `/src/testdata` folder.
+
+### Fixing Drone issues
+
+If tests are successful in your local environement but fail in Drone. You can follow these steps to run the tests in an environment similar to the Drone pipeline. This will mount your local files of the `grafana-image-renderer` repo in the Docker image so any change that happens in the Docker image will be available in your local environment. This allows you to run `yarn test-diff` and `yarn test-update` in Docker and see the results locally. 
+
+1. Run the Drone environment in Docker:
+
+```
+cd ./devenv/docker/drone
+docker-compose up
+```
+
+2. Update the `domain` variable in `src/service/http-server.integration.test.ts`. It should be set to `host.docker.internal` on Windows and Mac and to `172.17.0.1` on Linux. 
+
+3. Open a terminal within this Docker image and run the following commands:
+
+```
+PUPPETEER_CACHE_DIR=/drone/src/cache yarn install --frozen-lockfile --no-progress
+PUPPETEER_CACHE_DIR=/drone/src/cache yarn test
+```

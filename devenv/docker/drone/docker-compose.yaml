@@ -1,0 +1,10 @@
+version: '2'
+
+services:
+  docker-puppeteer:
+    image: grafana/docker-puppeteer:pre-node-20
+    volumes:
+      - "../../..:/drone/src"
+    stdin_open: true # docker run -i
+    tty: true        # docker run -t
+    entrypoint: bash

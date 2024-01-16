@@ -39,3 +39,5 @@ coverage
 scripts/tmp
 
 src/testdata/diff_*
+
+cache
