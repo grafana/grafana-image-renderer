@@ -150,11 +150,16 @@ cd ./devenv/docker/drone
 docker-compose up
 ```
 
-2. Update the `domain` variable in `src/service/http-server.integration.test.ts`. It should be set to `host.docker.internal` on Windows and Mac and to `172.17.0.1` on Linux. 
-
-3. Open a terminal within this Docker image and run the following commands:
+2. Open a terminal within the `drone-docker-puppeteer` container and run the following commands:
 
 ```
+cd /drone/src
 PUPPETEER_CACHE_DIR=/drone/src/cache yarn install --frozen-lockfile --no-progress
-PUPPETEER_CACHE_DIR=/drone/src/cache yarn test
+PUPPETEER_CACHE_DIR=/drone/src/cache CI=true yarn test-ci
+```
+
+_Notes:_
+The tests might take longer in the Docker container. If you run into timeout issues, you can run the test command with the `--testTimeout option`:
+```
+PUPPETEER_CACHE_DIR=/drone/src/cache CI=true yarn test-ci --testTimeout=10000
 ```
