@@ -125,20 +125,13 @@ For troubleshooting help, refer to
 
 ## Testing
 
-In order to run the image-renderer automated test suites, you need to follow these steps:
-
-1. Run the test environment in Docker:
-
-```
-cd ./devenv/docker/test
-docker-compose up
-```
-
-2. Run the test suites from the root folder:
+In order to run the image-renderer automated test suites, you need to run the following command from the root folder:
 
 ```
 yarn test
 ```
+
+This will launch a Grafana instance in Docker and, then, run the test suites.
 
 _Notes:_
 

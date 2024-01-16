@@ -18,8 +18,9 @@
     "build": "tsc",
     "start": "node build/app.js server --config=dev.json",
     "create-gcom-plugin-json": "ts-node scripts/createGcomPluginJson.ts ./scripts/tmp",
-    "test": "jest",
     "test-update": "cross-env UPDATE_GOLDEN=true jest",
+    "test": "sh ./scripts/run_tests.sh",
+    "test-ci": "jest",
     "test-diff": "cross-env SAVE_DIFF=true jest"
   },
   "dependencies": {

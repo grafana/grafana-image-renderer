@@ -109,7 +109,7 @@ def tests_step():
         'image': 'us-docker.pkg.dev/grafanalabs-dev/grafana-ci/docker-puppeteer:2.0.0',
         'depends_on': ['wait-for-grafana', 'yarn-build'],
         'commands': [
-            'yarn test',
+            'yarn test-ci',
         ],
         'environment': {
             'PUPPETEER_CACHE_DIR': '/drone/src/cache',
