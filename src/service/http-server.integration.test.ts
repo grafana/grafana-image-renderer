@@ -91,12 +91,20 @@ function getGrafanaEndpoint(domain: string) {
   return `http://${domain}:3000/d-solo`;
 }
 
+let envSettings = {
+  saveDiff: false,
+  updateGolden: false,
+}
+
 beforeAll(() => {
   process.env['PUPPETEER_DISABLE_HEADLESS_WARNING'] = 'true';
 
   if (process.env['CI'] === 'true') {
     domain = 'grafana';
   }
+  
+  envSettings.saveDiff = process.env['SAVE_DIFF'] === 'true'
+  envSettings.updateGolden = process.env['UPDATE_GOLDEN'] === 'true'
 
   return server.start();
 });
@@ -179,13 +187,13 @@ describe('Test /render', () => {
 // It writes the diff file to /testdata if tests are run with SAVE_DIFF=true.
 function compareImage(testName: string, responseBody: any): number {
   const goldenFilePath = path.join(goldenFilesFolder, `${testName}.png`);
-  if (process.env['UPDATE_GOLDEN'] === 'true') {
+  if (envSettings.updateGolden) {
     fs.writeFileSync(goldenFilePath, responseBody);
     return 0;
   }
 
   let diff: { width: number; height: number; data: Uint8ClampedArray } | null = null;
-  if (process.env['SAVE_DIFF'] === 'true') {
+  if (envSettings.saveDiff) {
     diff = {
       width: imageWidth,
       height: imageHeight,
