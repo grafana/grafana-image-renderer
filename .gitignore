@@ -38,6 +38,6 @@ coverage
 
 scripts/tmp
 
-src/testdata/diff_*
+tests/testdata/diff_*
 
 cache

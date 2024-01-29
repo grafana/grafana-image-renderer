@@ -29,7 +29,7 @@ const renderKey = jwt.sign(
   { algorithm: 'HS512' }
 );
 
-const goldenFilesFolder = './src/testdata';
+const goldenFilesFolder = './tests/testdata';
 const serviceConfig: ServiceConfig = {
   service: {
     host: undefined,
