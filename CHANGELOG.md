@@ -1,3 +1,7 @@
+## 3.9.1 (2024-01-29)
+- Chore: Upgrade jimp and node [#492](https://github.com/grafana/grafana-image-renderer/pull/492), [AgnesToulet](https://github.com/AgnesToulet)
+- Bump follow-redirects from 1.15.3 to 1.15.4 [#489](https://github.com/grafana/grafana-image-renderer/pull/489), [dependabot[bot]](https://github.com/apps/dependabot)
+
 ## 3.9.0 (2023-12-04)
 - Config: Improve consistency between plugin and server mode [#477](https://github.com/grafana/grafana-image-renderer/pull/477), [AgnesToulet](https://github.com/AgnesToulet)
 - Chore: Bump axios from 0.27.2 to 1.6.0 [#480](https://github.com/grafana/grafana-image-renderer/pull/480), [dependabot[bot]](https://github.com/apps/dependabot)
