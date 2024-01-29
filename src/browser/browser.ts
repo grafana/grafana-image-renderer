@@ -9,7 +9,6 @@ import * as Jimp from 'jimp';
 import { Logger } from '../logger';
 import { RenderingConfig } from '../config/rendering';
 import { ImageRenderOptions, RenderOptions } from '../types';
-import { getPDFOptionsFromURL } from './pdf';
 
 export interface Metrics {
   durationHistogram: promClient.Histogram;
@@ -320,6 +319,7 @@ export class Browser {
       }
     }
 
+    const isPDF = options.encoding === 'pdf';
     try {
       await this.withTimingMetrics(() => {
         if (this.config.verboseLogging) {
@@ -358,14 +358,13 @@ export class Browser {
           {
             timeout: options.timeout * 1000,
           },
-          options.fullPageImage || false
+          options.fullPageImage || isPDF
         );
       }, 'panelsRendered');
     } catch (err) {
       this.log.error('Error while waiting for the panels to load', 'url', options.url, 'err', err.stack);
     }
 
-    const isPDF = options.encoding === 'pdf';
     if (!options.filePath) {
       options.filePath = uniqueFilename(os.tmpdir()) + (isPDF ? '.pdf' : '.png');
     }
@@ -386,8 +385,24 @@ export class Browser {
 
       if (isPDF) {
         return page.pdf({
-          ...getPDFOptionsFromURL(options.url),
+          format: 'A4',
+          margin: {
+            bottom: 0, // '30px',
+            top: 0,
+            right: 0,
+            left: 0,
+          },
+          printBackground: true,
+          landscape: true,
           path: options.filePath,
+          // displayHeaderFooter: true,
+          // footerTemplate: `
+          //   <div style="width: 100%; font-size: 10px; padding: 0; color: rgba(36, 41, 46, 1); position: relative; margin-bottom: -10px; font-style: italic; z-index:10000">
+          //     <div style="height: 100%; display: flex; justify-content: center; align-items: center;">
+          //       Page&nbsp<span class="pageNumber"></span>/<span class="totalPages"></span>
+          //     </div>
+          //   </div>
+          // `,
         })
       }
 
