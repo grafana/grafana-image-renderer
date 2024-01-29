@@ -384,6 +384,7 @@ export class Browser {
       }
 
       if (isPDF) {
+        const scale = parseFloat(((options.deviceScaleFactor as string) || '1') as string) || 1;
         return page.pdf({
           format: 'A4',
           margin: {
@@ -395,6 +396,7 @@ export class Browser {
           printBackground: true,
           landscape: true,
           path: options.filePath,
+          scale: 1/scale,
           // displayHeaderFooter: true,
           // footerTemplate: `
           //   <div style="width: 100%; font-size: 10px; padding: 0; color: rgba(36, 41, 46, 1); position: relative; margin-bottom: -10px; font-style: italic; z-index:10000">
