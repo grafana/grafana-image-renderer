@@ -1,20 +1,22 @@
-import * as fs from 'fs';
-import * as path from 'path';
-import * as net from 'net';
-import express = require('express');
+import * as bodyParser from 'body-parser';
 import * as boom from '@hapi/boom';
-import morgan = require('morgan');
+import * as contentDisposition from 'content-disposition';
+import * as express from 'express';
+import * as fs from 'fs';
+import * as http from 'http';
+import * as morgan from 'morgan';
+import * as multer from 'multer';
+import * as net from 'net';
+import * as path from 'path';
 import * as promClient from 'prom-client';
+
 import { Logger } from '../logger';
 import { Browser, createBrowser } from '../browser';
 import { ServiceConfig } from './config';
 import { setupHttpServerMetrics } from './metrics';
 import { HTTPHeaders, ImageRenderOptions, RenderOptions } from '../types';
 import { Sanitizer } from '../sanitizer/Sanitizer';
-import * as bodyParser from 'body-parser';
-import * as multer from 'multer';
 import { isSanitizeRequest } from '../sanitizer/types';
-import * as contentDisposition from 'content-disposition';
 import { asyncMiddleware, trustedUrlMiddleware, authTokenMiddleware } from './middlewares';
 
 const upload = multer({ storage: multer.memoryStorage() });
@@ -27,8 +29,9 @@ enum SanitizeRequestPartName {
 export class HttpServer {
   app: express.Express;
   browser: Browser;
+  server: http.Server;
 
-  constructor(private config: ServiceConfig, private log: Logger, private sanitizer: Sanitizer) { }
+  constructor(private config: ServiceConfig, private log: Logger, private sanitizer: Sanitizer) {}
 
   async start() {
     this.app = express();
@@ -98,13 +101,13 @@ export class HttpServer {
     });
 
     if (this.config.service.host) {
-      const server = this.app.listen(this.config.service.port, this.config.service.host, () => {
-        const info = server.address() as net.AddressInfo;
+      this.server = this.app.listen(this.config.service.port, this.config.service.host, () => {
+        const info = this.server.address() as net.AddressInfo;
         this.log.info(`HTTP Server started, listening at http://${this.config.service.host}:${info.port}`);
       });
     } else {
-      const server = this.app.listen(this.config.service.port, () => {
-        const info = server.address() as net.AddressInfo;
+      this.server = this.app.listen(this.config.service.port, () => {
+        const info = this.server.address() as net.AddressInfo;
         this.log.info(`HTTP Server started, listening at http://localhost:${info.port}`);
       });
     }
@@ -136,6 +139,10 @@ export class HttpServer {
     }
 
     await this.browser.start();
+  }
+
+  close() {
+    this.server.close();
   }
 
   render = async (req: express.Request<any, any, any, ImageRenderOptions, any>, res: express.Response, next: express.NextFunction) => {

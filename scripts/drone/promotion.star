@@ -42,6 +42,7 @@ def publish_to_docker():
         },
         'commands': ['./scripts/build_push_docker.sh'],
         'volumes': [{'name': 'docker', 'path': '/var/run/docker.sock'}],
+        'depends_on': ['yarn-test'],
     }
 
 def publish_to_gcom():

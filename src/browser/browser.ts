@@ -47,7 +47,7 @@ export class Browser {
     }
   }
 
-  async start(): Promise<void> { }
+  async start(): Promise<void> {}
 
   validateRenderOptions(options: RenderOptions) {
     if (options.url.startsWith(`socket://`)) {
@@ -217,7 +217,7 @@ export class Browser {
         scrollDivSelector
       );
 
-      await new Promise(executor => setTimeout(executor, scrollDelay));
+      await new Promise((executor) => setTimeout(executor, scrollDelay));
     }
 
     await page.evaluate((scrollDivSelector) => {
@@ -339,20 +339,20 @@ export class Browser {
                * dashboard-row exists only in rows.
                */
               const panelCount = document.querySelectorAll('[data-panelId]').length;
-              const panelsRendered = document.querySelectorAll('[class$=\'panel-content\']')
-              let panelsRenderedCount = 0
+              const panelsRendered = document.querySelectorAll("[class$='panel-content']");
+              let panelsRenderedCount = 0;
               panelsRendered.forEach((value: Element) => {
                 if (value.childElementCount > 0) {
-                  panelsRenderedCount++
+                  panelsRenderedCount++;
                 }
-              })
+              });
 
               const totalPanelsRendered = panelsRenderedCount + document.querySelectorAll('.dashboard-row').length;
               return totalPanelsRendered >= panelCount;
             }
 
-            const panelCount = document.querySelectorAll('.panel-solo').length || document.querySelectorAll('[class$=\'panel-container\']').length;
-            return (window as any).panelsRendered >= panelCount || panelCount === 0
+            const panelCount = document.querySelectorAll('.panel-solo').length || document.querySelectorAll("[class$='panel-container']").length;
+            return (window as any).panelsRendered >= panelCount || panelCount === 0;
           },
           {
             timeout: options.timeout * 1000,
@@ -545,10 +545,10 @@ export class Browser {
   };
 
   logRequestFailed = (req: any) => {
-    let failureError = ""
+    let failureError = '';
     const failure = req?.failure();
     if (failure) {
-      failureError = failure.errorText
+      failureError = failure.errorText;
     }
     this.log.error('Browser request failed', 'url', req.url(), 'method', req.method(), 'failure', failureError);
   };

@@ -11,7 +11,12 @@ node:
 platform:
   arch: amd64
   os: linux
-services: []
+services:
+- environment:
+    GF_FEATURE_TOGGLES_ENABLE: renderAuthJWT
+    GF_PATHS_PROVISIONING: /drone/src/scripts/drone/provisioning
+  image: grafana/grafana-enterprise:latest
+  name: grafana
 steps:
 - commands:
   - mkdir -p bin
@@ -24,6 +29,8 @@ steps:
   - yarn install --frozen-lockfile --no-progress
   depends_on:
   - grabpl
+  environment:
+    PUPPETEER_CACHE_DIR: /drone/src/cache
   image: grafana/grafana-plugin-ci:1.9.0
   name: yarn-install
 - commands:
@@ -33,6 +40,20 @@ steps:
   - yarn-install
   image: grafana/grafana-plugin-ci:1.9.0
   name: yarn-build
+- commands:
+  - dockerize -wait http://grafana:3000 -timeout 120s
+  image: jwilder/dockerize:0.6.1
+  name: wait-for-grafana
+- commands:
+  - yarn test
+  depends_on:
+  - wait-for-grafana
+  - yarn-build
+  environment:
+    CI: "true"
+    PUPPETEER_CACHE_DIR: /drone/src/cache
+  image: grafana/docker-puppeteer:pre-node-20
+  name: yarn-test
 - commands:
   - . ~/.init-nvm.sh
   - echo "Starting veracode scan..."
@@ -55,7 +76,7 @@ steps:
   - bin/grabpl build-plugin-manifest ./dist/plugin-linux-x64-glibc || true
   - ./scripts/archive_target.sh linux-x64-glibc
   depends_on:
-  - yarn-build
+  - yarn-test
   environment:
     GRAFANA_API_KEY:
       from_secret: grafana_api_key
@@ -67,7 +88,7 @@ steps:
   - bin/grabpl build-plugin-manifest ./dist/plugin-darwin-x64-unknown || true
   - ./scripts/archive_target.sh darwin-x64-unknown
   depends_on:
-  - yarn-build
+  - yarn-test
   environment:
     GRAFANA_API_KEY:
       from_secret: grafana_api_key
@@ -79,7 +100,7 @@ steps:
   - bin/grabpl build-plugin-manifest ./dist/plugin-win32-x64-unknown || true
   - ./scripts/archive_target.sh win32-x64-unknown
   depends_on:
-  - yarn-build
+  - yarn-test
   environment:
     GRAFANA_API_KEY:
       from_secret: grafana_api_key
@@ -92,7 +113,7 @@ steps:
     true
   - ./scripts/archive_target.sh linux-x64-glibc plugin-linux-x64-glibc-no-chromium
   depends_on:
-  - yarn-build
+  - yarn-test
   environment:
     GRAFANA_API_KEY:
       from_secret: grafana_api_key
@@ -119,7 +140,12 @@ node:
 platform:
   arch: amd64
   os: linux
-services: []
+services:
+- environment:
+    GF_FEATURE_TOGGLES_ENABLE: renderAuthJWT
+    GF_PATHS_PROVISIONING: /drone/src/scripts/drone/provisioning
+  image: grafana/grafana-enterprise:latest
+  name: grafana
 steps:
 - commands:
   - mkdir -p bin
@@ -132,6 +158,8 @@ steps:
   - yarn install --frozen-lockfile --no-progress
   depends_on:
   - grabpl
+  environment:
+    PUPPETEER_CACHE_DIR: /drone/src/cache
   image: grafana/grafana-plugin-ci:1.9.0
   name: yarn-install
 - commands:
@@ -141,6 +169,20 @@ steps:
   - yarn-install
   image: grafana/grafana-plugin-ci:1.9.0
   name: yarn-build
+- commands:
+  - dockerize -wait http://grafana:3000 -timeout 120s
+  image: jwilder/dockerize:0.6.1
+  name: wait-for-grafana
+- commands:
+  - yarn test
+  depends_on:
+  - wait-for-grafana
+  - yarn-build
+  environment:
+    CI: "true"
+    PUPPETEER_CACHE_DIR: /drone/src/cache
+  image: grafana/docker-puppeteer:pre-node-20
+  name: yarn-test
 - commands:
   - . ~/.init-nvm.sh
   - echo "Starting veracode scan..."
@@ -163,7 +205,7 @@ steps:
   - bin/grabpl build-plugin-manifest ./dist/plugin-linux-x64-glibc
   - ./scripts/archive_target.sh linux-x64-glibc
   depends_on:
-  - yarn-build
+  - yarn-test
   environment:
     GRAFANA_API_KEY:
       from_secret: grafana_api_key
@@ -175,7 +217,7 @@ steps:
   - bin/grabpl build-plugin-manifest ./dist/plugin-darwin-x64-unknown
   - ./scripts/archive_target.sh darwin-x64-unknown
   depends_on:
-  - yarn-build
+  - yarn-test
   environment:
     GRAFANA_API_KEY:
       from_secret: grafana_api_key
@@ -187,7 +229,7 @@ steps:
   - bin/grabpl build-plugin-manifest ./dist/plugin-win32-x64-unknown
   - ./scripts/archive_target.sh win32-x64-unknown
   depends_on:
-  - yarn-build
+  - yarn-test
   environment:
     GRAFANA_API_KEY:
       from_secret: grafana_api_key
@@ -199,7 +241,7 @@ steps:
   - bin/grabpl build-plugin-manifest ./dist/plugin-linux-x64-glibc-no-chromium
   - ./scripts/archive_target.sh linux-x64-glibc plugin-linux-x64-glibc-no-chromium
   depends_on:
-  - yarn-build
+  - yarn-test
   environment:
     GRAFANA_API_KEY:
       from_secret: grafana_api_key
@@ -207,6 +249,8 @@ steps:
   name: package-linux-x64-glibc-no-chromium
 - commands:
   - ./scripts/build_push_docker.sh master
+  depends_on:
+  - yarn-test
   environment:
     DOCKER_PASS:
       from_secret: docker_pass
@@ -241,7 +285,12 @@ node:
 platform:
   arch: amd64
   os: linux
-services: []
+services:
+- environment:
+    GF_FEATURE_TOGGLES_ENABLE: renderAuthJWT
+    GF_PATHS_PROVISIONING: /drone/src/scripts/drone/provisioning
+  image: grafana/grafana-enterprise:latest
+  name: grafana
 steps:
 - commands:
   - mkdir -p bin
@@ -254,6 +303,8 @@ steps:
   - yarn install --frozen-lockfile --no-progress
   depends_on:
   - grabpl
+  environment:
+    PUPPETEER_CACHE_DIR: /drone/src/cache
   image: grafana/grafana-plugin-ci:1.9.0
   name: yarn-install
 - commands:
@@ -263,6 +314,20 @@ steps:
   - yarn-install
   image: grafana/grafana-plugin-ci:1.9.0
   name: yarn-build
+- commands:
+  - dockerize -wait http://grafana:3000 -timeout 120s
+  image: jwilder/dockerize:0.6.1
+  name: wait-for-grafana
+- commands:
+  - yarn test
+  depends_on:
+  - wait-for-grafana
+  - yarn-build
+  environment:
+    CI: "true"
+    PUPPETEER_CACHE_DIR: /drone/src/cache
+  image: grafana/docker-puppeteer:pre-node-20
+  name: yarn-test
 - commands:
   - . ~/.init-nvm.sh
   - echo "Starting veracode scan..."
@@ -285,7 +350,7 @@ steps:
   - bin/grabpl build-plugin-manifest ./dist/plugin-linux-x64-glibc
   - ./scripts/archive_target.sh linux-x64-glibc
   depends_on:
-  - yarn-build
+  - yarn-test
   environment:
     GRAFANA_API_KEY:
       from_secret: grafana_api_key
@@ -297,7 +362,7 @@ steps:
   - bin/grabpl build-plugin-manifest ./dist/plugin-darwin-x64-unknown
   - ./scripts/archive_target.sh darwin-x64-unknown
   depends_on:
-  - yarn-build
+  - yarn-test
   environment:
     GRAFANA_API_KEY:
       from_secret: grafana_api_key
@@ -309,7 +374,7 @@ steps:
   - bin/grabpl build-plugin-manifest ./dist/plugin-win32-x64-unknown
   - ./scripts/archive_target.sh win32-x64-unknown
   depends_on:
-  - yarn-build
+  - yarn-test
   environment:
     GRAFANA_API_KEY:
       from_secret: grafana_api_key
@@ -321,7 +386,7 @@ steps:
   - bin/grabpl build-plugin-manifest ./dist/plugin-linux-x64-glibc-no-chromium
   - ./scripts/archive_target.sh linux-x64-glibc plugin-linux-x64-glibc-no-chromium
   depends_on:
-  - yarn-build
+  - yarn-test
   environment:
     GRAFANA_API_KEY:
       from_secret: grafana_api_key
@@ -414,6 +479,6 @@ kind: secret
 name: srcclr_api_token
 ---
 kind: signature
-hmac: eeb3dd651cc32e9e32188e7f904e97131911d9699c7610c4b33a19098c257d9f
+hmac: f6cb2de5719e26d46b642bb10f322f1b269310d013408b72a0d72b1c05d4ebea
 
 ...
