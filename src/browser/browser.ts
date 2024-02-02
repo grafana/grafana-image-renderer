@@ -384,7 +384,7 @@ export class Browser {
       }
 
       if (isPDF) {
-        const scale = parseFloat(((options.deviceScaleFactor as string) || '1') as string) || 1;
+        const scale = parseFloat((options.deviceScaleFactor as string) || '1') || 1;
         return page.pdf({
           format: 'A4',
           margin: {
