@@ -9,6 +9,7 @@ import * as Jimp from 'jimp';
 import { Logger } from '../logger';
 import { RenderingConfig } from '../config/rendering';
 import { ImageRenderOptions, RenderOptions } from '../types';
+import { getPDFOptionsFromURL } from './pdf';
 
 export interface Metrics {
   durationHistogram: promClient.Histogram;
@@ -386,25 +387,15 @@ export class Browser {
       if (isPDF) {
         const scale = parseFloat((options.deviceScaleFactor as string) || '1') || 1;
         return page.pdf({
-          format: 'A4',
+          ...getPDFOptionsFromURL(options.url),
           margin: {
-            bottom: 0, // '30px',
+            bottom: 0,
             top: 0,
             right: 0,
             left: 0,
           },
-          printBackground: true,
-          landscape: true,
           path: options.filePath,
           scale: 1/scale,
-          // displayHeaderFooter: true,
-          // footerTemplate: `
-          //   <div style="width: 100%; font-size: 10px; padding: 0; color: rgba(36, 41, 46, 1); position: relative; margin-bottom: -10px; font-style: italic; z-index:10000">
-          //     <div style="height: 100%; display: flex; justify-content: center; align-items: center;">
-          //       Page&nbsp<span class="pageNumber"></span>/<span class="totalPages"></span>
-          //     </div>
-          //   </div>
-          // `,
         })
       }
 

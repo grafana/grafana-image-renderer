@@ -18,6 +18,7 @@ export interface RenderRequest {
     [header: string]: StringList;
   };
   authToken: string;
+  encoding: string;
 }
 
 export interface RenderResponse {
