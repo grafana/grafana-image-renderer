@@ -135,12 +135,8 @@ class PluginGRPCServer {
       timezone: req.timezone,
       deviceScaleFactor: req.deviceScaleFactor,
       headers: headers,
+      encoding: req.encoding,
     };
-
-    // Encoding parameter is not send over grpc
-    if (req.url.includes("encoding=pdf")) {
-      options.encoding = "pdf"
-    }
 
     this.log.debug('Render request received', 'url', options.url);
     let errStr = '';

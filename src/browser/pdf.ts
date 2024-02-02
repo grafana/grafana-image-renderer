@@ -4,11 +4,10 @@ import * as puppeteer from 'puppeteer';
 export function getPDFOptionsFromURL(url: string): puppeteer.PDFOptions {
   const urlParams = new URLSearchParams(url);
   return {
-    landscape: urlParams.get('pdf.landscape') === 'true',
-    format: (urlParams.get('pdf.format') as puppeteer.PaperFormat) ?? 'Letter',
-    preferCSSPageSize: urlParams.get('pdf.preferCSSPageSize') !== 'false', // defaults true
-    omitBackground: urlParams.get('pdf.omitBackground') !== 'false', // defaults true,
-    printBackground: urlParams.get('pdf.printBackground') === 'true', 
+    landscape: urlParams.get('pdf.landscape') !== 'false', // defaults true
+    format: (urlParams.get('pdf.format') as puppeteer.PaperFormat) ?? 'A4',
+    omitBackground: urlParams.get('pdf.omitBackground') === 'true', // defaults false,
+    printBackground: urlParams.get('pdf.printBackground') !== 'false',  // defaults true,
     pageRanges: urlParams.get('pdf.pageRanges') ?? undefined,
   };
 }

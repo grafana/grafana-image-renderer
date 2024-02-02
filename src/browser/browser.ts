@@ -320,6 +320,7 @@ export class Browser {
       }
     }
 
+    const isPDF = options.encoding === 'pdf';
     try {
       await this.withTimingMetrics(() => {
         if (this.config.verboseLogging) {
@@ -358,14 +359,13 @@ export class Browser {
           {
             timeout: options.timeout * 1000,
           },
-          options.fullPageImage || false
+          options.fullPageImage || isPDF
         );
       }, 'panelsRendered');
     } catch (err) {
       this.log.error('Error while waiting for the panels to load', 'url', options.url, 'err', err.stack);
     }
 
-    const isPDF = options.encoding === 'pdf';
     if (!options.filePath) {
       options.filePath = uniqueFilename(os.tmpdir()) + (isPDF ? '.pdf' : '.png');
     }
@@ -385,9 +385,17 @@ export class Browser {
       }
 
       if (isPDF) {
+        const scale = parseFloat((options.deviceScaleFactor as string) || '1') || 1;
         return page.pdf({
           ...getPDFOptionsFromURL(options.url),
+          margin: {
+            bottom: 0,
+            top: 0,
+            right: 0,
+            left: 0,
+          },
           path: options.filePath,
+          scale: 1/scale,
         })
       }
 
