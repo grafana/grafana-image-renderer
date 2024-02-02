@@ -10,6 +10,5 @@ export function getPDFOptionsFromURL(url: string): puppeteer.PDFOptions {
     omitBackground: urlParams.get('pdf.omitBackground') !== 'false', // defaults true,
     printBackground: urlParams.get('pdf.printBackground') === 'true', 
     pageRanges: urlParams.get('pdf.pageRanges') ?? undefined,
-    tagged: urlParams.get('pdf.tagged') === 'true',
   };
 }
