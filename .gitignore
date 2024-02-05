@@ -37,3 +37,7 @@ dist/**/*
 coverage
 
 scripts/tmp
+
+tests/testdata/diff_*
+
+cache

@@ -12,6 +12,9 @@ def install_deps_step():
         'depends_on': [
             'grabpl',
         ],
+        'environment': {
+            'PUPPETEER_CACHE_DIR': '/drone/src/cache',
+        },
     }
 
 def build_step():
@@ -54,7 +57,7 @@ def package_step(arch, name='', skip_chromium=False, override_output='', skip_er
             bpm_cmd,
             arc_cmd,
         ],
-        'depends_on': ['yarn-build'],
+        'depends_on': ['yarn-test'],
         'environment': {
             'GRAFANA_API_KEY': from_secret('grafana_api_key'),
         }
@@ -79,4 +82,37 @@ def security_scan_step():
             'SRCCLR_API_TOKEN': from_secret('srcclr_api_token'),
         },
         'failure': 'ignore',
+    }
+
+def e2e_services():
+    return [{
+        'name': 'grafana',
+        'image': 'grafana/grafana-enterprise:latest',
+        'environment': {
+            'GF_FEATURE_TOGGLES_ENABLE': 'renderAuthJWT',
+            'GF_PATHS_PROVISIONING': '/drone/src/scripts/drone/provisioning',
+        },
+    }]
+
+def e2e_setup_step():
+    return {
+        'name': 'wait-for-grafana',
+        'image': 'jwilder/dockerize:0.6.1',
+        'commands': [
+            'dockerize -wait http://grafana:3000 -timeout 120s',
+        ]
+    }
+
+def tests_step():
+    return {
+        'name': 'yarn-test',
+        'image': 'us-docker.pkg.dev/grafanalabs-dev/grafana-ci/docker-puppeteer:2.0.0',
+        'depends_on': ['wait-for-grafana', 'yarn-build'],
+        'commands': [
+            'yarn test-ci',
+        ],
+        'environment': {
+            'PUPPETEER_CACHE_DIR': '/drone/src/cache',
+            'CI': 'true',
+        },
     }

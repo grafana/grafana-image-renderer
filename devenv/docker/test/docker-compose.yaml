@@ -1,0 +1,13 @@
+version: '2'
+
+services:
+  grafana:
+    image: grafana/grafana-enterprise:latest
+    ports:
+      - 3000:3000
+    environment:
+      GF_FEATURE_TOGGLES_ENABLE: renderAuthJWT
+    volumes:
+      - ./dashboards.yaml:/etc/grafana/provisioning/dashboards/dashboards.yaml
+      - ../../../scripts/drone/provisioning/dashboards:/usr/share/grafana/dashboards
+      - ../../../scripts/drone/provisioning/datasources/datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml
