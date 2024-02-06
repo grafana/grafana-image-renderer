@@ -9,6 +9,7 @@ import * as Jimp from 'jimp';
 import { Logger } from '../logger';
 import { RenderingConfig } from '../config/rendering';
 import { ImageRenderOptions, RenderOptions } from '../types';
+import { getPDFOptionsFromURL } from './pdf';
 
 export interface Metrics {
   durationHistogram: promClient.Histogram;
@@ -319,6 +320,7 @@ export class Browser {
       }
     }
 
+    const isPDF = options.encoding === 'pdf';
     try {
       await this.withTimingMetrics(() => {
         if (this.config.verboseLogging) {
@@ -357,7 +359,7 @@ export class Browser {
           {
             timeout: options.timeout * 1000,
           },
-          options.fullPageImage || false
+          options.fullPageImage || isPDF
         );
       }, 'panelsRendered');
     } catch (err) {
@@ -365,7 +367,7 @@ export class Browser {
     }
 
     if (!options.filePath) {
-      options.filePath = uniqueFilename(os.tmpdir()) + '.png';
+      options.filePath = uniqueFilename(os.tmpdir()) + (isPDF ? '.pdf' : '.png');
     }
 
     await this.setPageZoomLevel(page, this.config.pageZoomLevel);
@@ -381,10 +383,26 @@ export class Browser {
           height: scrollResult.scrollHeight,
         });
       }
+
+      if (isPDF) {
+        const scale = parseFloat((options.deviceScaleFactor as string) || '1') || 1;
+        return page.pdf({
+          ...getPDFOptionsFromURL(options.url),
+          margin: {
+            bottom: 0,
+            top: 0,
+            right: 0,
+            left: 0,
+          },
+          path: options.filePath,
+          scale: 1/scale,
+        })
+      }
+
       return page.screenshot({ path: options.filePath, fullPage: options.fullPageImage, captureBeyondViewport: options.fullPageImage || false });
     }, 'screenshot');
 
-    if (options.scaleImage) {
+    if (options.scaleImage && !isPDF) {
       const scaled = `${options.filePath}_${Date.now()}_scaled.png`;
       const w = +options.width / options.scaleImage;
       const h = +options.height / options.scaleImage;

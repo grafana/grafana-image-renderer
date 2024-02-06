@@ -135,6 +135,7 @@ class PluginGRPCServer {
       timezone: req.timezone,
       deviceScaleFactor: req.deviceScaleFactor,
       headers: headers,
+      encoding: req.encoding,
     };
 
     this.log.debug('Render request received', 'url', options.url);
