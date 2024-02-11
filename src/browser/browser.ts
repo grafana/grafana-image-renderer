@@ -328,7 +328,7 @@ export class Browser {
           this.log.debug('Waiting for dashboard/panel to load', 'timeout', `${options.timeout}s`);
         }
 
-        await page.waitForNetworkIdle();
+        await page.waitForNetworkIdle({ timeout: options.timeout * 1000 });
         await new Promise((resolve) => setTimeout(resolve, 100));
       }, 'panelsRendered');
     } catch (err) {
