@@ -321,46 +321,15 @@ export class Browser {
     }
 
     const isPDF = options.encoding === 'pdf';
+
     try {
-      await this.withTimingMetrics(() => {
+      await this.withTimingMetrics(async () => {
         if (this.config.verboseLogging) {
           this.log.debug('Waiting for dashboard/panel to load', 'timeout', `${options.timeout}s`);
         }
 
-        return page.waitForFunction(
-          (isFullPage) => {
-            /**
-             * panelsRendered value is updated every time that a panel renders. It could happen multiple times in a same panel because scrolling. For full page screenshots
-             * we can reach panelsRendered >= panelCount condition even if we have panels that are still loading data and their panelsRenderer value is 0, generating
-             * a screenshot with loading panels. It's why the condition for full pages is different from a single panel.
-             */
-            if (isFullPage) {
-              /**
-               * data-panelId is the total number of the panels in the dashboard. Rows included.
-               * panel-content only exists in non-row panels when the data is loaded.
-               * dashboard-row exists only in rows.
-               */
-              const panelCount = document.querySelectorAll('[data-panelId]').length;
-              const panelsRendered = document.querySelectorAll("[class$='panel-content']");
-              let panelsRenderedCount = 0;
-              panelsRendered.forEach((value: Element) => {
-                if (value.childElementCount > 0) {
-                  panelsRenderedCount++;
-                }
-              });
-
-              const totalPanelsRendered = panelsRenderedCount + document.querySelectorAll('.dashboard-row').length;
-              return totalPanelsRendered >= panelCount;
-            }
-
-            const panelCount = document.querySelectorAll('.panel-solo').length || document.querySelectorAll("[class$='panel-container']").length;
-            return (window as any).panelsRendered >= panelCount || panelCount === 0;
-          },
-          {
-            timeout: options.timeout * 1000,
-          },
-          options.fullPageImage || isPDF
-        );
+        await page.waitForNetworkIdle();
+        await new Promise((resolve) => setTimeout(resolve, 100));
       }, 'panelsRendered');
     } catch (err) {
       this.log.error('Error while waiting for the panels to load', 'url', options.url, 'err', err.stack);
@@ -395,8 +364,8 @@ export class Browser {
             left: 0,
           },
           path: options.filePath,
-          scale: 1/scale,
-        })
+          scale: 1 / scale,
+        });
       }
 
       return page.screenshot({ path: options.filePath, fullPage: options.fullPageImage, captureBeyondViewport: options.fullPageImage || false });
