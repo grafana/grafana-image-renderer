@@ -328,8 +328,7 @@ export class Browser {
           this.log.debug('Waiting for dashboard/panel to load', 'timeout', `${options.timeout}s`);
         }
 
-        await page.waitForNetworkIdle({ timeout: options.timeout * 1000 });
-        await new Promise((resolve) => setTimeout(resolve, 100));
+        await waitForQueriesAndVisualizations(page, options);
       }, 'panelsRendered');
     } catch (err) {
       this.log.error('Error while waiting for the panels to load', 'url', options.url, 'err', err.stack);
@@ -556,4 +555,56 @@ export class Browser {
       (document.body.style as any).zoom = zoomLevel;
     }, zoomLevel);
   }
+}
+
+declare global {
+  interface Window {
+    __grafanaSceneContext: object;
+    __grafanaRunningQueryCount?: number;
+  }
+}
+
+async function waitForQueriesAndVisualizations(page: puppeteer.Page, options: ImageRenderOptions) {
+  await page.waitForFunction(
+    (isFullPage) => {
+      if (window.__grafanaSceneContext) {
+        return window.__grafanaRunningQueryCount === 0;
+      }
+
+      /**
+       * panelsRendered value is updated every time that a panel renders. It could happen multiple times in a same panel because scrolling. For full page screenshots
+       * we can reach panelsRendered >= panelCount condition even if we have panels that are still loading data and their panelsRenderer value is 0, generating
+       * a screenshot with loading panels. It's why the condition for full pages is different from a single panel.
+       */
+      if (isFullPage) {
+        /**
+         * data-panelId is the total number of the panels in the dashboard. Rows included.
+         * panel-content only exists in non-row panels when the data is loaded.
+         * dashboard-row exists only in rows.
+         */
+        const panelCount = document.querySelectorAll('[data-panelId]').length;
+        const panelsRendered = document.querySelectorAll("[class$='panel-content']");
+        let panelsRenderedCount = 0;
+        panelsRendered.forEach((value: Element) => {
+          if (value.childElementCount > 0) {
+            panelsRenderedCount++;
+          }
+        });
+
+        const totalPanelsRendered = panelsRenderedCount + document.querySelectorAll('.dashboard-row').length;
+        return totalPanelsRendered >= panelCount;
+      }
+
+      const panelCount = document.querySelectorAll('.panel-solo').length || document.querySelectorAll("[class$='panel-container']").length;
+      return (window as any).panelsRendered >= panelCount || panelCount === 0;
+    },
+    {
+      timeout: options.timeout * 1000,
+      polling: 'mutation',
+    },
+    options.fullPageImage
+  );
+
+  // Give some more time for rendering to complete
+  await new Promise((resolve) => setTimeout(resolve, 50));
 }
