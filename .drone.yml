@@ -3,7 +3,8 @@ clone:
   retries: 3
 depends_on: []
 image_pull_secrets:
-- dockerconfigjson
+- gcr
+- gar
 kind: pipeline
 name: test-pr
 node:
@@ -45,14 +46,14 @@ steps:
   image: jwilder/dockerize:0.6.1
   name: wait-for-grafana
 - commands:
-  - yarn test
+  - yarn test-ci
   depends_on:
   - wait-for-grafana
   - yarn-build
   environment:
     CI: "true"
     PUPPETEER_CACHE_DIR: /drone/src/cache
-  image: grafana/docker-puppeteer:pre-node-20
+  image: us-docker.pkg.dev/grafanalabs-dev/grafana-ci/docker-puppeteer:2.0.0
   name: yarn-test
 - commands:
   - . ~/.init-nvm.sh
@@ -132,7 +133,8 @@ clone:
   retries: 3
 depends_on: []
 image_pull_secrets:
-- dockerconfigjson
+- gcr
+- gar
 kind: pipeline
 name: test-master
 node:
@@ -174,14 +176,14 @@ steps:
   image: jwilder/dockerize:0.6.1
   name: wait-for-grafana
 - commands:
-  - yarn test
+  - yarn test-ci
   depends_on:
   - wait-for-grafana
   - yarn-build
   environment:
     CI: "true"
     PUPPETEER_CACHE_DIR: /drone/src/cache
-  image: grafana/docker-puppeteer:pre-node-20
+  image: us-docker.pkg.dev/grafanalabs-dev/grafana-ci/docker-puppeteer:2.0.0
   name: yarn-test
 - commands:
   - . ~/.init-nvm.sh
@@ -277,7 +279,8 @@ clone:
   retries: 3
 depends_on: []
 image_pull_secrets:
-- dockerconfigjson
+- gcr
+- gar
 kind: pipeline
 name: release
 node:
@@ -319,14 +322,14 @@ steps:
   image: jwilder/dockerize:0.6.1
   name: wait-for-grafana
 - commands:
-  - yarn test
+  - yarn test-ci
   depends_on:
   - wait-for-grafana
   - yarn-build
   environment:
     CI: "true"
     PUPPETEER_CACHE_DIR: /drone/src/cache
-  image: grafana/docker-puppeteer:pre-node-20
+  image: us-docker.pkg.dev/grafanalabs-dev/grafana-ci/docker-puppeteer:2.0.0
   name: yarn-test
 - commands:
   - . ~/.init-nvm.sh
@@ -452,7 +455,7 @@ get:
   name: .dockerconfigjson
   path: secret/data/common/gcr
 kind: secret
-name: dockerconfigjson
+name: gcr
 ---
 get:
   name: github_token
@@ -478,7 +481,13 @@ get:
 kind: secret
 name: srcclr_api_token
 ---
+get:
+  name: .dockerconfigjson
+  path: secret/data/common/gar
+kind: secret
+name: gar
+---
 kind: signature
-hmac: f6cb2de5719e26d46b642bb10f322f1b269310d013408b72a0d72b1c05d4ebea
+hmac: 04abae61fca21a27f8b24027ca87a9c8e54b06200f089e058641076fd3ef2300
 
 ...

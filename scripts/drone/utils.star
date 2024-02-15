@@ -1,4 +1,4 @@
-load('scripts/drone/vault.star', 'pull_secret')
+load('scripts/drone/vault.star', 'gcr_pull_secret', 'gar_pull_secret')
 
 ci_image = 'grafana/grafana-plugin-ci:1.9.0'
 docker_image = 'grafana/grafana-image-renderer'
@@ -49,7 +49,7 @@ def pipeline(
             }
         ],
         'depends_on': depends_on,
-        'image_pull_secrets': [pull_secret],
+        'image_pull_secrets': [gcr_pull_secret, gar_pull_secret],
     }
     if environment:
         pipeline.update(
