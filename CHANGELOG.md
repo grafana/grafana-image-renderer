@@ -1,3 +1,7 @@
+## 3.10.0 (2024-02-20)
+- WaitingForPanels: Change waiting logic for Scenes [#496](https://github.com/grafana/grafana-image-renderer/pull/496), [torkelo](https://github.com/torkelo)
+- Experimental: Support PDF rendering [#487](https://github.com/grafana/grafana-image-renderer/pull/487), [ryantxu](https://github.com/ryantxu)
+
 ## 3.9.1 (2024-01-29)
 - Chore: Upgrade jimp and node [#492](https://github.com/grafana/grafana-image-renderer/pull/492), [AgnesToulet](https://github.com/AgnesToulet)
 - Bump follow-redirects from 1.15.3 to 1.15.4 [#489](https://github.com/grafana/grafana-image-renderer/pull/489), [dependabot[bot]](https://github.com/apps/dependabot)

@@ -30,6 +30,7 @@ async function download() {
     const buildId = await resolveBuildId(browserVersion, platform, 'latest');
     console.log(`Installing ${browserVersion} into ${outputPath}`);
     return install({
+        baseUrl: 'https://storage.googleapis.com/chrome-for-testing-public',
         cacheDir: outputPath,
         browser: browserVersion,
         platform,
