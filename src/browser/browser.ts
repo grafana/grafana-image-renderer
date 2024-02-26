@@ -354,6 +354,13 @@ export class Browser {
 
       if (isPDF) {
         const scale = parseFloat((options.deviceScaleFactor as string) || '1') || 1;
+        if (scale < 1) {
+          await this.setViewport(page, {
+            ...options,
+            deviceScaleFactor: 1 / scale,
+          });
+        }
+
         return page.pdf({
           ...getPDFOptionsFromURL(options.url),
           margin: {
