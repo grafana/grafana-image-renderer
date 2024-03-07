@@ -1,3 +1,8 @@
+## 3.10.1 (2024-03-07)
+- Bump axios from 1.6.0 to 1.6.7 [#503](https://github.com/grafana/grafana-image-renderer/pull/503), [evictorero](https://github.com/evictorero)
+- Bump ip from 1.1.8 to 1.1.9 [#500](https://github.com/grafana/grafana-image-renderer/pull/500), [dependabot[bot]](https://github.com/apps/dependabot)
+- PDF: Fix resolution when zooming in [#502](https://github.com/grafana/grafana-image-renderer/pull/502), [AgnesToulet](https://github.com/AgnesToulet)
+
 ## 3.10.0 (2024-02-20)
 - WaitingForPanels: Change waiting logic for Scenes [#496](https://github.com/grafana/grafana-image-renderer/pull/496), [torkelo](https://github.com/torkelo)
 - Experimental: Support PDF rendering [#487](https://github.com/grafana/grafana-image-renderer/pull/487), [ryantxu](https://github.com/ryantxu)
