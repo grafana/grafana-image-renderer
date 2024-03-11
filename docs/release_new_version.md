@@ -37,4 +37,5 @@ was needed to be performed manually is no longer required and is automatically p
 </html>
 ```
 
-Finally, please recall to inform HG team about the new release.
+## Deploy into Grafana Cloud
+Create a PR in [Deployment Tools](https://github.com/grafana/deployment_tools/blob/master/ksonnet/lib/render-service/images.libsonnet) with the new version.
