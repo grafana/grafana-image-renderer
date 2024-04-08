@@ -1,3 +1,7 @@
+## 3.10.2 (2024-04-08)
+- Bump express from 4.18.2 to 4.19.2 [#510](https://github.com/grafana/grafana-image-renderer/pull/510), [dependabot[bot]](https://github.com/apps/dependabot)
+- Bump follow-redirects from 1.15.5 to 1.15.6 [#508](https://github.com/grafana/grafana-image-renderer/pull/508), [dependabot[bot]](https://github.com/apps/dependabot)
+
 ## 3.10.1 (2024-03-07)
 - Bump axios from 1.6.0 to 1.6.7 [#503](https://github.com/grafana/grafana-image-renderer/pull/503), [evictorero](https://github.com/evictorero)
 - Bump ip from 1.1.8 to 1.1.9 [#500](https://github.com/grafana/grafana-image-renderer/pull/500), [dependabot[bot]](https://github.com/apps/dependabot)
