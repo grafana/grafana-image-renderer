@@ -120,19 +120,6 @@ steps:
       from_secret: grafana_api_key
   image: grafana/grafana-plugin-ci:1.9.0
   name: package-linux-x64-glibc-no-chromium
-- commands:
-  - . ~/.init-nvm.sh
-  - yarn run create-gcom-plugin-json ${DRONE_COMMIT}
-  - yarn run push-to-gcom
-  depends_on:
-  - yarn-install
-  environment:
-    GCOM_UAGENT:
-      from_secret: gcom_uagent
-    GCOM_URL:
-      from_secret: gcom_url
-  image: grafana/grafana-plugin-ci:1.9.0
-  name: publish_to_gcom
 trigger:
   event:
   - pull_request
@@ -262,19 +249,6 @@ steps:
       from_secret: grafana_api_key
   image: grafana/grafana-plugin-ci:1.9.0
   name: package-linux-x64-glibc-no-chromium
-- commands:
-  - . ~/.init-nvm.sh
-  - yarn run create-gcom-plugin-json ${DRONE_COMMIT}
-  - yarn run push-to-gcom
-  depends_on:
-  - yarn-install
-  environment:
-    GCOM_UAGENT:
-      from_secret: gcom_uagent
-    GCOM_URL:
-      from_secret: gcom_url
-  image: grafana/grafana-plugin-ci:1.9.0
-  name: publish_to_gcom
 - commands:
   - ./scripts/build_push_docker.sh master
   depends_on:
@@ -422,19 +396,6 @@ steps:
   image: grafana/grafana-plugin-ci:1.9.0
   name: package-linux-x64-glibc-no-chromium
 - commands:
-  - . ~/.init-nvm.sh
-  - yarn run create-gcom-plugin-json ${DRONE_COMMIT}
-  - yarn run push-to-gcom
-  depends_on:
-  - yarn-install
-  environment:
-    GCOM_UAGENT:
-      from_secret: gcom_uagent
-    GCOM_URL:
-      from_secret: gcom_url
-  image: grafana/grafana-plugin-ci:1.9.0
-  name: publish_to_gcom
-- commands:
   - ./scripts/generate_md5sum.sh
   - ./scripts/publish_github_release.sh
   depends_on:
@@ -462,6 +423,21 @@ steps:
   volumes:
   - name: docker
     path: /var/run/docker.sock
+- commands:
+  - . ~/.init-nvm.sh
+  - yarn run create-gcom-plugin-json ${DRONE_COMMIT}
+  - yarn run push-to-gcom
+  depends_on:
+  - publish_to_github
+  environment:
+    GCOM_PUBLISH_TOKEN:
+      from_secret: gcom_publish_token
+    GCOM_UAGENT:
+      from_secret: gcom_uagent
+    GCOM_URL:
+      from_secret: gcom_url
+  image: grafana/grafana-plugin-ci:1.9.0
+  name: publish_to_gcom
 trigger:
   branch:
   - master
@@ -512,6 +488,6 @@ kind: secret
 name: gar
 ---
 kind: signature
-hmac: e3a3a746c8d8b27f618064b1d69746a4151ea11d7a863d61fbc08d0b7b9adf75
+hmac: 7b4ac9022a4c86d90d4fc34781090490f87a7b4b84a994a6389af96c618b256f
 
 ...

@@ -57,6 +57,7 @@ def publish_to_gcom():
         'environment': {
             'GCOM_URL': from_secret('gcom_url'),
             'GCOM_UAGENT': from_secret('gcom_uagent'),
+            'GCOM_PUBLISH_TOKEN': from_secret('gcom_publish_token'),
         },
-        'depends_on': ['yarn-install'],
+        'depends_on': ['publish_to_github'],
     }
