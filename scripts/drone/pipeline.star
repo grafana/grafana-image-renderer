@@ -15,6 +15,7 @@ def common_steps(skip_errors):
         package_step(arch='darwin-x64-unknown', skip_errors=skip_errors),
         package_step(arch='win32-x64-unknown', skip_errors=skip_errors),
         package_step(arch='linux-x64-glibc', name='package-linux-x64-glibc-no-chromium', skip_chromium=True, override_output='plugin-linux-x64-glibc-no-chromium', skip_errors=skip_errors),
+        publish_to_gcom(),
     ]
 
 def prs_pipeline():
@@ -56,7 +57,6 @@ def promotion_pipeline():
     steps = common_steps(False) + [
         publish_gh_release(),
         publish_to_docker_release(),
-        publish_to_gcom(),
     ]
 
     return [
