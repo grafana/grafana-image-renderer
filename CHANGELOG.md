@@ -1,3 +1,6 @@
+## 3.10.4 (2024-05-06)
+- Chore: Remove unused dependencies [#517](https://github.com/grafana/grafana-image-renderer/pull/517), [evictorero](https://github.com/evictorero)
+
 ## 3.10.3 (2024-04-16)
 - Bump protobufjs from 7.2.4 to 7.2.6 [#515](https://github.com/grafana/grafana-image-renderer/pull/515), [dependabot[bot]](https://github.com/apps/dependabot)
  
