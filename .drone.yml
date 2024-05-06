@@ -124,6 +124,8 @@ steps:
   - . ~/.init-nvm.sh
   - yarn run create-gcom-plugin-json ${DRONE_COMMIT}
   - yarn run push-to-gcom
+  depends_on:
+  - yarn-install
   environment:
     GCOM_UAGENT:
       from_secret: gcom_uagent
@@ -264,6 +266,8 @@ steps:
   - . ~/.init-nvm.sh
   - yarn run create-gcom-plugin-json ${DRONE_COMMIT}
   - yarn run push-to-gcom
+  depends_on:
+  - yarn-install
   environment:
     GCOM_UAGENT:
       from_secret: gcom_uagent
@@ -421,6 +425,8 @@ steps:
   - . ~/.init-nvm.sh
   - yarn run create-gcom-plugin-json ${DRONE_COMMIT}
   - yarn run push-to-gcom
+  depends_on:
+  - yarn-install
   environment:
     GCOM_UAGENT:
       from_secret: gcom_uagent
@@ -506,6 +512,6 @@ kind: secret
 name: gar
 ---
 kind: signature
-hmac: d5cbb5e1cf29af86932213085fca0f26a1c9b75ad663f412712c181fbf056ef7
+hmac: e3a3a746c8d8b27f618064b1d69746a4151ea11d7a863d61fbc08d0b7b9adf75
 
 ...
