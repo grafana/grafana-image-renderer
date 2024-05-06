@@ -58,4 +58,5 @@ def publish_to_gcom():
             'GCOM_URL': from_secret('gcom_url'),
             'GCOM_UAGENT': from_secret('gcom_uagent'),
         },
+        'depends_on': ['yarn-install'],
     }
