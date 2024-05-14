@@ -10,7 +10,8 @@ import { ConsoleLogger } from '../logger';
 import { ServiceConfig } from './config';
 import { createSanitizer } from '../sanitizer/Sanitizer';
 
-const dashboardUid = 'd10881ec-0d35-4909-8de7-6ab563a9ab29';
+const testDashboardUid = 'd10881ec-0d35-4909-8de7-6ab563a9ab29';
+const allPanelsDashboardUid = 'edlopzu6hn4lcd';
 const panelIds = {
   graph: 1,
   table: 2,
@@ -88,7 +89,7 @@ const server = new HttpServer(serviceConfig, new ConsoleLogger(serviceConfig.ser
 
 let domain = 'localhost';
 function getGrafanaEndpoint(domain: string) {
-  return `http://${domain}:3000/d-solo`;
+  return `http://${domain}:3000`;
 }
 
 let envSettings = {
@@ -131,7 +132,7 @@ describe('Test /render', () => {
   });
 
   it('should respond with the graph panel screenshot', async () => {
-    const url = `${getGrafanaEndpoint(domain)}/${dashboardUid}?panelId=${panelIds.graph}&render=1&from=1699333200000&to=1699344000000`;
+    const url = `${getGrafanaEndpoint(domain)}/d-solo/${testDashboardUid}?panelId=${panelIds.graph}&render=1&from=1699333200000&to=1699344000000`;
     const response = await request(server.app)
       .get(
         `/render?url=${encodeURIComponent(
@@ -148,7 +149,7 @@ describe('Test /render', () => {
   });
 
   it('should respond with the table panel screenshot', async () => {
-    const url = `${getGrafanaEndpoint(domain)}/${dashboardUid}?panelId=${panelIds.table}&render=1&from=1699333200000&to=1699344000000`;
+    const url = `${getGrafanaEndpoint(domain)}/d-solo/${testDashboardUid}?panelId=${panelIds.table}&render=1&from=1699333200000&to=1699344000000`;
     const response = await request(server.app)
       .get(
         `/render?url=${encodeURIComponent(
@@ -165,7 +166,7 @@ describe('Test /render', () => {
   });
 
   it('should respond with a panel error screenshot', async () => {
-    const url = `${getGrafanaEndpoint(domain)}/${dashboardUid}?panelId=${panelIds.error}&render=1&from=1699333200000&to=1699344000000`;
+    const url = `${getGrafanaEndpoint(domain)}/d-solo/${testDashboardUid}?panelId=${panelIds.error}&render=1&from=1699333200000&to=1699344000000`;
     const response = await request(server.app)
       .get(
         `/render?url=${encodeURIComponent(
@@ -178,6 +179,24 @@ describe('Test /render', () => {
     expect(response.headers['content-type']).toEqual('image/png');
 
     const pixelDiff = compareImage('error', response.body);
+    expect(pixelDiff).toBeLessThan(imageDiffThreshold);
+  });
+
+  
+  it('should take a full dashboard screenshot', async () => {
+    const url = `${getGrafanaEndpoint(domain)}/d/${allPanelsDashboardUid}?render=1&from=1699333200000&to=1699344000000&kiosk=true`;
+    const response = await request(server.app)
+      .get(
+        `/render?url=${encodeURIComponent(
+          url
+        )}&timeout=5&renderKey=${renderKey}&domain=${domain}&width=${imageWidth}&height=-1&deviceScaleFactor=1`
+      )
+      .set('X-Auth-Token', '-');
+
+    expect(response.statusCode).toEqual(200);
+    expect(response.headers['content-type']).toEqual('image/png');
+
+    const pixelDiff = compareImage('full-page-screenshot', response.body);
     expect(pixelDiff).toBeLessThan(imageDiffThreshold);
   });
 });
