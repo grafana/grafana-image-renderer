@@ -439,6 +439,7 @@ steps:
   - package-darwin-x64-unknown
   - package-win32-x64-unknown
   - package-linux-x64-glibc-no-chromium
+  - package-alpine-x64-no-chromium
   environment:
     GITHUB_TOKEN:
       from_secret: github_token
@@ -524,6 +525,6 @@ kind: secret
 name: gar
 ---
 kind: signature
-hmac: 319cd4f70f7d6fc505eaeabd6177abcf1052a3b0658bf91fb5f78b847eea144a
+hmac: a1dd3abdcd3cbaa8c32ce086ed19f7556b0304d3f05f826baef2ed7729ae29a3
 
 ...

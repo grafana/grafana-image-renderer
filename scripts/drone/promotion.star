@@ -17,6 +17,7 @@ def publish_gh_release():
             'package-darwin-x64-unknown',
             'package-win32-x64-unknown',
             'package-linux-x64-glibc-no-chromium',
+            'package-alpine-x64-no-chromium',
         ],
     }
 
