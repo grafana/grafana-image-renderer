@@ -120,6 +120,18 @@ steps:
       from_secret: grafana_api_key
   image: grafana/grafana-plugin-ci:1.9.0
   name: package-linux-x64-glibc-no-chromium
+- commands:
+  - . ~/.init-nvm.sh
+  - ./scripts/package_target.sh alpine-x64-unknown true plugin-alpine-x64-no-chromium
+  - bin/grabpl build-plugin-manifest ./dist/plugin-alpine-x64-no-chromium || true
+  - ./scripts/archive_target.sh alpine-x64-unknown plugin-alpine-x64-no-chromium
+  depends_on:
+  - yarn-test
+  environment:
+    GRAFANA_API_KEY:
+      from_secret: grafana_api_key
+  image: grafana/grafana-plugin-ci:1.9.0
+  name: package-alpine-x64-no-chromium
 trigger:
   event:
   - pull_request
@@ -249,6 +261,18 @@ steps:
       from_secret: grafana_api_key
   image: grafana/grafana-plugin-ci:1.9.0
   name: package-linux-x64-glibc-no-chromium
+- commands:
+  - . ~/.init-nvm.sh
+  - ./scripts/package_target.sh alpine-x64-unknown true plugin-alpine-x64-no-chromium
+  - bin/grabpl build-plugin-manifest ./dist/plugin-alpine-x64-no-chromium
+  - ./scripts/archive_target.sh alpine-x64-unknown plugin-alpine-x64-no-chromium
+  depends_on:
+  - yarn-test
+  environment:
+    GRAFANA_API_KEY:
+      from_secret: grafana_api_key
+  image: grafana/grafana-plugin-ci:1.9.0
+  name: package-alpine-x64-no-chromium
 - commands:
   - ./scripts/build_push_docker.sh master
   depends_on:
@@ -396,6 +420,18 @@ steps:
   image: grafana/grafana-plugin-ci:1.9.0
   name: package-linux-x64-glibc-no-chromium
 - commands:
+  - . ~/.init-nvm.sh
+  - ./scripts/package_target.sh alpine-x64-unknown true plugin-alpine-x64-no-chromium
+  - bin/grabpl build-plugin-manifest ./dist/plugin-alpine-x64-no-chromium
+  - ./scripts/archive_target.sh alpine-x64-unknown plugin-alpine-x64-no-chromium
+  depends_on:
+  - yarn-test
+  environment:
+    GRAFANA_API_KEY:
+      from_secret: grafana_api_key
+  image: grafana/grafana-plugin-ci:1.9.0
+  name: package-alpine-x64-no-chromium
+- commands:
   - ./scripts/generate_md5sum.sh
   - ./scripts/publish_github_release.sh
   depends_on:
@@ -488,6 +524,6 @@ kind: secret
 name: gar
 ---
 kind: signature
-hmac: 04abae61fca21a27f8b24027ca87a9c8e54b06200f089e058641076fd3ef2300
+hmac: 319cd4f70f7d6fc505eaeabd6177abcf1052a3b0658bf91fb5f78b847eea144a
 
 ...

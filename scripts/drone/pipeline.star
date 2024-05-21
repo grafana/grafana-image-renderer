@@ -15,6 +15,7 @@ def common_steps(skip_errors):
         package_step(arch='darwin-x64-unknown', skip_errors=skip_errors),
         package_step(arch='win32-x64-unknown', skip_errors=skip_errors),
         package_step(arch='linux-x64-glibc', name='package-linux-x64-glibc-no-chromium', skip_chromium=True, override_output='plugin-linux-x64-glibc-no-chromium', skip_errors=skip_errors),
+        package_step(arch='alpine-x64-unknown', name='package-alpine-x64-no-chromium', skip_chromium=True, override_output='plugin-alpine-x64-no-chromium', skip_errors=skip_errors),
     ]
 
 def prs_pipeline():
