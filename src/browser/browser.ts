@@ -176,7 +176,7 @@ export class Browser {
   }
 
   async scrollToLoadAllPanels(page: puppeteer.Page, options: ImageRenderOptions): Promise<DashboardScrollingResult> {
-    const scrollDivSelector = '#page-scrollbar';
+    const scrollDivSelector = '[class*="scrollbar-view"]';
     const scrollDelay = options.scrollDelay ?? 500;
 
     await page.waitForSelector(scrollDivSelector);
