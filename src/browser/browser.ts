@@ -176,21 +176,22 @@ export class Browser {
   }
 
   async scrollToLoadAllPanels(page: puppeteer.Page, options: ImageRenderOptions): Promise<DashboardScrollingResult> {
-    const scrollDivSelector = '[class="scrollbar-view"]';
+    const scrollDivSelector = '#page-scrollbar,[class*="scrollbar-view"]';
     const scrollDelay = options.scrollDelay ?? 500;
 
     await page.waitForSelector(scrollDivSelector);
     const heights: { dashboard?: { scroll: number; client: number }; body: { client: number } } = await page.evaluate((scrollDivSelector) => {
       const body = { client: document.body.clientHeight };
-      const dashboardDiv = document.querySelector(scrollDivSelector);
-      if (!dashboardDiv) {
+      const scrollableDiv = document.querySelector(scrollDivSelector);
+      if (!scrollableDiv) {
+        this.log.debug('no scrollable div detected, returning without scrolling')
         return {
           body,
         };
       }
 
       return {
-        dashboard: { scroll: dashboardDiv.scrollHeight, client: dashboardDiv.clientHeight },
+        dashboard: { scroll: scrollableDiv.scrollHeight, client: scrollableDiv.clientHeight },
         body,
       };
     }, scrollDivSelector);
@@ -202,6 +203,7 @@ export class Browser {
     }
 
     if (heights.dashboard.scroll <= heights.dashboard.client) {
+      this.log.debug('client height greather or equal than scroll height, no scrolling', 'scrollHeight', heights.dashboard.scroll, 'clientHeight', heights.dashboard.client)
       return {
         scrolled: false,
       };
