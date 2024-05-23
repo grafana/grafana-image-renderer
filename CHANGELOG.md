@@ -1,3 +1,7 @@
+## 3.10.5 (2024-05-23)
+- Packages: Release Alpine package without Chromium [#525](https://github.com/grafana/grafana-image-renderer/pull/525), [AgnesToulet](https://github.com/AgnesToulet)
+- Full page image: Fix scrolling with the new native scroll [#524](https://github.com/grafana/grafana-image-renderer/pull/524), [AgnesToulet](https://github.com/AgnesToulet)
+
 ## 3.10.4 (2024-05-06)
 - Chore: Remove unused dependencies [#517](https://github.com/grafana/grafana-image-renderer/pull/517), [evictorero](https://github.com/evictorero)
 
