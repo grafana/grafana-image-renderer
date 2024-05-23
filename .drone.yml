@@ -426,7 +426,7 @@ steps:
 - commands:
   - . ~/.init-nvm.sh
   - yarn run create-gcom-plugin-json ${DRONE_COMMIT}
-  - ./scripts/push-to-gcom.sh
+  - yarn run push-to-gcom
   depends_on:
   - publish_to_github
   environment:
@@ -488,6 +488,6 @@ kind: secret
 name: gar
 ---
 kind: signature
-hmac: 04abae61fca21a27f8b24027ca87a9c8e54b06200f089e058641076fd3ef2300
+hmac: 7b4ac9022a4c86d90d4fc34781090490f87a7b4b84a994a6389af96c618b256f
 
 ...

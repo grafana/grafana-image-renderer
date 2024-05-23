@@ -52,7 +52,7 @@ def publish_to_gcom():
         'commands': [
             '. ~/.init-nvm.sh',
             'yarn run create-gcom-plugin-json ${DRONE_COMMIT}',
-            './scripts/push-to-gcom.sh',
+            'yarn run push-to-gcom',
         ],
         'environment': {
             'GCOM_URL': from_secret('gcom_url'),
