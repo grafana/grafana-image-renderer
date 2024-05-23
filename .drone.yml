@@ -120,6 +120,18 @@ steps:
       from_secret: grafana_api_key
   image: grafana/grafana-plugin-ci:1.9.0
   name: package-linux-x64-glibc-no-chromium
+- commands:
+  - . ~/.init-nvm.sh
+  - ./scripts/package_target.sh alpine-x64-unknown true plugin-alpine-x64-no-chromium
+  - bin/grabpl build-plugin-manifest ./dist/plugin-alpine-x64-no-chromium || true
+  - ./scripts/archive_target.sh alpine-x64-unknown plugin-alpine-x64-no-chromium
+  depends_on:
+  - yarn-test
+  environment:
+    GRAFANA_API_KEY:
+      from_secret: grafana_api_key
+  image: grafana/grafana-plugin-ci:1.9.0
+  name: package-alpine-x64-no-chromium
 trigger:
   event:
   - pull_request
@@ -249,6 +261,18 @@ steps:
       from_secret: grafana_api_key
   image: grafana/grafana-plugin-ci:1.9.0
   name: package-linux-x64-glibc-no-chromium
+- commands:
+  - . ~/.init-nvm.sh
+  - ./scripts/package_target.sh alpine-x64-unknown true plugin-alpine-x64-no-chromium
+  - bin/grabpl build-plugin-manifest ./dist/plugin-alpine-x64-no-chromium
+  - ./scripts/archive_target.sh alpine-x64-unknown plugin-alpine-x64-no-chromium
+  depends_on:
+  - yarn-test
+  environment:
+    GRAFANA_API_KEY:
+      from_secret: grafana_api_key
+  image: grafana/grafana-plugin-ci:1.9.0
+  name: package-alpine-x64-no-chromium
 - commands:
   - ./scripts/build_push_docker.sh master
   depends_on:
@@ -396,6 +420,18 @@ steps:
   image: grafana/grafana-plugin-ci:1.9.0
   name: package-linux-x64-glibc-no-chromium
 - commands:
+  - . ~/.init-nvm.sh
+  - ./scripts/package_target.sh alpine-x64-unknown true plugin-alpine-x64-no-chromium
+  - bin/grabpl build-plugin-manifest ./dist/plugin-alpine-x64-no-chromium
+  - ./scripts/archive_target.sh alpine-x64-unknown plugin-alpine-x64-no-chromium
+  depends_on:
+  - yarn-test
+  environment:
+    GRAFANA_API_KEY:
+      from_secret: grafana_api_key
+  image: grafana/grafana-plugin-ci:1.9.0
+  name: package-alpine-x64-no-chromium
+- commands:
   - ./scripts/generate_md5sum.sh
   - ./scripts/publish_github_release.sh
   depends_on:
@@ -403,6 +439,7 @@ steps:
   - package-darwin-x64-unknown
   - package-win32-x64-unknown
   - package-linux-x64-glibc-no-chromium
+  - package-alpine-x64-no-chromium
   environment:
     GITHUB_TOKEN:
       from_secret: github_token
@@ -488,6 +525,6 @@ kind: secret
 name: gar
 ---
 kind: signature
-hmac: 7b4ac9022a4c86d90d4fc34781090490f87a7b4b84a994a6389af96c618b256f
+hmac: aef686a708994a7210707534e31b9ccd2c5b4356fb2f09afa3505914c43c6aea
 
 ...
