@@ -2,6 +2,9 @@
   "service": {
     "host": null,
     "port": 8081,
+    "protocol": "http",
+    "certFile": "",
+    "certKey": "",
 
     "metrics": {
       "enabled": false,

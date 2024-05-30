@@ -4,6 +4,7 @@ import * as contentDisposition from 'content-disposition';
 import * as express from 'express';
 import * as fs from 'fs';
 import * as http from 'http';
+import * as https from 'https';
 import * as morgan from 'morgan';
 import * as multer from 'multer';
 import * as net from 'net';
@@ -18,6 +19,7 @@ import { HTTPHeaders, ImageRenderOptions, RenderOptions } from '../types';
 import { Sanitizer } from '../sanitizer/Sanitizer';
 import { isSanitizeRequest } from '../sanitizer/types';
 import { asyncMiddleware, trustedUrlMiddleware, authTokenMiddleware } from './middlewares';
+import { SecureVersion } from 'tls';
 
 const upload = multer({ storage: multer.memoryStorage() });
 
@@ -100,17 +102,7 @@ export class HttpServer {
       return res.status(500).json(err);
     });
 
-    if (this.config.service.host) {
-      this.server = this.app.listen(this.config.service.port, this.config.service.host, () => {
-        const info = this.server.address() as net.AddressInfo;
-        this.log.info(`HTTP Server started, listening at http://${this.config.service.host}:${info.port}`);
-      });
-    } else {
-      this.server = this.app.listen(this.config.service.port, () => {
-        const info = this.server.address() as net.AddressInfo;
-        this.log.info(`HTTP Server started, listening at http://localhost:${info.port}`);
-      });
-    }
+    this.createServer();
 
     const metrics = {
       durationHistogram: new promClient.Histogram({
@@ -139,6 +131,44 @@ export class HttpServer {
     }
 
     await this.browser.start();
+  }
+
+  createServer() {
+    const { protocol, host, port } = this.config.service;
+    if (protocol === 'https') {
+      const { certFile, certKey, minTLSVersion } = this.config.service
+      if (!certFile || !certKey) {
+        throw new Error('No cert file or cert key provided, cannot start HTTPS server');
+      }
+
+      if (minTLSVersion && minTLSVersion !== 'TLSv1.2' && minTLSVersion !== 'TLSv1.3') {
+        throw new Error('Only allowed TLS min versions are TLSv1.2 and TLSv1.3');
+      }
+
+      const options = {
+        cert: fs.readFileSync(certFile),
+        key: fs.readFileSync(certKey),
+      
+        maxVersion: 'TLSv1.3' as SecureVersion,
+        minVersion: (minTLSVersion || 'TLSv1.2') as SecureVersion,
+      }
+      
+      this.server = https.createServer(options, this.app)
+    } else {
+      this.server = http.createServer(this.app)
+    } 
+    
+    if (host) {
+      this.server.listen(port, host, () => {
+        const info = this.server.address() as net.AddressInfo;
+        this.log.info(`${protocol?.toUpperCase()} Server started, listening at ${protocol}://${host}:${info.port}`);
+      });
+    } else {
+      this.server = this.app.listen(port, () => {
+        const info = this.server.address() as net.AddressInfo;
+        this.log.info(`${protocol?.toUpperCase()} Server started, listening at ${protocol}://localhost:${info.port}`);
+      });
+    }
   }
 
   close() {
