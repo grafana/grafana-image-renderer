@@ -22,6 +22,9 @@ export interface ServiceConfig {
   service: {
     host?: string;
     port: number;
+    protocol?: string;
+    certFile?: string;
+    certKey?: string;
     metrics: MetricsConfig;
     logging: LoggingConfig;
     security: SecurityConfig;
@@ -33,6 +36,7 @@ export const defaultServiceConfig: ServiceConfig = {
   service: {
     host: undefined,
     port: 8081,
+    protocol: 'http',
     metrics: {
       enabled: false,
       collectDefaultMetrics: true,
