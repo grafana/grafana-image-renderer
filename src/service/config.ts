@@ -25,6 +25,7 @@ export interface ServiceConfig {
     protocol?: string;
     certFile?: string;
     certKey?: string;
+    minTLSVersion?: string;
     metrics: MetricsConfig;
     logging: LoggingConfig;
     security: SecurityConfig;

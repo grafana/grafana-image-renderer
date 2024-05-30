@@ -136,9 +136,13 @@ export class HttpServer {
   createServer() {
     const { protocol, host, port } = this.config.service;
     if (protocol === 'https') {
-      const { certFile, certKey } = this.config.service
+      const { certFile, certKey, minTLSVersion } = this.config.service
       if (!certFile || !certKey) {
         throw new Error('No cert file or cert key provided, cannot start HTTPS server');
+      }
+
+      if (minTLSVersion && minTLSVersion !== 'TLSv1.2' && minTLSVersion !== 'TLSv1.3') {
+        throw new Error('Only allowed TLS min versions are TLSv1.2 and TLSv1.3');
       }
 
       const options = {
@@ -146,7 +150,7 @@ export class HttpServer {
         key: fs.readFileSync(certKey),
       
         maxVersion: 'TLSv1.3' as SecureVersion,
-        minVersion: 'TLSv1.2' as SecureVersion,
+        minVersion: (minTLSVersion || 'TLSv1.2') as SecureVersion,
       }
       
       this.server = https.createServer(options, this.app)
