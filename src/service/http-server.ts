@@ -296,12 +296,17 @@ export class HttpServer {
       } else {
         try {
           this.log.debug('Deleting temporary file', 'file', result.filePath);
-          fs.unlinkSync(result.filePath);
-          if (!options.filePath) {
-            fs.rmdirSync(path.dirname(result.filePath));
-          }
+          fs.unlink(result.filePath, (err) => {
+            if (err) {
+              throw err
+            }
+
+            if (!options.filePath) {
+              fs.rmdir(path.dirname(result.filePath), () => {});
+            }
+          })
         } catch (e) {
-          this.log.error('Failed to delete temporary file', 'file', result.filePath);
+          this.log.error('Failed to delete temporary file', 'file', result.filePath, 'error', e.message);
         }
       }
     });
