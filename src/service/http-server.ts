@@ -164,7 +164,7 @@ export class HttpServer {
         this.log.info(`${protocol?.toUpperCase()} Server started, listening at ${protocol}://${host}:${info.port}`);
       });
     } else {
-      this.server = this.app.listen(port, () => {
+      this.server.listen(port, () => {
         const info = this.server.address() as net.AddressInfo;
         this.log.info(`${protocol?.toUpperCase()} Server started, listening at ${protocol}://localhost:${info.port}`);
       });
