@@ -1,4 +1,4 @@
-## 3.11.0 (2024-06-11)
+## 3.11.0 (2024-06-13)
 - Chore: Upgrade chokidar and jest dependencies [#532](https://github.com/grafana/grafana-image-renderer/pull/532), [AgnesToulet](https://github.com/AgnesToulet)
 - Bump @grpc/grpc-js from 1.8.20 to 1.8.22 [#531](https://github.com/grafana/grafana-image-renderer/pull/531), [dependabot[bot]](https://github.com/apps/dependabot)
 - Server: Fix CSV deletion [#530](https://github.com/grafana/grafana-image-renderer/pull/530), [AgnesToulet](https://github.com/AgnesToulet)

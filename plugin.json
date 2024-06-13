@@ -25,7 +25,7 @@
       }
     ],
     "version": "3.11.0",
-    "updated": "2024-06-11"
+    "updated": "2024-06-13"
   },
   "dependencies": {
     "grafanaDependency": ">=8.3.11"
