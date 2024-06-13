@@ -1,3 +1,9 @@
+## 3.11.0 (2024-06-13)
+- Chore: Upgrade chokidar and jest dependencies [#532](https://github.com/grafana/grafana-image-renderer/pull/532), [AgnesToulet](https://github.com/AgnesToulet)
+- Bump @grpc/grpc-js from 1.8.20 to 1.8.22 [#531](https://github.com/grafana/grafana-image-renderer/pull/531), [dependabot[bot]](https://github.com/apps/dependabot)
+- Server: Fix CSV deletion [#530](https://github.com/grafana/grafana-image-renderer/pull/530), [AgnesToulet](https://github.com/AgnesToulet)
+- Server: Support HTTPS configuration [#527](https://github.com/grafana/grafana-image-renderer/pull/527), [AgnesToulet](https://github.com/AgnesToulet)
+
 ## 3.10.5 (2024-05-23)
 - Packages: Release Alpine package without Chromium [#525](https://github.com/grafana/grafana-image-renderer/pull/525), [AgnesToulet](https://github.com/AgnesToulet)
 - Full page image: Fix scrolling with the new native scroll [#524](https://github.com/grafana/grafana-image-renderer/pull/524), [AgnesToulet](https://github.com/AgnesToulet)
