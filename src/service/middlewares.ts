@@ -3,8 +3,12 @@ import * as boom from '@hapi/boom';
 import { ImageRenderOptions } from '../types';
 import { SecurityConfig, isAuthTokenValid } from '../config/security';
 
-export const asyncMiddleware = (fn) => (req, res, next) => {
+export const asyncMiddleware = (fn, log) => (req, res, next) => {
   Promise.resolve(fn(req, res, next)).catch((err) => {
+    if (err) {
+      log.error('error executing async function', 'error', err)
+    }
+
     if (!err.isBoom) {
       return next(boom.badImplementation(err));
     }

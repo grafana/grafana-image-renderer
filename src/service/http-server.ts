@@ -68,8 +68,8 @@ export class HttpServer {
     this.app.use('/render', authTokenMiddleware(this.config.service.security), trustedUrlMiddleware);
 
     // Set up /render endpoints
-    this.app.get('/render', asyncMiddleware(this.render));
-    this.app.get('/render/csv', asyncMiddleware(this.renderCSV));
+    this.app.get('/render', asyncMiddleware(this.render, this.log));
+    this.app.get('/render/csv', asyncMiddleware(this.renderCSV, this.log));
     this.app.get('/render/version', (req: express.Request, res: express.Response) => {
       const pluginInfo = require('../../plugin.json');
       res.send({ version: pluginInfo.info.version });
@@ -85,7 +85,7 @@ export class HttpServer {
         { name: SanitizeRequestPartName.file, maxCount: 1 },
         { name: SanitizeRequestPartName.config, maxCount: 1 },
       ]),
-      asyncMiddleware(this.sanitize)
+      asyncMiddleware(this.sanitize, this.log)
     );
 
     this.app.use((err, req, res, next) => {
