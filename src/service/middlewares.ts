@@ -5,9 +5,7 @@ import { SecurityConfig, isAuthTokenValid } from '../config/security';
 
 export const asyncMiddleware = (fn, log) => (req, res, next) => {
   Promise.resolve(fn(req, res, next)).catch((err) => {
-    if (err) {
-      log.error('error executing async function', 'error', err)
-    }
+    log.error('error executing async function', 'error', err.message, 'stack', err.stack)
 
     if (!err.isBoom) {
       return next(boom.badImplementation(err));
