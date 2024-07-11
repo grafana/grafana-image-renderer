@@ -23,7 +23,7 @@ export interface RenderCSVResponse {
   fileName?: string;
 }
 
-type DashboardScrollingResult = { scrolled: false } | { scrolled: true; scrollHeight: number };
+type DashboardScrollingResult = { scrolled: false } | { scrolled: true; scrollHeight: number, scrollWidth: number };
 
 type PuppeteerLaunchOptions = Parameters<typeof puppeteer['launch']>[0];
 
@@ -88,10 +88,13 @@ export class Browser {
       options.width = this.config.maxWidth;
     }
 
+    options.deviceScaleFactor = parseFloat(((options.deviceScaleFactor as string) || '1') as string) || 1;
+
     // Trigger full height snapshots with a negative height value
     if (options.height === -1) {
       options.fullPageImage = true;
       options.height = Math.floor(options.width * 0.75);
+      this.config.pageZoomLevel = 2/options.deviceScaleFactor
     }
 
     if (options.height < 10) {
@@ -101,8 +104,6 @@ export class Browser {
     if (options.height > this.config.maxHeight) {
       options.height = this.config.maxHeight;
     }
-
-    options.deviceScaleFactor = parseFloat(((options.deviceScaleFactor as string) || '1') as string) || 1;
 
     // Scaled thumbnails
     if (options.deviceScaleFactor <= 0) {
@@ -180,8 +181,8 @@ export class Browser {
     const scrollDelay = options.scrollDelay ?? 500;
 
     await page.waitForSelector(scrollDivSelector);
-    const heights: { dashboard?: { scroll: number; client: number }; body: { client: number } } = await page.evaluate((scrollDivSelector) => {
-      const body = { client: document.body.clientHeight };
+    const heights: { dashboard?: { scroll: number; client: number }; body: { height: number; width: number } } = await page.evaluate((scrollDivSelector) => {
+      const body = { height: document.body.clientHeight, width: document.body.clientWidth };
       const scrollableDiv = document.querySelector(scrollDivSelector);
       if (!scrollableDiv) {
         this.log.debug('no scrollable div detected, returning without scrolling')
@@ -209,6 +210,7 @@ export class Browser {
       };
     }
 
+    this.log.debug('about to scroll', 'scroll height', heights.dashboard.scroll, 'client height', heights.dashboard.client)
     const scrolls = Math.floor(heights.dashboard.scroll / heights.dashboard.client);
 
     for (let i = 0; i < scrolls; i++) {
@@ -228,10 +230,13 @@ export class Browser {
     }, scrollDivSelector);
 
     // Header height will be equal to 0 in Kiosk mode
-    const headerHeight = heights.body.client - heights.dashboard.client;
+    const headerHeight = heights.body.height - heights.dashboard.client;
+    const scrollHeight = heights.dashboard.scroll + headerHeight;
+    this.log.debug('scroll done', 'scrollHeight', scrollHeight)
     return {
       scrolled: true,
-      scrollHeight: heights.dashboard.scroll + headerHeight,
+      scrollHeight: scrollHeight,
+      scrollWidth: heights.body.width,
     };
   }
 
@@ -308,6 +313,10 @@ export class Browser {
       this.log.error('Error while trying to prepare page for screenshot', 'url', options.url, 'err', err.stack);
     }
 
+    if (this.config.pageZoomLevel < 0) {
+      await this.setPageZoomLevel(page, this.config.pageZoomLevel);
+    }
+
     let scrollResult: DashboardScrollingResult = {
       scrolled: false,
     };
@@ -320,6 +329,11 @@ export class Browser {
       } catch (err) {
         this.log.error('Error while scrolling to load all panels', 'url', options.url, 'err', err.stack);
       }
+    }
+
+    if (this.config.pageZoomLevel > 0) {
+      await this.setPageZoomLevel(page, this.config.pageZoomLevel);
+      await new Promise(resolve => setTimeout(resolve, 1000));
     }
 
     const isPDF = options.encoding === 'pdf';
@@ -340,17 +354,24 @@ export class Browser {
       options.filePath = uniqueFilename(os.tmpdir()) + (isPDF ? '.pdf' : '.png');
     }
 
-    await this.setPageZoomLevel(page, this.config.pageZoomLevel);
-
     if (this.config.verboseLogging) {
       this.log.debug('Taking screenshot', 'filePath', options.filePath);
     }
 
     await this.withTimingMetrics(async () => {
       if (scrollResult.scrolled) {
+        this.log.debug('setting viewport again', 'width', options.width, 'zoomLevel', this.config.pageZoomLevel);
+        let height = scrollResult.scrollHeight;
+        let width = scrollResult.scrollWidth;
+        if (this.config.pageZoomLevel < 1) {
+          height = Math.round(height * this.config.pageZoomLevel)
+        }
+
         await this.setViewport(page, {
           ...options,
-          height: scrollResult.scrollHeight,
+          height: height,
+          // width: width,
+          deviceScaleFactor: 1, //2/scale,
         });
       }
 
@@ -375,6 +396,7 @@ export class Browser {
           scale: 1 / scale,
         });
       }
+
 
       return page.screenshot({ path: options.filePath, fullPage: options.fullPageImage, captureBeyondViewport: options.fullPageImage || false });
     }, 'screenshot');
@@ -600,7 +622,9 @@ async function waitForQueriesAndVisualizations(page: puppeteer.Page, options: Im
           }
         });
 
-        const totalPanelsRendered = panelsRenderedCount + document.querySelectorAll('.dashboard-row').length;
+        const totalPanelsRendered = panelsRenderedCount + document.querySelectorAll("[data-testid*='dashboard-row']").length;
+        console.log('totalPanelsRendered, ', totalPanelsRendered)
+        console.log('panelCount, ', panelCount)
         return totalPanelsRendered >= panelCount;
       }
 
