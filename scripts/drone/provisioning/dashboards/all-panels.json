@@ -22,6 +22,17 @@
     "links": [],
     "panels": [
       {
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 0
+        },
+        "id": 13,
+        "title": "Main row",
+        "type": "row"
+      },
+      {
         "datasource": {
           "type": "grafana-testdata-datasource",
           "uid": "b5c1e67d-b771-4e21-a81a-f80f0d1885a7"
@@ -30,7 +41,7 @@
           "h": 9,
           "w": 6,
           "x": 0,
-          "y": 0
+          "y": 1
         },
         "id": 12,
         "options": {
@@ -42,7 +53,7 @@
           "content": "# Test dashboard\n\nThis dashboard is aiming to test most panels with the grafana-image-renderer.",
           "mode": "markdown"
         },
-        "pluginVersion": "10.4.3",
+        "pluginVersion": "11.2.0-pre",
         "title": "Text panel",
         "type": "text"
       },
@@ -86,7 +97,7 @@
           "h": 9,
           "w": 10,
           "x": 6,
-          "y": 0
+          "y": 1
         },
         "id": 10,
         "options": {
@@ -136,7 +147,11 @@
                 "tooltip": false,
                 "viz": false
               },
-              "lineWidth": 1
+              "lineWidth": 1,
+              "stacking": {
+                "group": "A",
+                "mode": "none"
+              }
             },
             "mappings": [],
             "thresholds": {
@@ -159,7 +174,7 @@
           "h": 9,
           "w": 8,
           "x": 16,
-          "y": 0
+          "y": 1
         },
         "id": 11,
         "options": {
@@ -168,6 +183,10 @@
             "displayMode": "list",
             "placement": "bottom",
             "showLegend": true
+          },
+          "tooltip": {
+            "mode": "single",
+            "sort": "none"
           }
         },
         "targets": [
@@ -208,7 +227,7 @@
           "h": 8,
           "w": 12,
           "x": 0,
-          "y": 9
+          "y": 10
         },
         "id": 9,
         "options": {
@@ -245,7 +264,7 @@
             "reverse": false
           }
         },
-        "pluginVersion": "10.4.3",
+        "pluginVersion": "11.2.0-pre",
         "targets": [
           {
             "datasource": {
@@ -302,7 +321,7 @@
           "h": 8,
           "w": 12,
           "x": 12,
-          "y": 9
+          "y": 10
         },
         "id": 8,
         "options": {
@@ -365,7 +384,7 @@
           "h": 8,
           "w": 12,
           "x": 0,
-          "y": 17
+          "y": 18
         },
         "id": 4,
         "options": {
@@ -383,7 +402,7 @@
           "showThresholdMarkers": true,
           "sizing": "auto"
         },
-        "pluginVersion": "10.4.3",
+        "pluginVersion": "11.2.0-pre",
         "targets": [
           {
             "datasource": {
@@ -423,7 +442,7 @@
           "h": 8,
           "w": 12,
           "x": 12,
-          "y": 17
+          "y": 18
         },
         "id": 5,
         "options": {
@@ -490,7 +509,7 @@
           "h": 8,
           "w": 12,
           "x": 0,
-          "y": 25
+          "y": 26
         },
         "id": 7,
         "options": {
@@ -511,7 +530,7 @@
           "sizing": "auto",
           "valueMode": "color"
         },
-        "pluginVersion": "10.4.3",
+        "pluginVersion": "11.2.0-pre",
         "targets": [
           {
             "datasource": {
@@ -578,7 +597,7 @@
           "h": 8,
           "w": 12,
           "x": 12,
-          "y": 25
+          "y": 26
         },
         "id": 2,
         "options": {
@@ -647,7 +666,7 @@
           "h": 8,
           "w": 12,
           "x": 0,
-          "y": 33
+          "y": 34
         },
         "id": 3,
         "options": {
@@ -655,6 +674,7 @@
           "graphMode": "area",
           "justifyMode": "auto",
           "orientation": "auto",
+          "percentChangeColorMode": "standard",
           "reduceOptions": {
             "calcs": [
               "lastNotNull"
@@ -666,7 +686,7 @@
           "textMode": "auto",
           "wideLayout": true
         },
-        "pluginVersion": "10.4.3",
+        "pluginVersion": "11.2.0-pre",
         "targets": [
           {
             "datasource": {
@@ -719,7 +739,7 @@
           "h": 8,
           "w": 12,
           "x": 12,
-          "y": 33
+          "y": 34
         },
         "id": 6,
         "options": {
@@ -734,7 +754,7 @@
           },
           "showHeader": true
         },
-        "pluginVersion": "10.4.3",
+        "pluginVersion": "11.2.0-pre",
         "targets": [
           {
             "datasource": {
@@ -766,6 +786,7 @@
               "axisLabel": "",
               "axisPlacement": "auto",
               "barAlignment": 0,
+              "barWidthFactor": 0.6,
               "drawStyle": "line",
               "fillOpacity": 0,
               "gradientMode": "none",
@@ -812,7 +833,7 @@
           "h": 9,
           "w": 24,
           "x": 0,
-          "y": 41
+          "y": 42
         },
         "id": 1,
         "options": {

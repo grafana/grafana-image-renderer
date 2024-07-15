@@ -600,7 +600,8 @@ async function waitForQueriesAndVisualizations(page: puppeteer.Page, options: Im
           }
         });
 
-        const totalPanelsRendered = panelsRenderedCount + document.querySelectorAll('.dashboard-row').length;
+        const rowCount = document.querySelectorAll('.dashboard-row').length || document.querySelectorAll("[data-testid='dashboard-row-container']").length
+        const totalPanelsRendered = panelsRenderedCount + rowCount;
         return totalPanelsRendered >= panelCount;
       }
 
