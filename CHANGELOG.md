@@ -1,3 +1,7 @@
+## 3.11.1 (2024-07-15)
+- Full page image: Fix wait condition for dashboard with rows [#542](https://github.com/grafana/grafana-image-renderer/pull/542), [AgnesToulet](https://github.com/AgnesToulet)
+- Chore: Upgrade Jimp deps [541](https://github.com/grafana/grafana-image-renderer/pull/541), [AgnesToulet](https://github.com/AgnesToulet)
+
 ## 3.11.0 (2024-06-13)
 - Chore: Upgrade chokidar and jest dependencies [#532](https://github.com/grafana/grafana-image-renderer/pull/532), [AgnesToulet](https://github.com/AgnesToulet)
 - Bump @grpc/grpc-js from 1.8.20 to 1.8.22 [#531](https://github.com/grafana/grafana-image-renderer/pull/531), [dependabot[bot]](https://github.com/apps/dependabot)
