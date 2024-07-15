@@ -209,18 +209,28 @@ export class Browser {
       };
     }
 
-    const scrolls = Math.floor(heights.dashboard.scroll / heights.dashboard.client);
-
-    for (let i = 0; i < scrolls; i++) {
-      await page.evaluate(
+    let scrolling = true;
+    let prevScrollTop = -1;
+    while (scrolling) {
+      const scrollTop = await page.evaluate(
         (scrollByHeight, scrollDivSelector) => {
-          document.querySelector(scrollDivSelector)?.scrollBy(0, scrollByHeight);
+          const scrollableDiv = document.querySelector(scrollDivSelector);
+
+          scrollableDiv?.scrollBy(0, scrollByHeight);
+          
+          return scrollableDiv?.scrollTop!;
         },
         heights.dashboard.client,
         scrollDivSelector
       );
 
       await new Promise((executor) => setTimeout(executor, scrollDelay));
+
+      if (scrollTop === prevScrollTop) {
+        scrolling = false
+      } else {
+        prevScrollTop = scrollTop
+      }
     }
 
     await page.evaluate((scrollDivSelector) => {
