@@ -1,0 +1,113 @@
+name: test-pr
+on:
+  pull_request: ~
+
+env:
+  GF_FEATURE_TOGGLES_ENABLE: 'renderAuthJWT'
+  GF_PATHS_PROVISIONING: '/drone/src/scripts/drone/provisioning'
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  set-env:
+    runs-on: ubuntu-x64
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set environment variables
+        uses: ./.github/actions/set-envs
+
+  grabpl:
+    runs-on: ubuntu-x64
+    container: 
+      image: byrnedo/alpine-curl:0.1.8
+
+    steps:
+      - uses: actions/checkout@v4
+        
+      - name: grabpl
+        run: |
+          mkdir -p bin
+          curl -fL -o bin/grabpl https://grafana-downloads.storage.googleapis.com/grafana-build-pipeline/v3.0.20/grabpl
+          chmod +x bin/grabpl
+  
+  yarn:
+    runs-on: ubuntu-x64
+    container:
+      image: grafana/grafana-plugin-ci:1.9.0
+    needs: grabpl
+    
+    steps:
+      - uses: actions/checkout@v4
+        
+      - name: yarn-install
+        run: |
+          . ~/.init-nvm.sh
+          yarn install --frozen-lockfile --no-progress
+        env:
+          PUPPETEER_CACHE_DIR: /drone/src/cache
+
+      - name: yarn-build
+        run: |
+          . ~/.init-nvm.sh
+          yarn build
+          
+      - name: wait-for-grafana
+        id: wait-for-grafana
+        with: 
+          images: jwilder/dockerize:0.6.1
+        run: dockerize -wait http://grafana:3000 -timeout 120s
+
+      - name: yarn-test
+        run: yarn test-ci
+        env:
+          CI: true
+          PUPPETEER_CACHE_DIR: /drone/src/cache
+
+  security:
+    runs-on: ubuntu-x64
+    container:
+      image: grafana/grafana-plugin-ci:1.9.0
+    needs: [set-env, yarn]
+      
+    steps:
+      - uses: actions/checkout@v4
+        
+      - name: security-scan
+        run: |
+          . ~/.init-nvm.sh
+          echo "Starting veracode scan..."
+          export _JAVA_OPTIONS=-Xmx4g
+          mkdir -p ci/jobs/security_scan
+          curl -sSL https://download.sourceclear.com/ci.sh | sh -s scan --skip-compile --quick --allow-dirty
+        env:
+          SRCCLR_API_TOKEN: ${{ env.SRCCLR_API_TOKEN }}
+          
+  packaging:
+    runs-on: ubuntu-x64
+    strategy:
+      matrix: 
+        packaging:
+          - linux-x64-glibc
+          - darwin-x64-unknown
+          - win32-x64-unknown
+          - linux-x64-glibc-no-chromium
+          - alpine-x64-no-chromium
+    container: 
+      image: grafana/grafana-plugin-ci:1.9.0
+    needs: [set-env, yarn]
+    
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: package-${{ matrix.packaging }}
+        run: . |
+          . ~/.init-nvm.sh
+          ./scripts/package_target.sh ${{ matrix.packaging }}
+          bin/grabpl build-plugin-manifest ./dist/plugin-${{ matrix.packaging }} || true
+          ./scripts/archive_target.sh ${{ matrix.packaging }}
+        env:
+          GRAFANA_API_KEY: ${{ env.GRAFANA_API_KEY }}
+        
