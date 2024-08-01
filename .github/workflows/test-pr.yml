@@ -6,15 +6,11 @@ env:
   GF_FEATURE_TOGGLES_ENABLE: 'renderAuthJWT'
   GF_PATHS_PROVISIONING: '/drone/src/scripts/drone/provisioning'
 
-permissions:
-  contents: read
-  id-token: write
-
 jobs:
   set-env:
     runs-on: ubuntu-x64
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
 
       - name: Set environment variables
         uses: ./.github/actions/set-envs
@@ -25,7 +21,7 @@ jobs:
       image: byrnedo/alpine-curl:0.1.8
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
         
       - name: grabpl
         run: |
@@ -40,7 +36,7 @@ jobs:
     needs: grabpl
     
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
         
       - name: yarn-install
         run: |
@@ -73,7 +69,7 @@ jobs:
     needs: [set-env, yarn]
       
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
         
       - name: security-scan
         run: |
@@ -100,7 +96,7 @@ jobs:
     needs: [set-env, yarn]
     
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
 
       - name: package-${{ matrix.packaging }}
         run: . |

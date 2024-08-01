@@ -1,5 +1,9 @@
 name: set-env
 
+permissions:
+  contents: read
+  id-token: write
+
 runs:
   using: 'composite'
   steps:
