@@ -4,15 +4,7 @@ on:
 
 jobs:
   test-pr:
-    runs-on: ubuntu-x64
-    strategy:
-      matrix:
-        packaging:
-          - linux-x64-glibc
-          - darwin-x64-unknown
-          - win32-x64-unknown
-          - linux-x64-glibc-no-chromium
-          - alpine-x64-no-chromium
+    runs-on: ubuntu-latest
     container: grafana/grafana-plugin-ci:1.9.0
     services: 
       grafana:
@@ -35,7 +27,6 @@ jobs:
         with:
           repo_secrets: |
             SRCCLR_API_TOKEN=infra/data/ci/drone-plugins:srcclr_api_token
-            GRAFANA_API_KEY=infra/data/ci/drone-plugins:grafana_api_key
       
       - name: grabpl
         run: |
@@ -43,12 +34,18 @@ jobs:
           curl -fL -o bin/grabpl https://grafana-downloads.storage.googleapis.com/grafana-build-pipeline/v3.0.20/grabpl
           chmod +x bin/grabpl
           
+      - uses: actions/cache/save@v4
+        id: grabpl-cache
+        with:
+          key: grabpl-${{ runner.os }}-${{ hashFiles('**/binary.url') }}
+          path: bin/grabpl
+          
       - name: yarn-install
         run: |
           . ~/.init-nvm.sh
           yarn install --frozen-lockfile --no-progress
         env:
-          PUPPETEER_CACHE_DIR: /drone/src/cache
+          PUPPETEER_CACHE_DIR: /src/cache
 
       - name: yarn-build
         run: |
@@ -62,7 +59,7 @@ jobs:
         run: yarn test-ci
         env:
           CI: true
-          PUPPETEER_CACHE_DIR: /drone/src/cache
+          PUPPETEER_CACHE_DIR: /src/cache
 
       - name: security-scan
         run: |
@@ -73,6 +70,31 @@ jobs:
           curl -sSL https://download.sourceclear.com/ci.sh | sh -s scan --skip-compile --quick --allow-dirty
         env:
           SRCCLR_API_TOKEN: ${{ env.SRCCLR_API_TOKEN }}
+
+  packaging:
+    runs-on: ubuntu-latest
+    container: grafana/grafana-plugin-ci:1.9.0
+    needs: [test-pr]
+    strategy:
+      matrix:
+        packaging:
+          - linux-x64-glibc
+          - darwin-x64-unknown
+          - win32-x64-unknown
+          - linux-x64-glibc-no-chromium
+          - alpine-x64-no-chromium
+    
+    steps:
+      - uses: actions/cache/restore@v4
+        with:
+          path: bin/grabpl
+          key: grabpl-${{ runner.os }}-${{ hashFiles('**/binary.url') }}
+
+      - name: Load secrets
+        uses: grafana/shared-workflows/actions/get-vault-secrets@main
+        with: 
+          repo_secrets: |
+            GRAFANA_API_KEY=infra/data/ci/drone-plugins:grafana_api_key
 
       - name: package-${{ matrix.packaging }}
         run: . |
