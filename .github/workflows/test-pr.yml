@@ -1,9 +1,13 @@
 name: test-pr
 on:
   pull_request: ~
+   
+permissions:
+  contents: read
+  id-token: write
 
 jobs:
-  test-pr:
+  test-pr:  
     runs-on: ubuntu-latest
     container: grafana/grafana-plugin-ci:1.9.0
     services: 
