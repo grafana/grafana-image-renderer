@@ -29,8 +29,8 @@ jobs:
       - name: Load secrets
         uses: grafana/shared-workflows/actions/get-vault-secrets@main
         with:
-          common_secrets: |
-            SRCCLR_API_TOKEN=infra/data/ci/drone-plugins:srcclr_api_token
+          repo_secrets: |
+            SRCCLR_API_TOKEN=grafana_image_renderer/github_actions:srcclr_api_token
       
       - name: grabpl
         run: |
@@ -97,8 +97,8 @@ jobs:
       - name: Load secrets
         uses: grafana/shared-workflows/actions/get-vault-secrets@main
         with:
-          common_secrets: |
-            GRAFANA_API_KEY=infra/data/ci/drone-plugins:grafana_api_key
+          repo_secrets: |
+            GRAFANA_API_KEY=grafana_image_renderer/github_actions:grafana_api_key
 
       - name: package-${{ matrix.packaging }}
         run: . |
