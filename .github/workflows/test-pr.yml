@@ -35,7 +35,7 @@ jobs:
           curl -fL -o bin/grabpl https://grafana-downloads.storage.googleapis.com/grafana-build-pipeline/v3.0.20/grabpl
           chmod +x bin/grabpl
           
-      - uses: actions/cache/save@v4
+      - uses: actions/cache@v4
         id: grabpl-cache
         with:
           key: grabpl-${{ runner.os }}-${{ hashFiles('**/binary.url') }}
@@ -82,8 +82,8 @@ jobs:
       - uses: grafana/shared-workflows/actions/login-to-gar@main
         id: login-to-gar
         with:
-          registry: us-docker.pkg.dev
-          environment: prod
+          registry: "us-docker.pkg.dev"
+          environment: "prod"
           
       - name: run-puppeter-image
         run: |
@@ -132,7 +132,7 @@ jobs:
           - alpine-x64-no-chromium
     
     steps:
-      - uses: actions/cache/restore@v4
+      - uses: actions/cache@v4
         with:
           path: bin/grabpl
           key: grabpl-${{ runner.os }}-${{ hashFiles('**/binary.url') }}
