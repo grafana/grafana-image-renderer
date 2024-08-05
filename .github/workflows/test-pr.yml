@@ -19,6 +19,8 @@ jobs:
           - /var/run/docker
       grabpl:
         image: byrnedo/alpine-curl:0.1.8
+      puppeter:
+        image: us-docker.pkg.dev/grafanalabs-dev/grafana-ci/docker-puppeteer:2.0.0
     
     steps:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
@@ -45,21 +47,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-          
-      - name: Get yarn cache directory path
-        id: yarn-cache-dir-path
-        run: echo "::set-output name=dir::$(yarn cache dir)"
 
-      - id: cache-yarn-cache
-        uses: actions/cache@v4
-        with:
-          path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
-          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-yarn-
-      
       - name: yarn-install
-        if: steps.cache-yarn-cache.outputs.cache-hit != 'true'
         run: yarn install --frozen-lockfile --no-progress
         env:
           PUPPETEER_CACHE_DIR: /tmp/src/cache
@@ -70,7 +59,7 @@ jobs:
       - name: yarn-test
         run: yarn test-ci
         env:
-          CI: true
+          CI: "true"
           PUPPETEER_CACHE_DIR: /tmp/src/cache
 
       - name: security-scan
