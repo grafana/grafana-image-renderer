@@ -30,7 +30,7 @@ jobs:
         uses: grafana/shared-workflows/actions/get-vault-secrets@main
         with:
           repo_secrets: |
-            SRCCLR_API_TOKEN=grafana_image_renderer/github_actions:srcclr_api_token
+            SRCCLR_API_TOKEN=github_actions:srcclr_api_token
       
       - name: grabpl
         run: |
@@ -98,7 +98,7 @@ jobs:
         uses: grafana/shared-workflows/actions/get-vault-secrets@main
         with:
           repo_secrets: |
-            GRAFANA_API_KEY=grafana_image_renderer/github_actions:grafana_api_key
+            GRAFANA_API_KEY=github_actions:grafana_api_key
 
       - name: package-${{ matrix.packaging }}
         run: . |
