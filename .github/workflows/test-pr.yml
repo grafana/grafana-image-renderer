@@ -44,7 +44,7 @@ jobs:
           path: bin/grabpl
     
       - name: install-node
-        run: actions/setup-node@v4
+        uses: actions/setup-node@v4
         with:
           node-version: '16'
           cache: 'yarn'
