@@ -19,8 +19,6 @@ jobs:
           - /var/run/docker
       grabpl:
         image: byrnedo/alpine-curl:0.1.8
-      puppeter:
-        image: us-docker.pkg.dev/grafanalabs-dev/grafana-ci/docker-puppeteer:2.0.0
     
     steps:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
@@ -55,6 +53,30 @@ jobs:
 
       - name: yarn-build
         run: yarn build
+        
+      - uses: grafana/shared-workflows/actions/login-to-gar@main
+        id: login-to-gar
+        with:
+          registry: 'us-docker.pkg.dev'
+          environment: 'prod'
+          
+      - name: run-puppeter-image
+        run: |
+          docker pull docker-puppeteer:2.0.0
+          docker run docker-puppeteer:2.0.0
+      
+      - name: wait-for-grafana
+        run: |
+          for i in {1..10}; do
+            if docker exec grafana curl -sf http://localhost:3000; then
+              echo "Grafana is ready!"
+              exit 0
+            fi
+            echo "Waiting for container to be ready..."
+            sleep 10
+          done
+          echo "Container failed to start in time" >&2
+          exit 1
 
       - name: yarn-test
         run: yarn test-ci
