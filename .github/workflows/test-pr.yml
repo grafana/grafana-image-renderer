@@ -40,11 +40,36 @@ jobs:
         with:
           key: grabpl-${{ runner.os }}-${{ hashFiles('**/binary.url') }}
           path: bin/grabpl
+          restore-keys: |
+            grabpl-${{ runner.os }}-
+            grabpl-
     
       - name: install-node
         uses: actions/setup-node@v4
         with:
           node-version: '18'
+          
+      - name: Get yarn cache directory path
+        id: yarn-cache-dir-path
+        run: echo "dir=$(yarn cache dir)" >> $GITHUB_OUTPUT
+
+      - name: Cache yarn cache
+        uses: actions/cache@v4
+        id: cache-yarn-cache
+        with:
+          path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
+          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-
+
+      - name: Cache node_modules
+        id: cache-node-modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-${{ matrix.node-version }}-nodemodules-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ matrix.node-version }}-nodemodules-
 
       - name: yarn-install
         run: yarn install --frozen-lockfile --no-progress
@@ -57,13 +82,13 @@ jobs:
       - uses: grafana/shared-workflows/actions/login-to-gar@main
         id: login-to-gar
         with:
-          registry: 'us-docker.pkg.dev'
-          environment: 'prod'
+          registry: us-docker.pkg.dev
+          environment: prod
           
       - name: run-puppeter-image
         run: |
-          docker pull docker-puppeteer:2.0.0
-          docker run docker-puppeteer:2.0.0
+          docker pull us-docker.pkg.dev/grafanalabs-dev/grafana-ci/docker-puppeteer:2.0.0
+          docker run us-docker.pkg.dev/grafanalabs-dev/grafana-ci/docker-puppeteer:2.0.0
       
       - name: wait-for-grafana
         run: |
