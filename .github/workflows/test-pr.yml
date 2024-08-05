@@ -59,7 +59,7 @@ jobs:
         run: yarn test-ci
         env:
           CI: true
-          PUPPETEER_CACHE_DIR: /src/cache
+          PUPPETEER_CACHE_DIR: /tmp/src/cache
 
       - name: security-scan
         run: |
