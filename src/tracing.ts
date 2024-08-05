@@ -6,13 +6,18 @@ import { Resource } from '@opentelemetry/resources';
 import { ConsoleLogger, PluginLogger } from './logger';
 import {defaultServiceConfig, ServiceConfig} from "./service/config";
 
+const process = require('process');
+const { diag, DiagConsoleLogger, DiagLogLevel } = require('@opentelemetry/api');
+
+// For troubleshooting, set the log level to DiagLogLevel.DEBUG
+diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.DEBUG);
 const traceExporter = new OTLPTraceExporter({
-    url: 'http://localhost:14268/api/traces', // Change to your Jaeger or OTLP endpoint
+    url: 'http://localhost:4318/v1/traces', // Change to your Jaeger or OTLP endpoint
 });
 
 const sdk = new NodeSDK({
     resource: new Resource({
-        [SEMRESATTRS_SERVICE_NAME]: 'image-renderer-service', // Set your service name here
+        [SEMRESATTRS_SERVICE_NAME]: 'image-renderer-service',
     }),
     traceExporter,
     instrumentations: [getNodeAutoInstrumentations()],
@@ -23,3 +28,9 @@ let config: ServiceConfig = defaultServiceConfig;
 
 const logger = new ConsoleLogger(config.service.logging);
 logger.info('Starting tracing');
+process.on('SIGTERM', () => {
+    sdk.shutdown()
+        .then(() => console.log('Tracing terminated'))
+        .catch((error) => console.log('Error terminating tracing', error))
+        .finally(() => process.exit(0));
+});
