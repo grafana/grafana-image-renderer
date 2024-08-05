@@ -9,7 +9,6 @@ permissions:
 jobs:
   test-pr:  
     runs-on: ubuntu-latest
-    container: grafana/grafana-plugin-ci:1.9.0
     services: 
       grafana:
         image: grafana/grafana-enterprise:latest
@@ -43,18 +42,20 @@ jobs:
         with:
           key: grabpl-${{ runner.os }}-${{ hashFiles('**/binary.url') }}
           path: bin/grabpl
-          
+    
+      - name: install-node
+        run: actions/setup-node@v4
+        with:
+          node-version: '16'
+          cache: 'yarn'
+      
       - name: yarn-install
-        run: |
-          . ~/.init-nvm.sh
-          yarn install --frozen-lockfile --no-progress
+        run: yarn install --frozen-lockfile --no-progress
         env:
           PUPPETEER_CACHE_DIR: /src/cache
 
       - name: yarn-build
-        run: |
-          . ~/.init-nvm.sh
-          yarn build
+        run: yarn build
 
       - name: wait-for-grafana
         run: dockerize -wait http://grafana:3000 -timeout 120s
@@ -67,7 +68,6 @@ jobs:
 
       - name: security-scan
         run: |
-          . ~/.init-nvm.sh
           echo "Starting veracode scan..."
           export _JAVA_OPTIONS=-Xmx4g
           mkdir -p ci/jobs/security_scan
@@ -77,7 +77,7 @@ jobs:
 
   packaging:
     runs-on: ubuntu-latest
-    container: grafana/grafana-plugin-ci:1.9.0
+    container: grafana/grafana-plugin-ci:1.9.6
     needs: [test-pr]
     strategy:
       matrix:
@@ -102,7 +102,6 @@ jobs:
 
       - name: package-${{ matrix.packaging }}
         run: . |
-          . ~/.init-nvm.sh
           ./scripts/package_target.sh ${{ matrix.packaging }}
           bin/grabpl build-plugin-manifest ./dist/plugin-${{ matrix.packaging }} || true
           ./scripts/archive_target.sh ${{ matrix.packaging }}
