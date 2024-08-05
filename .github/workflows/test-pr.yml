@@ -19,8 +19,6 @@ jobs:
           - /var/run/docker
       grabpl:
         image: byrnedo/alpine-curl:0.1.8
-      dockerize:
-        image: jwilder/dockerize:0.6.1
     
     steps:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
@@ -56,9 +54,6 @@ jobs:
 
       - name: yarn-build
         run: yarn build
-
-      - name: wait-for-grafana
-        run: dockerize -wait http://grafana:3000 -timeout 120s
 
       - name: yarn-test
         run: yarn test-ci
