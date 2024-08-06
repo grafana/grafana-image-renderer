@@ -81,10 +81,7 @@ jobs:
         
       - uses: grafana/shared-workflows/actions/login-to-gar@main
         id: login-to-gar
-        with:
-          registry: "us-docker.pkg.dev"
-          environment: "prod"
-          
+
       - name: run-puppeter-image
         run: |
           docker pull us-docker.pkg.dev/grafanalabs-dev/grafana-ci/docker-puppeteer:2.0.0
