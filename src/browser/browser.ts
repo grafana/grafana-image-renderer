@@ -578,11 +578,6 @@ declare global {
   interface Window {
     __grafanaSceneContext: object;
     __grafanaRunningQueryCount?: number;
-    grafanaBootData: {
-      settings: {
-        featureToggles: Record<string, boolean | undefined>
-      };
-    };
   }
 }
 
