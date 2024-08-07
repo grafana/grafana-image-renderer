@@ -7,6 +7,11 @@ export interface MetricsConfig {
   requestDurationBuckets: number[];
 }
 
+export interface TracesConfig {
+  enabled: boolean;
+  exporterURL: string;
+}
+
 export interface ConsoleLoggerConfig {
   level?: string;
   json: boolean;
@@ -29,6 +34,7 @@ export interface ServiceConfig {
     metrics: MetricsConfig;
     logging: LoggingConfig;
     security: SecurityConfig;
+    tracing: TracesConfig;
   };
   rendering: RenderingConfig;
 }
@@ -53,6 +59,10 @@ export const defaultServiceConfig: ServiceConfig = {
     security: {
       authToken: '-',
     },
+    tracing: {
+      enabled: false,
+      exporterURL: 'http://localhost:4318/v1/traces',
+    }
   },
   rendering: defaultRenderingConfig,
 };
