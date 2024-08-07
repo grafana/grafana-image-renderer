@@ -20,7 +20,6 @@ import { Sanitizer } from '../sanitizer/Sanitizer';
 import { isSanitizeRequest } from '../sanitizer/types';
 import { asyncMiddleware, trustedUrlMiddleware, authTokenMiddleware } from './middlewares';
 import { SecureVersion } from 'tls';
-import {context, trace} from "@opentelemetry/api";
 
 const upload = multer({ storage: multer.memoryStorage() });
 
