@@ -4,21 +4,19 @@ import {OTLPTraceExporter} from '@opentelemetry/exporter-trace-otlp-http';
 import {SEMRESATTRS_SERVICE_NAME} from '@opentelemetry/semantic-conventions';
 import {Resource} from '@opentelemetry/resources';
 import {ConsoleLogger, Logger} from "./logger";
-import {defaultServiceConfig, ServiceConfig} from "./service/config";
-
-const traceExporterURL = 'http://localhost:4318/v1/traces';
-let config: ServiceConfig = defaultServiceConfig;
-
+import {getServiceConfig} from "./utils";
 
 // For troubleshooting, set the log level to DiagLogLevel.DEBUG
-// const { diag, DiagConsoleLogger, DiagLogLevel } = require('@opentelemetry/api');
+// const {diag, DiagConsoleLogger, DiagLogLevel} = require('@opentelemetry/api');
 // diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.DEBUG);
 
+const config = getServiceConfig();
 const log = new ConsoleLogger(config.service.logging);
-// export function initializeTracing(log: Logger, traceExporterURL: string) {
-    log.info('Starting tracing', 'traceExporterURL', traceExporterURL);
+
+if (config.service.tracing.enabled) {
+    log.info('Starting tracing', 'traceExporterURL', config.service.tracing.exporterURL);
     const traceExporter = new OTLPTraceExporter({
-        url: traceExporterURL, // Change to your Jaeger or OTLP endpoint
+        url:  config.service.tracing.exporterURL, // Change to your Jaeger or OTLP endpoint
     });
 
     const sdk = new NodeSDK({
@@ -37,4 +35,4 @@ const log = new ConsoleLogger(config.service.logging);
             .catch((error) => log.error('Error terminating tracing', error))
             .finally(() => process.exit(0));
     });
-// }
+}

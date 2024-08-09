@@ -1,17 +1,14 @@
-import './tracing'; // FIXIT: ideally this should changed by a function initializeTracing
-
 import * as path from 'path';
-import * as _ from 'lodash';
 import * as fs from 'fs';
 import { Browser, computeExecutablePath } from '@puppeteer/browsers';
 import { RenderGRPCPluginV2 } from './plugin/v2/grpc_plugin';
 import { HttpServer } from './service/http-server';
-import { populateServiceConfigFromEnv, ServiceConfig, defaultServiceConfig } from './service/config';
 import { populatePluginConfigFromEnv, PluginConfig, defaultPluginConfig } from './plugin/v2/config';
 import { ConsoleLogger, PluginLogger } from './logger';
 import * as minimist from 'minimist';
 import { serve } from './node-plugin';
 import { createSanitizer } from './sanitizer/Sanitizer';
+import {getServiceConfig} from "./utils";
 
 async function main() {
   const argv = minimist(process.argv.slice(2));
@@ -54,27 +51,8 @@ async function main() {
       grpcPort: config.plugin.grpc.port,
     });
   } else if (command === 'server') {
-    let config: ServiceConfig = defaultServiceConfig;
-
-    if (argv.config) {
-      try {
-        const fileConfig = readJSONFileSync(argv.config);
-        config = _.merge(config, fileConfig);
-      } catch (e) {
-        console.error('failed to read config from path', argv.config, 'error', e);
-        return;
-      }
-    }
-
-    populateServiceConfigFromEnv(config, env);
-
+    const config = getServiceConfig();
     const logger = new ConsoleLogger(config.service.logging);
-
-    if (config.service.tracing.enabled) {
-      // FIXIT: not working probably because it is being initialized before the server
-      // initializeTracing(logger, config.service.tracing.exporterURL);
-      logger.info("tracing is enabled");
-    }
 
     const sanitizer = createSanitizer();
     const server = new HttpServer(config, logger, sanitizer);

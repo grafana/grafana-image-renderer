@@ -16,7 +16,7 @@
     "watch": "tsc-watch --onSuccess \"node build/app.js server --config=dev.json\"",
     "watch:debug": "tsc-watch --onSuccess \"cross-env DEBUG=puppeteer-cluster:* node build/app.js server --config=dev.json\"",
     "build": "tsc",
-    "start": "node build/app.js server --config=dev.json",
+    "start": "node --require ./build/tracing.js build/app.js server --config=dev.json",
     "create-gcom-plugin-json": "ts-node scripts/createGcomPluginJson.ts ./scripts/tmp",
     "push-to-gcom": "sh ./scripts/push-to-gcom.sh",
     "test-update": "cross-env UPDATE_GOLDEN=true jest",
