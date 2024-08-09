@@ -176,25 +176,42 @@ export class Browser {
   }
 
   async scrollToLoadAllPanels(page: puppeteer.Page, options: ImageRenderOptions): Promise<DashboardScrollingResult> {
-    const scrollDivSelector = '#page-scrollbar,[class*="scrollbar-view"]';
+    const scrollElementSelector = await page.evaluate(() => {
+      const pageScrollbarIDSelector = '#page-scrollbar';
+      // the page-scrollbar ID was introduced in Grafana 11.1.0
+      // these are selectors that are used to find the page scrollbar in older grafana versions
+      // there are several because of the various structural changes made to the page
+      // using just [class*="scrollbar-view"] doesn't reliably work as it can match other deeply nested child scrollbars
+      // TODO remove these once we are sure that the page-scrollbar ID will always present
+      const fallbackSelectors = [
+        'main > div > [class*="scrollbar-view"]',
+        'main > div > div > [class*="scrollbar-view"]',
+        'main > div > div > div > [class*="scrollbar-view"]',
+        'main > div > div > div > div > [class*="scrollbar-view"]',
+        'main > div > div > div > div > div > [class*="scrollbar-view"]',
+      ]
+      const pageScrollbarSelector = [pageScrollbarIDSelector, ...fallbackSelectors].join(',');
+      const hasPageScrollbar = Boolean(document.querySelector(pageScrollbarSelector));
+      return hasPageScrollbar ? pageScrollbarSelector : 'body';
+    });
     const scrollDelay = options.scrollDelay ?? 500;
 
-    await page.waitForSelector(scrollDivSelector);
-    const heights: { dashboard?: { scroll: number; client: number }; body: { client: number } } = await page.evaluate((scrollDivSelector) => {
+    await page.waitForSelector(scrollElementSelector);
+    const heights: { dashboard?: { scroll: number; client: number }; body: { client: number } } = await page.evaluate((scrollElementSelector) => {
       const body = { client: document.body.clientHeight };
-      const scrollableDiv = document.querySelector(scrollDivSelector);
-      if (!scrollableDiv) {
-        this.log.debug('no scrollable div detected, returning without scrolling')
+      const scrollableElement = document.querySelector(scrollElementSelector);
+      if (!scrollableElement) {
+        this.log.debug('no scrollable element detected, returning without scrolling')
         return {
           body,
         };
       }
 
       return {
-        dashboard: { scroll: scrollableDiv.scrollHeight, client: scrollableDiv.clientHeight },
+        dashboard: { scroll: scrollableElement.scrollHeight, client: scrollableElement.clientHeight },
         body,
       };
-    }, scrollDivSelector);
+    }, scrollElementSelector);
 
     if (!heights.dashboard) {
       return {
@@ -213,19 +230,23 @@ export class Browser {
 
     for (let i = 0; i < scrolls; i++) {
       await page.evaluate(
-        (scrollByHeight, scrollDivSelector) => {
-          document.querySelector(scrollDivSelector)?.scrollBy(0, scrollByHeight);
+        (scrollByHeight, scrollElementSelector) => {
+          scrollElementSelector === 'body'
+            ? window.scrollBy(0, scrollByHeight)
+            : document.querySelector(scrollElementSelector)?.scrollBy(0, scrollByHeight);
         },
         heights.dashboard.client,
-        scrollDivSelector
+        scrollElementSelector,
       );
 
       await new Promise((executor) => setTimeout(executor, scrollDelay));
     }
 
-    await page.evaluate((scrollDivSelector) => {
-      document.querySelector(scrollDivSelector)?.scrollTo(0, 0);
-    }, scrollDivSelector);
+    await page.evaluate((scrollElementSelector) => {
+      scrollElementSelector === 'body'
+        ? window.scrollTo(0, 0)
+        : document.querySelector(scrollElementSelector)?.scrollTo(0, 0);
+    }, scrollElementSelector);
 
     // Header height will be equal to 0 in Kiosk mode
     const headerHeight = heights.body.client - heights.dashboard.client;
