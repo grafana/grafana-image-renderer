@@ -1,3 +1,6 @@
+## 3.11.3 (2024-08-13)
+- Full page image: Fix blank page screenshot when scenes is turned on [#554](https://github.com/grafana/grafana-image-renderer/pull/554), [juanicabanas](https://github.com/juanicabanas)
+
 ## 3.11.2 (2024-08-08)
 - Properly support dashboards where the scrollable element is the document [#552](https://github.com/grafana/grafana-image-renderer/pull/552), [ashharrison90](https://github.com/ashharrison90)
 
