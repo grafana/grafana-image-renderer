@@ -58,7 +58,7 @@
     "@types/supertest": "^2.0.15",
     "@typescript-eslint/eslint-plugin": "5.37.0",
     "@typescript-eslint/parser": "5.37.0",
-    "axios": "1.6.7",
+    "axios": "1.7.4",
     "cross-env": "7.0.3",
     "eslint": "8.23.1",
     "fast-png": "^6.2.0",
