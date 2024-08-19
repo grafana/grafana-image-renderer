@@ -42,7 +42,7 @@
     "poolpeteer": "^0.23.0",
     "prom-client": "^14.1.0",
     "puppeteer": "^22.8.2",
-    "puppeteer-cluster": "^0.23.0",
+    "puppeteer-cluster": "^0.24.0",
     "unique-filename": "^2.0.1",
     "winston": "^3.8.2"
   },
