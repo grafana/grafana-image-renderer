@@ -27,7 +27,7 @@ async function main() {
 
       config.rendering.chromeBin = computeExecutablePath({
         cacheDir: path.dirname(process.execPath),
-        browser: Browser.CHROME,
+        browser: Browser.CHROMEHEADLESSSHELL,
         buildId: chromeInfo.buildId,
       });
       logger.debug(`Setting chromeBin to ${config.rendering.chromeBin}`);

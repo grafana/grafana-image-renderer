@@ -1101,6 +1101,20 @@
     unbzip2-stream "^1.4.3"
     yargs "^17.7.2"
 
+"@puppeteer/browsers@^2.3.1":
+  version "2.3.1"
+  resolved "https://registry.yarnpkg.com/@puppeteer/browsers/-/browsers-2.3.1.tgz#238200dbdce5c00ae28c8f2a55ac053c3be71668"
+  integrity sha512-uK7o3hHkK+naEobMSJ+2ySYyXtQkBxIH8Gn4MK9ciePjNV+Pf+PgY/W7iPzn2MTjl3stcYB5AlcTmPYw7AXDwA==
+  dependencies:
+    debug "^4.3.6"
+    extract-zip "^2.0.1"
+    progress "^2.0.3"
+    proxy-agent "^6.4.0"
+    semver "^7.6.3"
+    tar-fs "^3.0.6"
+    unbzip2-stream "^1.4.3"
+    yargs "^17.7.2"
+
 "@sinclair/typebox@^0.27.8":
   version "0.27.8"
   resolved "https://registry.yarnpkg.com/@sinclair/typebox/-/typebox-0.27.8.tgz#6667fac16c436b5434a387a34dedb013198f6e6e"
