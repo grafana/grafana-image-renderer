@@ -81,7 +81,7 @@ const serviceConfig: ServiceConfig = {
 
 const imageWidth = 500;
 const imageHeight = 300;
-const imageDiffThreshold = 0.01 * imageHeight * imageWidth;
+const imageDiffThreshold = 0.01;
 const matchingThreshold = 0.3;
 
 const sanitizer = createSanitizer();
@@ -144,8 +144,8 @@ describe('Test /render', () => {
     expect(response.statusCode).toEqual(200);
     expect(response.headers['content-type']).toEqual('image/png');
 
-    const pixelDiff = compareImage('graph', response.body);
-    expect(pixelDiff).toBeLessThan(imageDiffThreshold);
+    const ok = compareImage('graph', response.body);
+    expect(ok).toBeTruthy();
   });
 
   it('should respond with the table panel screenshot', async () => {
@@ -161,8 +161,8 @@ describe('Test /render', () => {
     expect(response.statusCode).toEqual(200);
     expect(response.headers['content-type']).toEqual('image/png');
 
-    const pixelDiff = compareImage('table', response.body);
-    expect(pixelDiff).toBeLessThan(imageDiffThreshold);
+    const ok = compareImage('table', response.body);
+    expect(ok).toBeTruthy();
   });
 
   it('should respond with a panel error screenshot', async () => {
@@ -178,8 +178,8 @@ describe('Test /render', () => {
     expect(response.statusCode).toEqual(200);
     expect(response.headers['content-type']).toEqual('image/png');
 
-    const pixelDiff = compareImage('error', response.body);
-    expect(pixelDiff).toBeLessThan(imageDiffThreshold);
+    const ok = compareImage('error', response.body);
+    expect(ok).toBeTruthy();
   });
 
   
@@ -196,47 +196,54 @@ describe('Test /render', () => {
     expect(response.statusCode).toEqual(200);
     expect(response.headers['content-type']).toEqual('image/png');
 
-    const pixelDiff = compareImage('full-page-screenshot', response.body);
-    expect(pixelDiff).toBeLessThan(imageDiffThreshold);
+    const ok = compareImage('full-page-screenshot', response.body);
+    expect(ok).toBeTruthy();
   });
 });
 
-// compareImage returns the number of different pixels between the image stored in the test file and the one from the response body.
+// compareImage returns if the number of different pixels between the image stored in the test file 
+//   and the one from the response body is lower than a threshold (0.1 * image size)
 // It updates the stored file and returns 0 if tests are run with UPDATE_GOLDEN=true.
 // It writes the diff file to /testdata if tests are run with SAVE_DIFF=true.
-function compareImage(testName: string, responseBody: any): number {
+function compareImage(testName: string, responseBody: any): boolean {
   const goldenFilePath = path.join(goldenFilesFolder, `${testName}.png`);
   if (envSettings.updateGolden) {
     fs.writeFileSync(goldenFilePath, responseBody);
-    return 0;
+    return true;
   }
+
+  const expectedImage = fastPng.decode(fs.readFileSync(goldenFilePath));
+  const { width, height } = expectedImage
 
   let diff: { width: number; height: number; data: Uint8ClampedArray } | null = null;
   if (envSettings.saveDiff) {
     diff = {
-      width: imageWidth,
-      height: imageHeight,
-      data: new Uint8ClampedArray(imageWidth * imageHeight * 4),
+      width: width,
+      height: height,
+      data: new Uint8ClampedArray(width * height * 4),
     };
   }
 
   const responseImage = fastPng.decode(responseBody);
-  const expectedImage = fastPng.decode(fs.readFileSync(goldenFilePath));
 
   const pixelDiff = pixelmatch(
     responseImage.data as Uint8ClampedArray,
     expectedImage.data as Uint8ClampedArray,
     diff ? diff.data : null,
-    imageWidth,
-    imageHeight,
+    width,
+    height,
     {
       threshold: matchingThreshold,
     }
   );
 
-  if (diff && pixelDiff >= imageDiffThreshold) {
+  const imagePixelDiffThreshold = imageDiffThreshold * width * height;
+  if (diff && pixelDiff >= imagePixelDiffThreshold) {
     fs.writeFileSync(path.join(goldenFilesFolder, `diff_${testName}.png`), fastPng.encode(diff as fastPng.ImageData));
   }
 
-  return pixelDiff;
+  console.log('threshold: ', imagePixelDiffThreshold)
+  console.log('pixelDiff: ', pixelDiff)
+
+  return pixelDiff <= imagePixelDiffThreshold;
 }
