@@ -23,7 +23,7 @@ export class ReusableBrowser extends Browser {
     try {
       page = await this.withTimingMetrics<puppeteer.Page>(async () => {
         this.validateImageOptions(options);
-        context = await this.browser.createIncognitoBrowserContext();
+        context = await this.browser.createBrowserContext();
         return context.newPage();
       }, 'newPage');
 
@@ -52,7 +52,7 @@ export class ReusableBrowser extends Browser {
 
     try {
       this.validateRenderOptions(options);
-      context = await this.browser.createIncognitoBrowserContext();
+      context = await this.browser.createBrowserContext();
       page = await context.newPage();
 
       if (options.timezone) {
