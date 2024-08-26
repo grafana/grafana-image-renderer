@@ -5533,12 +5533,12 @@ pngjs@^6.0.0:
   resolved "https://registry.yarnpkg.com/pngjs/-/pngjs-6.0.0.tgz#ca9e5d2aa48db0228a52c419c3308e87720da821"
   integrity sha512-TRzzuFRRmEoSW/p1KVAmiOgPco2Irlah+bGFCeNfJXxxYGwSw7YwAOAcd7X28K/m5bjBWKsC29KyoMfHbypayg==
 
-poolpeteer@^0.23.0:
-  version "0.23.3"
-  resolved "https://registry.yarnpkg.com/poolpeteer/-/poolpeteer-0.23.3.tgz#8364d0ad0fb1a521e3b5a8c71f70e5f87d21cc89"
-  integrity sha512-WmZ8PVHkPS/g1iQirdid00vAo2c+BQLw1N13nhRwVq0bvZD8HajFx1Z/55lAc7d4Sav1O19dbyqM+YpkzHv32g==
+poolpeteer@^0.24.0:
+  version "0.24.0"
+  resolved "https://registry.yarnpkg.com/poolpeteer/-/poolpeteer-0.24.0.tgz#a0b7e60485df8d7b3e3ab71be3e206d91518f1e6"
+  integrity sha512-2H2DtQNkKHDFLSqREHuiHY8RKGhSPcPCNtUlriWNTMfnbku07BX9oqogg3ZWPs01FQwRFt1VsV6zxBo87KnJrA==
   dependencies:
-    debug "^4.1.1"
+    debug "^4.3.4"
 
 prebuild-install@7.1.1:
   version "7.1.1"
