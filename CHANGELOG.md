@@ -1,5 +1,4 @@
 ## 3.11.4 (2024-08-30)
-- Upgrade poolpeteer to fix contextPerRenderKey mode [#560](https://github.com/grafana/grafana-image-renderer/pull/560), [AgnesToulet](https://github.com/AgnesToulet)
 - Puppeteer: Upgrade to v22 [#556](https://github.com/grafana/grafana-image-renderer/pull/556), [evictorero](https://github.com/evictorero)
 
 ## 3.11.3 (2024-08-13)
