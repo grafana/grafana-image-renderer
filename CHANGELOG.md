@@ -1,3 +1,6 @@
+## 3.11.4 (2024-08-30)
+- Puppeteer: Upgrade to v22 [#556](https://github.com/grafana/grafana-image-renderer/pull/556), [evictorero](https://github.com/evictorero)
+
 ## 3.11.3 (2024-08-13)
 - Full page image: Fix blank page screenshot when scenes is turned on [#554](https://github.com/grafana/grafana-image-renderer/pull/554), [juanicabanas](https://github.com/juanicabanas)
 
