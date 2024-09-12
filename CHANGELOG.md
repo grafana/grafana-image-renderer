@@ -1,3 +1,7 @@
+## 3.11.5 (2024-09-12)
+- Bump express to 4.21.0 [#567](https://github.com/grafana/grafana-image-renderer/pull/567), [evictorero](https://github.com/evictorero)
+- Bump micromatch from 4.0.7 to 4.0.8 [#561](https://github.com/grafana/grafana-image-renderer/pull/561), [dependabot[bot]](https://github.com/apps/dependabot)
+
 ## 3.11.4 (2024-08-30)
 - Puppeteer: Upgrade to v22 [#556](https://github.com/grafana/grafana-image-renderer/pull/556), [evictorero](https://github.com/evictorero)
 
