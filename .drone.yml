@@ -496,7 +496,7 @@ name: gcr
 ---
 get:
   name: github_token
-  path: infra/data/ci/drone-plugins
+  path: ci/data/repo/grafana/grafana-image-renderer/github_actions
 kind: secret
 name: github_token
 ---
