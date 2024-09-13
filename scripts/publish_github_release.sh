@@ -27,6 +27,8 @@ git push "https://${GITHUB_TOKEN}@github.com/grafana/grafana-image-renderer.git"
 
 echo "Pushing multiple artifacts to release v${VERSION}..."
 ghr \
+  -draft \ # Create a draft release FOR TESTING
+  -replace \ # Replace the release if it already exists FOR TESTING
   -u "${DRONE_REPO_OWNER}" \
   -r "${DRONE_REPO_NAME}" \
   -c "${DRONE_COMMIT_SHA}" \
