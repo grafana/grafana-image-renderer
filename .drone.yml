@@ -488,20 +488,20 @@ kind: secret
 name: gcr
 ---
 get:
-  name: github_app_id
-  path: ci/data/repo/grafana/grafana-image-renderer/github_actions
+  name: app-id
+  path: ci/repo/grafana/grafana-image-renderer/github-app
 kind: secret
 name: github_app_id
 ---
 get:
-  name: github_app_private_key
-  path: ci/data/repo/grafana/grafana-image-renderer/github_actions
+  name: private-key
+  path: ci/repo/grafana/grafana-image-renderer/github-app
 kind: secret
 name: github_app_private_key
 ---
 get:
-  name: github_app_installation_id
-  path: ci/data/repo/grafana/grafana-image-renderer/github_actions
+  name: app-installation-id
+  path: ci/repo/grafana/grafana-image-renderer/github-app
 kind: secret
 name: github_app_installation_id
 ---
@@ -530,6 +530,6 @@ kind: secret
 name: gar
 ---
 kind: signature
-hmac: 84fba26558ebea8e06f1368d449827c9afbf73f909e73f79686453a7b0c5d1a0
+hmac: e144331781cee221dacb123af3261dbcf1c349bc43ff7780ddca8aeb3a29c16d
 
 ...
