@@ -29,6 +29,7 @@ EXPOSE 8081
 CMD [ "yarn", "run", "dev" ]
 
 FROM base
+LABEL org.opencontainers.image.source="https://github.com/grafana/grafana-image-renderer"
 
 ENV NODE_ENV=production
 
