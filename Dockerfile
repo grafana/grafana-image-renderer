@@ -24,6 +24,7 @@ CMD [ "yarn", "run", "dev" ]
 FROM base
 
 LABEL maintainer="Grafana team <hello@grafana.com>"
+LABEL org.opencontainers.image.source="https://github.com/grafana/grafana-image-renderer"
 
 ARG GF_UID="472"
 ARG GF_GID="472"
