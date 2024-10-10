@@ -56,8 +56,8 @@ def promotion_pipeline():
 
     steps = common_steps(False) + [
         publish_gh_release(),
-        publish_to_docker_release(),
-        publish_to_gcom(),
+        # publish_to_docker_release(),
+        # publish_to_gcom(),
     ]
 
     return [

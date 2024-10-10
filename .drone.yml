@@ -433,6 +433,7 @@ steps:
   name: package-alpine-x64-no-chromium
 - commands:
   - ./scripts/generate_md5sum.sh
+  - . ./scripts/get_gh_token.sh
   - ./scripts/publish_github_release.sh
   depends_on:
   - package-linux-x64-glibc
@@ -441,40 +442,14 @@ steps:
   - package-linux-x64-glibc-no-chromium
   - package-alpine-x64-no-chromium
   environment:
-    GITHUB_TOKEN:
-      from_secret: github_token
+    GITHUB_APP_ID:
+      from_secret: github_app_id
+    GITHUB_APP_PRIVATE_KEY:
+      from_secret: github_app_private_key
+    GITHUB_INSTALLATION_ID:
+      from_secret: github_app_installation_id
   image: cibuilds/github:0.13.0
   name: publish_to_github
-- commands:
-  - ./scripts/build_push_docker.sh
-  depends_on:
-  - publish_to_github
-  environment:
-    DOCKER_PASS:
-      from_secret: docker_pass
-    DOCKER_USER:
-      from_secret: docker_user
-    IMAGE_NAME: grafana/grafana-image-renderer
-  image: google/cloud-sdk:449.0.0
-  name: publish_to_docker
-  volumes:
-  - name: docker
-    path: /var/run/docker.sock
-- commands:
-  - . ~/.init-nvm.sh
-  - yarn run create-gcom-plugin-json ${DRONE_COMMIT}
-  - yarn run push-to-gcom
-  depends_on:
-  - publish_to_github
-  environment:
-    GCOM_PUBLISH_TOKEN:
-      from_secret: gcom_publish_token
-    GCOM_UAGENT:
-      from_secret: gcom_uagent
-    GCOM_URL:
-      from_secret: gcom_url
-  image: grafana/grafana-plugin-ci:1.9.0
-  name: publish_to_gcom
 trigger:
   branch:
   - master
@@ -495,10 +470,22 @@ kind: secret
 name: gcr
 ---
 get:
-  name: github_token
-  path: ci/data/repo/grafana/grafana-image-renderer/github_actions
+  name: app-id
+  path: ci/data/repo/grafana/grafana-image-renderer/github-app
 kind: secret
-name: github_token
+name: github_app_id
+---
+get:
+  name: private-key
+  path: ci/data/repo/grafana/grafana-image-renderer/github-app
+kind: secret
+name: github_app_private_key
+---
+get:
+  name: app-installation-id
+  path: ci/data/repo/grafana/grafana-image-renderer/github-app
+kind: secret
+name: github_app_installation_id
 ---
 get:
   name: gcom_publish_token
@@ -525,6 +512,6 @@ kind: secret
 name: gar
 ---
 kind: signature
-hmac: aef686a708994a7210707534e31b9ccd2c5b4356fb2f09afa3505914c43c6aea
+hmac: b9cb2f3ee699d4d5f778ff3067228ccc784f559ce4ec73095ad57c744ee83561
 
 ...
