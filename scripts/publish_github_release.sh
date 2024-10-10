@@ -23,12 +23,12 @@ git config user.name "Drone Automation"
 
 echo "Pushing tag v${VERSION}..."
 git tag v"${VERSION}"
-git push "https://${GITHUB_TOKEN}@github.com/grafana/grafana-image-renderer.git" v"${VERSION}"
+git push "https://${GITHUB_APP_ID}:${GITHUB_TOKEN}@github.com/grafana/grafana-image-renderer.git" v"${VERSION}"
 
 echo "Pushing multiple artifacts to release v${VERSION}..."
 ghr \
-  -draft \ # Create a draft release FOR TESTING
-  -replace \ # Replace the release if it already exists FOR TESTING
+  -draft \
+  -replace \
   -u "${DRONE_REPO_OWNER}" \
   -r "${DRONE_REPO_NAME}" \
   -c "${DRONE_COMMIT_SHA}" \
