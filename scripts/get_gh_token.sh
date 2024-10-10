@@ -1,17 +1,13 @@
 #!/bin/bash
 
 set -e
-echo "in scripts"
 
 # Ensure necessary tools are installed
 apk add --no-cache openssl curl jq
-echo "tools installed" 
 
 # Write the private key to a file
 echo "$GITHUB_APP_PRIVATE_KEY" > private-key.pem
 chmod 600 private-key.pem
-
-echo "private key in file"
 
 # Generate the JWT
 NOW=$(date +%s)
@@ -27,8 +23,6 @@ RESPONSE=$(curl -s -X POST \
   -H "Authorization: Bearer $JWT" \
   -H "Accept: application/vnd.github+json" \
   https://api.github.com/app/installations/$GITHUB_INSTALLATION_ID/access_tokens)
-
-echo "get access token"
 
 # Extract the token from the response
 GITHUB_TOKEN=$(echo $RESPONSE | jq -r '.token')

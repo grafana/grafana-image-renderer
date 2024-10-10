@@ -433,7 +433,7 @@ steps:
   name: package-alpine-x64-no-chromium
 - commands:
   - ./scripts/generate_md5sum.sh
-  - ./scripts/get_gh_token.sh
+  - source ./scripts/get_gh_token.sh
   - ./scripts/publish_github_release.sh
   depends_on:
   - package-linux-x64-glibc
@@ -512,6 +512,6 @@ kind: secret
 name: gar
 ---
 kind: signature
-hmac: e28afc054103ba153f9643affc71a0523a7b2c7d4a501761a1a57e0d471f43a9
+hmac: b9210578208ea03e014ce0c24053c31233259480763c1c9a742bcd74d683b485
 
 ...
