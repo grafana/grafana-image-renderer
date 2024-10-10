@@ -1,6 +1,7 @@
 #!/bin/bash
 
 set -e
+echo "in scripts"
 
 # Ensure necessary tools are installed
 apk add --no-cache openssl curl jq
