@@ -7,7 +7,7 @@ def publish_gh_release():
         'image': 'cibuilds/github:0.13.0',
         'commands': [
             './scripts/generate_md5sum.sh',
-            'source ./scripts/get_gh_token.sh',
+            '. ./scripts/get_gh_token.sh',
             './scripts/publish_github_release.sh',
         ],
         'environment': {
