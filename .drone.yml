@@ -432,25 +432,6 @@ steps:
   image: grafana/grafana-plugin-ci:1.9.0
   name: package-alpine-x64-no-chromium
 - commands:
-  - apk add --no-cache openssl curl jq
-  - echo "$GITHUB_APP_PRIVATE_KEY" > private-key.pem
-  - chmod 600 private-key.pem
-  - NOW=$(date +%s)
-  - EXPIRATION=$(($NOW + 600))
-  - HEADER=$(printf '{"alg":"RS256","typ":"JWT"}' | openssl base64 -A | tr '+/' '-_'
-    | tr -d '=')
-  - PAYLOAD=$(printf '{"iat":%d,"exp":%d,"iss":"%s"}' $NOW $EXPIRATION $GITHUB_APP_ID
-    | openssl base64 -A | tr '+/' '-_' | tr -d '=')
-  - HEADER_PAYLOAD="$HEADER.$PAYLOAD"
-  - SIGNATURE=$(echo -n "$HEADER_PAYLOAD" | openssl dgst -sha256 -sign private-key.pem
-    | openssl base64 -A | tr '+/' '-_' | tr -d '=')
-  - JWT="$HEADER_PAYLOAD.$SIGNATURE"
-  - RESPONSE=$(curl -s -X POST \
-  - '  -H "Authorization: Bearer $JWT" \'
-  - '  -H "Accept: application/vnd.github+json" \'
-  - '  https://api.github.com/app/installations/$GITHUB_INSTALLATION_ID/access_tokens)'
-  - GITHUB_TOKEN=$(echo $RESPONSE | jq -r '.token')
-  - export GITHUB_TOKEN
   - ./scripts/generate_md5sum.sh
   - ./scripts/publish_github_release.sh
   depends_on:
@@ -530,6 +511,6 @@ kind: secret
 name: gar
 ---
 kind: signature
-hmac: e7f5ecbd0a068575bbbca6380fa74ac0cfee3a7fff8f58e473e217e9a54e7ab1
+hmac: 252ca4f941a5574982e31359f036c1d7ff7a6aedf98c6f38029e86bb2696fec8
 
 ...
