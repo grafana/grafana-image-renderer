@@ -27,8 +27,6 @@ git push "https://${GITHUB_APP_ID}:${GITHUB_TOKEN}@github.com/grafana/grafana-im
 
 echo "Pushing multiple artifacts to release v${VERSION}..."
 ghr \
-  -draft \
-  -replace \
   -u "${DRONE_REPO_OWNER}" \
   -r "${DRONE_REPO_NAME}" \
   -c "${DRONE_COMMIT_SHA}" \
