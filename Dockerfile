@@ -10,16 +10,12 @@ RUN apk --no-cache upgrade && \
     apk add --no-cache udev ttf-opensans unifont chromium ca-certificates dumb-init && \
     rm -rf /tmp/*
 
-# Development dependencies stage
-FROM base AS dev-dependencies
-
-COPY package.json yarn.lock ./
-RUN yarn install --pure-lockfile
-
 # Build stage
-FROM dev-dependencies AS build
+FROM base AS build
 
 COPY . ./
+
+RUN yarn install --pure-lockfile
 RUN yarn run build
 
 # Production dependencies stage
