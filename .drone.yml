@@ -450,6 +450,36 @@ steps:
       from_secret: github_app_installation_id
   image: cibuilds/github:0.13.0
   name: publish_to_github
+- commands:
+  - ./scripts/build_push_docker.sh
+  depends_on:
+  - publish_to_github
+  environment:
+    DOCKER_PASS:
+      from_secret: docker_pass
+    DOCKER_USER:
+      from_secret: docker_user
+    IMAGE_NAME: grafana/grafana-image-renderer
+  image: google/cloud-sdk:449.0.0
+  name: publish_to_docker
+  volumes:
+  - name: docker
+    path: /var/run/docker.sock
+- commands:
+  - . ~/.init-nvm.sh
+  - yarn run create-gcom-plugin-json ${DRONE_COMMIT}
+  - yarn run push-to-gcom
+  depends_on:
+  - publish_to_github
+  environment:
+    GCOM_PUBLISH_TOKEN:
+      from_secret: gcom_publish_token
+    GCOM_UAGENT:
+      from_secret: gcom_uagent
+    GCOM_URL:
+      from_secret: gcom_url
+  image: grafana/grafana-plugin-ci:1.9.0
+  name: publish_to_gcom
 trigger:
   branch:
   - master
@@ -512,6 +542,6 @@ kind: secret
 name: gar
 ---
 kind: signature
-hmac: b9cb2f3ee699d4d5f778ff3067228ccc784f559ce4ec73095ad57c744ee83561
+hmac: 5e72ddb2d00dec40054f0640eb9048e0375790ce7300d0863138e5f98cfb7a0c
 
 ...
