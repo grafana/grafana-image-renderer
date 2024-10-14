@@ -30,7 +30,7 @@
     "@hapi/boom": "^10.0.0",
     "@puppeteer/browsers": "^2.3.1",
     "chokidar": "^3.5.2",
-    "dompurify": "^2.4.0",
+    "dompurify": "^2.5.4",
     "express": "^4.21.0",
     "express-prom-bundle": "^6.5.0",
     "jimp": "^0.22.12",
