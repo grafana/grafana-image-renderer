@@ -433,6 +433,7 @@ steps:
   name: package-alpine-x64-no-chromium
 - commands:
   - ./scripts/generate_md5sum.sh
+  - . ./scripts/get_gh_token.sh
   - ./scripts/publish_github_release.sh
   depends_on:
   - package-linux-x64-glibc
@@ -441,8 +442,12 @@ steps:
   - package-linux-x64-glibc-no-chromium
   - package-alpine-x64-no-chromium
   environment:
-    GITHUB_TOKEN:
-      from_secret: github_token
+    GITHUB_APP_ID:
+      from_secret: github_app_id
+    GITHUB_APP_PRIVATE_KEY:
+      from_secret: github_app_private_key
+    GITHUB_INSTALLATION_ID:
+      from_secret: github_app_installation_id
   image: cibuilds/github:0.13.0
   name: publish_to_github
 - commands:
@@ -495,10 +500,22 @@ kind: secret
 name: gcr
 ---
 get:
-  name: github_token
-  path: ci/data/repo/grafana/grafana-image-renderer/github_actions
+  name: app-id
+  path: ci/data/repo/grafana/grafana-image-renderer/github-app
 kind: secret
-name: github_token
+name: github_app_id
+---
+get:
+  name: private-key
+  path: ci/data/repo/grafana/grafana-image-renderer/github-app
+kind: secret
+name: github_app_private_key
+---
+get:
+  name: app-installation-id
+  path: ci/data/repo/grafana/grafana-image-renderer/github-app
+kind: secret
+name: github_app_installation_id
 ---
 get:
   name: gcom_publish_token
@@ -525,6 +542,6 @@ kind: secret
 name: gar
 ---
 kind: signature
-hmac: aef686a708994a7210707534e31b9ccd2c5b4356fb2f09afa3505914c43c6aea
+hmac: 5e72ddb2d00dec40054f0640eb9048e0375790ce7300d0863138e5f98cfb7a0c
 
 ...
