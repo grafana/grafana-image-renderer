@@ -1,3 +1,8 @@
+## 3.11.6 (2024-10-17)
+- Chore: Upgrade express from 4.21.0 to 4.21.1 [#577](https://github.com/grafana/grafana-image-renderer/pull/577), [AgnesToulet](https://github.com/AgnesToulet)
+- Chore: Don't install dev packages in Docker image [#575](https://github.com/grafana/grafana-image-renderer/pull/575), [McTonderski](https://github.com/McTonderski), [AgnesToulet](https://github.com/AgnesToulet)
+- Bump dompurify from 2.4.7 to 2.5.4 [#574](https://github.com/grafana/grafana-image-renderer/pull/574), [dependabot[bot]](https://github.com/apps/dependabot)
+
 ## 3.11.5 (2024-09-12)
 - Bump express to 4.21.0 [#567](https://github.com/grafana/grafana-image-renderer/pull/567), [evictorero](https://github.com/evictorero)
 - Bump micromatch from 4.0.7 to 4.0.8 [#561](https://github.com/grafana/grafana-image-renderer/pull/561), [dependabot[bot]](https://github.com/apps/dependabot)
