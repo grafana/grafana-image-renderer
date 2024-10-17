@@ -7,10 +7,14 @@ def publish_gh_release():
         'image': 'cibuilds/github:0.13.0',
         'commands': [
             './scripts/generate_md5sum.sh',
+            '. ./scripts/get_gh_token.sh',
             './scripts/publish_github_release.sh',
         ],
         'environment': {
-            'GITHUB_TOKEN': from_secret('github_token'),
+            # These are passed as secrets for security
+            'GITHUB_APP_ID': from_secret('github_app_id'),
+            'GITHUB_APP_PRIVATE_KEY': from_secret('github_app_private_key'),
+            'GITHUB_INSTALLATION_ID': from_secret('github_app_installation_id'),
         },
         'depends_on': [
             'package-linux-x64-glibc',
