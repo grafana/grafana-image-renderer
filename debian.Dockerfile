@@ -33,6 +33,7 @@ RUN yarn install --pure-lockfile --production
 
 # Final stage
 FROM base
+LABEL org.opencontainers.image.source="https://github.com/grafana/grafana-image-renderer"
 
 ENV NODE_ENV=production
 
