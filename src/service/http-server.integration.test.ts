@@ -98,8 +98,6 @@ let envSettings = {
 }
 
 beforeAll(() => {
-  process.env['PUPPETEER_DISABLE_HEADLESS_WARNING'] = 'true';
-
   if (process.env['CI'] === 'true') {
     domain = 'grafana';
   }

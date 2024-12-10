@@ -130,13 +130,14 @@ export class Browser {
       ignoreHTTPSErrors: this.config.ignoresHttpsErrors,
       dumpio: this.config.dumpio,
       args: this.config.args,
+      defaultViewport: null
     };
 
     if (this.config.chromeBin) {
       launcherOptions.executablePath = this.config.chromeBin;
     }
 
-    launcherOptions.headless = !this.config.headed;
+    launcherOptions.headless = !this.config.headed ? 'shell' : false;
 
     return launcherOptions;
   }
@@ -397,7 +398,7 @@ export class Browser {
         });
       }
 
-      return page.screenshot({ path: options.filePath, fullPage: options.fullPageImage, captureBeyondViewport: options.fullPageImage || false });
+      return page.screenshot({ path: options.filePath, fullPage: options.fullPageImage, captureBeyondViewport: false });
     }, 'screenshot');
 
     if (options.scaleImage && !isPDF) {

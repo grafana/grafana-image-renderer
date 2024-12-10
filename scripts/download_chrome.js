@@ -24,7 +24,7 @@ if (platform === 'darwin') {
 
 const outputPath = path.resolve(process.cwd(), 'dist', process.argv[3] || `plugin-${archArg}`);
 
-const browserVersion = Browser.CHROME;
+const browserVersion = Browser.CHROMEHEADLESSSHELL;
 
 async function download() {
     const buildId = await resolveBuildId(browserVersion, platform, 'latest');

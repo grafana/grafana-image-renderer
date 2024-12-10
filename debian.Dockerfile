@@ -17,6 +17,7 @@ RUN apt-get install -y wget gnupg \
 ADD https://github.com/Yelp/dumb-init/releases/download/v1.2.0/dumb-init_1.2.0_amd64 /usr/local/bin/dumb-init
 RUN chmod +x /usr/local/bin/dumb-init
 
+# Build stage
 FROM base as build
 
 COPY . ./
@@ -24,15 +25,19 @@ COPY . ./
 RUN yarn install --pure-lockfile
 RUN yarn run build
 
-EXPOSE 8081
+# Production dependencies stage
+FROM base AS prod-dependencies
 
-CMD [ "yarn", "run", "dev" ]
+COPY package.json yarn.lock ./
+RUN yarn install --pure-lockfile --production
 
+# Final stage
 FROM base
+LABEL org.opencontainers.image.source="https://github.com/grafana/grafana-image-renderer"
 
 ENV NODE_ENV=production
 
-COPY --from=build /usr/src/app/node_modules node_modules
+COPY --from=prod-dependencies /usr/src/app/node_modules node_modules
 COPY --from=build /usr/src/app/build build
 COPY --from=build /usr/src/app/proto proto
 COPY --from=build /usr/src/app/default.json config.json
