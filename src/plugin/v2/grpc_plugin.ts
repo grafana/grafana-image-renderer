@@ -100,7 +100,9 @@ class PluginGRPCServer {
   }
 
   async render(call: grpc.ServerUnaryCall<RenderRequest, any>, callback: grpc.sendUnaryData<RenderResponse>) {
-    const { signal } = new AbortController();
+    const abortController = new AbortController();
+    const { signal } = abortController;
+
     const req = call.request;
     const headers: HTTPHeaders = {};
 
@@ -140,7 +142,12 @@ class PluginGRPCServer {
     };
 
     this.log.debug('Render request received', 'url', options.url);
+    call.on('cancelled', (err) => {
+      this.log.debug('Connection closed', 'url', options.url, 'error', err);
+      abortController.abort();
+    });
     let errStr = '';
+
     try {
       await this.browser.render(options, signal);
     } catch (err) {
@@ -151,7 +158,8 @@ class PluginGRPCServer {
   }
 
   async renderCsv(call: grpc.ServerUnaryCall<RenderCSVRequest, any>, callback: grpc.sendUnaryData<RenderCSVResponse>) {
-    const { signal } = new AbortController();
+    const abortController = new AbortController();
+    const { signal } = abortController;
 
     const req = call.request;
     const headers: HTTPHeaders = {};
@@ -188,6 +196,11 @@ class PluginGRPCServer {
     };
 
     this.log.debug('Render request received', 'url', options.url);
+    call.on('cancelled', (err) => {
+      this.log.debug('Connection closed', 'url', options.url, 'error', err);
+      abortController.abort();
+    });
+
     let errStr = '';
     let fileName = '';
     try {
