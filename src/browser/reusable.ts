@@ -16,7 +16,7 @@ export class ReusableBrowser extends Browser {
     this.browser = await puppeteer.launch(launcherOptions);
   }
 
-  async render(options: ImageRenderOptions): Promise<RenderResponse> {
+  async render(options: ImageRenderOptions, signal: AbortSignal): Promise<RenderResponse> {
     let context: puppeteer.BrowserContext | undefined;
     let page: puppeteer.Page | undefined;
 
@@ -32,9 +32,19 @@ export class ReusableBrowser extends Browser {
         await page.emulateTimezone(options.timezone);
       }
 
+      signal.addEventListener('abort', () => {
+        if (page) {
+          this.removePageListeners(page);
+          page.close();
+        }
+        if (context) {
+          context.close();
+        }
+      });
+
       this.addPageListeners(page);
 
-      return await this.takeScreenshot(page, options);
+      return await this.takeScreenshot(page, options, signal);
     } finally {
       if (page) {
         this.removePageListeners(page);
@@ -46,7 +56,7 @@ export class ReusableBrowser extends Browser {
     }
   }
 
-  async renderCSV(options: RenderOptions): Promise<RenderCSVResponse> {
+  async renderCSV(options: RenderOptions, signal: AbortSignal): Promise<RenderCSVResponse> {
     let context: puppeteer.BrowserContext | undefined;
     let page: puppeteer.Page | undefined;
 
@@ -60,9 +70,19 @@ export class ReusableBrowser extends Browser {
         await page.emulateTimezone(options.timezone);
       }
 
+      signal.addEventListener('abort', () => {
+        if (page) {
+          this.removePageListeners(page);
+          page.close();
+        }
+        if (context) {
+          context.close();
+        }
+      });
+
       this.addPageListeners(page);
 
-      return await this.exportCSV(page, options);
+      return await this.exportCSV(page, options, signal);
     } finally {
       if (page) {
         this.removePageListeners(page);
