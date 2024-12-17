@@ -277,16 +277,6 @@ export class Browser {
         return browser!.newPage();
       });
 
-      signal.addEventListener('abort', () => {
-        if (page) {
-          this.removePageListeners(page);
-          page.close();
-        }
-        if (browser) {
-          browser.close();
-        }
-      });
-
       this.addPageListeners(page);
 
       return await this.takeScreenshot(page, options, signal);
@@ -437,16 +427,6 @@ export class Browser {
       const launcherOptions = this.getLauncherOptions(options);
       browser = await puppeteer.launch(launcherOptions);
       page = await browser.newPage();
-
-      signal.addEventListener('abort', () => {
-        if (page) {
-          this.removePageListeners(page);
-          page.close();
-        }
-        if (browser) {
-          browser.close();
-        }
-      });
 
       this.addPageListeners(page);
 
