@@ -9,7 +9,7 @@ import * as Jimp from 'jimp';
 import { Logger } from '../logger';
 import { RenderingConfig } from '../config/rendering';
 import { ImageRenderOptions, RenderOptions } from '../types';
-import { TimeoutError } from './error';
+import { StepTimeoutError } from './error';
 import { getPDFOptionsFromURL } from './pdf';
 
 export interface Metrics {
@@ -267,15 +267,15 @@ export class Browser {
     let page: puppeteer.Page | undefined = undefined;
 
     try {
-      browser = await this.withTimingMetrics<puppeteer.Browser>(() => {
+      browser = await this.withTimingMetrics<puppeteer.Browser>('launch', () => {
         this.validateImageOptions(options);
         const launcherOptions = this.getLauncherOptions(options);
         return puppeteer.launch(launcherOptions);
-      }, 'launch');
+      });
 
-      page = await this.withTimingMetrics<puppeteer.Page>(() => {
+      page = await this.withTimingMetrics<puppeteer.Page>('newPage', () => {
         return browser!.newPage();
-      }, 'newPage');
+      });
 
       signal.addEventListener('abort', () => {
         if (page) {
@@ -310,91 +310,59 @@ export class Browser {
   };
 
   async takeScreenshot(page: puppeteer.Page, options: ImageRenderOptions, signal: AbortSignal): Promise<RenderResponse> {
-    try {
-      await this.withTimingMetrics(async () => {
-        if (this.config.verboseLogging) {
-          this.log.debug(
-            'Setting viewport for page',
-            'width',
-            options.width.toString(),
-            'height',
-            options.height.toString(),
-            'deviceScaleFactor',
-            options.deviceScaleFactor
-          );
-        }
+    await this.performStep('prepare', options.url, signal, async () => {
+      if (this.config.verboseLogging) {
+        this.log.debug(
+          'Setting viewport for page',
+          'width',
+          options.width.toString(),
+          'height',
+          options.height.toString(),
+          'deviceScaleFactor',
+          options.deviceScaleFactor
+        );
+      }
 
-        await this.setViewport(page, options);
-        await this.preparePage(page, options);
-        await this.setTimezone(page, options);
+      await this.setViewport(page, options);
+      await this.preparePage(page, options);
+      await this.setTimezone(page, options);
 
-        if (this.config.verboseLogging) {
-          this.log.debug('Moving mouse on page', 'x', options.width, 'y', options.height);
-        }
-        return page.mouse.move(+options.width, +options.height);
-      }, 'prepare');
+      if (this.config.verboseLogging) {
+        this.log.debug('Moving mouse on page', 'x', options.width, 'y', options.height);
+      }
+      return page.mouse.move(+options.width, +options.height);
+    });
 
-      // await new Promise((resolve) => setTimeout(resolve, 8000));
-      // this.log.error('signal status', 'is aborted', signal.aborted);
+    await this.performStep('navigate', options.url, signal, async () => {
+      if (this.config.verboseLogging) {
+        this.log.debug('Navigating and waiting for all network requests to finish', 'url', options.url);
+      }
 
-      const res = await this.withTimingMetrics(() => {
-        if (this.config.verboseLogging) {
-          this.log.debug('Navigating and waiting for all network requests to finish', 'url', options.url);
-        }
-
-        return page.goto(options.url, { waitUntil: 'networkidle0', timeout: options.timeout * 1000, signal });
-      }, 'navigate');
-      this.log.error('signal status', 'is aborted', signal.aborted, 'res', res?.url);
-    } catch (err) {
-      this.log.error('Error while trying to prepare page for screenshot', 'url', options.url, 'err', err.stack);
-      throw new TimeoutError('navigate');
-    }
+      await page.goto(options.url, { waitUntil: 'networkidle0', timeout: options.timeout * 1000, signal });
+    });
 
     let scrollResult: DashboardScrollingResult = {
       scrolled: false,
     };
 
     if (options.fullPageImage) {
-      try {
-        scrollResult = await this.withTimingMetrics(() => {
-          return this.scrollToLoadAllPanels(page, options, signal);
-        }, 'dashboardScrolling');
-      } catch (err) {
-        this.log.error('Error while scrolling to load all panels', 'url', options.url, 'err', err.stack);
-        throw new TimeoutError('dashboardScrolling');
+      const res = await this.performStep<DashboardScrollingResult>('dashboardScrolling', options.url, signal, () => {
+        return this.scrollToLoadAllPanels(page, options, signal);
+      });
+
+      if (res) {
+        scrollResult = res;
       }
     }
 
     const isPDF = options.encoding === 'pdf';
+    await this.performStep('panelsRendered', options.url, signal, async () => {
+      if (this.config.verboseLogging) {
+        this.log.debug('Waiting for dashboard/panel to load', 'timeout', `${options.timeout}s`);
+      }
 
-    try {
-      await this.withTimingMetrics(async () => {
-        if (this.config.verboseLogging) {
-          this.log.debug('Waiting for dashboard/panel to load', 'timeout', `${options.timeout}s`);
-        }
-
-        await waitForQueriesAndVisualizations(page, options, signal);
-      }, 'panelsRendered');
-    } catch (err) {
-      const windowInfo = await page.evaluate(() => {
-        return {
-          usingScenes: window.__grafanaSceneContext !== null,
-          queryCount: window.__grafanaRunningQueryCount,
-        };
-      });
-      this.log.error(
-        'Error while waiting for the panels to load',
-        'url',
-        options.url,
-        'usingScenes',
-        windowInfo.usingScenes,
-        'queryCount',
-        windowInfo.queryCount,
-        'err',
-        err.stack
-      );
-      throw new TimeoutError('panelsRendered');
-    }
+      await waitForQueriesAndVisualizations(page, options, signal);
+    });
 
     if (!options.filePath) {
       options.filePath = uniqueFilename(os.tmpdir()) + (isPDF ? '.pdf' : '.png');
@@ -402,11 +370,11 @@ export class Browser {
 
     await this.setPageZoomLevel(page, this.config.pageZoomLevel);
 
-    if (this.config.verboseLogging) {
-      this.log.debug('Taking screenshot', 'filePath', options.filePath);
-    }
+    await this.performStep('screenshot', options.url, signal, async () => {
+      if (this.config.verboseLogging) {
+        this.log.debug('Taking screenshot', 'filePath', options.filePath);
+      }
 
-    await this.withTimingMetrics(async () => {
       if (scrollResult.scrolled) {
         await this.setViewport(page, {
           ...options,
@@ -437,14 +405,14 @@ export class Browser {
       }
 
       return page.screenshot({ path: options.filePath, fullPage: options.fullPageImage, captureBeyondViewport: false });
-    }, 'screenshot');
+    });
 
     if (options.scaleImage && !isPDF) {
-      const scaled = `${options.filePath}_${Date.now()}_scaled.png`;
-      const w = +options.width / options.scaleImage;
-      const h = +options.height / options.scaleImage;
+      await this.performStep('imageResize', options.url, signal, async () => {
+        const scaled = `${options.filePath}_${Date.now()}_scaled.png`;
+        const w = +options.width / options.scaleImage!;
+        const h = +options.height / options.scaleImage!;
 
-      await this.withTimingMetrics(async () => {
         const file = await Jimp.read(options.filePath);
         await file
           .resize(w, h)
@@ -454,7 +422,7 @@ export class Browser {
           .writeAsync(scaled);
 
         fs.renameSync(scaled, options.filePath);
-      }, 'imageResize');
+      });
     }
 
     return { filePath: options.filePath };
@@ -495,42 +463,51 @@ export class Browser {
   }
 
   async exportCSV(page: any, options: RenderOptions, signal: AbortSignal): Promise<RenderCSVResponse> {
-    await this.preparePage(page, options);
-    await this.setTimezone(page, options);
+    await this.performStep('prepare', options.url, signal, async () => {
+      await this.preparePage(page, options);
+      await this.setTimezone(page, options);
 
+      await page._client().send('Page.setDownloadBehavior', { behavior: 'allow', downloadPath: downloadPath });
+    });
+
+    let downloadFilePath = '';
     const downloadPath = uniqueFilename(os.tmpdir());
     fs.mkdirSync(downloadPath);
     const watcher = chokidar.watch(downloadPath);
-    let downloadFilePath = '';
     watcher.on('add', (file) => {
       if (!file.endsWith('.crdownload')) {
         downloadFilePath = file;
       }
     });
 
-    await page._client().send('Page.setDownloadBehavior', { behavior: 'allow', downloadPath: downloadPath });
-
-    if (this.config.verboseLogging) {
-      this.log.debug('Navigating and waiting for all network requests to finish', 'url', options.url);
-    }
-
-    await page.goto(options.url, { waitUntil: 'networkidle0', timeout: options.timeout * 1000, signal });
-
-    if (this.config.verboseLogging) {
-      this.log.debug('Waiting for download to end');
-    }
-
-    const startDate = Date.now();
-    while (Date.now() - startDate <= options.timeout * 1000) {
-      if (downloadFilePath !== '') {
-        break;
+    await this.performStep('navigateCSV', options.url, signal, async () => {
+      if (this.config.verboseLogging) {
+        this.log.debug('Navigating and waiting for all network requests to finish', 'url', options.url);
       }
-      await new Promise((resolve) => setTimeout(resolve, 500));
-    }
 
-    if (downloadFilePath === '') {
-      throw new TimeoutError(`CSV download`);
-    }
+      await page.goto(options.url, { waitUntil: 'networkidle0', timeout: options.timeout * 1000, signal });
+    });
+
+    await this.performStep('downloadCSV', options.url, signal, async () => {
+      if (this.config.verboseLogging) {
+        this.log.debug('Waiting for download to end');
+      }
+
+      const startDate = Date.now();
+      while (Date.now() - startDate <= options.timeout * 1000) {
+        if (signal.aborted) {
+          throw new StepTimeoutError('downloadCSV');
+        }
+        if (downloadFilePath !== '') {
+          break;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 500));
+      }
+
+      if (downloadFilePath === '') {
+        throw new StepTimeoutError('downloadCSV');
+      }
+    });
 
     await watcher.close();
 
@@ -545,7 +522,35 @@ export class Browser {
     return { filePath, fileName: path.basename(downloadFilePath) };
   }
 
-  async withTimingMetrics<T>(callback: () => Promise<T>, step: string): Promise<T> {
+  async performStep<T>(step: string, url: string, signal: AbortSignal, callback: () => Promise<T>): Promise<T | undefined> {
+    if (this.config.verboseLogging) {
+      this.log.debug('Step begins', 'step', step, 'url', url);
+    }
+
+    try {
+      const res = await this.withTimingMetrics(step, callback);
+
+      if (signal.aborted) {
+        this.log.warn('Signal aborted while performing step', 'step', step, 'url', url);
+        throw new StepTimeoutError(step);
+      }
+
+      if (this.config.verboseLogging) {
+        this.log.debug('Step ends', 'step', step, 'url', url);
+      }
+
+      return res;
+    } catch (err) {
+      if (!(err instanceof puppeteer.TimeoutError)) {
+        this.log.error('Error while performing step', 'step', step, 'url', url);
+        throw err;
+      }
+
+      this.log.error('Error while performing step', 'step', step, 'url', url, 'err', err.stack);
+    }
+  }
+
+  async withTimingMetrics<T>(step: string, callback: () => Promise<T>): Promise<T> {
     if (this.config.timingMetrics) {
       const endTimer = this.metrics.durationHistogram.startTimer({ step });
       const res = await callback();
