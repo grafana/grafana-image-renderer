@@ -1,3 +1,5 @@
+import './tracing'; // FIXIT: ideally this should changed by a function initializeTracing
+
 import * as path from 'path';
 import * as _ from 'lodash';
 import * as fs from 'fs';
@@ -64,6 +66,12 @@ async function main() {
     populateServiceConfigFromEnv(config, env);
 
     const logger = new ConsoleLogger(config.service.logging);
+
+    if (config.service.tracing.enabled) {
+      // FIXIT: not working probably because it is being initialized before the server
+      // initializeTracing(logger, config.service.tracing.exporterURL);
+      logger.info("tracing is enabled");
+    }
 
     const sanitizer = createSanitizer();
     const server = new HttpServer(config, logger, sanitizer);
