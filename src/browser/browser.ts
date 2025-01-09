@@ -522,7 +522,7 @@ export class Browser {
       return res;
     } catch (err) {
       if (!(err instanceof puppeteer.TimeoutError)) {
-        this.log.error('Error while performing step', 'step', step, 'url', url);
+        this.log.error('Error while performing step', 'step', step, 'url', url, 'err', err.stack);
         throw err;
       }
 
