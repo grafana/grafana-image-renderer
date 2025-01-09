@@ -298,30 +298,36 @@ export class HttpServer {
       this.log.debug('Connection closed', 'url', options.url, 'error', err);
       abortController.abort();
     });
-    const result = await this.browser.renderCSV(options, signal);
 
-    if (result.fileName) {
-      res.setHeader('Content-Disposition', contentDisposition(result.fileName));
-    }
-    res.sendFile(result.filePath, (err) => {
-      if (err) {
-        next(err);
-      } else {
-        try {
-          this.log.debug('Deleting temporary file', 'file', result.filePath);
-          fs.unlink(result.filePath, (err) => {
-            if (err) {
-              throw err;
-            }
+    try {
+      const result = await this.browser.renderCSV(options, signal);
 
-            if (!options.filePath) {
-              fs.rmdir(path.dirname(result.filePath), () => {});
-            }
-          });
-        } catch (e) {
-          this.log.error('Failed to delete temporary file', 'file', result.filePath, 'error', e.message);
-        }
+      if (result.fileName) {
+        res.setHeader('Content-Disposition', contentDisposition(result.fileName));
       }
-    });
+      res.sendFile(result.filePath, (err) => {
+        if (err) {
+          next(err);
+        } else {
+          try {
+            this.log.debug('Deleting temporary file', 'file', result.filePath);
+            fs.unlink(result.filePath, (err) => {
+              if (err) {
+                throw err;
+              }
+
+              if (!options.filePath) {
+                fs.rmdir(path.dirname(result.filePath), () => {});
+              }
+            });
+          } catch (e) {
+            this.log.error('Failed to delete temporary file', 'file', result.filePath, 'error', e.message);
+          }
+        }
+      });
+    } catch (e) {
+      this.log.error('Render CSV failed', 'url', options.url, 'error', e.stack);
+      return res.status(500).json({ error: e.message });
+    }
   };
 }

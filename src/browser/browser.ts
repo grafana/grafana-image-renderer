@@ -443,15 +443,17 @@ export class Browser {
   }
 
   async exportCSV(page: any, options: RenderOptions, signal: AbortSignal): Promise<RenderCSVResponse> {
+    let downloadFilePath = '';
+    let downloadPath = '';
     await this.performStep('prepare', options.url, signal, async () => {
+      downloadPath = uniqueFilename(os.tmpdir());
+
       await this.preparePage(page, options);
       await this.setTimezone(page, options);
 
       await page._client().send('Page.setDownloadBehavior', { behavior: 'allow', downloadPath: downloadPath });
     });
 
-    let downloadFilePath = '';
-    const downloadPath = uniqueFilename(os.tmpdir());
     fs.mkdirSync(downloadPath);
     const watcher = chokidar.watch(downloadPath);
     watcher.on('add', (file) => {
@@ -476,6 +478,7 @@ export class Browser {
       const startDate = Date.now();
       while (Date.now() - startDate <= options.timeout * 1000) {
         if (signal.aborted) {
+          this.log.warn('Signal aborted while performing step', 'step', 'downloadCSV', 'url', options.url);
           throw new StepTimeoutError('downloadCSV');
         }
         if (downloadFilePath !== '') {
