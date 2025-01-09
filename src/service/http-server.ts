@@ -269,7 +269,8 @@ export class HttpServer {
   };
 
   renderCSV = async (req: express.Request<any, any, any, RenderOptions, any>, res: express.Response, next: express.NextFunction) => {
-    const { abort, signal } = new AbortController();
+    const abortController = new AbortController();
+    const { signal } = abortController;
 
     if (!req.query.url) {
       throw boom.badRequest('Missing url parameter');
@@ -295,7 +296,7 @@ export class HttpServer {
     this.log.debug('Render request received', 'url', options.url);
     req.on('close', (err) => {
       this.log.debug('Connection closed', 'url', options.url, 'error', err);
-      abort();
+      abortController.abort();
     });
     const result = await this.browser.renderCSV(options, signal);
 
