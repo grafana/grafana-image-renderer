@@ -32,16 +32,6 @@ export class ReusableBrowser extends Browser {
         await page.emulateTimezone(options.timezone);
       }
 
-      signal.addEventListener('abort', () => {
-        if (page) {
-          this.removePageListeners(page);
-          page.close();
-        }
-        if (context) {
-          context.close();
-        }
-      });
-
       this.addPageListeners(page);
 
       return await this.takeScreenshot(page, options, signal);

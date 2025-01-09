@@ -79,12 +79,6 @@ export class ClusteredBrowser extends Browser {
       }
 
       try {
-        signal.addEventListener('abort', () => {
-          if (page) {
-            this.removePageListeners(page);
-          }
-        });
-
         this.addPageListeners(page);
         switch (renderType) {
           case RenderType.CSV:
