@@ -1,3 +1,4 @@
+
 import * as path from 'path';
 import * as _ from 'lodash';
 import * as fs from 'fs';
@@ -10,6 +11,7 @@ import { ConsoleLogger, PluginLogger } from './logger';
 import * as minimist from 'minimist';
 import { serve } from './node-plugin';
 import { createSanitizer } from './sanitizer/Sanitizer';
+import { initializeTracing } from './tracing';
 
 async function main() {
   const argv = minimist(process.argv.slice(2));
@@ -64,6 +66,11 @@ async function main() {
     populateServiceConfigFromEnv(config, env);
 
     const logger = new ConsoleLogger(config.service.logging);
+
+    if (config.service.tracing.enabled) {
+      initializeTracing(logger, config.service.tracing.exporterURL);
+      logger.info("tracing is enabled");
+    }
 
     const sanitizer = createSanitizer();
     const server = new HttpServer(config, logger, sanitizer);
