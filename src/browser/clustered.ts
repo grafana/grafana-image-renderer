@@ -14,6 +14,7 @@ interface ClusterOptions {
   groupId?: string;
   options: RenderOptions | ImageRenderOptions;
   renderType: RenderType;
+  signal: AbortSignal;
 }
 
 type ClusterResponse = RenderResponse | RenderCSVResponse;
@@ -71,19 +72,20 @@ export class ClusteredBrowser extends Browser {
   async start(): Promise<void> {
     this.cluster = await this.createCluster();
     await this.cluster.task(async ({ page, data }) => {
-      if (data.options.timezone) {
+      const { options, renderType, signal } = data;
+      if (options.timezone) {
         // set timezone
-        await page.emulateTimezone(data.options.timezone);
+        await page.emulateTimezone(options.timezone);
       }
 
       try {
         this.addPageListeners(page);
-        switch (data.renderType) {
+        switch (renderType) {
           case RenderType.CSV:
-            return await this.exportCSV(page, data.options);
+            return await this.exportCSV(page, options, signal);
           case RenderType.PNG:
           default:
-            return await this.takeScreenshot(page, data.options as ImageRenderOptions);
+            return await this.takeScreenshot(page, options as ImageRenderOptions, signal);
         }
       } finally {
         this.removePageListeners(page);
@@ -99,13 +101,13 @@ export class ClusteredBrowser extends Browser {
     return undefined;
   };
 
-  async render(options: ImageRenderOptions): Promise<RenderResponse> {
+  async render(options: ImageRenderOptions, signal: AbortSignal): Promise<RenderResponse> {
     this.validateImageOptions(options);
-    return this.cluster.execute({ groupId: this.getGroupId(options), options, renderType: RenderType.PNG });
+    return this.cluster.execute({ groupId: this.getGroupId(options), options, renderType: RenderType.PNG, signal });
   }
 
-  async renderCSV(options: RenderOptions): Promise<RenderCSVResponse> {
+  async renderCSV(options: RenderOptions, signal: AbortSignal): Promise<RenderCSVResponse> {
     this.validateRenderOptions(options);
-    return this.cluster.execute({ groupId: this.getGroupId(options), options, renderType: RenderType.CSV });
+    return this.cluster.execute({ groupId: this.getGroupId(options), options, renderType: RenderType.CSV, signal });
   }
 }
