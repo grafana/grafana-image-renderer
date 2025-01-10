@@ -1,4 +1,3 @@
-import './tracing'; // FIXIT: ideally this should changed by a function initializeTracing
 
 import * as path from 'path';
 import * as _ from 'lodash';
@@ -12,6 +11,7 @@ import { ConsoleLogger, PluginLogger } from './logger';
 import * as minimist from 'minimist';
 import { serve } from './node-plugin';
 import { createSanitizer } from './sanitizer/Sanitizer';
+import { initializeTracing } from './tracing';
 
 async function main() {
   const argv = minimist(process.argv.slice(2));
@@ -53,12 +53,15 @@ async function main() {
   } else if (command === 'server') {
     let config: ServiceConfig = defaultServiceConfig;
 
-    if (argv.config) {
+    const configFileName = argv.config || 'dev.json';
+    const configPath = path.resolve(process.cwd(), configFileName); // Resolve relative to CWD
+
+    if (configPath) {
       try {
-        const fileConfig = readJSONFileSync(argv.config);
+        const fileConfig = readJSONFileSync(configPath);
         config = _.merge(config, fileConfig);
       } catch (e) {
-        console.error('failed to read config from path', argv.config, 'error', e);
+        console.error('failed to read config from path', configPath, 'error', e);
         return;
       }
     }
@@ -68,8 +71,7 @@ async function main() {
     const logger = new ConsoleLogger(config.service.logging);
 
     if (config.service.tracing.enabled) {
-      // FIXIT: not working probably because it is being initialized before the server
-      // initializeTracing(logger, config.service.tracing.exporterURL);
+      initializeTracing(logger, config.service.tracing.exporterURL);
       logger.info("tracing is enabled");
     }
 
