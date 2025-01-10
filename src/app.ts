@@ -53,15 +53,12 @@ async function main() {
   } else if (command === 'server') {
     let config: ServiceConfig = defaultServiceConfig;
 
-    const configFileName = argv.config || 'dev.json';
-    const configPath = path.resolve(process.cwd(), configFileName); // Resolve relative to CWD
-
-    if (configPath) {
+    if (argv.config) {
       try {
-        const fileConfig = readJSONFileSync(configPath);
+        const fileConfig = readJSONFileSync(argv.config);
         config = _.merge(config, fileConfig);
       } catch (e) {
-        console.error('failed to read config from path', configPath, 'error', e);
+        console.error('failed to read config from path', argv.config, 'error', e);
         return;
       }
     }
