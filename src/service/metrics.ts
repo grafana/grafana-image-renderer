@@ -15,7 +15,10 @@ export const setupHttpServerMetrics = (app: express.Express, config: MetricsConf
     config.requestDurationBuckets.join(',')
   );
 
-  const excludeRegExp = /^((?!(render)).)*$/;
+  // Exclude all non-rendering endpoints:
+  //   - endpoints that do not include render
+  //   - /render/version
+  const excludeRegExp = /^(((?!(render)).)*|.*version.*)$/;
 
   const opts = {
     httpDurationMetricName: 'grafana_image_renderer_service_http_request_duration_seconds',
