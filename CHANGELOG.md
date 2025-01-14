@@ -1,3 +1,8 @@
+## 3.12.0 (2025-01-14)
+- Support cancel rendering requests on client cancellation [#588](https://github.com/grafana/grafana-image-renderer/pull/588), [AgnesToulet](https://github.com/AgnesToulet)
+- Chore: Add ENV variables for temp folders in Docker [#583](https://github.com/grafana/grafana-image-renderer/pull/583), [evictorero](https://github.com/evictorero)
+- Add image source label to dockerfiles [#573](https://github.com/grafana/grafana-image-renderer/pull/573), [wuast94](https://github.com/wuast94)
+
 ## 3.11.6 (2024-10-17)
 - Chore: Upgrade express from 4.21.0 to 4.21.1 [#577](https://github.com/grafana/grafana-image-renderer/pull/577), [AgnesToulet](https://github.com/AgnesToulet)
 - Chore: Don't install dev packages in Docker image [#575](https://github.com/grafana/grafana-image-renderer/pull/575), [McTonderski](https://github.com/McTonderski), [AgnesToulet](https://github.com/AgnesToulet)
