@@ -9,6 +9,8 @@ import {Logger} from "./logger";
 // const { diag, DiagConsoleLogger, DiagLogLevel } = require('@opentelemetry/api');
 // diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.DEBUG);
 
+const traceExporterURL = 'http://localhost:4318/v1/traces'
+
 const traceExporter = new OTLPTraceExporter({
     url: traceExporterURL, // Change to your Jaeger or OTLP endpoint
 });
@@ -18,7 +20,14 @@ const sdk = new NodeSDK({
         [SEMRESATTRS_SERVICE_NAME]: 'image-renderer-service',
     }),
     traceExporter,
-    instrumentations: [getNodeAutoInstrumentations()],
+    instrumentations: [
+        getNodeAutoInstrumentations({
+        // only instrument fs if it is part of another trace
+        '@opentelemetry/instrumentation-fs': {
+          requireParentSpan: true,
+        },
+      })
+    ],
 });
 
 export  function startTracing(log: Logger) {

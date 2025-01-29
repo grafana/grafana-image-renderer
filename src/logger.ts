@@ -46,25 +46,12 @@ export class ConsoleLogger implements Logger {
       transports.push(new winston.transports.Console(options));
     }
 
-    // Create a custom format to include trace context in logs
-    const traceContextFormat = winston.format((info) => {
-      const span = trace.getSpan(context.active());
-      if (span) {
-        const spanContext = span.spanContext();
-        info.trace_id = spanContext.traceId;
-        info.span_id = spanContext.spanId;
-      }
-      return info;
-    });
+//@opentelemetry/instrumentation-winston auto inject trace-context into Winston log records 
 
     this.logger = winston.createLogger({
       level: config.level,
       exitOnError: false,
       transports: transports,
-      format: winston.format.combine(
-          traceContextFormat(),
-          winston.format.json()
-      ),
     });
 
     this.errorWriter = {
