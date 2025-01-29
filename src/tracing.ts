@@ -5,28 +5,25 @@ import {SEMRESATTRS_SERVICE_NAME} from '@opentelemetry/semantic-conventions';
 import {Resource} from '@opentelemetry/resources';
 import {Logger} from "./logger";
 
-const traceExporterURL = 'http://localhost:4318/v1/traces';
-
-
 // For troubleshooting, set the log level to DiagLogLevel.DEBUG
 // const { diag, DiagConsoleLogger, DiagLogLevel } = require('@opentelemetry/api');
 // diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.DEBUG);
 
-export  function initializeTracing(log: Logger, traceExporterURL: string) {
-    log.info('Starting tracing', 'traceExporterURL', traceExporterURL);
-    const traceExporter = new OTLPTraceExporter({
-        url: traceExporterURL, // Change to your Jaeger or OTLP endpoint
-    });
+const traceExporter = new OTLPTraceExporter({
+    url: traceExporterURL, // Change to your Jaeger or OTLP endpoint
+});
 
-    const sdk = new NodeSDK({
-        resource: new Resource({
-            [SEMRESATTRS_SERVICE_NAME]: 'image-renderer-service',
-        }),
-        traceExporter,
-        instrumentations: [getNodeAutoInstrumentations()],
-    });
+const sdk = new NodeSDK({
+    resource: new Resource({
+        [SEMRESATTRS_SERVICE_NAME]: 'image-renderer-service',
+    }),
+    traceExporter,
+    instrumentations: [getNodeAutoInstrumentations()],
+});
 
+export  function startTracing(log: Logger) {
     sdk.start();
+    log.info('Starting tracing');
 
     process.on('SIGTERM', () => {
         sdk.shutdown()

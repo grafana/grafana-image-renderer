@@ -47,6 +47,9 @@ const serviceConfig: ServiceConfig = {
         colorize: false,
       },
     },
+    tracing: {
+      enabled: true,
+    },
     security: {
       authToken: '-',
     },

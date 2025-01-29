@@ -9,7 +9,6 @@ export interface MetricsConfig {
 
 export interface TracesConfig {
   enabled: boolean;
-  exporterURL: string;
 }
 
 export interface ConsoleLoggerConfig {
@@ -61,7 +60,6 @@ export const defaultServiceConfig: ServiceConfig = {
     },
     tracing: {
       enabled: false,
-      exporterURL: 'http://localhost:4318/v1/traces',
     }
   },
   rendering: defaultRenderingConfig,
