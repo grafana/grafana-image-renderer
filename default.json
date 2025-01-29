@@ -20,6 +20,10 @@
       }
     },
 
+    "tracing": {
+      "enabled": false
+    },
+
     "security": {
       "authToken": "-"
     }
