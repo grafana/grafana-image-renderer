@@ -564,7 +564,7 @@ export class Browser {
   };
 
   logRedirectResponse = (resp: puppeteer.HTTPResponse) => {
-    const status = resp.status()
+    const status = resp.status();
     if (status >= 300 && status <= 399 && resp.request().resourceType() === 'document') {
       const headers = resp.headers();
       this.log.debug(`Redirect from ${resp.url()} to ${headers['location']}`)
