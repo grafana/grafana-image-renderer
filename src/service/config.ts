@@ -55,12 +55,12 @@ export const defaultServiceConfig: ServiceConfig = {
         colorize: false,
       },
     },
+    tracing: {
+      enabled: false,
+    },
     security: {
       authToken: '-',
     },
-    tracing: {
-      enabled: false,
-    }
   },
   rendering: defaultRenderingConfig,
 };

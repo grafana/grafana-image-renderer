@@ -9,10 +9,8 @@ import {Logger} from "./logger";
 // const { diag, DiagConsoleLogger, DiagLogLevel } = require('@opentelemetry/api');
 // diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.DEBUG);
 
-const traceExporterURL = 'http://localhost:4318/v1/traces'
-
 const traceExporter = new OTLPTraceExporter({
-    url: traceExporterURL, // Change to your Jaeger or OTLP endpoint
+    url: process.env['OTEL_EXPORTER_OTLP_TRACES_ENDPOINT'],
 });
 
 const sdk = new NodeSDK({
