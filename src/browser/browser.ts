@@ -555,6 +555,7 @@ export class Browser {
       page.on('request', this.logRequest);
       page.on('requestfinished', this.logRequestFinished);
       page.on('close', this.logPageClosed);
+      page.on('response', this.logRedirectResponse);
     }
   }
 
@@ -568,6 +569,7 @@ export class Browser {
       page.off('request', this.logRequest);
       page.off('requestfinished', this.logRequestFinished);
       page.off('close', this.logPageClosed);
+      page.off('response', this.logRedirectResponse);
     }
   }
 
@@ -596,6 +598,14 @@ export class Browser {
 
   logRequest = (req: any) => {
     this.log.debug('Browser request', 'url', req.url(), 'method', req.method());
+  };
+
+  logRedirectResponse = (resp: puppeteer.HTTPResponse) => {
+    const status = resp.status();
+    if (status >= 300 && status <= 399 && resp.request().resourceType() === 'document') {
+      const headers = resp.headers();
+      this.log.debug(`Redirect from ${resp.url()} to ${headers['location']}`);
+    }
   };
 
   logRequestFailed = (req: any) => {
