@@ -1,3 +1,4 @@
+import { startTracing } from './tracing';
 import * as path from 'path';
 import * as _ from 'lodash';
 import * as fs from 'fs';
@@ -64,6 +65,10 @@ async function main() {
     populateServiceConfigFromEnv(config, env);
 
     const logger = new ConsoleLogger(config.service.logging);
+
+    if (config.service.tracing.enabled) {
+      startTracing(logger);
+    }
 
     const sanitizer = createSanitizer();
     const server = new HttpServer(config, logger, sanitizer);
