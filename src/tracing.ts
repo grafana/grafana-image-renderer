@@ -15,7 +15,7 @@ const traceExporter = new OTLPTraceExporter({
 
 const sdk = new NodeSDK({
     resource: new Resource({
-        [SEMRESATTRS_SERVICE_NAME]: 'image-renderer-service',
+        [SEMRESATTRS_SERVICE_NAME]: 'grafana-image-renderer',
     }),
     traceExporter,
     instrumentations: [
