@@ -53,7 +53,7 @@ const pluginV2ProtoDescriptor = grpc.loadPackageDefinition(pluginV2PackageDef);
 const sanitizerProtoDescriptor = grpc.loadPackageDefinition(sanitizerPackageDef);
 
 export class RenderGRPCPluginV2 implements GrpcPlugin {
-  constructor(private config: PluginConfig, private log: Logger) { }
+  constructor(private config: PluginConfig, private log: Logger) {}
 
   async grpcServer(server: grpc.Server) {
     const metrics = setupMetrics();
@@ -92,7 +92,7 @@ export class RenderGRPCPluginV2 implements GrpcPlugin {
 class PluginGRPCServer {
   private browserVersion: string | undefined;
 
-  constructor(private browser: Browser, private log: Logger, private sanitizer: Sanitizer, private securityCfg: SecurityConfig) { }
+  constructor(private browser: Browser, private log: Logger, private sanitizer: Sanitizer, private securityCfg: SecurityConfig) {}
 
   async start(browserVersion?: string) {
     this.browserVersion = browserVersion;
@@ -100,6 +100,9 @@ class PluginGRPCServer {
   }
 
   async render(call: grpc.ServerUnaryCall<RenderRequest, any>, callback: grpc.sendUnaryData<RenderResponse>) {
+    const abortController = new AbortController();
+    const { signal } = abortController;
+
     const req = call.request;
     const headers: HTTPHeaders = {};
 
@@ -139,9 +142,14 @@ class PluginGRPCServer {
     };
 
     this.log.debug('Render request received', 'url', options.url);
+    call.on('cancelled', (err) => {
+      this.log.debug('Connection closed', 'url', options.url, 'error', err);
+      abortController.abort();
+    });
     let errStr = '';
+
     try {
-      await this.browser.render(options);
+      await this.browser.render(options, signal);
     } catch (err) {
       this.log.error('Render request failed', 'url', options.url, 'error', err.toString());
       errStr = err.toString();
@@ -150,6 +158,9 @@ class PluginGRPCServer {
   }
 
   async renderCsv(call: grpc.ServerUnaryCall<RenderCSVRequest, any>, callback: grpc.sendUnaryData<RenderCSVResponse>) {
+    const abortController = new AbortController();
+    const { signal } = abortController;
+
     const req = call.request;
     const headers: HTTPHeaders = {};
 
@@ -185,10 +196,15 @@ class PluginGRPCServer {
     };
 
     this.log.debug('Render request received', 'url', options.url);
+    call.on('cancelled', (err) => {
+      this.log.debug('Connection closed', 'url', options.url, 'error', err);
+      abortController.abort();
+    });
+
     let errStr = '';
     let fileName = '';
     try {
-      const result = await this.browser.renderCSV(options);
+      const result = await this.browser.renderCSV(options, signal);
       fileName = result.fileName || '';
     } catch (err) {
       this.log.error('Render request failed', 'url', options.url, 'error', err.toString());

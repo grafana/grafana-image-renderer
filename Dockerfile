@@ -4,6 +4,10 @@ FROM node:18-alpine AS base
 ENV CHROME_BIN="/usr/bin/chromium-browser"
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD="true"
 
+# Folder used by puppeteer to write temporal files
+ENV XDG_CONFIG_HOME=/tmp/.chromium
+ENV XDG_CACHE_HOME=/tmp/.chromium
+
 WORKDIR /usr/src/app
 
 RUN apk --no-cache upgrade && \
