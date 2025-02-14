@@ -11,6 +11,7 @@ import { RenderingConfig } from '../config/rendering';
 import { ImageRenderOptions, RenderOptions } from '../types';
 import { StepTimeoutError } from './error';
 import { getPDFOptionsFromURL } from './pdf';
+import { trace, Tracer } from '@opentelemetry/api';
 
 export interface Metrics {
   durationHistogram: promClient.Histogram;
@@ -29,8 +30,11 @@ type DashboardScrollingResult = { scrolled: false } | { scrolled: true; scrollHe
 type PuppeteerLaunchOptions = Parameters<typeof puppeteer['launch']>[0];
 
 export class Browser {
+  tracer: Tracer;
+  
   constructor(protected config: RenderingConfig, protected log: Logger, protected metrics: Metrics) {
     this.log.debug('Browser initialized', 'config', this.config);
+    this.tracer = trace.getTracer('browser');
   }
 
   async getBrowserVersion(): Promise<string> {
@@ -536,7 +540,12 @@ export class Browser {
   async withTimingMetrics<T>(step: string, callback: () => Promise<T>): Promise<T> {
     if (this.config.timingMetrics) {
       const endTimer = this.metrics.durationHistogram.startTimer({ step });
-      const res = await callback();
+      const res = this.tracer.startActiveSpan(step, async (span) => {
+        const cbRes = await callback();
+        span.end();
+        return cbRes;
+      });
+
       endTimer();
 
       return res;
