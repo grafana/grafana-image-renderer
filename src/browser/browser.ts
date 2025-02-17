@@ -62,15 +62,10 @@ export class Browser {
     }
 
     options.headers = options.headers || {};
-    const headers = {};
 
-    if (options.headers['Accept-Language']) {
-      headers['Accept-Language'] = options.headers['Accept-Language'];
-    } else if (this.config.acceptLanguage) {
-      headers['Accept-Language'] = this.config.acceptLanguage;
+    if (!options.headers['Accept-Language'] && this.config.acceptLanguage) {
+      options.headers['Accept-Language'] = this.config.acceptLanguage;
     }
-
-    options.headers = headers;
 
     if (typeof options.timeout === 'string') {
       options.timeout = parseInt(options.timeout as unknown as string, 10);

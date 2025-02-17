@@ -119,7 +119,7 @@ class PluginGRPCServer {
     }
 
     if (req.headers) {
-      for (const key in req.headers) {
+      for (const key in ['Accept-Language', 'traceparent', 'tracestate']) {
         if (req.headers.hasOwnProperty(key)) {
           const h = req.headers[key];
           headers[key] = h.values.join(';');

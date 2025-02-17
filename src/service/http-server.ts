@@ -189,6 +189,12 @@ export class HttpServer {
       headers['Accept-Language'] = (req.headers['Accept-Language'] as string[]).join(';');
     }
 
+    // Propagate traces 
+    if (req.headers['traceparent']) {
+      headers['traceparent'] = req.headers['traceparent'] as string;
+      headers['tracestate'] = (req.headers['tracestate'] as string) ?? '';
+    }
+
     const options: ImageRenderOptions = {
       url: req.query.url,
       width: req.query.width,
