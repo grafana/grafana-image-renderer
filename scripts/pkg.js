@@ -31,6 +31,6 @@ if(platform === 'macos' && (arch.includes('arm'))) {
 const outputPath = "dist/" + (process.argv[3] || `plugin-${archArg}`);
 const outputNodeModules = `${outputPath}/node_modules`
 
-childProcess.execSync(`"./node_modules/.bin/pkg" -t node18-${platform}-${arch} . --out-path ${outputPath} --no-native-build`, {stdio: 'inherit'});
+childProcess.execSync(`"./node_modules/.bin/pkg" -t node22-${platform}-${arch} . --out-path ${outputPath} --no-native-build`, {stdio: 'inherit'});
 
 childProcess.execSync(`rm -rf ${outputNodeModules}`)
