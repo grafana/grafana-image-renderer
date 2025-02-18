@@ -22,7 +22,7 @@ async function main() {
     const config = getConfig() as PluginConfig;
     const logger = new PluginLogger();
 
-    if (config.rendering.tracing.enabled) {
+    if (config.rendering.tracing.url) {
       startTracing(logger);
     }
 
@@ -58,7 +58,7 @@ async function main() {
     const config = getConfig() as ServiceConfig;
     const logger = new ConsoleLogger(config.service.logging);
 
-    if (config.rendering.tracing.enabled) {
+    if (config.rendering.tracing.url) {
       startTracing(logger);
     }
 

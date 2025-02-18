@@ -14,7 +14,6 @@ type NetworkConditions = {
 };
 
 export interface TracesConfig {
-  enabled: boolean;
   url: string;
 }
 
@@ -68,7 +67,6 @@ export const defaultRenderingConfig: RenderingConfig = {
   dumpio: false,
   timingMetrics: false,
   tracing: {
-    enabled: false,
     url: '',
   },
 };
@@ -129,7 +127,6 @@ const envConfig: Record<Mode, Keys<RenderingConfig>> = {
     dumpio: 'GF_PLUGIN_RENDERING_DUMPIO',
     timingMetrics: 'GF_PLUGIN_RENDERING_TIMING_METRICS',
     tracing: {
-      enabled: 'GF_PLUGIN_RENDERING_TRACING_ENABLED',
       url: 'GF_PLUGIN_RENDERING_TRACING_URL',
     },
   },
@@ -220,10 +217,6 @@ export function populateRenderingConfigFromEnv(config: RenderingConfig, env: Nod
 
   if (env[envKeys.timingMetrics!]) {
     config.timingMetrics = env[envKeys.timingMetrics!] === 'true';
-  }
-
-  if (env[envKeys.tracing?.enabled!]) {
-    config.tracing.enabled = env[envKeys.tracing?.enabled!] === 'true';
   }
 
   if (env[envKeys.tracing?.url!]) {

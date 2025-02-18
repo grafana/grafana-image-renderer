@@ -71,7 +71,6 @@ const serviceConfig: ServiceConfig = {
     },
     timingMetrics: false,
     tracing: {
-      enabled: false,
       url: '',
     },
     emulateNetworkConditions: false,

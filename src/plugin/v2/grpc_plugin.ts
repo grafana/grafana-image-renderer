@@ -248,7 +248,7 @@ class PluginGRPCServer {
       }
     }
 
-    if (this.config.rendering.tracing.enabled) {
+    if (this.config.rendering.tracing.url) {
       const output: TraceCarrier = {};
       propagation.inject(context.active(), output);
       const { traceparent, tracestate } = output;

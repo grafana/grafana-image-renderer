@@ -9,7 +9,7 @@ import { getConfig } from './config/config';
 
 const config = getConfig();
 let sdk;
-if (config.rendering.tracing.enabled) {
+if (config.rendering.tracing.url) {
   sdk = initTracing(config.rendering.tracing.url);
 }
 

@@ -34,7 +34,7 @@ export class Browser {
 
   constructor(protected config: RenderingConfig, protected log: Logger, protected metrics: Metrics) {
     this.log.debug('Browser initialized', 'config', this.config);
-    if (config.tracing.enabled) {
+    if (config.tracing.url) {
       this.tracer = trace.getTracer('browser');
     }
   }
