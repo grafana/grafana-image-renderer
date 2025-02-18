@@ -26,6 +26,9 @@ const renderingConfig = {
   verboseLogging: false,
   dumpio: false,
   timingMetrics: false,
+  tracing: {
+    url: '',
+  },
   emulateNetworkConditions: false,
 };
 
