@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import * as _ from 'lodash';
 import * as minimist from 'minimist';
 import { defaultServiceConfig, populateServiceConfigFromEnv, ServiceConfig } from '../service/config';
-import { defaultPluginConfig, PluginConfig, populatePluginConfigFromEnv } from '../plugin/v2/config';
+import { defaultPluginConfig, populatePluginConfigFromEnv, PluginConfig } from '../plugin/v2/config';
 
 export function getConfig(): PluginConfig | ServiceConfig {
   const argv = minimist(process.argv.slice(2));
