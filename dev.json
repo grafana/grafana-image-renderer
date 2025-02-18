@@ -15,10 +15,6 @@
         "json": false,
         "colorize": true
       }
-    },
-    
-    "tracing": {
-      "enabled": true
     }
   },
   "rendering": {
@@ -54,6 +50,11 @@
 
     "verboseLogging": true,
     "dumpio": false,
-    "timingMetrics": true
+    "timingMetrics": true,
+
+    "tracing": {
+      "enabled": true,
+      "url": "http://localhost:4318/v1/traces"
+    }
   }
 }
