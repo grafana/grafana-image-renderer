@@ -93,10 +93,21 @@ The following example describes how to build and run the remote HTTP rendering s
    ```
 
 1. Run the server:
+   - Using default configuration 
 
-   ```bash
-   node build/app.js server --port=8081
-   ```
+      ```bash
+      node build/app.js server
+      ```
+   - Using custom [configuration](https://grafana.com/docs/grafana/latest/image-rendering/#configuration)
+
+      ```bash
+      node build/app.js server --config=dev.json
+      ```   
+   - Using environment variables
+
+      ```bash
+      HTTP_PORT=8085 LOG_LEVEL=debug node build/app.js server
+      ```   
 
 1. Update Grafana configuration:
 
