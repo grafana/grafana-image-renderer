@@ -66,6 +66,22 @@ export function populateServiceConfigFromEnv(config: ServiceConfig, env: NodeJS.
     config.service.port = parseInt(env['HTTP_PORT'] as string, 10);
   }
 
+  if (env['HTTP_PROTOCOL']) {
+    config.service.protocol = env['HTTP_PROTOCOL'];
+  }
+
+  if (env['HTTP_CERT_FILE']) {
+    config.service.certFile = env['HTTP_CERT_FILE'];
+  }
+
+  if (env['HTTP_CERT_KEY']) {
+    config.service.certKey = env['HTTP_CERT_KEY'];
+  }
+
+  if (env['HTTP_MIN_TLS_VERSION']) {
+    config.service.minTLSVersion = env['HTTP_MIN_TLS_VERSION'];
+  }
+
   if (env['AUTH_TOKEN']) {
     const authToken = env['AUTH_TOKEN'] as string;
     config.service.security.authToken = authToken.includes(' ') ? authToken.split(' ') : authToken;
