@@ -110,7 +110,6 @@ class PluginGRPCServer {
     const { signal } = abortController;
 
     const req = call.request;
-    const headers: HTTPHeaders = {};
 
     if (!req) {
       return callback({ code: Status.INVALID_ARGUMENT, details: 'Request cannot be null' });
@@ -124,21 +123,6 @@ class PluginGRPCServer {
       return callback({ code: Status.INVALID_ARGUMENT, details: 'Forbidden query url protocol' });
     }
 
-    if (req.headers) {
-      if (req.headers.hasOwnProperty('Accept-Language')) {
-        const h = req.headers['Accept-Language'];
-        headers['Accept-Language'] = h.values.join(';');
-      }
-    }
-
-    if (this.config.rendering.tracing.enabled) {
-      const output: TraceCarrier = {};
-      propagation.inject(context.active(), output);
-      const { traceparent, tracestate } = output;
-      headers['traceparent'] = traceparent ?? '';
-      headers['tracestate'] = tracestate ?? '';
-    }
-
     const options: ImageRenderOptions = {
       url: req.url,
       width: req.width,
@@ -149,7 +133,7 @@ class PluginGRPCServer {
       domain: req.domain,
       timezone: req.timezone,
       deviceScaleFactor: req.deviceScaleFactor,
-      headers: headers,
+      headers: this.getHeaders(req),
       encoding: req.encoding,
     };
 
@@ -174,7 +158,6 @@ class PluginGRPCServer {
     const { signal } = abortController;
 
     const req = call.request;
-    const headers: HTTPHeaders = {};
 
     if (!req) {
       return callback({ code: Status.INVALID_ARGUMENT, details: 'Request cannot be null' });
@@ -188,15 +171,6 @@ class PluginGRPCServer {
       return callback({ code: Status.INVALID_ARGUMENT, details: 'Forbidden query url protocol' });
     }
 
-    if (req.headers) {
-      for (const key in req.headers) {
-        if (req.headers.hasOwnProperty(key)) {
-          const h = req.headers[key];
-          headers[key] = h.values.join(';');
-        }
-      }
-    }
-
     const options: RenderOptions = {
       url: req.url,
       filePath: req.filePath,
@@ -204,7 +178,7 @@ class PluginGRPCServer {
       renderKey: req.renderKey,
       domain: req.domain,
       timezone: req.timezone,
-      headers: headers,
+      headers: this.getHeaders(req),
     };
 
     this.log.debug('Render request received', 'url', options.url);
@@ -262,6 +236,27 @@ class PluginGRPCServer {
       this.log.error('Sanitization failed', 'contentLength', req.content.length, 'name', grpcReq.filename, 'error', e.stack);
       callback(null, { error: e.stack, sanitized: Buffer.from('', 'binary') });
     }
+  }
+
+  getHeaders(req: RenderRequest | RenderCSVRequest): HTTPHeaders {
+    const headers: HTTPHeaders = {};
+
+    if (req.headers) {
+      if (req.headers.hasOwnProperty('Accept-Language')) {
+        const h = req.headers['Accept-Language'];
+        headers['Accept-Language'] = h.values.join(';');
+      }
+    }
+
+    if (this.config.rendering.tracing.enabled) {
+      const output: TraceCarrier = {};
+      propagation.inject(context.active(), output);
+      const { traceparent, tracestate } = output;
+      headers['traceparent'] = traceparent ?? '';
+      headers['tracestate'] = tracestate ?? '';
+    }
+
+    return headers;
   }
 }
 
