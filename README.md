@@ -45,21 +45,27 @@ If you still want to install the plugin with the Grafana Docker image, refer to 
    1. Update your `Makefile` to set `ARCH = darwin-arm64-unknown`.
    2. Run `make build_package`. 
    3. The plugin will be built in the `dist` folder. Copy the whole folder.
+
 2. Add to Grafana plugins folder:
-   1. Open your grafana plugins folder. Check your .ini ffile, it should have the directory.
-   ```
-   [paths]
-   plugins = data/plugins
-   ```
-   If you do not have one, create a new `plugins` folder and update the path.
+   1. Open your grafana plugins folder. Check your .ini file, it should have the directory.
+
+      ```
+      [paths]
+      plugins = data/plugins
+      ```
+
+      If you do not have one, create a new `plugins` folder and update the path.
+
    2. Paste the copied `dist` folder and rename it to `grafana-image-renderer`.
+
 3. Update Grafana .ini file:
    1. Comment out the remote renderer settings in the [rendering] section.
    2. Add the following config to allow running the IR plugin unsigned.
-   ``` 
-   [plugins]
-   allow_loading_unsigned_plugins = grafana-image-renderer
-   ```
+
+      ``` 
+      [plugins]
+      allow_loading_unsigned_plugins = grafana-image-renderer
+      ```
 
 ## Remote rendering service installation
 
@@ -96,10 +102,13 @@ The following example shows how you can run Grafana and the remote HTTP renderin
    ```
 
    If you want to run a local branch of the image renderer in Docker, you can build the docker image of the image renderer from source
+  
    ```
    docker build -t custom-grafana-image-renderer .
+
    ```
    and paste the new image name
+   
    ```yaml
      renderer:
        image: <IMAGE NAME>
