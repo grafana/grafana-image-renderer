@@ -31,10 +31,12 @@ type PuppeteerLaunchOptions = Parameters<typeof puppeteer['launch']>[0];
 
 export class Browser {
   tracer: Tracer;
-  
+
   constructor(protected config: RenderingConfig, protected log: Logger, protected metrics: Metrics) {
     this.log.debug('Browser initialized', 'config', this.config);
-    this.tracer = trace.getTracer('browser');
+    if (config.tracing.url) {
+      this.tracer = trace.getTracer('browser');
+    }
   }
 
   async getBrowserVersion(): Promise<string> {
@@ -266,13 +268,13 @@ export class Browser {
     let page: puppeteer.Page | undefined = undefined;
 
     try {
-      browser = await this.withTimingMetrics<puppeteer.Browser>('launch', () => {
+      browser = await this.withMonitoring<puppeteer.Browser>('launch', () => {
         this.validateImageOptions(options);
         const launcherOptions = this.getLauncherOptions(options);
         return puppeteer.launch(launcherOptions);
       });
 
-      page = await this.withTimingMetrics<puppeteer.Page>('newPage', () => {
+      page = await this.withMonitoring<puppeteer.Page>('newPage', () => {
         return browser!.newPage();
       });
 
@@ -510,7 +512,7 @@ export class Browser {
     }
 
     try {
-      const res = await this.withTimingMetrics(step, callback);
+      const res = await this.withMonitoring(step, callback);
 
       if (signal.aborted) {
         this.log.warn('Signal aborted while performing step', 'step', step, 'url', url);
@@ -532,21 +534,34 @@ export class Browser {
     }
   }
 
-  async withTimingMetrics<T>(step: string, callback: () => Promise<T>): Promise<T> {
+  async withMonitoring<T>(step: string, callback: () => Promise<T>): Promise<T> {
+    // Wrap callback with timing metrics if enabled
     if (this.config.timingMetrics) {
-      const endTimer = this.metrics.durationHistogram.startTimer({ step });
-      const res = this.tracer.startActiveSpan(step, async (span) => {
-        const cbRes = await callback();
-        span.end();
-        return cbRes;
-      });
-
-      endTimer();
-
-      return res;
-    } else {
-      return callback();
+      const originalCallback = callback;
+      callback = async () => {
+        const endTimer = this.metrics.durationHistogram.startTimer({ step });
+        try {
+          return await originalCallback();
+        } finally {
+          endTimer();
+        }
+      };
     }
+
+    // Wrap callback with tracing if enabled
+    if (this.tracer) {
+      const originalCallback = callback;
+      callback = () =>
+        this.tracer.startActiveSpan(step, async (span) => {
+          try {
+            return await originalCallback();
+          } finally {
+            span.end();
+          }
+        });
+    }
+
+    return callback();
   }
 
   addPageListeners(page: puppeteer.Page) {

@@ -47,9 +47,6 @@ const serviceConfig: ServiceConfig = {
         colorize: false,
       },
     },
-    tracing: {
-      enabled: true,
-    },
     security: {
       authToken: '-',
     },
@@ -73,6 +70,9 @@ const serviceConfig: ServiceConfig = {
       timeout: 30,
     },
     timingMetrics: false,
+    tracing: {
+      url: '',
+    },
     emulateNetworkConditions: false,
     // Set to true to get more logs
     verboseLogging: false, // true,
@@ -98,15 +98,15 @@ function getGrafanaEndpoint(domain: string) {
 let envSettings = {
   saveDiff: false,
   updateGolden: false,
-}
+};
 
 beforeAll(() => {
   if (process.env['CI'] === 'true') {
     domain = 'grafana';
   }
-  
-  envSettings.saveDiff = process.env['SAVE_DIFF'] === 'true'
-  envSettings.updateGolden = process.env['UPDATE_GOLDEN'] === 'true'
+
+  envSettings.saveDiff = process.env['SAVE_DIFF'] === 'true';
+  envSettings.updateGolden = process.env['UPDATE_GOLDEN'] === 'true';
 
   return server.start();
 });
@@ -183,14 +183,11 @@ describe('Test /render', () => {
     expect(pixelDiff).toBeLessThan(imageDiffThreshold);
   });
 
-  
   it('should take a full dashboard screenshot', async () => {
     const url = `${getGrafanaEndpoint(domain)}/d/${allPanelsDashboardUid}?render=1&from=1699333200000&to=1699344000000&kiosk=true`;
     const response = await request(server.app)
       .get(
-        `/render?url=${encodeURIComponent(
-          url
-        )}&timeout=5&renderKey=${renderKey}&domain=${domain}&width=${imageWidth}&height=-1&deviceScaleFactor=1`
+        `/render?url=${encodeURIComponent(url)}&timeout=5&renderKey=${renderKey}&domain=${domain}&width=${imageWidth}&height=-1&deviceScaleFactor=1`
       )
       .set('X-Auth-Token', '-');
 

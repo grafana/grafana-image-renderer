@@ -20,10 +20,6 @@
       }
     },
 
-    "tracing": {
-      "enabled": false
-    },
-
     "security": {
       "authToken": "-"
     }
@@ -55,6 +51,10 @@
 
     "verboseLogging": false,
     "dumpio": false,
-    "timingMetrics": false
+    "timingMetrics": false,
+
+    "tracing": {
+      "url": ""
+    }
   }
 }

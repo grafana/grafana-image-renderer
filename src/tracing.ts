@@ -3,30 +3,40 @@ import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentation
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
 import { SEMRESATTRS_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
 import { Resource } from '@opentelemetry/resources';
+
 import { Logger } from './logger';
+import { getConfig } from './config/config';
 
-// For troubleshooting, set the log level to DiagLogLevel.DEBUG
-// const { diag, DiagConsoleLogger, DiagLogLevel } = require('@opentelemetry/api');
-// diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.DEBUG);
+const config = getConfig();
+let sdk;
+if (config.rendering.tracing.url) {
+  sdk = initTracing(config.rendering.tracing.url);
+}
 
-const traceExporter = new OTLPTraceExporter({
-  url: process.env['OTEL_EXPORTER_OTLP_TRACES_ENDPOINT'],
-});
+export function initTracing(exporterURL: string) {
+  // For troubleshooting, set the log level to DiagLogLevel.DEBUG
+  // const { diag, DiagConsoleLogger, DiagLogLevel } = require('@opentelemetry/api');
+  // diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.DEBUG);
 
-const sdk = new NodeSDK({
-  resource: new Resource({
-    [SEMRESATTRS_SERVICE_NAME]: 'grafana-image-renderer',
-  }),
-  traceExporter,
-  instrumentations: [
-    getNodeAutoInstrumentations({
-      // only instrument fs if it is part of another trace
-      '@opentelemetry/instrumentation-fs': {
-        requireParentSpan: true,
-      },
+  const traceExporter = new OTLPTraceExporter({
+    url: exporterURL,
+  });
+
+  return new NodeSDK({
+    resource: new Resource({
+      [SEMRESATTRS_SERVICE_NAME]: 'grafana-image-renderer',
     }),
-  ],
-});
+    traceExporter,
+    instrumentations: [
+      getNodeAutoInstrumentations({
+        // only instrument fs if it is part of another trace
+        '@opentelemetry/instrumentation-fs': {
+          requireParentSpan: true,
+        },
+      }),
+    ],
+  });
+}
 
 export function startTracing(log: Logger) {
   sdk.start();
