@@ -241,11 +241,9 @@ class PluginGRPCServer {
   getHeaders(req: RenderRequest | RenderCSVRequest): HTTPHeaders {
     const headers: HTTPHeaders = {};
 
-    if (req.headers) {
-      if (req.headers.hasOwnProperty('Accept-Language')) {
-        const h = req.headers['Accept-Language'];
-        headers['Accept-Language'] = h.values.join(';');
-      }
+    if (req.headers?.hasOwnProperty('Accept-Language')) {
+      const h = req.headers['Accept-Language'];
+      headers['Accept-Language'] = h.values.join(';');
     }
 
     if (this.config.rendering.tracing.url) {
