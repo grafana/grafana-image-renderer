@@ -53,7 +53,7 @@
     "timingMetrics": true,
 
     "tracing": {
-      "url": ""
+      "url": "http://localhost:4318/v1/traces"
     }
   }
 }

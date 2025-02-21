@@ -103,6 +103,9 @@ const envConfig: Record<Mode, Keys<RenderingConfig>> = {
     verboseLogging: 'RENDERING_VERBOSE_LOGGING',
     dumpio: 'RENDERING_DUMPIO',
     timingMetrics: 'RENDERING_TIMING_METRICS',
+    tracing: {
+      url: 'RENDERING_TRACING_URL',
+    },
   },
   plugin: {
     chromeBin: 'GF_PLUGIN_RENDERING_CHROME_BIN',
