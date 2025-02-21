@@ -53,7 +53,6 @@ If you still want to install the plugin with the Grafana Docker image, refer to 
       [paths]
       plugins = data/plugins
       ```
-
       If you do not have one, create a new `plugins` folder and update the path.
 
    2. Paste the copied `dist` folder and rename it to `grafana-image-renderer`.
@@ -100,18 +99,10 @@ The following example shows how you can run Grafana and the remote HTTP renderin
        ports:
          - 8081
    ```
-
-   If you want to run a local branch of the image renderer in Docker, you can build the docker image of the image renderer from source
-  
+   _Notes:_
+   If you want to run a local branch of the image renderer in Docker, you can build the docker image of the image renderer from source via
    ```
    docker build -t custom-grafana-image-renderer .
-
-   ```
-   and paste the new image name
-   
-   ```yaml
-     renderer:
-       image: <IMAGE NAME>
    ```
 
 1. Next, run docker compose.
