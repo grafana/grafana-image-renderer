@@ -8,6 +8,8 @@ A Grafana backend plugin that handles rendering panels and dashboards to PNGs us
 - Windows (x64)
 - Mac OS X (x64)
 
+For Mac ARM64, you need to [build the plugin from source](https://github.com/grafana/grafana-image-renderer/blob/master/docs/building_from_source.md) or use the [remote rendering installation](https://github.com/grafana/grafana-image-renderer?tab=readme-ov-file#remote-rendering-service-installation).
+
 ### Dependencies
 
 This plugin is packaged in a single executable with [Node.js](https://nodejs.org/) runtime and [Chromium browser](https://www.chromium.org/Home).
@@ -26,7 +28,8 @@ Rendering multiple images in parallel requires an even bigger memory footprint. 
 
 ## Plugin installation
 
-You can install the plugin using Grafana CLI (recommended way) or with Grafana Docker image. There is a separate plugin instruction for Mac ARM64.
+You can install the plugin using Grafana CLI (recommended way) or with Grafana Docker image.
+
 ### Grafana CLI (recommended)
 
 ```bash
@@ -38,33 +41,6 @@ grafana-cli plugins install grafana-image-renderer
 This plugin is not compatible with the current Grafana Docker image and requires additional system-level dependencies. We recommend setting up another Docker container for rendering and using remote rendering instead. For instruction, refer to [Run in Docker](#run-in-docker).
 
 If you still want to install the plugin with the Grafana Docker image, refer to the instructions on building a custom Grafana image in [Grafana Docker documentation](https://grafana.com/docs/grafana/latest/setup-grafana/configure-docker/#build-a-custom-grafana-docker-image).
-
-### Plugin for Mac ARM64
-
-1. Build the plugin locally for Mac:
-   1. Update your `Makefile` to set `ARCH = darwin-arm64-unknown`.
-   2. Run `make build_package`. 
-   3. The plugin will be built in the `dist` folder. Copy the whole folder.
-
-2. Add to Grafana plugins folder:
-   1. Open your grafana plugins folder. Check your .ini file, it should have the directory.
-
-      ```
-      [paths]
-      plugins = data/plugins
-      ```
-      If you do not have one, create a new `plugins` folder and update the path.
-
-   2. Paste the copied `dist` folder and rename it to `grafana-image-renderer`.
-
-3. Update Grafana .ini file:
-   1. Comment out the remote renderer settings in the [rendering] section.
-   2. Add the following config to allow running the IR plugin unsigned.
-
-      ``` 
-      [plugins]
-      allow_loading_unsigned_plugins = grafana-image-renderer
-      ```
 
 ## Remote rendering service installation
 
@@ -98,11 +74,6 @@ The following example shows how you can run Grafana and the remote HTTP renderin
        image: grafana/grafana-image-renderer:latest
        ports:
          - 8081
-   ```
-   _Notes:_
-   If you want to run a local branch of the image renderer in Docker, you can build the docker image of the image renderer from source via
-   ```
-   docker build -t custom-grafana-image-renderer .
    ```
 
 1. Next, run docker compose.
@@ -153,44 +124,3 @@ For available configuration settings, please refer to [Grafana Image Rendering d
 
 For troubleshooting help, refer to
 [Grafana Image Rendering troubleshooting documentation](https://grafana.com/docs/grafana/latest/image-rendering/troubleshooting/).
-
-## Testing
-
-In order to run the image-renderer automated test suites, you need to run the following command from the root folder:
-
-```
-yarn test
-```
-
-This will launch a Grafana instance in Docker and, then, run the test suites.
-
-_Notes:_
-
-If there are some expected changes in the reference image files (located in `/tests/testdata`), run `yarn test-update` and push the updated references.
-
-If the tests are failing and you want to see the difference between the image you get and the reference image, run `yarn test-diff`. This will generate images (called `diff_<test case>.png`) containing the differences in the `/tests/testdata` folder.
-
-### Fixing Drone issues
-
-If tests are successful in your local environement but fail in Drone. You can follow these steps to run the tests in an environment similar to the Drone pipeline. This will mount your local files of the `grafana-image-renderer` repo in the Docker image so any change that happens in the Docker image will be available in your local environment. This allows you to run `yarn test-diff` and `yarn test-update` in Docker and see the results locally. 
-
-1. Run the Drone environment in Docker:
-
-```
-cd ./devenv/docker/drone
-docker-compose up
-```
-
-2. Open a terminal within the `drone-docker-puppeteer` container and run the following commands:
-
-```
-cd /drone/src
-PUPPETEER_CACHE_DIR=/drone/src/cache yarn install --frozen-lockfile --no-progress
-PUPPETEER_CACHE_DIR=/drone/src/cache CI=true yarn test-ci
-```
-
-_Notes:_
-The tests might take longer in the Docker container. If you run into timeout issues, you can run the test command with the `--testTimeout option`:
-```
-PUPPETEER_CACHE_DIR=/drone/src/cache CI=true yarn test-ci --testTimeout=10000
-```

@@ -44,7 +44,7 @@
     "dumpio": false,
 
     "tracing": {
-      "url": "http://host.docker.internal:4318/v1/traces"
+      "url": ""
     }
   }
 }
