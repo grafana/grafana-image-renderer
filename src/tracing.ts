@@ -24,7 +24,7 @@ export function initTracing(exporterURL: string) {
 
   return new NodeSDK({
     resource: new Resource({
-      [SEMRESATTRS_SERVICE_NAME]: 'grafana-image-renderer',
+      [SEMRESATTRS_SERVICE_NAME]: config.rendering.tracing.serviceName || 'grafana-image-renderer',
     }),
     traceExporter,
     instrumentations: [

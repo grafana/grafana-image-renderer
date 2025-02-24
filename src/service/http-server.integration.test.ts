@@ -72,6 +72,7 @@ const serviceConfig: ServiceConfig = {
     timingMetrics: false,
     tracing: {
       url: '',
+      serviceName: '',
     },
     emulateNetworkConditions: false,
     // Set to true to get more logs

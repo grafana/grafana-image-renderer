@@ -54,7 +54,8 @@
     "timingMetrics": false,
 
     "tracing": {
-      "url": ""
+      "url": "",
+      "serviceName": ""
     }
   }
 }

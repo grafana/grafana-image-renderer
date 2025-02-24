@@ -28,6 +28,7 @@ const renderingConfig = {
   timingMetrics: false,
   tracing: {
     url: '',
+    serviceName: '',
   },
   emulateNetworkConditions: false,
 };
