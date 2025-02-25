@@ -53,7 +53,7 @@ steps:
   environment:
     CI: "true"
     PUPPETEER_CACHE_DIR: /drone/src/cache
-  image: us-docker.pkg.dev/grafanalabs-dev/grafana-ci/docker-puppeteer:2.0.0
+  image: us-docker.pkg.dev/grafanalabs-dev/grafana-ci/docker-puppeteer:3.0.0
   name: yarn-test
 - commands:
   - . ~/.init-nvm.sh
@@ -195,7 +195,7 @@ steps:
   environment:
     CI: "true"
     PUPPETEER_CACHE_DIR: /drone/src/cache
-  image: us-docker.pkg.dev/grafanalabs-dev/grafana-ci/docker-puppeteer:2.0.0
+  image: us-docker.pkg.dev/grafanalabs-dev/grafana-ci/docker-puppeteer:3.0.0
   name: yarn-test
 - commands:
   - . ~/.init-nvm.sh
@@ -353,7 +353,7 @@ steps:
   environment:
     CI: "true"
     PUPPETEER_CACHE_DIR: /drone/src/cache
-  image: us-docker.pkg.dev/grafanalabs-dev/grafana-ci/docker-puppeteer:2.0.0
+  image: us-docker.pkg.dev/grafanalabs-dev/grafana-ci/docker-puppeteer:3.0.0
   name: yarn-test
 - commands:
   - . ~/.init-nvm.sh
@@ -542,6 +542,6 @@ kind: secret
 name: gar
 ---
 kind: signature
-hmac: 5e72ddb2d00dec40054f0640eb9048e0375790ce7300d0863138e5f98cfb7a0c
+hmac: 4dba0a92e353db7897b48eca1db87b5736aef14d23e987e0845a887b3103c90c
 
 ...
