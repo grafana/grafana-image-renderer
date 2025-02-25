@@ -1,3 +1,4 @@
+import { startTracing } from './tracing';
 import * as path from 'path';
 import * as _ from 'lodash';
 import * as fs from 'fs';
@@ -10,6 +11,7 @@ import { ConsoleLogger, PluginLogger } from './logger';
 import * as minimist from 'minimist';
 import { serve } from './node-plugin';
 import { createSanitizer } from './sanitizer/Sanitizer';
+import { getConfig } from './config/config';
 
 async function main() {
   const argv = minimist(process.argv.slice(2));
@@ -17,9 +19,13 @@ async function main() {
   const command = argv._[0];
 
   if (command === undefined) {
+    const config = getConfig() as PluginConfig;
     const logger = new PluginLogger();
-    const config: PluginConfig = defaultPluginConfig;
-    populatePluginConfigFromEnv(config, env);
+
+    if (config.rendering.tracing.url) {
+      startTracing(logger);
+    }
+
     if (!config.rendering.chromeBin && (process as any).pkg) {
       const execPath = path.dirname(process.execPath);
       const chromeInfoFile = fs.readFileSync(path.resolve(execPath, 'chrome-info.json'), 'utf8');
@@ -49,21 +55,12 @@ async function main() {
       grpcPort: config.plugin.grpc.port,
     });
   } else if (command === 'server') {
-    let config: ServiceConfig = defaultServiceConfig;
-
-    if (argv.config) {
-      try {
-        const fileConfig = readJSONFileSync(argv.config);
-        config = _.merge(config, fileConfig);
-      } catch (e) {
-        console.error('failed to read config from path', argv.config, 'error', e);
-        return;
-      }
-    }
-
-    populateServiceConfigFromEnv(config, env);
-
+    const config = getConfig() as ServiceConfig;
     const logger = new ConsoleLogger(config.service.logging);
+
+    if (config.rendering.tracing.url) {
+      startTracing(logger);
+    }
 
     const sanitizer = createSanitizer();
     const server = new HttpServer(config, logger, sanitizer);
@@ -77,15 +74,9 @@ main().catch((err) => {
   const errorLog = {
     '@level': 'error',
     '@message': 'failed to start grafana-image-renderer',
-    'error': err.message,
-    'trace': err.stack,
-  }
+    error: err.message,
+    trace: err.stack,
+  };
   console.error(JSON.stringify(errorLog));
   process.exit(1);
 });
-
-function readJSONFileSync(filePath: string) {
-  const rawdata = fs.readFileSync(filePath, 'utf8');
-  return JSON.parse(rawdata);
-};
-
