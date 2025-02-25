@@ -107,7 +107,6 @@ const envConfig: Record<Mode, Keys<RenderingConfig>> = {
     timingMetrics: 'RENDERING_TIMING_METRICS',
     tracing: {
       url: 'RENDERING_TRACING_URL',
-      serviceName: 'RENDERING_TRACING_SERVICE_NAME'
     },
   },
   plugin: {
@@ -134,7 +133,6 @@ const envConfig: Record<Mode, Keys<RenderingConfig>> = {
     timingMetrics: 'GF_PLUGIN_RENDERING_TIMING_METRICS',
     tracing: {
       url: 'GF_PLUGIN_RENDERING_TRACING_URL',
-      serviceName: 'GF_PLUGIN_RENDERING_TRACING_SERVICE_NAME'
 
     },
   },
