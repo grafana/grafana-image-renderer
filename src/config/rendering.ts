@@ -15,7 +15,7 @@ type NetworkConditions = {
 
 export interface TracesConfig {
   url: string;
-  serviceName: string;
+  serviceName?: string;
 }
 
 export interface RenderingConfig {

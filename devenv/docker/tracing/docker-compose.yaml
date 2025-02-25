@@ -59,15 +59,12 @@ services:
       GF_RENDERING_CALLBACK_URL: http://grafana:3000/
       GF_RENDERING_TRACING_URL: http://tempo:4318/v1/traces
       GF_LOG_FILTERS: rendering:debug
-      GF_AUTH_ANONYMOUS_ENABLED: true
-      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
-      GF_AUTH_DISABLE_LOGIN_FORM: true
-      GF_FEATURE_TOGGLES_ENABLE: traceqlEditor metricsSummary
       GF_INSTALL_PLUGINS: https://storage.googleapis.com/integration-artifacts/grafana-exploretraces-app/grafana-exploretraces-app-latest.zip;grafana-traces-app
+      GF_TRACING_OPENTELEMETRY_OTLP_ADDRESS: tempo:4317
     ports:
       - "3000:3000"
   renderer:
-    image: custom-grafana-image-renderer
+    image: grafana/grafana-image-renderer:latest
     ports:
       - 8081:8081
     volumes:

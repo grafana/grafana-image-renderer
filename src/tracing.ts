@@ -13,7 +13,7 @@ if (config.rendering.tracing.url) {
   sdk = initTracing(config.rendering.tracing.url);
 }
 
-export function initTracing(exporterURL: string) {
+function initTracing(exporterURL: string) {
   // For troubleshooting, set the log level to DiagLogLevel.DEBUG
   // const { diag, DiagConsoleLogger, DiagLogLevel } = require('@opentelemetry/api');
   // diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.DEBUG);
