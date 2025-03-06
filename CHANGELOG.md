@@ -1,4 +1,4 @@
-## 3.12.2 (2025-03-07)
+## 3.12.2 (2025-03-06)
 
 - Image Render: Support Tracing [#586](https://github.com/grafana/grafana-image-renderer/pull/586), [lucychen-grafana](https://github.com/lucychen-grafana)
 - Server: Support HTTPS configuration using env variables [#600](https://github.com/grafana/grafana-image-renderer/pull/600), [evictorero](https://github.com/evictorero)
