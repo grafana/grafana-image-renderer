@@ -21,7 +21,7 @@ export class ReusableBrowser extends Browser {
     let page: puppeteer.Page | undefined;
 
     try {
-      page = await this.withTimingMetrics<puppeteer.Page>('newPage', async () => {
+      page = await this.withMonitoring<puppeteer.Page>('newPage', async () => {
         this.validateImageOptions(options);
         context = await this.browser.createBrowserContext();
         return context.newPage();
