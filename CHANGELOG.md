@@ -1,3 +1,10 @@
+## 3.12.2 (2025-03-06)
+
+- Image Render: Support Tracing [#586](https://github.com/grafana/grafana-image-renderer/pull/586), [lucychen-grafana](https://github.com/lucychen-grafana)
+- Server: Support HTTPS configuration using env variables [#600](https://github.com/grafana/grafana-image-renderer/pull/600), [evictorero](https://github.com/evictorero)
+- Docs: Update run server options [#599](https://github.com/grafana/grafana-image-renderer/pull/599), [evictorero](https://github.com/evictorero)
+- Chore: Upgrade to Node 22 [#595](https://github.com/grafana/grafana-image-renderer/pull/595), [AgnesToulet](https://github.com/AgnesToulet)
+
 ## 3.12.1 (2025-02-10)
 
 - Chore: upgrade deps [#593](https://github.com/grafana/grafana-image-renderer/pull/593), [AgnesToulet](https://github.com/AgnesToulet)
