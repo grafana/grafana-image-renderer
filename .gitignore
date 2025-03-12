@@ -41,5 +41,3 @@ scripts/tmp
 tests/testdata/diff_*
 
 cache
-
-/devenv/docker/tracing/tempo-data/

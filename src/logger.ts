@@ -1,6 +1,5 @@
 import * as winston from 'winston';
 import { LoggingConfig } from './service/config';
-import { context, trace } from '@opentelemetry/api';
 
 export interface LogWriter {
   write(message, encoding);
@@ -45,8 +44,6 @@ export class ConsoleLogger implements Logger {
       options.format = winston.format.combine(...(formatters as any));
       transports.push(new winston.transports.Console(options));
     }
-
-    //@opentelemetry/instrumentation-winston auto inject trace-context into Winston log records
 
     this.logger = winston.createLogger({
       level: config.level,

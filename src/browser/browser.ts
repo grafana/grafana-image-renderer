@@ -11,7 +11,6 @@ import { RenderingConfig } from '../config/rendering';
 import { ImageRenderOptions, RenderOptions } from '../types';
 import { StepTimeoutError } from './error';
 import { getPDFOptionsFromURL } from './pdf';
-import { trace, Tracer } from '@opentelemetry/api';
 
 export interface Metrics {
   durationHistogram: promClient.Histogram;
@@ -30,13 +29,8 @@ type DashboardScrollingResult = { scrolled: false } | { scrolled: true; scrollHe
 type PuppeteerLaunchOptions = Parameters<typeof puppeteer['launch']>[0];
 
 export class Browser {
-  tracer: Tracer;
-
   constructor(protected config: RenderingConfig, protected log: Logger, protected metrics: Metrics) {
     this.log.debug('Browser initialized', 'config', this.config);
-    if (config.tracing.url) {
-      this.tracer = trace.getTracer('browser');
-    }
   }
 
   async getBrowserVersion(): Promise<string> {
@@ -64,10 +58,15 @@ export class Browser {
     }
 
     options.headers = options.headers || {};
+    const headers = {};
 
-    if (!options.headers['Accept-Language'] && this.config.acceptLanguage) {
-      options.headers['Accept-Language'] = this.config.acceptLanguage;
+    if (options.headers['Accept-Language']) {
+      headers['Accept-Language'] = options.headers['Accept-Language'];
+    } else if (this.config.acceptLanguage) {
+      headers['Accept-Language'] = this.config.acceptLanguage;
     }
+
+    options.headers = headers;
 
     if (typeof options.timeout === 'string') {
       options.timeout = parseInt(options.timeout as unknown as string, 10);
@@ -268,13 +267,13 @@ export class Browser {
     let page: puppeteer.Page | undefined = undefined;
 
     try {
-      browser = await this.withMonitoring<puppeteer.Browser>('launch', () => {
+      browser = await this.withTimingMetrics<puppeteer.Browser>('launch', () => {
         this.validateImageOptions(options);
         const launcherOptions = this.getLauncherOptions(options);
         return puppeteer.launch(launcherOptions);
       });
 
-      page = await this.withMonitoring<puppeteer.Page>('newPage', () => {
+      page = await this.withTimingMetrics<puppeteer.Page>('newPage', () => {
         return browser!.newPage();
       });
 
@@ -512,7 +511,7 @@ export class Browser {
     }
 
     try {
-      const res = await this.withMonitoring(step, callback);
+      const res = await this.withTimingMetrics(step, callback);
 
       if (signal.aborted) {
         this.log.warn('Signal aborted while performing step', 'step', step, 'url', url);
@@ -534,34 +533,16 @@ export class Browser {
     }
   }
 
-  async withMonitoring<T>(step: string, callback: () => Promise<T>): Promise<T> {
-    // Wrap callback with timing metrics if enabled
+  async withTimingMetrics<T>(step: string, callback: () => Promise<T>): Promise<T> {
     if (this.config.timingMetrics) {
-      const originalCallback = callback;
-      callback = async () => {
-        const endTimer = this.metrics.durationHistogram.startTimer({ step });
-        try {
-          return await originalCallback();
-        } finally {
-          endTimer();
-        }
-      };
-    }
+      const endTimer = this.metrics.durationHistogram.startTimer({ step });
+      const res = await callback();
+      endTimer();
 
-    // Wrap callback with tracing if enabled
-    if (this.tracer) {
-      const originalCallback = callback;
-      callback = () =>
-        this.tracer.startActiveSpan(step, async (span) => {
-          try {
-            return await originalCallback();
-          } finally {
-            span.end();
-          }
-        });
+      return res;
+    } else {
+      return callback();
     }
-
-    return callback();
   }
 
   addPageListeners(page: puppeteer.Page) {
