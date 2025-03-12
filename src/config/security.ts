@@ -4,9 +4,9 @@ export interface SecurityConfig {
 
 export const isAuthTokenValid = (config: SecurityConfig, reqAuthToken: string): boolean => {
   let configToken = config.authToken || [''];
-  if (typeof configToken === 'string') {
-    configToken = [configToken];
+  if (typeof configToken === "string") {
+    configToken = [configToken]
   }
 
-  return reqAuthToken !== '' && configToken.includes(reqAuthToken);
-};
+  return reqAuthToken !== "" && configToken.includes(reqAuthToken)
+}

@@ -13,11 +13,6 @@ type NetworkConditions = {
   latency: number;
 };
 
-export interface TracesConfig {
-  url: string;
-  serviceName?: string;
-}
-
 export interface RenderingConfig {
   chromeBin?: string;
   args: string[];
@@ -39,7 +34,6 @@ export interface RenderingConfig {
   headed?: boolean;
   networkConditions?: NetworkConditions;
   emulateNetworkConditions: boolean;
-  tracing: TracesConfig;
 }
 
 export const defaultRenderingConfig: RenderingConfig = {
@@ -67,10 +61,6 @@ export const defaultRenderingConfig: RenderingConfig = {
   verboseLogging: false,
   dumpio: false,
   timingMetrics: false,
-  tracing: {
-    url: '',
-    serviceName: '',
-  },
 };
 
 export enum Mode {
@@ -105,9 +95,6 @@ const envConfig: Record<Mode, Keys<RenderingConfig>> = {
     verboseLogging: 'RENDERING_VERBOSE_LOGGING',
     dumpio: 'RENDERING_DUMPIO',
     timingMetrics: 'RENDERING_TIMING_METRICS',
-    tracing: {
-      url: 'RENDERING_TRACING_URL',
-    },
   },
   plugin: {
     chromeBin: 'GF_PLUGIN_RENDERING_CHROME_BIN',
@@ -131,10 +118,6 @@ const envConfig: Record<Mode, Keys<RenderingConfig>> = {
     verboseLogging: 'GF_PLUGIN_RENDERING_VERBOSE_LOGGING',
     dumpio: 'GF_PLUGIN_RENDERING_DUMPIO',
     timingMetrics: 'GF_PLUGIN_RENDERING_TIMING_METRICS',
-    tracing: {
-      url: 'GF_PLUGIN_RENDERING_TRACING_URL',
-
-    },
   },
 };
 
@@ -223,9 +206,5 @@ export function populateRenderingConfigFromEnv(config: RenderingConfig, env: Nod
 
   if (env[envKeys.timingMetrics!]) {
     config.timingMetrics = env[envKeys.timingMetrics!] === 'true';
-  }
-
-  if (env[envKeys.tracing?.url!]) {
-    config.tracing.url = env[envKeys.tracing?.url!] as string;
   }
 }
