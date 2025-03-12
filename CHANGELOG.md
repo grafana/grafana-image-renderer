@@ -1,4 +1,8 @@
-## 3.12.2 (2025-03-06)
+## 3.12.3 (2025-03-12)
+
+- 3.12.2 does not work due to Image Render: Support Tracing [#586](https://github.com/grafana/grafana-image-renderer/pull/586). Revert "Image Render: Support Tracing (#586)" [#609](https://github.com/grafana/grafana-image-renderer/pull/609), [lucychen-grafana](https://github.com/lucychen-grafana)
+
+## 3.12.2 (2025-03-06) (DEPRECATED)
 
 - Image Render: Support Tracing [#586](https://github.com/grafana/grafana-image-renderer/pull/586), [lucychen-grafana](https://github.com/lucychen-grafana)
 - Server: Support HTTPS configuration using env variables [#600](https://github.com/grafana/grafana-image-renderer/pull/600), [evictorero](https://github.com/evictorero)
