@@ -41,6 +41,11 @@
     },
 
     "verboseLogging": false,
-    "dumpio": false
+    "dumpio": false,
+
+    "tracing": {
+      "url": "",
+      "serviceName": ""
+    }
   }
 }

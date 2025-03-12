@@ -2,31 +2,26 @@
   "service": {
     "host": null,
     "port": 8081,
-    "protocol": "http",
-    "certFile": "",
-    "certKey": "",
 
     "metrics": {
-      "enabled": false,
+      "enabled": true,
       "collectDefaultMetrics": true,
       "requestDurationBuckets": [1, 5, 7, 9, 11, 13, 15, 20, 30]
     },
 
     "logging": {
-      "level": "info",
+      "level": "debug",
       "console": {
         "json": true,
         "colorize": false
       }
-    },
-
-    "security": {
-      "authToken": "-"
     }
   },
   "rendering": {
     "chromeBin": null,
-    "args": ["--no-sandbox", "--disable-gpu"],
+    "args": [
+      "--no-sandbox"
+    ],
     "ignoresHttpsErrors": false,
 
     "timezone": null,
@@ -37,24 +32,19 @@
     "maxWidth": 3080,
     "maxHeight": 3000,
     "maxDeviceScaleFactor": 4,
-    "pageZoomLevel": 1,
-    "headed": false,
 
-    "mode": "default",
-    "emulateNetworkConditions": false,
+    "mode": "clustered",
     "clustering": {
-      "monitor": false,
-      "mode": "browser",
+      "mode": "context",
       "maxConcurrency": 5,
       "timeout": 30
     },
 
     "verboseLogging": false,
     "dumpio": false,
-    "timingMetrics": false,
 
     "tracing": {
-      "url": "",
+      "url": " http://tempo:4318/v1/traces",
       "serviceName": ""
     }
   }
