@@ -37,6 +37,17 @@ export class HttpServer {
 
   async start() {
     this.app = express();
+    
+    // Add CORS headers
+    this.app.use((req, res, next) => {
+      res.header('Access-Control-Allow-Headers', 'Content-Type, X-Auth-Token, traceparent, tracestate');
+      
+      if (req.method === 'OPTIONS') {
+        return res.sendStatus(200);
+      }
+      next();
+    });
+
     this.app.use(
       morgan('combined', {
         skip: (req, res) => {
