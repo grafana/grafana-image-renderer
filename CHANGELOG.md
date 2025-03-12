@@ -1,3 +1,7 @@
+## 3.12.3 (2025-03-12)
+
+- Revert "Image Render: Support Tracing (#586)" [#609](https://github.com/grafana/grafana-image-renderer/pull/609), [lucychen-grafana](https://github.com/lucychen-grafana)
+
 ## 3.12.2 (2025-03-06)
 
 - Image Render: Support Tracing [#586](https://github.com/grafana/grafana-image-renderer/pull/586), [lucychen-grafana](https://github.com/lucychen-grafana)
