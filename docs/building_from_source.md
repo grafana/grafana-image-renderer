@@ -24,6 +24,9 @@ cd grafana-image-renderer
     # build and package for Darwin x64
     make build_package ARCH=darwin-x64-unknown
 
+    # build and package for Mac ARM64
+    make build_package ARCH=darwin-arm64-unknown
+
     # build and package without including Chromium
     make build_package ARCH=<ARCH> SKIP_CHROMIUM=true OUT=plugin-<ARCH>-no-chromium
     ```

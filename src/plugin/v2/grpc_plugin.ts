@@ -1,5 +1,6 @@
 import * as grpc from '@grpc/grpc-js';
 import * as protoLoader from '@grpc/proto-loader';
+import { context, propagation } from '@opentelemetry/api';
 import * as promClient from 'prom-client';
 import { GrpcPlugin } from '../../node-plugin';
 import { Logger } from '../../logger';
@@ -48,6 +49,11 @@ const sanitizerPackageDef = protoLoader.loadSync(__dirname + '/../../../proto/sa
   oneofs: true,
 });
 
+interface TraceCarrier {
+  traceparent?: string;
+  tracestate?: string;
+}
+
 const rendererV2ProtoDescriptor = grpc.loadPackageDefinition(rendererV2PackageDef);
 const pluginV2ProtoDescriptor = grpc.loadPackageDefinition(pluginV2PackageDef);
 const sanitizerProtoDescriptor = grpc.loadPackageDefinition(sanitizerPackageDef);
@@ -58,7 +64,7 @@ export class RenderGRPCPluginV2 implements GrpcPlugin {
   async grpcServer(server: grpc.Server) {
     const metrics = setupMetrics();
     const browser = createBrowser(this.config.rendering, this.log, metrics);
-    const pluginService = new PluginGRPCServer(browser, this.log, createSanitizer(), this.config.plugin.security);
+    const pluginService = new PluginGRPCServer(browser, this.log, createSanitizer(), this.config);
 
     const rendererServiceDef = rendererV2ProtoDescriptor['pluginextensionv2']['Renderer']['service'];
     server.addService(rendererServiceDef, pluginService as any);
@@ -92,7 +98,7 @@ export class RenderGRPCPluginV2 implements GrpcPlugin {
 class PluginGRPCServer {
   private browserVersion: string | undefined;
 
-  constructor(private browser: Browser, private log: Logger, private sanitizer: Sanitizer, private securityCfg: SecurityConfig) {}
+  constructor(private browser: Browser, private log: Logger, private sanitizer: Sanitizer, private config: PluginConfig) {}
 
   async start(browserVersion?: string) {
     this.browserVersion = browserVersion;
@@ -104,27 +110,17 @@ class PluginGRPCServer {
     const { signal } = abortController;
 
     const req = call.request;
-    const headers: HTTPHeaders = {};
 
     if (!req) {
       return callback({ code: Status.INVALID_ARGUMENT, details: 'Request cannot be null' });
     }
 
-    if (!isAuthTokenValid(this.securityCfg, req.authToken)) {
+    if (!isAuthTokenValid(this.config.plugin.security, req.authToken)) {
       return callback({ code: Status.UNAUTHENTICATED, details: 'Unauthorized request' });
     }
 
     if (req.url && !(req.url.startsWith('http://') || req.url.startsWith('https://'))) {
       return callback({ code: Status.INVALID_ARGUMENT, details: 'Forbidden query url protocol' });
-    }
-
-    if (req.headers) {
-      for (const key in req.headers) {
-        if (req.headers.hasOwnProperty(key)) {
-          const h = req.headers[key];
-          headers[key] = h.values.join(';');
-        }
-      }
     }
 
     const options: ImageRenderOptions = {
@@ -137,7 +133,7 @@ class PluginGRPCServer {
       domain: req.domain,
       timezone: req.timezone,
       deviceScaleFactor: req.deviceScaleFactor,
-      headers: headers,
+      headers: this.getHeaders(req),
       encoding: req.encoding,
     };
 
@@ -162,27 +158,17 @@ class PluginGRPCServer {
     const { signal } = abortController;
 
     const req = call.request;
-    const headers: HTTPHeaders = {};
 
     if (!req) {
       return callback({ code: Status.INVALID_ARGUMENT, details: 'Request cannot be null' });
     }
 
-    if (!isAuthTokenValid(this.securityCfg, req.authToken)) {
+    if (!isAuthTokenValid(this.config.plugin.security, req.authToken)) {
       return callback({ code: Status.UNAUTHENTICATED, details: 'Unauthorized request' });
     }
 
     if (req.url && !(req.url.startsWith('http://') || req.url.startsWith('https://'))) {
       return callback({ code: Status.INVALID_ARGUMENT, details: 'Forbidden query url protocol' });
-    }
-
-    if (req.headers) {
-      for (const key in req.headers) {
-        if (req.headers.hasOwnProperty(key)) {
-          const h = req.headers[key];
-          headers[key] = h.values.join(';');
-        }
-      }
     }
 
     const options: RenderOptions = {
@@ -192,7 +178,7 @@ class PluginGRPCServer {
       renderKey: req.renderKey,
       domain: req.domain,
       timezone: req.timezone,
-      headers: headers,
+      headers: this.getHeaders(req),
     };
 
     this.log.debug('Render request received', 'url', options.url);
@@ -231,7 +217,7 @@ class PluginGRPCServer {
   async sanitize(call: grpc.ServerUnaryCall<GRPCSanitizeRequest, any>, callback: grpc.sendUnaryData<GRPCSanitizeResponse>) {
     const grpcReq = call.request;
 
-    if (!isAuthTokenValid(this.securityCfg, grpcReq.authToken)) {
+    if (!isAuthTokenValid(this.config.plugin.security, grpcReq.authToken)) {
       return callback({ code: Status.UNAUTHENTICATED, details: 'Unauthorized request' });
     }
 
@@ -250,6 +236,25 @@ class PluginGRPCServer {
       this.log.error('Sanitization failed', 'contentLength', req.content.length, 'name', grpcReq.filename, 'error', e.stack);
       callback(null, { error: e.stack, sanitized: Buffer.from('', 'binary') });
     }
+  }
+
+  getHeaders(req: RenderRequest | RenderCSVRequest): HTTPHeaders {
+    const headers: HTTPHeaders = {};
+
+    if (req.headers?.hasOwnProperty('Accept-Language')) {
+      const h = req.headers['Accept-Language'];
+      headers['Accept-Language'] = h.values.join(';');
+    }
+
+    if (this.config.rendering.tracing.url) {
+      const output: TraceCarrier = {};
+      propagation.inject(context.active(), output);
+      const { traceparent, tracestate } = output;
+      headers['traceparent'] = traceparent ?? '';
+      headers['tracestate'] = tracestate ?? '';
+    }
+
+    return headers;
   }
 }
 
