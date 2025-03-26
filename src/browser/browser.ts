@@ -415,6 +415,19 @@ export class Browser {
       });
     }
 
+    if (options.greyScaleImage && !isPDF) {
+      await this.performStep('greyScale', options.url, signal, async () => {
+        const greyScaled = `${options.filePath}_${Date.now()}_greyscaled.png`;
+        
+        const file = await Jimp.read(options.filePath);
+        await file
+          .greyscale()
+          .writeAsync(greyScaled);
+
+        fs.renameSync(greyScaled, options.filePath);
+      });        
+    } 
+
     return { filePath: options.filePath };
   }
 
