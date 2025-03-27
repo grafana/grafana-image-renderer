@@ -54,7 +54,7 @@
     "@types/jest": "^29.5.12",
     "@types/jsdom": "20.0.0",
     "@types/multer": "^1.4.7",
-    "@types/node": "^22.13.1",
+    "@types/node": "^20.17.27",
     "@types/pixelmatch": "^5.2.6",
     "@types/supertest": "^2.0.15",
     "@typescript-eslint/eslint-plugin": "5.37.0",
@@ -88,6 +88,6 @@
   },
   "bin": "build/app.js",
   "engines": {
-    "node": ">= 22"
+    "node": ">= 20"
   }
 }
