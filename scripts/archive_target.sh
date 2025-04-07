@@ -9,5 +9,6 @@ fi
 
 OUT="${2:-plugin-${ARCH}}"
 
+apt-get update && apt-get install zip -y
 mkdir -p artifacts
 (cd dist && zip -yqr ../artifacts/${OUT}.zip ${OUT})

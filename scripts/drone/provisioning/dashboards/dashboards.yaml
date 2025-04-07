@@ -1,0 +1,11 @@
+apiVersion: 1
+
+providers:
+ - name: 'Tests'
+   folder: 'tests'
+   folderUid: ''
+   type: file
+   allowUiUpdates: false
+   updateIntervalSeconds: 60
+   options:
+     path: /drone/src/scripts/drone/provisioning/dashboards

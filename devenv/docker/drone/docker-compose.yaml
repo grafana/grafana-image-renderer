@@ -1,0 +1,20 @@
+version: '2'
+
+services:
+  docker-puppeteer:
+    image: grafana/docker-puppeteer:pre-node-20
+    volumes:
+      - "../../..:/drone/src"
+    stdin_open: true # docker run -i
+    tty: true        # docker run -t
+    entrypoint: bash
+  grafana:
+    image: grafana/grafana-enterprise:latest
+    ports:
+      - 3000:3000
+    environment:
+      GF_FEATURE_TOGGLES_ENABLE: renderAuthJWT
+    volumes:
+      - ../test/dashboards.yaml:/etc/grafana/provisioning/dashboards/dashboards.yaml
+      - ../../../scripts/drone/provisioning/dashboards:/usr/share/grafana/dashboards
+      - ../../../scripts/drone/provisioning/datasources/datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml

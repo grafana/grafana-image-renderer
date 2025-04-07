@@ -38,7 +38,7 @@ grafana-cli plugins install grafana-image-renderer
 
 This plugin is not compatible with the current Grafana Docker image and requires additional system-level dependencies. We recommend setting up another Docker container for rendering and using remote rendering instead. For instruction, refer to [Run in Docker](#run-in-docker).
 
-If you still want to install the plugin with the Grafana Docker image, refer to the instructions on building a custom Grafana image in [Grafana Docker documentation](https://grafana.com/docs/installation/docker/#custom-image-with-grafana-image-renderer-plugin-pre-installed).
+If you still want to install the plugin with the Grafana Docker image, refer to the instructions on building a custom Grafana image in [Grafana Docker documentation](https://grafana.com/docs/grafana/latest/setup-grafana/configure-docker/#build-a-custom-grafana-docker-image).
 
 ## Remote rendering service installation
 
@@ -56,35 +56,35 @@ The following example shows how you can run Grafana and the remote HTTP renderin
 
 1. Create a `docker-compose.yml` with the following content:
 
-```yaml
-version: '2'
+   ```yaml
+   version: '2'
 
-services:
-  grafana:
-    image: grafana/grafana:latest
-    ports:
-      - '3000:3000'
-    environment:
-      GF_RENDERING_SERVER_URL: http://renderer:8081/render
-      GF_RENDERING_CALLBACK_URL: http://grafana:3000/
-      GF_LOG_FILTERS: rendering:debug
-  renderer:
-    image: grafana/grafana-image-renderer:latest
-    ports:
-      - 8081
-```
+   services:
+     grafana:
+       image: grafana/grafana:latest
+       ports:
+         - '3000:3000'
+       environment:
+         GF_RENDERING_SERVER_URL: http://renderer:8081/render
+         GF_RENDERING_CALLBACK_URL: http://grafana:3000/
+         GF_LOG_FILTERS: rendering:debug
+     renderer:
+       image: grafana/grafana-image-renderer:latest
+       ports:
+         - 8081
+   ```
 
 1. Next, run docker compose.
 
-```bash
-docker-compose up
-```
+   ```bash
+   docker-compose up
+   ```
 
 ### Run as standalone Node.js application
 
 The following example describes how to build and run the remote HTTP rendering service as a standalone Node.js application and configure Grafana appropriately.
 
-1. Clone the [Grafana image renderer plugin](https://grafana.com/grafana/plugins/grafana-image-renderer) Git repository.
+1. Clone the [Grafana image renderer plugin](https://github.com/grafana/grafana-image-renderer/) Git repository.
 1. Install dependencies and build:
 
    ```bash
@@ -93,10 +93,21 @@ The following example describes how to build and run the remote HTTP rendering s
    ```
 
 1. Run the server:
+   - Using default configuration 
 
-   ```bash
-   node build/app.js server --port=8081
-   ```
+      ```bash
+      node build/app.js server
+      ```
+   - Using custom [configuration](https://grafana.com/docs/grafana/latest/image-rendering/#configuration)
+
+      ```bash
+      node build/app.js server --config=dev.json
+      ```   
+   - Using environment variables
+
+      ```bash
+      HTTP_PORT=8085 LOG_LEVEL=debug node build/app.js server
+      ```   
 
 1. Update Grafana configuration:
 
@@ -108,6 +119,12 @@ The following example describes how to build and run the remote HTTP rendering s
 
 1. Restart Grafana.
 
+## Security
+
+Access to the rendering endpoints is restricted to requests providing an auth token. This token should be configured in the Grafana configuration file and the renderer configuration file. This token is important when you run the plugin in remote rendering mode to avoid unauthorized file disclosure (see [CVE-2022-31176](https://github.com/grafana/grafana-image-renderer/security/advisories/GHSA-2cfh-233g-m4c5)).
+
+See [Grafana Image Rendering documentation](https://grafana.com/docs/grafana/latest/image-rendering/#security) to configure this secret token. The default value `-` is configured on both Grafana and the image renderer when you get started but we strongly recommend you to update this to a more secure value.
+
 ## Configuration
 
 For available configuration settings, please refer to [Grafana Image Rendering documentation](https://grafana.com/docs/grafana/latest/image-rendering/#configuration).
@@ -116,3 +133,44 @@ For available configuration settings, please refer to [Grafana Image Rendering d
 
 For troubleshooting help, refer to
 [Grafana Image Rendering troubleshooting documentation](https://grafana.com/docs/grafana/latest/image-rendering/troubleshooting/).
+
+## Testing
+
+In order to run the image-renderer automated test suites, you need to run the following command from the root folder:
+
+```
+yarn test
+```
+
+This will launch a Grafana instance in Docker and, then, run the test suites.
+
+_Notes:_
+
+If there are some expected changes in the reference image files (located in `/tests/testdata`), run `yarn test-update` and push the updated references.
+
+If the tests are failing and you want to see the difference between the image you get and the reference image, run `yarn test-diff`. This will generate images (called `diff_<test case>.png`) containing the differences in the `/tests/testdata` folder.
+
+### Fixing Drone issues
+
+If tests are successful in your local environement but fail in Drone. You can follow these steps to run the tests in an environment similar to the Drone pipeline. This will mount your local files of the `grafana-image-renderer` repo in the Docker image so any change that happens in the Docker image will be available in your local environment. This allows you to run `yarn test-diff` and `yarn test-update` in Docker and see the results locally. 
+
+1. Run the Drone environment in Docker:
+
+```
+cd ./devenv/docker/drone
+docker-compose up
+```
+
+2. Open a terminal within the `drone-docker-puppeteer` container and run the following commands:
+
+```
+cd /drone/src
+PUPPETEER_CACHE_DIR=/drone/src/cache yarn install --frozen-lockfile --no-progress
+PUPPETEER_CACHE_DIR=/drone/src/cache CI=true yarn test-ci
+```
+
+_Notes:_
+The tests might take longer in the Docker container. If you run into timeout issues, you can run the test command with the `--testTimeout option`:
+```
+PUPPETEER_CACHE_DIR=/drone/src/cache CI=true yarn test-ci --testTimeout=10000
+```

@@ -7,8 +7,10 @@ import * as fs from 'fs';
 import * as promClient from 'prom-client';
 import * as Jimp from 'jimp';
 import { Logger } from '../logger';
-import { RenderingConfig } from '../config';
+import { RenderingConfig } from '../config/rendering';
 import { ImageRenderOptions, RenderOptions } from '../types';
+import { StepTimeoutError } from './error';
+import { getPDFOptionsFromURL } from './pdf';
 
 export interface Metrics {
   durationHistogram: promClient.Histogram;
@@ -67,7 +69,7 @@ export class Browser {
     options.headers = headers;
 
     if (typeof options.timeout === 'string') {
-      options.timeout = parseInt((options.timeout as unknown) as string, 10);
+      options.timeout = parseInt(options.timeout as unknown as string, 10);
     }
 
     options.timeout = options.timeout || 30;
@@ -129,13 +131,14 @@ export class Browser {
       ignoreHTTPSErrors: this.config.ignoresHttpsErrors,
       dumpio: this.config.dumpio,
       args: this.config.args,
+      defaultViewport: null,
     };
 
     if (this.config.chromeBin) {
       launcherOptions.executablePath = this.config.chromeBin;
     }
 
-    launcherOptions.headless = !this.config.headed;
+    launcherOptions.headless = !this.config.headed ? 'shell' : false;
 
     return launcherOptions;
   }
@@ -174,25 +177,43 @@ export class Browser {
     page.on('dialog', acceptBeforeUnload);
   }
 
-  async scrollToLoadAllPanels(page: puppeteer.Page, options: ImageRenderOptions): Promise<DashboardScrollingResult> {
-    const scrollDivSelector = '[class="scrollbar-view"]';
+  async scrollToLoadAllPanels(page: puppeteer.Page, options: ImageRenderOptions, signal: AbortSignal): Promise<DashboardScrollingResult> {
+    const scrollElementSelector = await page.evaluate(() => {
+      const pageScrollbarIDSelector = '#page-scrollbar';
+      // the page-scrollbar ID was introduced in Grafana 11.1.0
+      // these are selectors that are used to find the page scrollbar in older grafana versions
+      // there are several because of the various structural changes made to the page
+      // using just [class*="scrollbar-view"] doesn't reliably work as it can match other deeply nested child scrollbars
+      // TODO remove these once we are sure that the page-scrollbar ID will always present
+      const fallbackSelectors = [
+        'main > div > [class*="scrollbar-view"]',
+        'main > div > div > [class*="scrollbar-view"]',
+        'main > div > div > div > [class*="scrollbar-view"]',
+        'main > div > div > div > div > [class*="scrollbar-view"]',
+        'main > div > div > div > div > div > [class*="scrollbar-view"]',
+      ];
+      const pageScrollbarSelector = [pageScrollbarIDSelector, ...fallbackSelectors].join(',');
+      const hasPageScrollbar = Boolean(document.querySelector(pageScrollbarSelector));
+      return hasPageScrollbar ? pageScrollbarSelector : 'body';
+    });
     const scrollDelay = options.scrollDelay ?? 500;
 
-    await page.waitForSelector(scrollDivSelector);
-    const heights: { dashboard?: { scroll: number; client: number }; body: { client: number } } = await page.evaluate((scrollDivSelector) => {
+    await page.waitForSelector(scrollElementSelector, { signal });
+    const heights: { dashboard?: { scroll: number; client: number }; body: { client: number } } = await page.evaluate((scrollElementSelector) => {
       const body = { client: document.body.clientHeight };
-      const dashboardDiv = document.querySelector(scrollDivSelector);
-      if (!dashboardDiv) {
+      const scrollableElement = document.querySelector(scrollElementSelector);
+      if (!scrollableElement) {
+        this.log.debug('no scrollable element detected, returning without scrolling');
         return {
           body,
         };
       }
 
       return {
-        dashboard: { scroll: dashboardDiv.scrollHeight, client: dashboardDiv.clientHeight },
+        dashboard: { scroll: scrollableElement.scrollHeight, client: scrollableElement.clientHeight },
         body,
       };
-    }, scrollDivSelector);
+    }, scrollElementSelector);
 
     if (!heights.dashboard) {
       return {
@@ -201,6 +222,13 @@ export class Browser {
     }
 
     if (heights.dashboard.scroll <= heights.dashboard.client) {
+      this.log.debug(
+        'client height greather or equal than scroll height, no scrolling',
+        'scrollHeight',
+        heights.dashboard.scroll,
+        'clientHeight',
+        heights.dashboard.client
+      );
       return {
         scrolled: false,
       };
@@ -210,18 +238,21 @@ export class Browser {
 
     for (let i = 0; i < scrolls; i++) {
       await page.evaluate(
-        (scrollByHeight, scrollDivSelector) => {
-          document.querySelector(scrollDivSelector)?.scrollBy(0, scrollByHeight);
+        (scrollByHeight, scrollElementSelector) => {
+          scrollElementSelector === 'body'
+            ? window.scrollBy(0, scrollByHeight)
+            : document.querySelector(scrollElementSelector)?.scrollBy(0, scrollByHeight);
         },
         heights.dashboard.client,
-        scrollDivSelector
+        scrollElementSelector
       );
-      await page.waitForTimeout(scrollDelay);
+
+      await new Promise((executor) => setTimeout(executor, scrollDelay));
     }
 
-    await page.evaluate((scrollDivSelector) => {
-      document.querySelector(scrollDivSelector)?.scrollTo(0, 0);
-    }, scrollDivSelector);
+    await page.evaluate((scrollElementSelector) => {
+      scrollElementSelector === 'body' ? window.scrollTo(0, 0) : document.querySelector(scrollElementSelector)?.scrollTo(0, 0);
+    }, scrollElementSelector);
 
     // Header height will be equal to 0 in Kiosk mode
     const headerHeight = heights.body.client - heights.dashboard.client;
@@ -231,24 +262,24 @@ export class Browser {
     };
   }
 
-  async render(options: ImageRenderOptions): Promise<RenderResponse> {
+  async render(options: ImageRenderOptions, signal: AbortSignal): Promise<RenderResponse> {
     let browser: puppeteer.Browser | undefined = undefined;
     let page: puppeteer.Page | undefined = undefined;
 
     try {
-      browser = await this.withTimingMetrics<puppeteer.Browser>(() => {
+      browser = await this.withTimingMetrics<puppeteer.Browser>('launch', () => {
         this.validateImageOptions(options);
         const launcherOptions = this.getLauncherOptions(options);
         return puppeteer.launch(launcherOptions);
-      }, 'launch');
+      });
 
-      page = await this.withTimingMetrics<puppeteer.Page>(() => {
+      page = await this.withTimingMetrics<puppeteer.Page>('newPage', () => {
         return browser!.newPage();
-      }, 'newPage');
+      });
 
       this.addPageListeners(page);
 
-      return await this.takeScreenshot(page, options);
+      return await this.takeScreenshot(page, options, signal);
     } finally {
       if (page) {
         this.removePageListeners(page);
@@ -268,100 +299,110 @@ export class Browser {
     });
   };
 
-  async takeScreenshot(page: puppeteer.Page, options: ImageRenderOptions): Promise<RenderResponse> {
-    try {
-      await this.withTimingMetrics(async () => {
-        if (this.config.verboseLogging) {
-          this.log.debug(
-            'Setting viewport for page',
-            'width',
-            options.width.toString(),
-            'height',
-            options.height.toString(),
-            'deviceScaleFactor',
-            options.deviceScaleFactor
-          );
-        }
+  async takeScreenshot(page: puppeteer.Page, options: ImageRenderOptions, signal: AbortSignal): Promise<RenderResponse> {
+    await this.performStep('prepare', options.url, signal, async () => {
+      if (this.config.verboseLogging) {
+        this.log.debug(
+          'Setting viewport for page',
+          'width',
+          options.width.toString(),
+          'height',
+          options.height.toString(),
+          'deviceScaleFactor',
+          options.deviceScaleFactor
+        );
+      }
 
-        await this.setViewport(page, options);
+      await this.setViewport(page, options);
+      await this.preparePage(page, options);
+      await this.setTimezone(page, options);
 
-        await this.preparePage(page, options);
-        await this.setTimezone(page, options);
+      if (this.config.verboseLogging) {
+        this.log.debug('Moving mouse on page', 'x', options.width, 'y', options.height);
+      }
+      return page.mouse.move(+options.width, +options.height);
+    });
 
-        if (this.config.verboseLogging) {
-          this.log.debug('Moving mouse on page', 'x', options.width, 'y', options.height);
-        }
-        return page.mouse.move(+options.width, +options.height);
-      }, 'prepare');
+    await this.performStep('navigate', options.url, signal, async () => {
+      if (this.config.verboseLogging) {
+        this.log.debug('Navigating and waiting for all network requests to finish', 'url', options.url);
+      }
 
-      await this.withTimingMetrics(() => {
-        if (this.config.verboseLogging) {
-          this.log.debug('Navigating and waiting for all network requests to finish', 'url', options.url);
-        }
-
-        return page.goto(options.url, { waitUntil: 'networkidle0', timeout: options.timeout * 1000 });
-      }, 'navigate');
-    } catch (err) {
-      this.log.error('Error while trying to prepare page for screenshot', 'url', options.url, 'err', err.stack);
-    }
+      await page.goto(options.url, { waitUntil: 'networkidle0', timeout: options.timeout * 1000, signal });
+    });
 
     let scrollResult: DashboardScrollingResult = {
       scrolled: false,
     };
 
     if (options.fullPageImage) {
-      try {
-        scrollResult = await this.withTimingMetrics(() => {
-          return this.scrollToLoadAllPanels(page, options);
-        }, 'dashboardScrolling');
-      } catch (err) {
-        this.log.error('Error while scrolling to load all panels', 'url', options.url, 'err', err.stack);
+      const res = await this.performStep<DashboardScrollingResult>('dashboardScrolling', options.url, signal, () => {
+        return this.scrollToLoadAllPanels(page, options, signal);
+      });
+
+      if (res) {
+        scrollResult = res;
       }
     }
 
-    try {
-      await this.withTimingMetrics(() => {
-        if (this.config.verboseLogging) {
-          this.log.debug('Waiting for dashboard/panel to load', 'timeout', `${options.timeout}s`);
-        }
-        return page.waitForFunction(
-          () => {
-            const panelCount = document.querySelectorAll('.panel').length || document.querySelectorAll('.panel-container').length;
-            return (window as any).panelsRendered >= panelCount;
-          },
-          {
-            timeout: options.timeout * 1000,
-          }
-        );
-      }, 'panelsRendered');
-    } catch (err) {
-      this.log.error('Error while waiting for the panels to load', 'url', options.url, 'err', err.stack);
-    }
+    const isPDF = options.encoding === 'pdf';
+    await this.performStep('panelsRendered', options.url, signal, async () => {
+      if (this.config.verboseLogging) {
+        this.log.debug('Waiting for dashboard/panel to load', 'timeout', `${options.timeout}s`);
+      }
+
+      await waitForQueriesAndVisualizations(page, options, signal);
+    });
 
     if (!options.filePath) {
-      options.filePath = uniqueFilename(os.tmpdir()) + '.png';
+      options.filePath = uniqueFilename(os.tmpdir()) + (isPDF ? '.pdf' : '.png');
     }
 
-    if (this.config.verboseLogging) {
-      this.log.debug('Taking screenshot', 'filePath', options.filePath);
-    }
+    await this.setPageZoomLevel(page, this.config.pageZoomLevel);
 
-    await this.withTimingMetrics(async () => {
+    await this.performStep('screenshot', options.url, signal, async () => {
+      if (this.config.verboseLogging) {
+        this.log.debug('Taking screenshot', 'filePath', options.filePath);
+      }
+
       if (scrollResult.scrolled) {
         await this.setViewport(page, {
           ...options,
           height: scrollResult.scrollHeight,
         });
       }
-      return page.screenshot({ path: options.filePath, fullPage: options.fullPageImage, captureBeyondViewport: options.fullPageImage || false });
-    }, 'screenshot');
 
-    if (options.scaleImage) {
-      const scaled = `${options.filePath}_${Date.now()}_scaled.png`;
-      const w = +options.width / options.scaleImage;
-      const h = +options.height / options.scaleImage;
+      if (isPDF) {
+        const scale = parseFloat((options.deviceScaleFactor as string) || '1') || 1;
+        if (scale < 1) {
+          await this.setViewport(page, {
+            ...options,
+            deviceScaleFactor: 1 / scale,
+          });
+        }
 
-      await this.withTimingMetrics(async () => {
+        return page.pdf({
+          ...getPDFOptionsFromURL(options.url),
+          margin: {
+            bottom: 0,
+            top: 0,
+            right: 0,
+            left: 0,
+          },
+          path: options.filePath,
+          scale: 1 / scale,
+        });
+      }
+
+      return page.screenshot({ path: options.filePath, fullPage: options.fullPageImage, captureBeyondViewport: false });
+    });
+
+    if (options.scaleImage && !isPDF) {
+      await this.performStep('imageResize', options.url, signal, async () => {
+        const scaled = `${options.filePath}_${Date.now()}_scaled.png`;
+        const w = +options.width / options.scaleImage!;
+        const h = +options.height / options.scaleImage!;
+
         const file = await Jimp.read(options.filePath);
         await file
           .resize(w, h)
@@ -371,13 +412,13 @@ export class Browser {
           .writeAsync(scaled);
 
         fs.renameSync(scaled, options.filePath);
-      }, 'imageResize');
+      });
     }
 
     return { filePath: options.filePath };
   }
 
-  async renderCSV(options: RenderOptions): Promise<RenderCSVResponse> {
+  async renderCSV(options: RenderOptions, signal: AbortSignal): Promise<RenderCSVResponse> {
     let browser;
     let page: any;
 
@@ -386,9 +427,10 @@ export class Browser {
       const launcherOptions = this.getLauncherOptions(options);
       browser = await puppeteer.launch(launcherOptions);
       page = await browser.newPage();
+
       this.addPageListeners(page);
 
-      return await this.exportCSV(page, options);
+      return await this.exportCSV(page, options, signal);
     } finally {
       if (page) {
         this.removePageListeners(page);
@@ -400,43 +442,55 @@ export class Browser {
     }
   }
 
-  async exportCSV(page: any, options: RenderOptions): Promise<RenderCSVResponse> {
-    await this.preparePage(page, options);
-    await this.setTimezone(page, options);
+  async exportCSV(page: any, options: RenderOptions, signal: AbortSignal): Promise<RenderCSVResponse> {
+    let downloadFilePath = '';
+    let downloadPath = '';
+    await this.performStep('prepare', options.url, signal, async () => {
+      downloadPath = uniqueFilename(os.tmpdir());
 
-    const downloadPath = uniqueFilename(os.tmpdir());
+      await this.preparePage(page, options);
+      await this.setTimezone(page, options);
+
+      await page._client().send('Page.setDownloadBehavior', { behavior: 'allow', downloadPath: downloadPath });
+    });
+
     fs.mkdirSync(downloadPath);
     const watcher = chokidar.watch(downloadPath);
-    let downloadFilePath = '';
     watcher.on('add', (file) => {
       if (!file.endsWith('.crdownload')) {
         downloadFilePath = file;
       }
     });
 
-    await page._client.send('Page.setDownloadBehavior', { behavior: 'allow', downloadPath: downloadPath });
-
-    if (this.config.verboseLogging) {
-      this.log.debug('Navigating and waiting for all network requests to finish', 'url', options.url);
-    }
-
-    await page.goto(options.url, { waitUntil: 'networkidle0', timeout: options.timeout * 1000 });
-
-    if (this.config.verboseLogging) {
-      this.log.debug('Waiting for download to end');
-    }
-
-    const startDate = Date.now();
-    while (Date.now() - startDate <= options.timeout * 1000) {
-      if (downloadFilePath !== '') {
-        break;
+    await this.performStep('navigateCSV', options.url, signal, async () => {
+      if (this.config.verboseLogging) {
+        this.log.debug('Navigating and waiting for all network requests to finish', 'url', options.url);
       }
-      await new Promise((resolve) => setTimeout(resolve, 500));
-    }
 
-    if (downloadFilePath === '') {
-      throw new Error(`Timeout exceeded while waiting for download to end`);
-    }
+      await page.goto(options.url, { waitUntil: 'networkidle0', timeout: options.timeout * 1000, signal });
+    });
+
+    await this.performStep('downloadCSV', options.url, signal, async () => {
+      if (this.config.verboseLogging) {
+        this.log.debug('Waiting for download to end');
+      }
+
+      const startDate = Date.now();
+      while (Date.now() - startDate <= options.timeout * 1000) {
+        if (signal.aborted) {
+          this.log.warn('Signal aborted while performing step', 'step', 'downloadCSV', 'url', options.url);
+          throw new StepTimeoutError('downloadCSV');
+        }
+        if (downloadFilePath !== '') {
+          break;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 500));
+      }
+
+      if (downloadFilePath === '') {
+        throw new StepTimeoutError('downloadCSV');
+      }
+    });
 
     await watcher.close();
 
@@ -451,7 +505,35 @@ export class Browser {
     return { filePath, fileName: path.basename(downloadFilePath) };
   }
 
-  async withTimingMetrics<T>(callback: () => Promise<T>, step: string): Promise<T> {
+  async performStep<T>(step: string, url: string, signal: AbortSignal, callback: () => Promise<T>): Promise<T | undefined> {
+    if (this.config.verboseLogging) {
+      this.log.debug('Step begins', 'step', step, 'url', url);
+    }
+
+    try {
+      const res = await this.withTimingMetrics(step, callback);
+
+      if (signal.aborted) {
+        this.log.warn('Signal aborted while performing step', 'step', step, 'url', url);
+        throw new StepTimeoutError(step);
+      }
+
+      if (this.config.verboseLogging) {
+        this.log.debug('Step ends', 'step', step, 'url', url);
+      }
+
+      return res;
+    } catch (err) {
+      if (!(err instanceof puppeteer.TimeoutError)) {
+        this.log.error('Error while performing step', 'step', step, 'url', url, 'err', err.stack);
+        throw err;
+      }
+
+      this.log.error('Error while performing step', 'step', step, 'url', url, 'err', err.stack);
+    }
+  }
+
+  async withTimingMetrics<T>(step: string, callback: () => Promise<T>): Promise<T> {
     if (this.config.timingMetrics) {
       const endTimer = this.metrics.durationHistogram.startTimer({ step });
       const res = await callback();
@@ -463,7 +545,7 @@ export class Browser {
     }
   }
 
-  addPageListeners(page: any) {
+  addPageListeners(page: puppeteer.Page) {
     page.on('error', this.logError);
     page.on('pageerror', this.logPageError);
     page.on('requestfailed', this.logRequestFailed);
@@ -473,19 +555,21 @@ export class Browser {
       page.on('request', this.logRequest);
       page.on('requestfinished', this.logRequestFinished);
       page.on('close', this.logPageClosed);
+      page.on('response', this.logRedirectResponse);
     }
   }
 
-  removePageListeners(page: any) {
-    page.removeListener('error', this.logError);
-    page.removeListener('pageerror', this.logPageError);
-    page.removeListener('requestfailed', this.logRequestFailed);
-    page.removeListener('console', this.logConsoleMessage);
+  removePageListeners(page: puppeteer.Page) {
+    page.off('error', this.logError);
+    page.off('pageerror', this.logPageError);
+    page.off('requestfailed', this.logRequestFailed);
+    page.off('console', this.logConsoleMessage);
 
     if (this.config.verboseLogging) {
-      page.removeListener('request', this.logRequest);
-      page.removeListener('requestfinished', this.logRequestFinished);
-      page.removeListener('close', this.logPageClosed);
+      page.off('request', this.logRequest);
+      page.off('requestfinished', this.logRequestFinished);
+      page.off('close', this.logPageClosed);
+      page.off('response', this.logRedirectResponse);
     }
   }
 
@@ -504,7 +588,7 @@ export class Browser {
     }
 
     const loc = msg.location();
-    if (msgType === 'error') {
+    if (msgType === 'error' && msg.text() !== 'JSHandle@object') {
       this.log.error('Browser console error', 'msg', msg.text(), 'url', loc.url, 'line', loc.lineNumber, 'column', loc.columnNumber);
       return;
     }
@@ -516,8 +600,21 @@ export class Browser {
     this.log.debug('Browser request', 'url', req.url(), 'method', req.method());
   };
 
+  logRedirectResponse = (resp: puppeteer.HTTPResponse) => {
+    const status = resp.status();
+    if (status >= 300 && status <= 399 && resp.request().resourceType() === 'document') {
+      const headers = resp.headers();
+      this.log.debug(`Redirect from ${resp.url()} to ${headers['location']}`);
+    }
+  };
+
   logRequestFailed = (req: any) => {
-    this.log.error('Browser request failed', 'url', req.url(), 'method', req.method(), 'failure', req.failure().errorText);
+    let failureError = '';
+    const failure = req?.failure();
+    if (failure) {
+      failureError = failure.errorText;
+    }
+    this.log.error('Browser request failed', 'url', req.url(), 'method', req.method(), 'failure', failureError);
   };
 
   logRequestFinished = (req: any) => {
@@ -527,4 +624,68 @@ export class Browser {
   logPageClosed = () => {
     this.log.debug('Browser page closed');
   };
+
+  private async setPageZoomLevel(page: puppeteer.Page, zoomLevel: number) {
+    if (this.config.verboseLogging) {
+      this.log.debug('Setting zoom level', 'zoomLevel', zoomLevel);
+    }
+    await page.evaluate((zoomLevel: number) => {
+      (document.body.style as any).zoom = zoomLevel;
+    }, zoomLevel);
+  }
+}
+
+declare global {
+  interface Window {
+    __grafanaSceneContext: object;
+    __grafanaRunningQueryCount?: number;
+  }
+}
+
+async function waitForQueriesAndVisualizations(page: puppeteer.Page, options: ImageRenderOptions, signal: AbortSignal) {
+  await page.waitForFunction(
+    (isFullPage) => {
+      if (window.__grafanaSceneContext) {
+        return window.__grafanaRunningQueryCount === 0;
+      }
+
+      /**
+       * panelsRendered value is updated every time that a panel renders. It could happen multiple times in a same panel because scrolling. For full page screenshots
+       * we can reach panelsRendered >= panelCount condition even if we have panels that are still loading data and their panelsRenderer value is 0, generating
+       * a screenshot with loading panels. It's why the condition for full pages is different from a single panel.
+       */
+      if (isFullPage) {
+        /**
+         * data-panelId is the total number of the panels in the dashboard. Rows included.
+         * panel-content only exists in non-row panels when the data is loaded.
+         * dashboard-row exists only in rows.
+         */
+        const panelCount = document.querySelectorAll('[data-panelId]').length;
+        const panelsRendered = document.querySelectorAll("[class$='panel-content']");
+        let panelsRenderedCount = 0;
+        panelsRendered.forEach((value: Element) => {
+          if (value.childElementCount > 0) {
+            panelsRenderedCount++;
+          }
+        });
+
+        const rowCount =
+          document.querySelectorAll('.dashboard-row').length || document.querySelectorAll("[data-testid='dashboard-row-container']").length;
+        const totalPanelsRendered = panelsRenderedCount + rowCount;
+        return totalPanelsRendered >= panelCount;
+      }
+
+      const panelCount = document.querySelectorAll('.panel-solo').length || document.querySelectorAll("[class$='panel-container']").length;
+      return (window as any).panelsRendered >= panelCount || panelCount === 0;
+    },
+    {
+      timeout: options.timeout * 1000,
+      polling: 'mutation',
+      signal,
+    },
+    options.fullPageImage
+  );
+
+  // Give some more time for rendering to complete
+  await new Promise((resolve) => setTimeout(resolve, 50));
 }

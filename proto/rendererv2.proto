@@ -18,6 +18,8 @@ message RenderRequest {
   int32 timeout = 8;
   string timezone = 9;
   map<string, StringList> headers = 10;
+  string authToken = 11;
+  string encoding = 12;
 }
 
 message RenderResponse {
@@ -32,6 +34,7 @@ message RenderCSVRequest {
   int32 timeout = 5;
   string timezone = 6;
   map<string, StringList> headers = 7;
+  string authToken = 8;
 }
 
 message RenderCSVResponse {

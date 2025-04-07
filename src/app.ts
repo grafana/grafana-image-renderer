@@ -1,14 +1,15 @@
 import * as path from 'path';
-import * as puppeteer from 'puppeteer';
 import * as _ from 'lodash';
+import * as fs from 'fs';
+import { Browser, computeExecutablePath } from '@puppeteer/browsers';
 import { RenderGRPCPluginV2 } from './plugin/v2/grpc_plugin';
 import { HttpServer } from './service/http-server';
+import { populateServiceConfigFromEnv, ServiceConfig, defaultServiceConfig } from './service/config';
+import { populatePluginConfigFromEnv, PluginConfig, defaultPluginConfig } from './plugin/v2/config';
 import { ConsoleLogger, PluginLogger } from './logger';
 import * as minimist from 'minimist';
-import { defaultPluginConfig, defaultServiceConfig, readJSONFileSync, PluginConfig, ServiceConfig } from './config';
 import { serve } from './node-plugin';
-
-const chromeFolderPrefix = 'chrome-';
+import { createSanitizer } from './sanitizer/Sanitizer';
 
 async function main() {
   const argv = minimist(process.argv.slice(2));
@@ -20,20 +21,16 @@ async function main() {
     const config: PluginConfig = defaultPluginConfig;
     populatePluginConfigFromEnv(config, env);
     if (!config.rendering.chromeBin && (process as any).pkg) {
-      //@ts-ignore
-      const executablePath = puppeteer.executablePath() as string;
+      const execPath = path.dirname(process.execPath);
+      const chromeInfoFile = fs.readFileSync(path.resolve(execPath, 'chrome-info.json'), 'utf8');
+      const chromeInfo = JSON.parse(chromeInfoFile);
 
-      if (executablePath.includes(chromeFolderPrefix)) {
-        const parts = executablePath.split(path.sep);
-        while (!parts[0].startsWith(chromeFolderPrefix)) {
-          parts.shift();
-        }
-
-        config.rendering.chromeBin = [path.dirname(process.execPath), ...parts].join(path.sep);
-      } else {
-        // local chrome installation in dev mode
-        config.rendering.chromeBin = env['PUPPETEER_EXECUTABLE_PATH'];
-      }
+      config.rendering.chromeBin = computeExecutablePath({
+        cacheDir: path.dirname(process.execPath),
+        browser: Browser.CHROMEHEADLESSSHELL,
+        buildId: chromeInfo.buildId,
+      });
+      logger.debug(`Setting chromeBin to ${config.rendering.chromeBin}`);
     }
 
     await serve({
@@ -67,7 +64,9 @@ async function main() {
     populateServiceConfigFromEnv(config, env);
 
     const logger = new ConsoleLogger(config.service.logging);
-    const server = new HttpServer(config, logger);
+
+    const sanitizer = createSanitizer();
+    const server = new HttpServer(config, logger, sanitizer);
     await server.start();
   } else {
     console.log('Unknown command');
@@ -75,83 +74,18 @@ async function main() {
 }
 
 main().catch((err) => {
-  console.error(err);
+  const errorLog = {
+    '@level': 'error',
+    '@message': 'failed to start grafana-image-renderer',
+    'error': err.message,
+    'trace': err.stack,
+  }
+  console.error(JSON.stringify(errorLog));
   process.exit(1);
 });
 
-function populatePluginConfigFromEnv(config: PluginConfig, env: NodeJS.ProcessEnv) {
-  // Plugin env variables that needs to be initiated early
-  if (env['GF_PLUGIN_GRPC_HOST']) {
-    config.plugin.grpc.host = env['GF_PLUGIN_GRPC_HOST'] as string;
-  }
+function readJSONFileSync(filePath: string) {
+  const rawdata = fs.readFileSync(filePath, 'utf8');
+  return JSON.parse(rawdata);
+};
 
-  if (env['GF_PLUGIN_GRPC_PORT']) {
-    config.plugin.grpc.port = parseInt(env['GF_PLUGIN_GRPC_PORT'] as string, 10);
-  }
-}
-
-function populateServiceConfigFromEnv(config: ServiceConfig, env: NodeJS.ProcessEnv) {
-  if (env['BROWSER_TZ']) {
-    config.rendering.timezone = env['BROWSER_TZ'];
-  } else {
-    config.rendering.timezone = env['TZ'];
-  }
-
-  if (env['HTTP_HOST']) {
-    config.service.host = env['HTTP_HOST'];
-  }
-
-  if (env['HTTP_PORT']) {
-    config.service.port = parseInt(env['HTTP_PORT'] as string, 10);
-  }
-
-  if (env['LOG_LEVEL']) {
-    config.service.logging.level = env['LOG_LEVEL'] as string;
-  }
-
-  if (env['IGNORE_HTTPS_ERRORS']) {
-    config.rendering.ignoresHttpsErrors = env['IGNORE_HTTPS_ERRORS'] === 'true';
-  }
-
-  if (env['CHROME_BIN']) {
-    config.rendering.chromeBin = env['CHROME_BIN'];
-  }
-
-  if (env['ENABLE_METRICS']) {
-    config.service.metrics.enabled = env['ENABLE_METRICS'] === 'true';
-  }
-
-  if (env['RENDERING_MODE']) {
-    config.rendering.mode = env['RENDERING_MODE'] as string;
-  }
-
-  if (env['RENDERING_CLUSTERING_MODE']) {
-    config.rendering.clustering.mode = env['RENDERING_CLUSTERING_MODE'] as string;
-  }
-
-  if (env['RENDERING_CLUSTERING_MAX_CONCURRENCY']) {
-    config.rendering.clustering.maxConcurrency = parseInt(env['RENDERING_CLUSTERING_MAX_CONCURRENCY'] as string, 10);
-  }
-
-  if (env['RENDERING_CLUSTERING_TIMEOUT']) {
-    config.rendering.clustering.timeout = parseInt(env['RENDERING_CLUSTERING_TIMEOUT'] as string, 10);
-  }
-
-  if (env['RENDERING_VERBOSE_LOGGING']) {
-    config.rendering.verboseLogging = env['RENDERING_VERBOSE_LOGGING'] === 'true';
-  }
-
-  if (env['RENDERING_DUMPIO']) {
-    config.rendering.dumpio = env['RENDERING_DUMPIO'] === 'true';
-  }
-
-  if (env['RENDERING_ARGS']) {
-    const args = env['RENDERING_ARGS'] as string;
-    if (args.length > 0) {
-      const argsList = args.split(',');
-      if (argsList.length > 0) {
-        config.rendering.args = argsList;
-      }
-    }
-  }
-}

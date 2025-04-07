@@ -2,9 +2,7 @@
   "type": "renderer",
   "name": "Grafana Image Renderer",
   "id": "grafana-image-renderer",
-
   "backend": true,
-
   "info": {
     "description": "Grafana Backend Image Renderer that uses headless chrome to capture images.",
     "author": {
@@ -17,13 +15,19 @@
       "large": "img/icon.png"
     },
     "links": [
-      {"name": "Project site", "url": "https://github.com/grafana/grafana-image-renderer"},
-      {"name": "Apache License", "url": "https://github.com/grafana/grafana-image-renderer/blob/master/LICENSE"}
+      {
+        "name": "Project site",
+        "url": "https://github.com/grafana/grafana-image-renderer"
+      },
+      {
+        "name": "Apache License",
+        "url": "https://github.com/grafana/grafana-image-renderer/blob/master/LICENSE"
+      }
     ],
-    "version": "3.4.2",
-    "updated": "2022-03-23"
+    "version": "3.12.4",
+    "updated": "2025-03-27"
   },
   "dependencies": {
-    "grafanaDependency": ">=7.0.0"
+    "grafanaDependency": ">=8.3.11"
   }
 }
