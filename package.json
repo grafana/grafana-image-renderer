@@ -60,7 +60,7 @@
     "@typescript-eslint/eslint-plugin": "5.37.0",
     "@typescript-eslint/parser": "5.37.0",
     "@yao-pkg/pkg": "^6.3.0",
-    "axios": "1.7.4",
+    "axios": "1.8.2",
     "cross-env": "7.0.3",
     "eslint": "8.23.1",
     "fast-png": "^6.2.0",
