@@ -12,7 +12,15 @@ WORKDIR /usr/src/app
 
 RUN apk --no-cache upgrade && \
     apk add --no-cache udev ttf-opensans unifont chromium chromium-swiftshader ca-certificates dumb-init && \
-    rm -rf /tmp/*
+    # Remove NPM-related files and directories
+    rm -rf /usr/local/lib/node_modules/npm && \
+    rm -rf /usr/local/bin/npm && \
+    rm -rf /usr/local/bin/npx && \
+    rm -rf /root/.npm && \
+    rm -rf /root/.node-gyp && \
+    # Clean up
+    rm -rf /tmp/* && \
+    rm -rf /var/cache/apk/*
 
 # Build stage
 FROM base AS build
