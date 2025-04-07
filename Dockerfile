@@ -19,8 +19,7 @@ RUN apk --no-cache upgrade && \
     rm -rf /root/.npm && \
     rm -rf /root/.node-gyp && \
     # Clean up
-    rm -rf /tmp/* && \
-    rm -rf /var/cache/apk/*
+    rm -rf /tmp/*
 
 # Build stage
 FROM base AS build
