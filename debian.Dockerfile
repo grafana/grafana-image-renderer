@@ -22,7 +22,7 @@ ADD https://github.com/Yelp/dumb-init/releases/download/v1.2.0/dumb-init_1.2.0_a
 RUN chmod +x /usr/local/bin/dumb-init
 
 # Build stage
-FROM base as build
+FROM base AS build
 
 COPY . ./
 
