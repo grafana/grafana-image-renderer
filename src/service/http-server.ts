@@ -200,6 +200,7 @@ export class HttpServer {
       timezone: req.query.timezone,
       encoding: req.query.encoding,
       deviceScaleFactor: req.query.deviceScaleFactor,
+      greyScaleImage: req.query.greyScaleImage,
       headers: headers,
     };
 
