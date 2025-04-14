@@ -41,13 +41,13 @@ export class HttpServer {
     // Add CORS headers
     this.app.use((req, res, next) => {
       res.header('Access-Control-Allow-Headers', 'Content-Type, X-Auth-Token, traceparent, tracestate');
-      
+
       if (req.method === 'OPTIONS') {
         return res.sendStatus(200);
       }
       next();
     });
-    
+
     this.app.use(
       morgan('combined', {
         skip: (req, res) => {
@@ -337,8 +337,8 @@ export class HttpServer {
       headers['Accept-Language'] = (req.headers['Accept-Language'] as string[]).join(';');
     }
 
-    // Propagate traces
-    if (req.headers['traceparent']) {
+    // Propagate traces (only if tracing is enabled)
+    if (this.config.rendering.tracing.url && req.headers['traceparent']) {
       headers['traceparent'] = req.headers['traceparent'] as string;
       headers['tracestate'] = (req.headers['tracestate'] as string) ?? '';
     }
