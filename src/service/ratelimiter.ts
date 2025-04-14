@@ -15,13 +15,13 @@ export const setupRateLimiter = (config: RateLimiterConfig) => {
     rateLimiter = new RateLimiterRedis({
       storeClient: redisClient,
       keyPrefix: 'rate-limit',
-      points: config.limitRps, // Maximum number of requests
+      points: config.requestsPerMinute, // Maximum number of requests
       duration: 60, // per 60 seconds
     });
   } else {
     // Fallback to in-memory storage
     rateLimiter = new RateLimiterMemory({
-      points: config.limitRps,
+      points: config.requestsPerMinute,
       duration: 60,
     });
   }
