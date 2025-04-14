@@ -18,6 +18,13 @@ export interface LoggingConfig {
   console?: ConsoleLoggerConfig;
 }
 
+export interface RateLimiterConfig {
+  enabled: boolean;
+  redisHost?: string;
+  redisPort?: number;
+  limitRps: number;
+}
+
 export interface ServiceConfig {
   service: {
     host?: string;
@@ -29,6 +36,7 @@ export interface ServiceConfig {
     metrics: MetricsConfig;
     logging: LoggingConfig;
     security: SecurityConfig;
+    rateLimiter: RateLimiterConfig;
   };
   rendering: RenderingConfig;
 }
@@ -52,6 +60,10 @@ export const defaultServiceConfig: ServiceConfig = {
     },
     security: {
       authToken: '-',
+    },
+    rateLimiter: {
+      enabled: false,
+      limitRps: 100,
     },
   },
   rendering: defaultRenderingConfig,

@@ -15,6 +15,13 @@
         "json": false,
         "colorize": true
       }
+    },
+
+    "rateLimiter": {
+      "enabled": true,
+      "redisHost": null,
+      "redisPort": null,
+      "limitRps": 100
     }
   },
   "rendering": {
