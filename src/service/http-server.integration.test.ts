@@ -52,7 +52,7 @@ const serviceConfig: ServiceConfig = {
     },
     rateLimiter: {
       enabled: false,
-      limitRps: 100,
+      requestsPerMinute: 100,
     },
   },
   rendering: {
