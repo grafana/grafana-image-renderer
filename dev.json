@@ -18,9 +18,7 @@
     },
 
     "rateLimiter": {
-      "enabled": true,
-      "redisHost": null,
-      "redisPort": null,
+      "enabled": false,
       "requestsPerMinute": 5
     }
   },
