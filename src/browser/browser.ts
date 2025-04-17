@@ -391,6 +391,7 @@ export class Browser {
           },
           path: options.filePath,
           scale: 1 / scale,
+          timeout: options.timeout,
         });
       }
 
