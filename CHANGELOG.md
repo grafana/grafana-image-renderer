@@ -1,8 +1,14 @@
+## 3.12.5 (2025-04-22)
+
+- PDF: Use sent timeout [#628](https://github.com/grafana/grafana-image-renderer/pull/628), [AgnesToulet](https://github.com/AgnesToulet)
+- Docker: Remove unused NPM files [#625](https://github.com/grafana/grafana-image-renderer/pull/625), [AgnesToulet](https://github.com/AgnesToulet)
+- Docker: Add chromium-swiftshader to support webGL [#623](https://github.com/grafana/grafana-image-renderer/pull/623), [AgnesToulet](https://github.com/AgnesToulet)
+
 ## 3.12.4 (2025-03-27)
 
 - Chore: Update dompurify to fix CVE [#614](https://github.com/grafana/grafana-image-renderer/pull/614), [lucychen-grafana](https://github.com/lucychen-grafana)
 - Chore: Downgrade to Node 20 [#619](https://github.com/grafana/grafana-image-renderer/pull/619), [evictorero](https://github.com/evictorero)
- 
+
 ## 3.12.3 (2025-03-12)
 
 - 3.12.2 does not work due to Image Render: Support Tracing [#586](https://github.com/grafana/grafana-image-renderer/pull/586). Revert "Image Render: Support Tracing (#586)" [#609](https://github.com/grafana/grafana-image-renderer/pull/609), [lucychen-grafana](https://github.com/lucychen-grafana)
