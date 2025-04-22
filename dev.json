@@ -19,7 +19,7 @@
 
     "rateLimiter": {
       "enabled": false,
-      "requestsPerMinute": 5
+      "requestsPerSecond": 5
     }
   },
   "rendering": {

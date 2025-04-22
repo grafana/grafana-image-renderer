@@ -28,7 +28,7 @@
       "enabled": false,
       "redisHost": null,
       "redisPort": null,
-      "requestsPerMinute": 100
+      "requestsPerSecond": 5
     }
   },
   "rendering": {

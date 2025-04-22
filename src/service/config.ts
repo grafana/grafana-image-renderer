@@ -22,7 +22,7 @@ export interface RateLimiterConfig {
   enabled: boolean;
   redisHost?: string;
   redisPort?: number;
-  requestsPerMinute: number;
+  requestsPerSecond: number;
 }
 
 export interface ServiceConfig {
@@ -63,7 +63,7 @@ export const defaultServiceConfig: ServiceConfig = {
     },
     rateLimiter: {
       enabled: false,
-      requestsPerMinute: 100,
+      requestsPerSecond: 5,
     },
   },
   rendering: defaultRenderingConfig,

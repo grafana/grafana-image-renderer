@@ -21,7 +21,7 @@
       "enabled": true,
       "redisHost": "redis",
       "redisPort": 6379,
-      "requestsPerMinute": 5
+      "requestsPerSecond": 5
     }
   },
   "rendering": {

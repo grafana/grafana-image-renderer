@@ -16,19 +16,19 @@ export const setupRateLimiter = (config: RateLimiterConfig, log: Logger) => {
     rateLimiter = new RateLimiterRedis({
       storeClient: redisClient,
       keyPrefix: 'rate-limit',
-      points: config.requestsPerMinute, // Maximum number of requests
-      duration: 60, // per 60 seconds
+      points: config.requestsPerSecond, // Maximum number of requests
+      duration: 1, // per second
     });
 
-    log.info('Rate limiter enabled using Redis', 'requestsPerMinute', config.requestsPerMinute);
+    log.info('Rate limiter enabled using Redis', 'requestsPerSecond', config.requestsPerSecond);
   } else {
     // Fallback to in-memory storage
     rateLimiter = new RateLimiterMemory({
-      points: config.requestsPerMinute,
-      duration: 60,
+      points: config.requestsPerSecond,
+      duration: 1,
     });
 
-    log.info('Rate limiter enabled using in-memory storage', 'requestsPerMinute', config.requestsPerMinute);
+    log.info('Rate limiter enabled using in-memory storage', 'requestsPerSecond', config.requestsPerSecond);
   }
 
   return rateLimiter;
