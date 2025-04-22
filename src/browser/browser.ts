@@ -391,8 +391,8 @@ export class Browser {
             left: 0,
           },
           path: options.filePath,
+          scale: 1 / scale,
           timeout: timeoutMs,
-          timeout: options.timeout * 1000,
         });
       }
 
