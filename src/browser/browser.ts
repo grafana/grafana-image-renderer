@@ -381,6 +381,7 @@ export class Browser {
           });
         }
 
+        const timeoutMs = options.timeout * 1000;
         return page.pdf({
           ...getPDFOptionsFromURL(options.url),
           margin: {
@@ -391,6 +392,7 @@ export class Browser {
           },
           path: options.filePath,
           scale: 1 / scale,
+          timeout: timeoutMs,
         });
       }
 
