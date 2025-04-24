@@ -8,7 +8,7 @@ services:
       GF_RENDERING_CALLBACK_URL: http://grafana:3000/
       GF_LOG_FILTERS: rendering:debug
   renderer:
-    image: custom-grafana-image-renderer
+    image: grafana/grafana-image-renderer:latest
     ports:
       - 8081
     volumes:

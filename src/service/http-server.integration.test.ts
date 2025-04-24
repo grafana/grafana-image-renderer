@@ -4,6 +4,7 @@ import * as path from 'path';
 import * as request from 'supertest';
 import * as pixelmatch from 'pixelmatch';
 import * as fastPng from 'fast-png';
+import * as promClient from 'prom-client';
 
 import { HttpServer } from './http-server';
 import { ConsoleLogger } from '../logger';
@@ -31,7 +32,7 @@ const renderKey = jwt.sign(
 );
 
 const goldenFilesFolder = './tests/testdata';
-const serviceConfig: ServiceConfig = {
+const defaultServiceConfig: ServiceConfig = {
   service: {
     host: undefined,
     port: 8081,
@@ -89,7 +90,7 @@ const imageDiffThreshold = 0.01 * imageHeight * imageWidth;
 const matchingThreshold = 0.3;
 
 const sanitizer = createSanitizer();
-const server = new HttpServer(serviceConfig, new ConsoleLogger(serviceConfig.service.logging), sanitizer);
+let server;
 
 let domain = 'localhost';
 function getGrafanaEndpoint(domain: string) {
@@ -101,7 +102,15 @@ let envSettings = {
   updateGolden: false,
 };
 
-beforeAll(() => {
+beforeEach(async () => {
+  return setupTestEnv();
+});
+
+afterEach(() => {
+  return cleanUpTestEnv();
+});
+
+function setupTestEnv(config?: ServiceConfig) {
   if (process.env['CI'] === 'true') {
     domain = 'grafana';
   }
@@ -109,12 +118,15 @@ beforeAll(() => {
   envSettings.saveDiff = process.env['SAVE_DIFF'] === 'true';
   envSettings.updateGolden = process.env['UPDATE_GOLDEN'] === 'true';
 
+  const currentConfig = config ?? defaultServiceConfig;
+  server = new HttpServer(currentConfig, new ConsoleLogger(currentConfig.service.logging), sanitizer);
   return server.start();
-});
+}
 
-afterAll(() => {
+function cleanUpTestEnv() {
+  promClient.register.clear();
   return server.close();
-});
+}
 
 describe('Test /render/version', () => {
   it('should respond with unauthorized', () => {
@@ -123,7 +135,6 @@ describe('Test /render/version', () => {
 
   it('should respond with the current plugin version', () => {
     const pluginInfo = require('../../plugin.json');
-
     return request(server.app).get('/render/version').set('X-Auth-Token', '-').expect(200, { version: pluginInfo.info.version });
   });
 });
@@ -197,6 +208,17 @@ describe('Test /render', () => {
 
     const pixelDiff = compareImage('full-page-screenshot', response.body);
     expect(pixelDiff).toBeLessThan(imageDiffThreshold);
+  });
+
+  it('should respond with too many requests', async () => {
+    await cleanUpTestEnv();
+    const config = JSON.parse(JSON.stringify(defaultServiceConfig));
+    config.service.rateLimiter.enabled = true;
+    config.service.rateLimiter.requestsPerSecond = 0;
+    await setupTestEnv(config);
+
+    const response = await request(server.app).get('/render').set('X-Auth-Token', '-');
+    expect(response.statusCode).toEqual(429);
   });
 });
 

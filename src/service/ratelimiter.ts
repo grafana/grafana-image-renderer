@@ -9,8 +9,8 @@ export const setupRateLimiter = (config: RateLimiterConfig, log: Logger) => {
 
   if (config.redisHost && config.redisPort) {
     const redisClient = new Redis({
-      host: config.redisHost || 'localhost',
-      port: config.redisPort || 6379,
+      host: config.redisHost,
+      port: config.redisPort,
     });
 
     rateLimiter = new RateLimiterRedis({
