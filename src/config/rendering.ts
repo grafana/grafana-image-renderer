@@ -131,7 +131,16 @@ export function populateRenderingConfigFromEnv(config: RenderingConfig, env: Nod
   if (env[envKeys.args!]) {
     const args = env[envKeys.args!] as string;
     if (args.length > 0) {
-      const argsList = args.split(',');
+      let argsList: string[] = [];
+
+      if (args.includes('\n')) {
+        // New style: split by newlines
+        argsList = args.split('\n').map(arg => arg.trim()).filter(arg => arg.length > 0);
+      } else {
+        // Old style: split by commas
+        argsList = args.split(',').map(arg => arg.trim()).filter(arg => arg.length > 0);
+      }
+
       if (argsList.length > 0) {
         config.args = argsList;
       }
