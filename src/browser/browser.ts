@@ -278,7 +278,7 @@ export class Browser {
         return browser!.newPage();
       });
 
-      this.addPageListeners(page);
+      await this.addPageListeners(page);
 
       return await this.takeScreenshot(page, options, signal);
     } finally {
@@ -429,7 +429,7 @@ export class Browser {
       browser = await puppeteer.launch(launcherOptions);
       page = await browser.newPage();
 
-      this.addPageListeners(page);
+      await this.addPageListeners(page);
 
       return await this.exportCSV(page, options, signal);
     } finally {
@@ -564,11 +564,17 @@ export class Browser {
     return callback();
   }
 
-  addPageListeners(page: puppeteer.Page) {
+  async addPageListeners(page: puppeteer.Page) {
     page.on('error', this.logError);
     page.on('pageerror', this.logPageError);
     page.on('requestfailed', this.logRequestFailed);
     page.on('console', this.logConsoleMessage);
+
+    if (this.config.tracing.url != '') {
+      await page.setRequestInterception(true);
+
+      page.on('request', this.removeTracingHeader);
+    }
 
     if (this.config.verboseLogging) {
       page.on('request', this.logRequest);
@@ -584,6 +590,10 @@ export class Browser {
     page.off('requestfailed', this.logRequestFailed);
     page.off('console', this.logConsoleMessage);
 
+    if (this.config.tracing.url != '') {
+      page.off('request', this.removeTracingHeader);
+    }
+
     if (this.config.verboseLogging) {
       page.off('request', this.logRequest);
       page.off('requestfinished', this.logRequestFinished);
@@ -591,6 +601,22 @@ export class Browser {
       page.off('response', this.logRedirectResponse);
     }
   }
+
+  removeTracingHeader = (req: puppeteer.HTTPRequest) => {
+    const headers = req.headers();
+    const url = req.url();
+    const referer = headers['referer'] ?? '';
+
+    const urlHostname = new URL(url).hostname;
+    const refererHostname = referer ? new URL(referer).hostname : '';
+
+    if (!req.isNavigationRequest() && urlHostname !== refererHostname) {
+      delete headers['traceparent'];
+      delete headers['tracestate'];
+    }
+
+    req.continue({ headers });
+  };
 
   logError = (err: Error) => {
     this.log.error('Browser page crashed', 'error', err.toString());
@@ -615,7 +641,7 @@ export class Browser {
     this.log.debug(`Browser console ${msgType}`, 'msg', msg.text(), 'url', loc.url, 'line', loc.lineNumber, 'column', loc.columnNumber);
   };
 
-  logRequest = (req: any) => {
+  logRequest = (req: puppeteer.HTTPRequest) => {
     this.log.debug('Browser request', 'url', req.url(), 'method', req.method());
   };
 

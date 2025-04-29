@@ -32,7 +32,7 @@ export class ReusableBrowser extends Browser {
         await page.emulateTimezone(options.timezone);
       }
 
-      this.addPageListeners(page);
+      await this.addPageListeners(page);
 
       return await this.takeScreenshot(page, options, signal);
     } finally {
@@ -60,7 +60,7 @@ export class ReusableBrowser extends Browser {
         await page.emulateTimezone(options.timezone);
       }
 
-      this.addPageListeners(page);
+      await this.addPageListeners(page);
 
       return await this.exportCSV(page, options, signal);
     } finally {
