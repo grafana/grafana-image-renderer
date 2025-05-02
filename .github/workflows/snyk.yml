@@ -8,8 +8,8 @@ on:
       - 'master'
   workflow_dispatch:
 
-  permissions:
-    contents: read
+permissions:
+  contents: read
 
 jobs:
   snyk-scan-ci:
