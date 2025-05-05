@@ -24,4 +24,6 @@ def secrets():
         vault_secret('grafana_api_key', 'infra/data/ci/drone-plugins', 'grafana_api_key'),
         vault_secret('srcclr_api_token', 'infra/data/ci/drone-plugins', 'srcclr_api_token'),
         vault_secret(gar_pull_secret, 'secret/data/common/gar', '.dockerconfigjson'),
+        vault_secret('docker_username', 'ci/data/common/dockerhub', 'username'),
+        vault_secret('docker_password', 'ci/data/common/dockerhub', 'password'),
     ]
