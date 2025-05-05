@@ -15,10 +15,11 @@ import { Logger } from '../logger';
 import { Browser, createBrowser } from '../browser';
 import { ServiceConfig } from './config';
 import { setupHttpServerMetrics } from './metrics';
+import { setupRateLimiter } from './ratelimiter';
 import { HTTPHeaders, ImageRenderOptions, RenderOptions } from '../types';
 import { Sanitizer } from '../sanitizer/Sanitizer';
 import { isSanitizeRequest } from '../sanitizer/types';
-import { asyncMiddleware, trustedUrlMiddleware, authTokenMiddleware } from './middlewares';
+import { asyncMiddleware, trustedUrlMiddleware, authTokenMiddleware, rateLimiterMiddleware } from './middlewares';
 import { SecureVersion } from 'tls';
 
 const upload = multer({ storage: multer.memoryStorage() });
@@ -66,6 +67,11 @@ export class HttpServer {
 
     // Middlewares for /render endpoints
     this.app.use('/render', authTokenMiddleware(this.config.service.security), trustedUrlMiddleware);
+    const rateLimiterConfig = this.config.service.rateLimiter;
+    if (rateLimiterConfig.enabled) {
+      let rateLimiter = setupRateLimiter(rateLimiterConfig, this.log);
+      this.app.use('/render', rateLimiterMiddleware(rateLimiter));
+    }
 
     // Set up /render endpoints
     this.app.get('/render', asyncMiddleware(this.render));

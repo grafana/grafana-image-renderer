@@ -15,6 +15,11 @@
         "json": false,
         "colorize": true
       }
+    },
+
+    "rateLimiter": {
+      "enabled": false,
+      "requestsPerSecond": 5
     }
   },
   "rendering": {
