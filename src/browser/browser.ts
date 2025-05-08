@@ -572,7 +572,7 @@ export class Browser {
     page.on('requestfailed', this.logRequestFailed);
     page.on('console', this.logConsoleMessage);
 
-    if (this.config.tracing.url != '') {
+    if (this.config.tracing.url.trim() != '') {
       await page.setRequestInterception(true);
 
       page.on('request', this.removeTracingHeader);
