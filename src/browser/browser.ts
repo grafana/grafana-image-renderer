@@ -609,12 +609,20 @@ export class Browser {
     const url = req.url();
     const referer = headers['referer'] ?? '';
 
-    const urlHostname = new URL(url).hostname;
-    const refererHostname = referer ? new URL(referer).hostname : '';
+    try {
+      const urlHostname = new URL(url).hostname;
+      const refererHostname = referer ? new URL(referer).hostname : '';
 
-    if (!req.isNavigationRequest() && urlHostname !== refererHostname) {
-      delete headers['traceparent'];
-      delete headers['tracestate'];
+      if (!req.isNavigationRequest() && urlHostname !== refererHostname) {
+        delete headers['traceparent'];
+        delete headers['tracestate'];
+      }
+    } catch (error) {
+      this.log.debug('Failed to remove tracing header', 
+        'url', url,
+        'referer', referer,
+        'error', error.message
+      );
     }
 
     req.continue({ headers });
