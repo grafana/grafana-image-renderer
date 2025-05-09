@@ -537,20 +537,7 @@ export class Browser {
   }
 
   async withMonitoring<T>(step: string, callback: () => Promise<T>): Promise<T> {
-    // Wrap callback with timing metrics if enabled
-    if (this.config.timingMetrics) {
-      const originalCallback = callback;
-      callback = async () => {
-        const endTimer = this.metrics.durationHistogram.startTimer({ step });
-        try {
-          return await originalCallback();
-        } finally {
-          endTimer();
-        }
-      };
-    }
-
-    // Wrap callback with tracing if enabled
+    // Wrap callback with tracing if enabled (inner layer)
     if (this.tracer) {
       const originalCallback = callback;
       callback = () =>
@@ -561,6 +548,19 @@ export class Browser {
             span.end();
           }
         });
+    }
+
+    // Wrap callback with timing metrics if enabled (outer layer)
+    if (this.config.timingMetrics) {
+      const originalCallback = callback;
+      callback = async () => {
+        const endTimer = this.metrics.durationHistogram.startTimer({ step });
+        try {
+          return await originalCallback();
+        } finally {
+          endTimer();
+        }
+      };
     }
 
     return callback();
