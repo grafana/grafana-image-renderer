@@ -38,6 +38,7 @@ export class HttpServer {
 
   async start() {
     this.app = express();
+
     this.app.use(
       morgan('combined', {
         skip: (req, res) => {
@@ -189,12 +190,6 @@ export class HttpServer {
       throw boom.badRequest('Missing url parameter');
     }
 
-    const headers: HTTPHeaders = {};
-
-    if (req.headers['Accept-Language']) {
-      headers['Accept-Language'] = (req.headers['Accept-Language'] as string[]).join(';');
-    }
-
     const options: ImageRenderOptions = {
       url: req.query.url,
       width: req.query.width,
@@ -206,7 +201,7 @@ export class HttpServer {
       timezone: req.query.timezone,
       encoding: req.query.encoding,
       deviceScaleFactor: req.query.deviceScaleFactor,
-      headers: headers,
+      headers: this.getHeaders(req),
     };
 
     this.log.debug('Render request received', 'url', options.url);
@@ -282,12 +277,6 @@ export class HttpServer {
       throw boom.badRequest('Missing url parameter');
     }
 
-    const headers: HTTPHeaders = {};
-
-    if (req.headers['Accept-Language']) {
-      headers['Accept-Language'] = (req.headers['Accept-Language'] as string[]).join(';');
-    }
-
     const options: RenderOptions = {
       url: req.query.url,
       filePath: req.query.filePath,
@@ -296,7 +285,7 @@ export class HttpServer {
       domain: req.query.domain,
       timezone: req.query.timezone,
       encoding: req.query.encoding,
-      headers: headers,
+      headers: this.getHeaders(req),
     };
 
     this.log.debug('Render request received', 'url', options.url);
@@ -336,4 +325,20 @@ export class HttpServer {
       return res.status(500).json({ error: e.message });
     }
   };
+
+  getHeaders(req: express.Request<any, any, any, RenderOptions, any>): HTTPHeaders {
+    const headers: HTTPHeaders = {};
+
+    if (req.headers['Accept-Language']) {
+      headers['Accept-Language'] = (req.headers['Accept-Language'] as string[]).join(';');
+    }
+
+    // Propagate traces (only if tracing is enabled)
+    if (this.config.rendering.tracing.url && req.headers['traceparent']) {
+      headers['traceparent'] = req.headers['traceparent'] as string;
+      headers['tracestate'] = (req.headers['tracestate'] as string) ?? '';
+    }
+
+    return headers;
+  }
 }

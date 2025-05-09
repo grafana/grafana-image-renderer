@@ -75,6 +75,10 @@ const defaultServiceConfig: ServiceConfig = {
       timeout: 30,
     },
     timingMetrics: false,
+    tracing: {
+      url: '',
+      serviceName: '',
+    },
     emulateNetworkConditions: false,
     // Set to true to get more logs
     verboseLogging: false, // true,

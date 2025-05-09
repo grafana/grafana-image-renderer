@@ -11,6 +11,7 @@ import { RenderingConfig } from '../config/rendering';
 import { ImageRenderOptions, RenderOptions } from '../types';
 import { StepTimeoutError } from './error';
 import { getPDFOptionsFromURL } from './pdf';
+import { trace, Tracer } from '@opentelemetry/api';
 
 export interface Metrics {
   durationHistogram: promClient.Histogram;
@@ -29,8 +30,13 @@ type DashboardScrollingResult = { scrolled: false } | { scrolled: true; scrollHe
 type PuppeteerLaunchOptions = Parameters<typeof puppeteer['launch']>[0];
 
 export class Browser {
+  tracer: Tracer;
+
   constructor(protected config: RenderingConfig, protected log: Logger, protected metrics: Metrics) {
     this.log.debug('Browser initialized', 'config', this.config);
+    if (config.tracing.url) {
+      this.tracer = trace.getTracer('browser');
+    }
   }
 
   async getBrowserVersion(): Promise<string> {
@@ -58,15 +64,10 @@ export class Browser {
     }
 
     options.headers = options.headers || {};
-    const headers = {};
 
-    if (options.headers['Accept-Language']) {
-      headers['Accept-Language'] = options.headers['Accept-Language'];
-    } else if (this.config.acceptLanguage) {
-      headers['Accept-Language'] = this.config.acceptLanguage;
+    if (!options.headers['Accept-Language'] && this.config.acceptLanguage) {
+      options.headers['Accept-Language'] = this.config.acceptLanguage;
     }
-
-    options.headers = headers;
 
     if (typeof options.timeout === 'string') {
       options.timeout = parseInt(options.timeout as unknown as string, 10);
@@ -267,17 +268,17 @@ export class Browser {
     let page: puppeteer.Page | undefined = undefined;
 
     try {
-      browser = await this.withTimingMetrics<puppeteer.Browser>('launch', () => {
+      browser = await this.withMonitoring<puppeteer.Browser>('launch', () => {
         this.validateImageOptions(options);
         const launcherOptions = this.getLauncherOptions(options);
         return puppeteer.launch(launcherOptions);
       });
 
-      page = await this.withTimingMetrics<puppeteer.Page>('newPage', () => {
+      page = await this.withMonitoring<puppeteer.Page>('newPage', () => {
         return browser!.newPage();
       });
 
-      this.addPageListeners(page);
+      await this.addPageListeners(page);
 
       return await this.takeScreenshot(page, options, signal);
     } finally {
@@ -430,7 +431,7 @@ export class Browser {
       browser = await puppeteer.launch(launcherOptions);
       page = await browser.newPage();
 
-      this.addPageListeners(page);
+      await this.addPageListeners(page);
 
       return await this.exportCSV(page, options, signal);
     } finally {
@@ -513,7 +514,7 @@ export class Browser {
     }
 
     try {
-      const res = await this.withTimingMetrics(step, callback);
+      const res = await this.withMonitoring(step, callback);
 
       if (signal.aborted) {
         this.log.warn('Signal aborted while performing step', 'step', step, 'url', url);
@@ -535,23 +536,47 @@ export class Browser {
     }
   }
 
-  async withTimingMetrics<T>(step: string, callback: () => Promise<T>): Promise<T> {
-    if (this.config.timingMetrics) {
-      const endTimer = this.metrics.durationHistogram.startTimer({ step });
-      const res = await callback();
-      endTimer();
-
-      return res;
-    } else {
-      return callback();
+  async withMonitoring<T>(step: string, callback: () => Promise<T>): Promise<T> {
+    // Wrap callback with tracing if enabled (inner layer)
+    if (this.tracer) {
+      const originalCallback = callback;
+      callback = () =>
+        this.tracer.startActiveSpan(step, async (span) => {
+          try {
+            return await originalCallback();
+          } finally {
+            span.end();
+          }
+        });
     }
+
+    // Wrap callback with timing metrics if enabled (outer layer)
+    if (this.config.timingMetrics) {
+      const originalCallback = callback;
+      callback = async () => {
+        const endTimer = this.metrics.durationHistogram.startTimer({ step });
+        try {
+          return await originalCallback();
+        } finally {
+          endTimer();
+        }
+      };
+    }
+
+    return callback();
   }
 
-  addPageListeners(page: puppeteer.Page) {
+  async addPageListeners(page: puppeteer.Page) {
     page.on('error', this.logError);
     page.on('pageerror', this.logPageError);
     page.on('requestfailed', this.logRequestFailed);
     page.on('console', this.logConsoleMessage);
+
+    if (this.config.tracing.url.trim() != '') {
+      await page.setRequestInterception(true);
+
+      page.on('request', this.removeTracingHeader);
+    }
 
     if (this.config.verboseLogging) {
       page.on('request', this.logRequest);
@@ -567,6 +592,10 @@ export class Browser {
     page.off('requestfailed', this.logRequestFailed);
     page.off('console', this.logConsoleMessage);
 
+    if (this.config.tracing.url != '') {
+      page.off('request', this.removeTracingHeader);
+    }
+
     if (this.config.verboseLogging) {
       page.off('request', this.logRequest);
       page.off('requestfinished', this.logRequestFinished);
@@ -574,6 +603,30 @@ export class Browser {
       page.off('response', this.logRedirectResponse);
     }
   }
+
+  removeTracingHeader = (req: puppeteer.HTTPRequest) => {
+    const headers = req.headers();
+    const url = req.url();
+    const referer = headers['referer'] ?? '';
+
+    try {
+      const urlHostname = new URL(url).hostname;
+      const refererHostname = referer ? new URL(referer).hostname : '';
+
+      if (!req.isNavigationRequest() && urlHostname !== refererHostname) {
+        delete headers['traceparent'];
+        delete headers['tracestate'];
+      }
+    } catch (error) {
+      this.log.debug('Failed to remove tracing header', 
+        'url', url,
+        'referer', referer,
+        'error', error.message
+      );
+    }
+
+    req.continue({ headers });
+  };
 
   logError = (err: Error) => {
     this.log.error('Browser page crashed', 'error', err.toString());
@@ -598,7 +651,7 @@ export class Browser {
     this.log.debug(`Browser console ${msgType}`, 'msg', msg.text(), 'url', loc.url, 'line', loc.lineNumber, 'column', loc.columnNumber);
   };
 
-  logRequest = (req: any) => {
+  logRequest = (req: puppeteer.HTTPRequest) => {
     this.log.debug('Browser request', 'url', req.url(), 'method', req.method());
   };
 

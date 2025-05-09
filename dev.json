@@ -55,6 +55,11 @@
 
     "verboseLogging": true,
     "dumpio": false,
-    "timingMetrics": true
+    "timingMetrics": true,
+
+    "tracing": {
+      "url": "http://localhost:4318/v1/traces",
+      "serviceName": ""
+    }
   }
 }

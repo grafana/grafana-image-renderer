@@ -58,6 +58,11 @@
 
     "verboseLogging": false,
     "dumpio": false,
-    "timingMetrics": false
+    "timingMetrics": false,
+
+    "tracing": {
+      "url": "",
+      "serviceName": ""
+    }
   }
 }
