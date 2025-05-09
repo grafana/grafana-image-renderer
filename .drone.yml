@@ -279,9 +279,9 @@ steps:
   - yarn-test
   environment:
     DOCKER_PASS:
-      from_secret: docker_pass
+      from_secret: docker_password
     DOCKER_USER:
-      from_secret: docker_user
+      from_secret: docker_username
     IMAGE_NAME: grafana/grafana-image-renderer
   image: google/cloud-sdk:449.0.0
   name: publish_to_docker_master
@@ -456,9 +456,9 @@ steps:
   - publish_to_github
   environment:
     DOCKER_PASS:
-      from_secret: docker_pass
+      from_secret: docker_password
     DOCKER_USER:
-      from_secret: docker_user
+      from_secret: docker_username
     IMAGE_NAME: grafana/grafana-image-renderer
   image: google/cloud-sdk:449.0.0
   name: publish_to_docker
@@ -541,7 +541,19 @@ get:
 kind: secret
 name: gar
 ---
+get:
+  name: username
+  path: ci/data/common/dockerhub
+kind: secret
+name: docker_username
+---
+get:
+  name: password
+  path: ci/data/common/dockerhub
+kind: secret
+name: docker_password
+---
 kind: signature
-hmac: 4dba0a92e353db7897b48eca1db87b5736aef14d23e987e0845a887b3103c90c
+hmac: 15d030deddf602f0edf703164e7049ff4bccc23f795995e4f7a3050452a25069
 
 ...
