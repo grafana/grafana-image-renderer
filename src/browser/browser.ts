@@ -568,7 +568,7 @@ export class Browser {
     return callback();
   }
 
-  async addPageListeners(page: puppeteer.Page, headers: HTTPHeaders) {
+  async addPageListeners(page: puppeteer.Page, headers?: HTTPHeaders) {
     page.on('error', this.logError);
     page.on('pageerror', this.logPageError);
     page.on('requestfailed', this.logRequestFailed);
