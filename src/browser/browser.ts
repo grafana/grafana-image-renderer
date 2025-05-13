@@ -612,17 +612,15 @@ export class Browser {
     try {
       const urlHostname = new URL(url).hostname;
       const refererHostname = referer ? new URL(referer).hostname : '';
+      const shouldRemoveHeaders = !req.isNavigationRequest() && urlHostname !== refererHostname;
+      this.log.debug('Comparing referer and URL hostnames', 'shouldRemoveHeaders', shouldRemoveHeaders, 'url', url, 'referer', referer);
 
-      if (!req.isNavigationRequest() && urlHostname !== refererHostname) {
+      if (shouldRemoveHeaders) {
         delete headers['traceparent'];
         delete headers['tracestate'];
       }
     } catch (error) {
-      this.log.debug('Failed to remove tracing header', 
-        'url', url,
-        'referer', referer,
-        'error', error.message
-      );
+      this.log.debug('Failed to remove tracing header', 'url', url, 'referer', referer, 'error', error.message);
     }
 
     req.continue({ headers });

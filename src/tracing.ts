@@ -46,7 +46,7 @@ export function startTracing(log: Logger) {
     sdk
       .shutdown()
       .then(() => log.debug('Tracing terminated'))
-      .catch((error) => log.error('Error terminating tracing', error))
+      .catch((error) => log.error('Error terminating tracing', 'err', error))
       .finally(() => process.exit(0));
   });
 }
