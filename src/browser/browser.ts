@@ -8,7 +8,7 @@ import * as promClient from 'prom-client';
 import * as Jimp from 'jimp';
 import { Logger } from '../logger';
 import { RenderingConfig } from '../config/rendering';
-import { ImageRenderOptions, RenderOptions } from '../types';
+import { HTTPHeaders, ImageRenderOptions, RenderOptions } from '../types';
 import { StepTimeoutError } from './error';
 import { getPDFOptionsFromURL } from './pdf';
 import { trace, Tracer } from '@opentelemetry/api';
@@ -168,9 +168,11 @@ export class Browser {
       });
     }
 
-    if (options.headers && Object.keys(options.headers).length > 0) {
-      this.log.debug(`Setting extra HTTP headers for page`, 'headers', options.headers);
-      await page.setExtraHTTPHeaders(options.headers as any);
+    if (options.headers && options.headers['Accept-Language']) {
+      const headers = { 'Accept-Language': options.headers['Accept-Language'] };
+      this.log.debug(`Setting extra HTTP headers for page`, 'headers', headers);
+
+      await page.setExtraHTTPHeaders(headers as any);
     }
 
     // automatically accept "Changes you made may not be saved" dialog which could be triggered by saving migrated dashboard schema
@@ -278,7 +280,7 @@ export class Browser {
         return browser!.newPage();
       });
 
-      await this.addPageListeners(page);
+      await this.addPageListeners(page, options.headers);
 
       return await this.takeScreenshot(page, options, signal);
     } finally {
@@ -431,7 +433,7 @@ export class Browser {
       browser = await puppeteer.launch(launcherOptions);
       page = await browser.newPage();
 
-      await this.addPageListeners(page);
+      await this.addPageListeners(page, options.headers);
 
       return await this.exportCSV(page, options, signal);
     } finally {
@@ -566,7 +568,7 @@ export class Browser {
     return callback();
   }
 
-  async addPageListeners(page: puppeteer.Page) {
+  async addPageListeners(page: puppeteer.Page, headers) {
     page.on('error', this.logError);
     page.on('pageerror', this.logPageError);
     page.on('requestfailed', this.logRequestFailed);
@@ -575,7 +577,7 @@ export class Browser {
     if (this.config.tracing.url.trim() != '') {
       await page.setRequestInterception(true);
 
-      page.on('request', this.removeTracingHeader);
+      page.on('request', this.addTracingHeaders(headers));
     }
 
     if (this.config.verboseLogging) {
@@ -592,38 +594,44 @@ export class Browser {
     page.off('requestfailed', this.logRequestFailed);
     page.off('console', this.logConsoleMessage);
 
-    if (this.config.tracing.url != '') {
-      page.off('request', this.removeTracingHeader);
-    }
+    // page.off('request', ...) does not work so best to remove all listeners for this event
+    page.removeAllListeners('request');
 
     if (this.config.verboseLogging) {
-      page.off('request', this.logRequest);
       page.off('requestfinished', this.logRequestFinished);
       page.off('close', this.logPageClosed);
       page.off('response', this.logRedirectResponse);
     }
   }
 
-  removeTracingHeader = (req: puppeteer.HTTPRequest) => {
-    const headers = req.headers();
-    const url = req.url();
-    const referer = headers['referer'] ?? '';
-
-    try {
-      const urlHostname = new URL(url).hostname;
-      const refererHostname = referer ? new URL(referer).hostname : '';
-      const shouldRemoveHeaders = !req.isNavigationRequest() && urlHostname !== refererHostname;
-      this.log.debug('Comparing referer and URL hostnames', 'shouldRemoveHeaders', shouldRemoveHeaders, 'url', url, 'referer', referer);
-
-      if (shouldRemoveHeaders) {
-        delete headers['traceparent'];
-        delete headers['tracestate'];
+  addTracingHeaders = (optionsHeaders?: HTTPHeaders) => {
+    return (req: puppeteer.HTTPRequest) => {
+      if (!optionsHeaders) {
+        req.continue();
+        return;
       }
-    } catch (error) {
-      this.log.debug('Failed to remove tracing header', 'url', url, 'referer', referer, 'error', error.message);
-    }
 
-    req.continue({ headers });
+      const headers = req.headers();
+      const url = req.url();
+      const method = req.method();
+      const referer = headers['referer'] ?? '';
+
+      try {
+        const urlHostname = new URL(url).hostname;
+        const refererHostname = referer ? new URL(referer).hostname : '';
+        const shouldAddHeaders = req.isNavigationRequest() || urlHostname === refererHostname;
+        this.log.debug('Comparing referer and URL hostnames', 'method', method, 'shouldAddHeaders', shouldAddHeaders, 'url', url, 'referer', referer);
+
+        if (shouldAddHeaders) {
+          headers['traceparent'] = optionsHeaders['traceparent'] ?? '';
+          headers['tracestate'] = optionsHeaders['tracestate'] ?? '';
+        }
+      } catch (error) {
+        this.log.debug('Failed to remove tracing header', 'url', url, 'referer', referer, 'error', error.message);
+      }
+
+      req.continue({ headers });
+    };
   };
 
   logError = (err: Error) => {
