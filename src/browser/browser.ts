@@ -568,7 +568,7 @@ export class Browser {
     return callback();
   }
 
-  async addPageListeners(page: puppeteer.Page, headers) {
+  async addPageListeners(page: puppeteer.Page, headers: HTTPHeaders) {
     page.on('error', this.logError);
     page.on('pageerror', this.logPageError);
     page.on('requestfailed', this.logRequestFailed);
@@ -627,7 +627,7 @@ export class Browser {
           headers['tracestate'] = optionsHeaders['tracestate'] ?? '';
         }
       } catch (error) {
-        this.log.debug('Failed to remove tracing header', 'url', url, 'referer', referer, 'error', error.message);
+        this.log.debug('Failed to add tracing headers', 'url', url, 'referer', referer, 'error', error.message);
       }
 
       req.continue({ headers });
