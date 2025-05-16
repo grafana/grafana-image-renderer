@@ -42,8 +42,8 @@ def publish_to_docker():
         'image': 'google/cloud-sdk:449.0.0',
         'environment': {
             'IMAGE_NAME': docker_image,
-            'DOCKER_USER': from_secret('docker_user'),
-            'DOCKER_PASS': from_secret('docker_pass'),
+            'DOCKER_USER': from_secret('docker_username'),
+            'DOCKER_PASS': from_secret('docker_password'),
         },
         'commands': ['./scripts/build_push_docker.sh'],
         'volumes': [{'name': 'docker', 'path': '/var/run/docker.sock'}],

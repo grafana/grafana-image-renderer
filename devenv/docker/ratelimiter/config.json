@@ -15,6 +15,13 @@
         "json": true,
         "colorize": false
       }
+    },
+
+    "rateLimiter": {
+      "enabled": true,
+      "redisHost": "redis",
+      "redisPort": 6379,
+      "requestsPerSecond": 5
     }
   },
   "rendering": {
@@ -44,11 +51,6 @@
     },
 
     "verboseLogging": false,
-    "dumpio": false,
-
-    "tracing": {
-      "url": "",
-      "serviceName": ""
-    }
+    "dumpio": false
   }
 }
