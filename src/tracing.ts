@@ -1,8 +1,9 @@
 import { NodeSDK } from '@opentelemetry/sdk-node';
 import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
-import { SEMRESATTRS_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
+import { ATTR_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
 import { Resource } from '@opentelemetry/resources';
+import { diag, DiagConsoleLogger, DiagLogLevel } from '@opentelemetry/api';
 
 import { Logger } from './logger';
 import { getConfig } from './config/config';
@@ -10,13 +11,13 @@ import { getConfig } from './config/config';
 const config = getConfig();
 let sdk;
 if (config.rendering.tracing.url) {
-  sdk = initTracing(config.rendering.tracing.url);
+  sdk = initTracing(config.rendering.tracing.url, config.rendering.verboseLogging);
 }
 
-function initTracing(exporterURL: string) {
-  // For troubleshooting, set the log level to DiagLogLevel.DEBUG
-  // const { diag, DiagConsoleLogger, DiagLogLevel } = require('@opentelemetry/api');
-  // diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.DEBUG);
+function initTracing(exporterURL: string, verboseLogging: boolean = false) {
+  if (verboseLogging) {
+    diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.DEBUG);
+  }
 
   const traceExporter = new OTLPTraceExporter({
     url: exporterURL,
@@ -24,7 +25,7 @@ function initTracing(exporterURL: string) {
 
   return new NodeSDK({
     resource: new Resource({
-      [SEMRESATTRS_SERVICE_NAME]: config.rendering.tracing.serviceName || 'grafana-image-renderer',
+      [ATTR_SERVICE_NAME]: config.rendering.tracing.serviceName || 'grafana-image-renderer',
     }),
     traceExporter,
     instrumentations: [
