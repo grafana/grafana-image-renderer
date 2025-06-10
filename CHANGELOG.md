@@ -1,3 +1,14 @@
+## 3.12.6 (2025-05-23)
+
+- Chore: Upgrade multer 2.0.0 [#642](https://github.com/grafana/grafana-image-renderer/pull/642), [evictorero](https://github.com/evictorero)
+- Tracing: Fix tracing headers causing CORS issue [#640](https://github.com/grafana/grafana-image-renderer/pull/640), [AgnesToulet](https://github.com/AgnesToulet)
+- Tracing: improve logs [#639](https://github.com/grafana/grafana-image-renderer/pull/639), [AgnesToulet](https://github.com/AgnesToulet)
+- Image Render: Support tracing [#612](https://github.com/grafana/grafana-image-renderer/pull/612), [lucychen-grafana](https://github.com/lucychen-grafana)
+- CI: Fix Docker secrets [#636](https://github.com/grafana/grafana-image-renderer/pull/636), [AgnesToulet](https://github.com/AgnesToulet)
+- Server: Add rate limiter [#627](https://github.com/grafana/grafana-image-renderer/pull/627), [AgnesToulet](https://github.com/AgnesToulet)
+- Bump formidable from 3.5.2 to 3.5.4 [#634](https://github.com/grafana/grafana-image-renderer/pull/634), [dependabot[bot]](https://github.com/apps/dependabot)
+- CI: improve workflow security [#635](https://github.com/grafana/grafana-image-renderer/pull/635), [AgnesToulet](https://github.com/AgnesToulet)
+
 ## 3.12.5 (2025-04-22)
 
 - PDF: Use sent timeout [#628](https://github.com/grafana/grafana-image-renderer/pull/628), [AgnesToulet](https://github.com/AgnesToulet)

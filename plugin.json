@@ -24,8 +24,8 @@
         "url": "https://github.com/grafana/grafana-image-renderer/blob/master/LICENSE"
       }
     ],
-    "version": "3.12.5",
-    "updated": "2025-04-22"
+    "version": "3.12.6",
+    "updated": "2025-05-23"
   },
   "dependencies": {
     "grafanaDependency": ">=8.3.11"
