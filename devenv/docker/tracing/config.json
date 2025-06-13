@@ -20,10 +20,7 @@
   "rendering": {
     "chromeBin": null,
     "args": [
-      "--no-sandbox",
-      "--disable-setuid-sandbox",
-      "--disable-gpu",
-      "--use-gl=swiftshader"
+      "--no-sandbox"
     ],
     "ignoresHttpsErrors": false,
 
@@ -47,7 +44,7 @@
     "dumpio": false,
 
     "tracing": {
-      "url": "",
+      "url": " http://tempo:4318/v1/traces",
       "serviceName": ""
     }
   }

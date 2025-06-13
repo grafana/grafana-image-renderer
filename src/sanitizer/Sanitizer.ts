@@ -45,7 +45,7 @@ const svgTags = {
 const svgFilePrefix = '<?xml version="1.0" encoding="utf-8"?>';
 
 export class Sanitizer {
-  constructor(private domPurify: DOMPurify.DOMPurifyI) {}
+  constructor(private domPurify: DOMPurify.DOMPurify) {}
 
   private sanitizeUseTagHook = (node) => {
     if (node.nodeName === 'use') {

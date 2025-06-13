@@ -16,25 +16,25 @@ export class ReusableBrowser extends Browser {
     this.browser = await puppeteer.launch(launcherOptions);
   }
 
-  async render(options: ImageRenderOptions): Promise<RenderResponse> {
+  async render(options: ImageRenderOptions, signal: AbortSignal): Promise<RenderResponse> {
     let context: puppeteer.BrowserContext | undefined;
     let page: puppeteer.Page | undefined;
 
     try {
-      page = await this.withTimingMetrics<puppeteer.Page>(async () => {
+      page = await this.withMonitoring<puppeteer.Page>('newPage', async () => {
         this.validateImageOptions(options);
-        context = await this.browser.createIncognitoBrowserContext();
+        context = await this.browser.createBrowserContext();
         return context.newPage();
-      }, 'newPage');
+      });
 
       if (options.timezone) {
         // set timezone
         await page.emulateTimezone(options.timezone);
       }
 
-      this.addPageListeners(page);
+      await this.addPageListeners(page, options.headers);
 
-      return await this.takeScreenshot(page, options);
+      return await this.takeScreenshot(page, options, signal);
     } finally {
       if (page) {
         this.removePageListeners(page);
@@ -46,13 +46,13 @@ export class ReusableBrowser extends Browser {
     }
   }
 
-  async renderCSV(options: RenderOptions): Promise<RenderCSVResponse> {
+  async renderCSV(options: RenderOptions, signal: AbortSignal): Promise<RenderCSVResponse> {
     let context: puppeteer.BrowserContext | undefined;
     let page: puppeteer.Page | undefined;
 
     try {
       this.validateRenderOptions(options);
-      context = await this.browser.createIncognitoBrowserContext();
+      context = await this.browser.createBrowserContext();
       page = await context.newPage();
 
       if (options.timezone) {
@@ -60,9 +60,9 @@ export class ReusableBrowser extends Browser {
         await page.emulateTimezone(options.timezone);
       }
 
-      this.addPageListeners(page);
+      await this.addPageListeners(page, options.headers);
 
-      return await this.exportCSV(page, options);
+      return await this.exportCSV(page, options, signal);
     } finally {
       if (page) {
         this.removePageListeners(page);

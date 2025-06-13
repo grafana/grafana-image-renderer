@@ -15,10 +15,11 @@ import { Logger } from '../logger';
 import { Browser, createBrowser } from '../browser';
 import { ServiceConfig } from './config';
 import { setupHttpServerMetrics } from './metrics';
+import { setupRateLimiter } from './ratelimiter';
 import { HTTPHeaders, ImageRenderOptions, RenderOptions } from '../types';
 import { Sanitizer } from '../sanitizer/Sanitizer';
 import { isSanitizeRequest } from '../sanitizer/types';
-import { asyncMiddleware, trustedUrlMiddleware, authTokenMiddleware } from './middlewares';
+import { asyncMiddleware, trustedUrlMiddleware, authTokenMiddleware, rateLimiterMiddleware } from './middlewares';
 import { SecureVersion } from 'tls';
 
 const upload = multer({ storage: multer.memoryStorage() });
@@ -37,6 +38,7 @@ export class HttpServer {
 
   async start() {
     this.app = express();
+
     this.app.use(
       morgan('combined', {
         skip: (req, res) => {
@@ -66,6 +68,11 @@ export class HttpServer {
 
     // Middlewares for /render endpoints
     this.app.use('/render', authTokenMiddleware(this.config.service.security), trustedUrlMiddleware);
+    const rateLimiterConfig = this.config.service.rateLimiter;
+    if (rateLimiterConfig.enabled) {
+      let rateLimiter = setupRateLimiter(rateLimiterConfig, this.log);
+      this.app.use('/render', rateLimiterMiddleware(rateLimiter));
+    }
 
     // Set up /render endpoints
     this.app.get('/render', asyncMiddleware(this.render));
@@ -136,7 +143,7 @@ export class HttpServer {
   createServer() {
     const { protocol, host, port } = this.config.service;
     if (protocol === 'https') {
-      const { certFile, certKey, minTLSVersion } = this.config.service
+      const { certFile, certKey, minTLSVersion } = this.config.service;
       if (!certFile || !certKey) {
         throw new Error('No cert file or cert key provided, cannot start HTTPS server');
       }
@@ -148,16 +155,16 @@ export class HttpServer {
       const options = {
         cert: fs.readFileSync(certFile),
         key: fs.readFileSync(certKey),
-      
+
         maxVersion: 'TLSv1.3' as SecureVersion,
         minVersion: (minTLSVersion || 'TLSv1.2') as SecureVersion,
-      }
-      
-      this.server = https.createServer(options, this.app)
+      };
+
+      this.server = https.createServer(options, this.app);
     } else {
-      this.server = http.createServer(this.app)
-    } 
-    
+      this.server = http.createServer(this.app);
+    }
+
     if (host) {
       this.server.listen(port, host, () => {
         const info = this.server.address() as net.AddressInfo;
@@ -176,14 +183,11 @@ export class HttpServer {
   }
 
   render = async (req: express.Request<any, any, any, ImageRenderOptions, any>, res: express.Response, next: express.NextFunction) => {
+    const abortController = new AbortController();
+    const { signal } = abortController;
+
     if (!req.query.url) {
       throw boom.badRequest('Missing url parameter');
-    }
-
-    const headers: HTTPHeaders = {};
-
-    if (req.headers['Accept-Language']) {
-      headers['Accept-Language'] = (req.headers['Accept-Language'] as string[]).join(';');
     }
 
     const options: ImageRenderOptions = {
@@ -197,28 +201,34 @@ export class HttpServer {
       timezone: req.query.timezone,
       encoding: req.query.encoding,
       deviceScaleFactor: req.query.deviceScaleFactor,
-      headers: headers,
+      headers: this.getHeaders(req),
     };
 
     this.log.debug('Render request received', 'url', options.url);
     req.on('close', (err) => {
       this.log.debug('Connection closed', 'url', options.url, 'error', err);
+      abortController.abort();
     });
 
-    const result = await this.browser.render(options);
+    try {
+      const result = await this.browser.render(options, signal);
 
-    res.sendFile(result.filePath, (err) => {
-      if (err) {
-        next(err);
-      } else {
-        try {
-          this.log.debug('Deleting temporary file', 'file', result.filePath);
-          fs.unlinkSync(result.filePath);
-        } catch (e) {
-          this.log.error('Failed to delete temporary file', 'file', result.filePath);
+      res.sendFile(result.filePath, (err) => {
+        if (err) {
+          next(err);
+        } else {
+          try {
+            this.log.debug('Deleting temporary file', 'file', result.filePath);
+            fs.unlinkSync(result.filePath);
+          } catch (e) {
+            this.log.error('Failed to delete temporary file', 'file', result.filePath);
+          }
         }
-      }
-    });
+      });
+    } catch (e) {
+      this.log.error('Render failed', 'url', options.url, 'error', e.stack);
+      return res.status(500).json({ error: e.message });
+    }
   };
 
   sanitize = async (req: express.Request<any, { error: string }>, res: express.Response<{ error: string }>) => {
@@ -260,14 +270,11 @@ export class HttpServer {
   };
 
   renderCSV = async (req: express.Request<any, any, any, RenderOptions, any>, res: express.Response, next: express.NextFunction) => {
+    const abortController = new AbortController();
+    const { signal } = abortController;
+
     if (!req.query.url) {
       throw boom.badRequest('Missing url parameter');
-    }
-
-    const headers: HTTPHeaders = {};
-
-    if (req.headers['Accept-Language']) {
-      headers['Accept-Language'] = (req.headers['Accept-Language'] as string[]).join(';');
     }
 
     const options: RenderOptions = {
@@ -278,37 +285,60 @@ export class HttpServer {
       domain: req.query.domain,
       timezone: req.query.timezone,
       encoding: req.query.encoding,
-      headers: headers,
+      headers: this.getHeaders(req),
     };
 
     this.log.debug('Render request received', 'url', options.url);
     req.on('close', (err) => {
       this.log.debug('Connection closed', 'url', options.url, 'error', err);
+      abortController.abort();
     });
-    const result = await this.browser.renderCSV(options);
 
-    if (result.fileName) {
-      res.setHeader('Content-Disposition', contentDisposition(result.fileName));
-    }
-    res.sendFile(result.filePath, (err) => {
-      if (err) {
-        next(err);
-      } else {
-        try {
-          this.log.debug('Deleting temporary file', 'file', result.filePath);
-          fs.unlink(result.filePath, (err) => {
-            if (err) {
-              throw err
-            }
+    try {
+      const result = await this.browser.renderCSV(options, signal);
 
-            if (!options.filePath) {
-              fs.rmdir(path.dirname(result.filePath), () => {});
-            }
-          })
-        } catch (e) {
-          this.log.error('Failed to delete temporary file', 'file', result.filePath, 'error', e.message);
-        }
+      if (result.fileName) {
+        res.setHeader('Content-Disposition', contentDisposition(result.fileName));
       }
-    });
+      res.sendFile(result.filePath, (err) => {
+        if (err) {
+          next(err);
+        } else {
+          try {
+            this.log.debug('Deleting temporary file', 'file', result.filePath);
+            fs.unlink(result.filePath, (err) => {
+              if (err) {
+                throw err;
+              }
+
+              if (!options.filePath) {
+                fs.rmdir(path.dirname(result.filePath), () => {});
+              }
+            });
+          } catch (e) {
+            this.log.error('Failed to delete temporary file', 'file', result.filePath, 'error', e.message);
+          }
+        }
+      });
+    } catch (e) {
+      this.log.error('Render CSV failed', 'url', options.url, 'error', e.stack);
+      return res.status(500).json({ error: e.message });
+    }
   };
+
+  getHeaders(req: express.Request<any, any, any, RenderOptions, any>): HTTPHeaders {
+    const headers: HTTPHeaders = {};
+
+    if (req.headers['Accept-Language']) {
+      headers['Accept-Language'] = (req.headers['Accept-Language'] as string[]).join(';');
+    }
+
+    // Propagate traces (only if tracing is enabled)
+    if (this.config.rendering.tracing.url && req.headers['traceparent']) {
+      headers['traceparent'] = req.headers['traceparent'] as string;
+      headers['tracestate'] = (req.headers['tracestate'] as string) ?? '';
+    }
+
+    return headers;
+  }
 }

@@ -18,6 +18,13 @@ export interface LoggingConfig {
   console?: ConsoleLoggerConfig;
 }
 
+export interface RateLimiterConfig {
+  enabled: boolean;
+  redisHost?: string;
+  redisPort?: number;
+  requestsPerSecond: number;
+}
+
 export interface ServiceConfig {
   service: {
     host?: string;
@@ -29,6 +36,7 @@ export interface ServiceConfig {
     metrics: MetricsConfig;
     logging: LoggingConfig;
     security: SecurityConfig;
+    rateLimiter: RateLimiterConfig;
   };
   rendering: RenderingConfig;
 }
@@ -53,6 +61,10 @@ export const defaultServiceConfig: ServiceConfig = {
     security: {
       authToken: '-',
     },
+    rateLimiter: {
+      enabled: false,
+      requestsPerSecond: 5,
+    },
   },
   rendering: defaultRenderingConfig,
 };
@@ -64,6 +76,22 @@ export function populateServiceConfigFromEnv(config: ServiceConfig, env: NodeJS.
 
   if (env['HTTP_PORT']) {
     config.service.port = parseInt(env['HTTP_PORT'] as string, 10);
+  }
+
+  if (env['HTTP_PROTOCOL']) {
+    config.service.protocol = env['HTTP_PROTOCOL'];
+  }
+
+  if (env['HTTP_CERT_FILE']) {
+    config.service.certFile = env['HTTP_CERT_FILE'];
+  }
+
+  if (env['HTTP_CERT_KEY']) {
+    config.service.certKey = env['HTTP_CERT_KEY'];
+  }
+
+  if (env['HTTP_MIN_TLS_VERSION']) {
+    config.service.minTLSVersion = env['HTTP_MIN_TLS_VERSION'];
   }
 
   if (env['AUTH_TOKEN']) {
