@@ -42,7 +42,7 @@ RUN yarn install --pure-lockfile --production
 FROM base
 
 LABEL maintainer="Grafana team <hello@grafana.com>"
-LABEL org.opencontainers.image.source="https://github.com/grafana/grafana-image-renderer"
+LABEL org.opencontainers.image.source="https://github.com/grafana/grafana-image-renderer/tree/master/Dockerfile"
 
 ARG GF_UID="472"
 ARG GF_GID="472"
