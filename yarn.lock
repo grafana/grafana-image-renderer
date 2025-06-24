@@ -7617,10 +7617,10 @@ tar-fs@^2.0.0, tar-fs@^2.1.1:
     pump "^3.0.0"
     tar-stream "^2.1.4"
 
-tar-fs@^3.0.6, tar-fs@^3.0.8:
-  version "3.0.8"
-  resolved "https://registry.yarnpkg.com/tar-fs/-/tar-fs-3.0.8.tgz#8f62012537d5ff89252d01e48690dc4ebed33ab7"
-  integrity sha512-ZoROL70jptorGAlgAYiLoBLItEKw/fUxg9BSYK/dF/GAGYFJOJJJMvjPAKDJraCXFwadD456FCuvLWgfhMsPwg==
+tar-fs@^3.0.6, tar-fs@^3.0.8, tar-fs@^3.0.9:
+  version "3.0.10"
+  resolved "https://registry.yarnpkg.com/tar-fs/-/tar-fs-3.0.10.tgz#60f8ccd60fe30164bdd3d6606619650236ed38f7"
+  integrity sha512-C1SwlQGNLe/jPNqapK8epDsXME7CAJR5RL3GcE6KWx1d9OUByzoHVcbu1VPI8tevg9H8Alae0AApHHFGzrD5zA==
   dependencies:
     pump "^3.0.0"
     tar-stream "^3.1.5"
