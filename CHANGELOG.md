@@ -1,3 +1,7 @@
+## 3.12.8 (2025-06-25)
+
+- Chore: Update base Docker image to latest (CVE-2025-6191, CVE-2025-6192), [#654](https://github.com/grafana/grafana-image-renderer/pull/654), [Proximyst](https://github.com/Proximyst)
+
 ## 3.12.7 (2025-06-19)
 
 - Chore: Update base Docker image to latest (CVE-2025-5959), [#647](https://github.com/grafana/grafana-image-renderer/pull/647), [#648](https://github.com/grafana/grafana-image-renderer/pull/648), [macabu](https://github.com/macabu), [Proximyst](https://github.com/Proximyst)
