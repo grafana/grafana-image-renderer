@@ -1,0 +1,149 @@
+name: test-pr
+on:
+  pull_request: ~
+   
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  test-pr:  
+    runs-on: ubuntu-latest
+    services: 
+      grafana:
+        image: grafana/grafana-enterprise:latest
+        env:
+          GF_FEATURE_TOGGLES_ENABLE: 'renderAuthJWT'
+          GF_PATHS_PROVISIONING: '/scripts/drone/provisioning'
+        volumes:
+          - /var/run/docker
+      grabpl:
+        image: byrnedo/alpine-curl:0.1.8
+    
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+
+      - name: Load secrets
+        uses: grafana/shared-workflows/actions/get-vault-secrets@main
+        with:
+          repo_secrets: |
+            SRCCLR_API_TOKEN=github_actions:srcclr_api_token
+      
+      - name: grabpl
+        run: |
+          mkdir -p bin
+          curl -fL -o bin/grabpl https://grafana-downloads.storage.googleapis.com/grafana-build-pipeline/v3.0.20/grabpl
+          chmod +x bin/grabpl
+          
+      - uses: actions/cache@v4
+        id: grabpl-cache
+        with:
+          key: grabpl-${{ runner.os }}-${{ hashFiles('**/binary.url') }}
+          path: bin/grabpl
+          restore-keys: |
+            grabpl-${{ runner.os }}-
+            grabpl-
+    
+      - name: install-node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          
+      - name: Get yarn cache directory path
+        id: yarn-cache-dir-path
+        run: echo "dir=$(yarn cache dir)" >> $GITHUB_OUTPUT
+
+      - name: Cache yarn cache
+        uses: actions/cache@v4
+        id: cache-yarn-cache
+        with:
+          path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
+          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-
+
+      - name: Cache node_modules
+        id: cache-node-modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-${{ matrix.node-version }}-nodemodules-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ matrix.node-version }}-nodemodules-
+
+      - name: yarn-install
+        run: yarn install --frozen-lockfile --no-progress
+        env:
+          PUPPETEER_CACHE_DIR: /tmp/src/cache
+
+      - name: yarn-build
+        run: yarn build
+        
+      - uses: grafana/shared-workflows/actions/login-to-gar@main
+        id: login-to-gar
+
+      - name: run-puppeter-image
+        run: |
+          docker pull us-docker.pkg.dev/grafanalabs-dev/grafana-ci/docker-puppeteer:2.0.0
+          docker run us-docker.pkg.dev/grafanalabs-dev/grafana-ci/docker-puppeteer:2.0.0
+      
+      - name: wait-for-grafana
+        run: |
+          for i in {1..10}; do
+            if docker exec grafana curl -sf http://localhost:3000; then
+              echo "Grafana is ready!"
+              exit 0
+            fi
+            echo "Waiting for container to be ready..."
+            sleep 10
+          done
+          echo "Container failed to start in time" >&2
+          exit 1
+
+      - name: yarn-test
+        run: yarn test-ci
+        env:
+          CI: "true"
+          PUPPETEER_CACHE_DIR: /tmp/src/cache
+
+      - name: security-scan
+        run: |
+          echo "Starting veracode scan..."
+          export _JAVA_OPTIONS=-Xmx4g
+          mkdir -p ci/jobs/security_scan
+          curl -sSL https://download.sourceclear.com/ci.sh | sh -s scan --skip-compile --quick --allow-dirty
+        env:
+          SRCCLR_API_TOKEN: ${{ env.SRCCLR_API_TOKEN }}
+
+  packaging:
+    runs-on: ubuntu-latest
+    container: grafana/grafana-plugin-ci:1.9.6
+    needs: [test-pr]
+    strategy:
+      matrix:
+        packaging:
+          - linux-x64-glibc
+          - darwin-x64-unknown
+          - win32-x64-unknown
+          - linux-x64-glibc-no-chromium
+          - alpine-x64-no-chromium
+    
+    steps:
+      - uses: actions/cache@v4
+        with:
+          path: bin/grabpl
+          key: grabpl-${{ runner.os }}-${{ hashFiles('**/binary.url') }}
+
+      - name: Load secrets
+        uses: grafana/shared-workflows/actions/get-vault-secrets@main
+        with:
+          repo_secrets: |
+            GRAFANA_API_KEY=github_actions:grafana_api_key
+
+      - name: package-${{ matrix.packaging }}
+        run: . |
+          ./scripts/package_target.sh ${{ matrix.packaging }}
+          bin/grabpl build-plugin-manifest ./dist/plugin-${{ matrix.packaging }} || true
+          ./scripts/archive_target.sh ${{ matrix.packaging }}
+        env:
+          GRAFANA_API_KEY: ${{ env.GRAFANA_API_KEY }}
