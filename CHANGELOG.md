@@ -1,3 +1,7 @@
+## 3.12.9 (2025-07-01)
+
+- Docker: Update Chromium in Alpine (CVE-2025-6554), [#655](https://github.com/grafana/grafana-image-renderer/pull/655), [Proximyst](https://github.com/Proximyst)
+
 ## 3.12.8 (2025-06-25)
 
 - Chore: Update base Docker image to latest (CVE-2025-6191, CVE-2025-6192), [#654](https://github.com/grafana/grafana-image-renderer/pull/654), [Proximyst](https://github.com/Proximyst)
