@@ -1,4 +1,4 @@
-import http from "k6/http";
+import http from 'k6/http';
 
 export const DatasourcesEndpoint = class DatasourcesEndpoint {
   constructor(httpClient) {
@@ -68,31 +68,34 @@ export const UIEndpoint = class UIEndpoint {
 
   login(username, pwd) {
     const payload = { user: username, password: pwd };
-    return this.httpClient.formPost('/login', payload);
+    return this.httpClient.post('/login', JSON.stringify(payload));
   }
 
   renderPanel(orgId, dashboardUid, panelId) {
-    return this.httpClient.get(
-      `/render/d-solo/${dashboardUid}/graph-panel`,
-      {
-        orgId,
-        panelId,
-        width: 1000,
-        height: 500,
-        tz: 'Europe/Stockholm',
-      }
-    );
+    return this.httpClient.get(`/render/d-solo/${dashboardUid}/graph-panel`, {
+      orgId,
+      panelId: `panel-${panelId}`,
+      width: 1000,
+      height: 500,
+      tz: 'Europe/Stockholm',
+      timeout: '10',
+    });
   }
-}
+};
 
 export const GrafanaClient = class GrafanaClient {
   constructor(httpClient) {
     httpClient.onBeforeRequest = (params) => {
+      params.headers = params.headers || {};
+
       if (this.orgId && this.orgId > 0) {
-        params.headers = params.headers || {};
-        params.headers["X-Grafana-Org-Id"] = this.orgId;
+        params.headers['X-Grafana-Org-Id'] = this.orgId;
       }
-    }
+
+      if (this.authToken) {
+        params.headers['Authorization'] = `Bearer ${this.authToken}`;
+      }
+    };
 
     this.raw = httpClient;
     this.dashboards = new DashboardsEndpoint(httpClient.withUrl('/api'));
@@ -118,7 +121,11 @@ export const GrafanaClient = class GrafanaClient {
   withOrgId(orgId) {
     this.orgId = orgId;
   }
-}
+
+  withAuthToken(authToken) {
+    this.authToken = authToken;
+  }
+};
 
 export const BaseClient = class BaseClient {
   constructor(url, subUrl) {
@@ -135,33 +142,26 @@ export const BaseClient = class BaseClient {
   }
 
   withUrl(subUrl) {
-    let c = new BaseClient(this.url,  subUrl);
+    let c = new BaseClient(this.url, subUrl);
     c.onBeforeRequest = this.onBeforeRequest;
     return c;
   }
 
-  beforeRequest(params) {
-
-  }
+  beforeRequest(params) {}
 
   get(url, queryParams, params) {
     params = params || {};
     this.onBeforeRequest(params);
 
     if (queryParams) {
-      url += '?' + Array.from(Object.entries(queryParams)).map(([key, value]) =>
-        `${key}=${encodeURIComponent(value)}`
-      ).join('&');
+      url +=
+        '?' +
+        Array.from(Object.entries(queryParams))
+          .map(([key, value]) => `${key}=${encodeURIComponent(value)}`)
+          .join('&');
     }
 
     return http.get(this.url + url, params);
-  }
-
-  formPost(url, body, params) {
-    params = params || {};
-    this.beforeRequest(params);
-    this.onBeforeRequest(params);
-    return http.post(this.url + url, body, params);
   }
 
   post(url, body, params) {
@@ -206,8 +206,8 @@ export const BaseClient = class BaseClient {
 
     return http.batch(requests);
   }
-}
+};
 
 export const createClient = (url) => {
   return new GrafanaClient(new BaseClient(url, ''));
-}
+};
