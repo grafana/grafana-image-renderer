@@ -130,8 +130,9 @@ export class HttpServer {
 
       try {
         const browserVersion = await this.browser.getBrowserVersion();
+        this.log.info('Browser version', 'version', browserVersion);
         browserInfo.labels(browserVersion).set(1);
-      } catch {
+      } catch (err) {
         this.log.error('Failed to get browser version');
         browserInfo.labels('unknown').set(0);
       }
