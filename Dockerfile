@@ -17,7 +17,7 @@ COPY --from=chrome-repository /etc/apt/sources.list.d/google.list /etc/apt/sourc
 COPY --from=chrome-repository /usr/share/keyrings/googlechrome-linux-keyring.gpg /usr/share/keyrings/googlechrome-linux-keyring.gpg
 RUN apt-get update
 
-RUN apt-get download $(apt-cache depends google-chrome-stable fonts-ipafont-gothic fonts-wqy-zenhei fonts-thai-tlwg fonts-khmeros fonts-kacst fonts-freefont-ttf libxss1 unifont fonts-open-sans fonts-roboto fonts-inter bash \
+RUN apt-get download $(apt-cache depends google-chrome-stable fonts-ipafont-gothic fonts-wqy-zenhei fonts-thai-tlwg fonts-khmeros fonts-kacst fonts-freefont-ttf libxss1 unifont fonts-open-sans fonts-roboto fonts-inter bash busybox \
     --recurse --no-recommends --no-suggests --no-conflicts --no-breaks --no-replaces --no-enhances --no-pre-depends | grep '^\w')
 RUN mkdir /dpkg && \
     find . -type f -name '*.deb' -exec sh -c 'dpkg --extract "$1" /dpkg || exit 5' sh '{}' \;
@@ -31,12 +31,17 @@ RUN yarn install --pure-lockfile
 RUN yarn run build
 RUN rm -rf node_modules/ && yarn install --pure-lockfile --production
 
-FROM gcr.io/distroless/nodejs22-debian12:debug-nonroot
+FROM gcr.io/distroless/nodejs22-debian12:nonroot
 
 LABEL maintainer="Grafana team <hello@grafana.com>"
 LABEL org.opencontainers.image.source="https://github.com/grafana/grafana-image-renderer/tree/master/Dockerfile"
 
 COPY --from=debs /dpkg /
+
+USER root
+SHELL ["/bin/busybox", "sh", "-c"]
+RUN /bin/busybox --install
+USER nonroot
 
 ENV CHROME_BIN="/opt/google/chrome/google-chrome"
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD="true"
