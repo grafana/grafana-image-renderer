@@ -116,7 +116,7 @@ afterEach(() => {
 
 function setupTestEnv(config?: ServiceConfig) {
   if (process.env['CI'] === 'true') {
-    domain = 'grafana';
+    domain = process.env.CI_GRAFANA_HOST || 'grafana';
   }
 
   envSettings.saveDiff = process.env['SAVE_DIFF'] === 'true';

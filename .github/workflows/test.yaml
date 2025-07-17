@@ -23,6 +23,16 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read # clone the repository
+    services:
+      grafana:
+        image: grafana/grafana:latest
+        ports:
+          - 3000:3000
+        options: >-
+          --health-cmd="curl -f http://localhost:3000/api/health || exit 1"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
     steps:
       - uses: actions/checkout@v4
         with:
@@ -39,6 +49,8 @@ jobs:
 
       - run: yarn install --frozen-lockfile
       - run: yarn run test-ci
+        env:
+          CI_GRAFANA_HOST: localhost
 
   eslint:
     name: ESLint
