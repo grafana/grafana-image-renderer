@@ -1,6 +1,6 @@
-import * as fs from 'fs';
-import * as _ from 'lodash';
-import * as minimist from 'minimist';
+import fs from 'fs';
+import _ from 'lodash';
+import minimist from 'minimist';
 import { defaultServiceConfig, populateServiceConfigFromEnv, ServiceConfig } from '../service/config';
 import { defaultPluginConfig, populatePluginConfigFromEnv, PluginConfig } from '../plugin/v2/config';
 

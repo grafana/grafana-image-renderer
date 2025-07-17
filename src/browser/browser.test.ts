@@ -1,7 +1,7 @@
 import { ConsoleLogger } from '../logger';
 import { RenderOptions } from '../types';
 import { Browser } from './browser';
-import * as promClient from 'prom-client';
+import promClient from 'prom-client';
 
 jest.mock('../logger');
 
