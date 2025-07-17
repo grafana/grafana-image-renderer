@@ -1,4 +1,4 @@
-import express = require('express');
+import { Request, Response, NextFunction } from 'express';
 import * as boom from '@hapi/boom';
 import { ImageRenderOptions } from '../types';
 import { SecurityConfig, isAuthTokenValid } from '../config/security';
@@ -13,11 +13,7 @@ export const asyncMiddleware = (fn) => (req, res, next) => {
   });
 };
 
-export const trustedUrlMiddleware = (
-  req: express.Request<any, any, any, ImageRenderOptions, any>,
-  res: express.Response,
-  next: express.NextFunction
-) => {
+export const trustedUrlMiddleware = (req: Request<any, any, any, ImageRenderOptions, any>, _: Response, next: NextFunction) => {
   const queryUrl = req.query.url;
 
   if (queryUrl && !(queryUrl.startsWith('http://') || queryUrl.startsWith('https://'))) {
@@ -28,7 +24,7 @@ export const trustedUrlMiddleware = (
 };
 
 export const authTokenMiddleware = (config: SecurityConfig) => {
-  return (req: express.Request<any, any, any, ImageRenderOptions, any>, res: express.Response, next: express.NextFunction) => {
+  return (req: Request<any, any, any, ImageRenderOptions, any>, _: Response, next: NextFunction) => {
     const headerToken = req.header('X-Auth-Token');
     if (headerToken === undefined || !isAuthTokenValid(config, headerToken)) {
       return next(boom.unauthorized('Unauthorized request'));
@@ -39,7 +35,7 @@ export const authTokenMiddleware = (config: SecurityConfig) => {
 };
 
 export const rateLimiterMiddleware = (rateLimiter: RateLimiterAbstract) => {
-  return async (req: express.Request<any, any, any, ImageRenderOptions, any>, res: express.Response, next: express.NextFunction) => {
+  return async (req: Request<any, any, any, ImageRenderOptions, any>, res: Response, next: NextFunction) => {
     const rateLimiterKey = req.header('X-Tenant-ID') || req.ip;
     if (rateLimiterKey === undefined) {
       return next(boom.badRequest('Missing X-Tenant-ID header to use rate limiter'));
