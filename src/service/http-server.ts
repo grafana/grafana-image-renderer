@@ -1,12 +1,12 @@
 import * as bodyParser from 'body-parser';
 import * as boom from '@hapi/boom';
-import * as contentDisposition from 'content-disposition';
+import contentDisposition from 'content-disposition';
 import express, { Express, Request, Response, NextFunction } from 'express';
 import * as fs from 'fs';
 import * as http from 'http';
 import * as https from 'https';
-import * as morgan from 'morgan';
-import * as multer from 'multer';
+import morgan from 'morgan';
+import multer from 'multer';
 import * as net from 'net';
 import * as path from 'path';
 import * as promClient from 'prom-client';

@@ -1,4 +1,4 @@
-import * as promBundle from 'express-prom-bundle';
+import promBundle from 'express-prom-bundle';
 import * as promClient from 'prom-client';
 import * as onFinished from 'on-finished';
 import { Express } from 'express';
