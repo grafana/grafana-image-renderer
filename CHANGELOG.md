@@ -1,3 +1,9 @@
+## Unreleased (4.0.0)
+
+- Build: Update all dependencies, [#X](https://github.com/grafana/grafana-image-renderer/pull/X), [Proximyst](https://github.com/Proximyst)
+- Build: Bump minimum Node.js version from v20 to v22 (LTS), [#X](https://github.com/grafana/grafana-image-renderer/pull/X), [Proximyst](https://github.com/Proximyst)
+- Plugin: Update minimum Grafana version to 11.3.8, [#X](https://github.com/grafana/grafana-image-renderer/pull/X), [Proximyst](https://github.com/Proximyst)
+
 ## 3.12.9 (2025-07-01)
 
 - Docker: Update Chromium in Alpine (CVE-2025-6554), [#655](https://github.com/grafana/grafana-image-renderer/pull/655), [Proximyst](https://github.com/Proximyst)
