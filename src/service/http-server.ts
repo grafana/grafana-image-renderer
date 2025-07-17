@@ -1,7 +1,7 @@
 import * as bodyParser from 'body-parser';
 import * as boom from '@hapi/boom';
 import * as contentDisposition from 'content-disposition';
-import * as express from 'express';
+import express, { Express, Request, Response, NextFunction } from 'express';
 import * as fs from 'fs';
 import * as http from 'http';
 import * as https from 'https';
@@ -22,6 +22,8 @@ import { isSanitizeRequest } from '../sanitizer/types';
 import { asyncMiddleware, trustedUrlMiddleware, authTokenMiddleware, rateLimiterMiddleware } from './middlewares';
 import { SecureVersion } from 'tls';
 
+import pluginInfo from '../../plugin.json';
+
 const upload = multer({ storage: multer.memoryStorage() });
 
 enum SanitizeRequestPartName {
@@ -30,7 +32,7 @@ enum SanitizeRequestPartName {
 }
 
 export class HttpServer {
-  app: express.Express;
+  app: Express;
   browser: Browser;
   server: http.Server;
 
@@ -41,19 +43,19 @@ export class HttpServer {
 
     this.app.use(
       morgan('combined', {
-        skip: (req, res) => {
+        skip: (_, res) => {
           return res.statusCode >= 400;
         },
         stream: this.log.debugWriter,
-      })
+      } as morgan.Options<Request, Response>)
     );
     this.app.use(
       morgan('combined', {
-        skip: (req, res) => {
+        skip: (_, res) => {
           return res.statusCode < 400;
         },
         stream: this.log.errorWriter,
-      })
+      } as morgan.Options<Request, Response>)
     );
 
     this.app.use(bodyParser.json());
@@ -62,7 +64,7 @@ export class HttpServer {
       setupHttpServerMetrics(this.app, this.config.service.metrics, this.log);
     }
 
-    this.app.get('/', (req: express.Request, res: express.Response) => {
+    this.app.get('/', (_: Request, res: Response) => {
       res.send('Grafana Image Renderer');
     });
 
@@ -77,8 +79,7 @@ export class HttpServer {
     // Set up /render endpoints
     this.app.get('/render', asyncMiddleware(this.render));
     this.app.get('/render/csv', asyncMiddleware(this.renderCSV));
-    this.app.get('/render/version', (req: express.Request, res: express.Response) => {
-      const pluginInfo = require('../../plugin.json');
+    this.app.get('/render/version', (_: Request, res: Response) => {
       res.send({ version: pluginInfo.info.version });
     });
 
@@ -95,14 +96,14 @@ export class HttpServer {
       asyncMiddleware(this.sanitize)
     );
 
-    this.app.use((err, req, res, next) => {
+    this.app.use((err: Error | boom.Boom<any>, req: Request, res: Response, _: NextFunction) => {
       if (err.stack) {
         this.log.error('Request failed', 'url', req.url, 'stack', err.stack);
       } else {
         this.log.error('Request failed', 'url', req.url, 'error', err);
       }
 
-      if (err.output) {
+      if (boom.isBoom(err) && err.output) {
         return res.status(err.output.statusCode).json(err.output.payload);
       }
 

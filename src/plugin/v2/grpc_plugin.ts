@@ -241,7 +241,7 @@ class PluginGRPCServer {
   getHeaders(req: RenderRequest | RenderCSVRequest): HTTPHeaders {
     const headers: HTTPHeaders = {};
 
-    if (req.headers?.hasOwnProperty('Accept-Language')) {
+    if (req.headers && 'Accept-Language' in req.headers) {
       const h = req.headers['Accept-Language'];
       headers['Accept-Language'] = h.values.join(';');
     }

@@ -11,6 +11,8 @@ import { ConsoleLogger } from '../logger';
 import { ServiceConfig } from './config';
 import { createSanitizer } from '../sanitizer/Sanitizer';
 
+import pluginInfo from '../../plugin.json';
+
 const testDashboardUid = 'd10881ec-0d35-4909-8de7-6ab563a9ab29';
 const allPanelsDashboardUid = 'edlopzu6hn4lcd';
 const panelIds = {
@@ -138,7 +140,6 @@ describe('Test /render/version', () => {
   });
 
   it('should respond with the current plugin version', () => {
-    const pluginInfo = require('../../plugin.json');
     return request(server.app).get('/render/version').set('X-Auth-Token', '-').expect(200, { version: pluginInfo.info.version });
   });
 });
