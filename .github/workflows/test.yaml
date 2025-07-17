@@ -1,0 +1,92 @@
+name: Tests
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  yarn-test:
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: [lts, 22, 24, .nvmrc]
+
+    name: Yarn test-ci (Node.js ${{ matrix.node-version }})
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # clone the repository
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        if: matrix.node-version != '.nvmrc'
+        with:
+          node-version: ${{ matrix.node-version }}
+      - uses: actions/setup-node@v4
+        if: matrix.node-version == '.nvmrc'
+        with:
+          node-version-file: .nvmrc
+
+      - run: yarn install --frozen-lockfile
+      - run: yarn run test-ci
+
+  eslint:
+    name: ESLint
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # clone the repository
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts
+
+      - run: yarn install --frozen-lockfile
+      - run: yarn run eslint
+
+  typecheck:
+    name: Typecheck
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # clone the repository
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts
+
+      - run: yarn install --frozen-lockfile
+      - run: yarn run eslint
+
+  prettier:
+    name: Prettier
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # clone the repository
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts
+
+      - run: yarn install --frozen-lockfile
+      - run: yarn run prettier:check
