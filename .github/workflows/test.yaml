@@ -72,7 +72,7 @@ jobs:
           node-version: lts/*
 
       - run: yarn install --frozen-lockfile
-      - run: yarn run eslint
+      - run: yarn run typecheck
 
   prettier:
     name: Prettier
