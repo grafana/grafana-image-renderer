@@ -70,7 +70,7 @@ export class HttpServer {
     this.app.use('/render', authTokenMiddleware(this.config.service.security), trustedUrlMiddleware);
     const rateLimiterConfig = this.config.service.rateLimiter;
     if (rateLimiterConfig.enabled) {
-      let rateLimiter = setupRateLimiter(rateLimiterConfig, this.log);
+      const rateLimiter = setupRateLimiter(rateLimiterConfig, this.log);
       this.app.use('/render', rateLimiterMiddleware(rateLimiter));
     }
 

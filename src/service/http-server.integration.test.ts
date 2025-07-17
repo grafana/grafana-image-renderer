@@ -101,7 +101,7 @@ function getGrafanaEndpoint(domain: string) {
   return `http://${domain}:3000`;
 }
 
-let envSettings = {
+const envSettings = {
   saveDiff: false,
   updateGolden: false,
 };
