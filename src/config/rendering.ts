@@ -133,7 +133,6 @@ const envConfig: Record<Mode, Keys<RenderingConfig>> = {
     timingMetrics: 'GF_PLUGIN_RENDERING_TIMING_METRICS',
     tracing: {
       url: 'GF_PLUGIN_RENDERING_TRACING_URL',
-
     },
   },
 };
