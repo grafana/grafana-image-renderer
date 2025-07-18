@@ -1,8 +1,15 @@
 ## Unreleased (4.0.0)
 
 - Build: Update all dependencies, [#663](https://github.com/grafana/grafana-image-renderer/pull/663), [Proximyst](https://github.com/Proximyst)
+
+Breaking changes:
+
 - Build: Bump minimum Node.js version from v20 to v22 (LTS), [#663](https://github.com/grafana/grafana-image-renderer/pull/663), [Proximyst](https://github.com/Proximyst)
+  - If you use the Docker image, you will not have to update anything.
+  - If you run grafana-image-renderer yourself, you may need to update Node.js.
 - Plugin: Update minimum Grafana version to 11.3.8, [#663](https://github.com/grafana/grafana-image-renderer/pull/663), [Proximyst](https://github.com/Proximyst)
+  - If you use any Grafana version newer than 11.3.8 (incl. 11.4.x, 11.5.x, 11.6.x, 12.x), you will not have to do anything.
+  - If you are not in that group, you must update Grafana before updating.
 
 ## 3.12.9 (2025-07-01)
 
