@@ -1,14 +1,14 @@
-import * as bodyParser from 'body-parser';
+import bodyParser from 'body-parser';
 import * as boom from '@hapi/boom';
 import contentDisposition from 'content-disposition';
 import express, { Express, Request, Response, NextFunction } from 'express';
-import * as fs from 'fs';
-import * as http from 'http';
-import * as https from 'https';
+import fs from 'fs';
+import http from 'http';
+import https from 'https';
 import morgan from 'morgan';
 import multer from 'multer';
-import * as net from 'net';
-import * as path from 'path';
+import net from 'net';
+import path from 'path';
 import * as promClient from 'prom-client';
 
 import { Logger } from '../logger';

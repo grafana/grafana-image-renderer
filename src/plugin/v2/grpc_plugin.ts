@@ -5,7 +5,7 @@ import * as promClient from 'prom-client';
 import { GrpcPlugin } from '../../node-plugin';
 import { Logger } from '../../logger';
 import { PluginConfig } from './config';
-import { SecurityConfig, isAuthTokenValid } from '../../config/security';
+import { isAuthTokenValid } from '../../config/security';
 import { createBrowser, Browser } from '../../browser';
 import { HTTPHeaders, ImageRenderOptions, RenderOptions } from '../../types';
 import {
