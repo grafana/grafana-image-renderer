@@ -1,8 +1,8 @@
 import * as fs from 'fs';
 import * as jwt from 'jsonwebtoken';
 import * as path from 'path';
-import * as request from 'supertest';
-import * as pixelmatch from 'pixelmatch';
+import request from 'supertest';
+import pixelmatch from 'pixelmatch';
 import * as fastPng from 'fast-png';
 import * as promClient from 'prom-client';
 
@@ -38,6 +38,7 @@ const defaultServiceConfig: ServiceConfig = {
   service: {
     host: undefined,
     port: 8081,
+    protocol: 'http',
     metrics: {
       enabled: false,
       collectDefaultMetrics: true,
