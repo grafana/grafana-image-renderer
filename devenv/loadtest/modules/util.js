@@ -33,10 +33,10 @@ export const upsertTestdataDatasource = (client, name) => {
   if (res.status === 404) {
     res = client.datasources.create(payload);
 
-    if (res.status == 200) {
+    if (res.status === 200) {
       id = res.json().id;
     }
-  } else if (res.status == 200) {
+  } else if (res.status === 200) {
     id = res.json().id;
     res = client.datasources.update(res.json().id, payload);
   }

@@ -25,7 +25,7 @@ export class ExitManager {
     process.on('uncaughtException', this.exitHandler.bind(this));
   }
 
-  exitHandler(options, err) {
+  exitHandler(_options, err) {
     for (const fn of cleanUpHandlers) {
       try {
         fn();

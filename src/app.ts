@@ -1,21 +1,20 @@
 import { startTracing } from './tracing';
-import * as path from 'path';
-import * as _ from 'lodash';
-import * as fs from 'fs';
+import path from 'path';
+import _ from 'lodash';
+import fs from 'fs';
 import { Browser, computeExecutablePath } from '@puppeteer/browsers';
 import { RenderGRPCPluginV2 } from './plugin/v2/grpc_plugin';
 import { HttpServer } from './service/http-server';
-import { populateServiceConfigFromEnv, ServiceConfig, defaultServiceConfig } from './service/config';
-import { populatePluginConfigFromEnv, PluginConfig, defaultPluginConfig } from './plugin/v2/config';
+import { ServiceConfig } from './service/config';
+import { PluginConfig } from './plugin/v2/config';
 import { ConsoleLogger, PluginLogger } from './logger';
-import * as minimist from 'minimist';
+import minimist from 'minimist';
 import { serve } from './node-plugin';
 import { createSanitizer } from './sanitizer/Sanitizer';
 import { getConfig } from './config/config';
 
 async function main() {
   const argv = minimist(process.argv.slice(2));
-  const env = Object.assign({}, process.env);
   const command = argv._[0];
 
   if (command === undefined) {

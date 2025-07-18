@@ -29,7 +29,7 @@ export interface ServiceConfig {
   service: {
     host?: string;
     port: number;
-    protocol?: string;
+    protocol: 'http' | 'https';
     certFile?: string;
     certKey?: string;
     minTLSVersion?: string;
@@ -79,7 +79,7 @@ export function populateServiceConfigFromEnv(config: ServiceConfig, env: NodeJS.
   }
 
   if (env['HTTP_PROTOCOL']) {
-    config.service.protocol = env['HTTP_PROTOCOL'];
+    config.service.protocol = env['HTTP_PROTOCOL'] === 'https' ? 'https' : 'http';
   }
 
   if (env['HTTP_CERT_FILE']) {

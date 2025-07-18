@@ -43,6 +43,7 @@ export interface RenderCSVResponse {
   fileName?: string;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface CollectMetricsRequest {}
 
 export interface MetricsPayload {
