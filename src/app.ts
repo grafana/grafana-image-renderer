@@ -1,7 +1,7 @@
 import { startTracing } from './tracing';
-import * as path from 'path';
-import * as _ from 'lodash';
-import * as fs from 'fs';
+import path from 'path';
+import _ from 'lodash';
+import fs from 'fs';
 import { Browser, computeExecutablePath } from '@puppeteer/browsers';
 import { RenderGRPCPluginV2 } from './plugin/v2/grpc_plugin';
 import { HttpServer } from './service/http-server';
