@@ -1,71 +1,58 @@
-# Base stage
-FROM node:20-alpine AS base
+FROM debian:12-slim AS debian-updated
 
-ENV CHROME_BIN="/usr/bin/chromium-browser"
-ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD="true"
+# If we ever need to bust the cache, just change the date here.
+# While we don't cache anything in Drone, that might not be true when we migrate to GitHub Actions where some action might automatically enable layer caching.
+# This is fine, but is terrible in situations where we want to _force_ an update of a package.
+RUN echo 'cachebuster 2025-07-16' && apt-get update
 
-# Folder used by puppeteer to write temporal files
-ENV XDG_CONFIG_HOME=/tmp/.chromium
-ENV XDG_CACHE_HOME=/tmp/.chromium
+FROM debian-updated AS chrome-repository
 
-WORKDIR /usr/src/app
+RUN apt-get install -y wget gnupg && \
+    wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /usr/share/keyrings/googlechrome-linux-keyring.gpg && \
+    sh -c 'echo "deb [arch=amd64 signed-by=/usr/share/keyrings/googlechrome-linux-keyring.gpg] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list'
 
-# We use edge for Chromium to get the latest release.
-# Can be back to stable when 3.22 gets .103.
-RUN apk --no-cache upgrade && \
-    apk add --no-cache udev ttf-opensans unifont ca-certificates dumb-init && \
-    apk add --no-cache 'chromium>=138.0.7204.93' 'chromium-swiftshader>=138.0.7204.93' --repository=https://dl-cdn.alpinelinux.org/alpine/edge/community && \
-    # Remove NPM-related files and directories
-    rm -rf /usr/local/lib/node_modules/npm && \
-    rm -rf /usr/local/bin/npm && \
-    rm -rf /usr/local/bin/npx && \
-    rm -rf /root/.npm && \
-    rm -rf /root/.node-gyp && \
-    # Clean up
-    rm -rf /tmp/*
+FROM debian-updated AS debs
 
-# Build stage
-FROM base AS build
+COPY --from=chrome-repository /etc/apt/sources.list.d/google.list /etc/apt/sources.list.d/google.list
+COPY --from=chrome-repository /usr/share/keyrings/googlechrome-linux-keyring.gpg /usr/share/keyrings/googlechrome-linux-keyring.gpg
+RUN apt-get update
 
+RUN apt-get download $(apt-cache depends google-chrome-stable fonts-ipafont-gothic fonts-wqy-zenhei fonts-thai-tlwg fonts-khmeros fonts-kacst fonts-freefont-ttf libxss1 unifont fonts-open-sans fonts-roboto fonts-inter bash busybox \
+    --recurse --no-recommends --no-suggests --no-conflicts --no-breaks --no-replaces --no-enhances --no-pre-depends | grep '^\w')
+RUN mkdir /dpkg && \
+    find . -type f -name '*.deb' -exec sh -c 'dpkg --extract "$1" /dpkg || exit 5' sh '{}' \;
+
+FROM node:22-alpine AS build
+
+WORKDIR /src
 COPY . ./
 
 RUN yarn install --pure-lockfile
 RUN yarn run build
+RUN rm -rf node_modules/ && yarn install --pure-lockfile --production
 
-# Production dependencies stage
-FROM base AS prod-dependencies
-
-COPY package.json yarn.lock ./
-RUN yarn install --pure-lockfile --production
-
-# Final stage
-FROM base
+FROM gcr.io/distroless/nodejs22-debian12:nonroot
 
 LABEL maintainer="Grafana team <hello@grafana.com>"
 LABEL org.opencontainers.image.source="https://github.com/grafana/grafana-image-renderer/tree/master/Dockerfile"
 
-ARG GF_UID="472"
-ARG GF_GID="472"
-ENV GF_PATHS_HOME="/usr/src/app"
+COPY --from=debs /dpkg /
 
-WORKDIR $GF_PATHS_HOME
+USER root
+SHELL ["/bin/busybox", "sh", "-c"]
+RUN /bin/busybox --install
+USER nonroot
 
-RUN addgroup -S -g $GF_GID grafana && \
-    adduser -S -u $GF_UID -G grafana grafana && \
-    mkdir -p "$GF_PATHS_HOME" && \
-    chown -R grafana:grafana "$GF_PATHS_HOME"
-
+ENV CHROME_BIN="/opt/google/chrome/google-chrome"
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD="true"
 ENV NODE_ENV=production
 
-COPY --from=prod-dependencies /usr/src/app/node_modules node_modules
-COPY --from=build /usr/src/app/build build
-COPY --from=build /usr/src/app/proto proto
-COPY --from=build /usr/src/app/default.json config.json
-COPY --from=build /usr/src/app/plugin.json plugin.json
+COPY --from=build /src/node_modules node_modules
+COPY --from=build /src/build build
+COPY --from=build /src/proto proto
+COPY --from=build /src/default.json config.json
+COPY --from=build /src/plugin.json plugin.json
 
 EXPOSE 8081
 
-USER grafana
-
-ENTRYPOINT ["dumb-init", "--"]
-CMD ["node", "build/app.js", "server", "--config=config.json"]
+CMD ["build/app.js", "server", "--config=config.json"]

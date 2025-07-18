@@ -1,3 +1,7 @@
+## 3.13.0 (2025-07-16)
+
+- Docker: Move to distroless Debian (CVE-2025-6558, CVE-2025-7656, CVE-2025-7657), [#661](https://github.com/grafana/grafana-image-renderer/pull/661), [Proximyst](https://github.com/Proximyst)
+
 ## 3.12.9 (2025-07-01)
 
 - Docker: Update Chromium in Alpine (CVE-2025-6554), [#655](https://github.com/grafana/grafana-image-renderer/pull/655), [Proximyst](https://github.com/Proximyst)
