@@ -26,7 +26,10 @@ export const trustedUrlMiddleware = (req: Request<any, any, any, ImageRenderOpti
 export const authTokenMiddleware = (config: SecurityConfig) => {
   return (req: Request<any, any, any, ImageRenderOptions, any>, _: Response, next: NextFunction) => {
     const headerToken = req.header('X-Auth-Token');
-    if (headerToken === undefined || !isAuthTokenValid(config, headerToken)) {
+    if (!headerToken) {
+      return next(boom.unauthorized('Missing X-Auth-Token header'));
+    }
+    if (!isAuthTokenValid(config, headerToken)) {
       return next(boom.unauthorized('Unauthorized request'));
     }
 
