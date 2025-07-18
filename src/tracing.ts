@@ -14,7 +14,7 @@ if (config.rendering.tracing.url) {
   sdk = initTracing(config.rendering.tracing.url, config.rendering.verboseLogging);
 }
 
-function initTracing(exporterURL: string, verboseLogging: boolean = false) {
+function initTracing(exporterURL: string, verboseLogging = false) {
   if (verboseLogging) {
     diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.DEBUG);
   }

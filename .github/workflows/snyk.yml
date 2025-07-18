@@ -1,15 +1,19 @@
 name: Snyk Monitor Scanning
+
 on:
   release:
     types: [published] 
   push:
     branches:
-      - 'main' 
       - 'master'
   workflow_dispatch:
 
 permissions:
   contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   snyk-scan-ci:
