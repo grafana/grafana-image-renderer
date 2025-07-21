@@ -111,7 +111,7 @@ export const serve = async (opts: ServeConfig) => {
 
   // Register all plugins onto the gRPC server.
   for (const key in pluginSet) {
-    if (pluginSet.hasOwnProperty(key)) {
+    if (key in pluginSet) {
       const p = pluginSet[key];
       await p.grpcServer(server);
     }

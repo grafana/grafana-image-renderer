@@ -1,18 +1,17 @@
-import * as winston from 'winston';
+import winston from 'winston';
 import { LoggingConfig } from './service/config';
-import { context, trace } from '@opentelemetry/api';
 
 export interface LogWriter {
-  write(message, encoding);
+  write(message: string, encoding?: string): void;
 }
 
 export interface Logger {
   errorWriter: LogWriter;
   debugWriter: LogWriter;
-  debug(message?: string, ...optionalParams: any[]);
-  info(message?: string, ...optionalParams: any[]);
-  warn(message?: string, ...optionalParams: any[]);
-  error(message?: string, ...optionalParams: any[]);
+  debug(message?: string, ...optionalParams: any[]): void;
+  info(message?: string, ...optionalParams: any[]): void;
+  warn(message?: string, ...optionalParams: any[]): void;
+  error(message?: string, ...optionalParams: any[]): void;
 }
 
 export class ConsoleLogger implements Logger {

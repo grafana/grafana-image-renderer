@@ -1,4 +1,4 @@
-import * as DOMPurify from 'dompurify';
+import DOMPurify from 'dompurify';
 import { JSDOM } from 'jsdom';
 import { ConfigType, isDOMPurifyConfig, SanitizeRequest, SanitizeResponse } from './types';
 

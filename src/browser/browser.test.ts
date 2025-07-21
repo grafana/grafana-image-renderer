@@ -1,7 +1,7 @@
 import { ConsoleLogger } from '../logger';
 import { RenderOptions } from '../types';
 import { Browser } from './browser';
-import * as promClient from 'prom-client';
+import promClient from 'prom-client';
 
 jest.mock('../logger');
 
@@ -58,7 +58,7 @@ describe('Test validateRenderOptions', () => {
   });
 
   it('should use accept-language header if it exists', () => {
-    let options: RenderOptions = {
+    const options: RenderOptions = {
       url: 'http://localhost',
       filePath: '',
       timeout: 0,
@@ -75,7 +75,7 @@ describe('Test validateRenderOptions', () => {
   });
 
   it('should use acceptLanguage configuration if no header is given', () => {
-    let options: RenderOptions = {
+    const options: RenderOptions = {
       url: 'http://localhost',
       filePath: '',
       timeout: 0,
@@ -89,7 +89,7 @@ describe('Test validateRenderOptions', () => {
   });
 
   it('should use timeout option if given', () => {
-    let options: RenderOptions = {
+    const options: RenderOptions = {
       url: 'http://localhost',
       filePath: '',
       timeout: 5,
@@ -103,7 +103,7 @@ describe('Test validateRenderOptions', () => {
   });
 
   it('should use default timeout if none is given', () => {
-    let options: RenderOptions = {
+    const options: RenderOptions = {
       url: 'http://localhost',
       filePath: '',
       timeout: 0,

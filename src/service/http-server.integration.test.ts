@@ -1,8 +1,8 @@
 import * as fs from 'fs';
 import * as jwt from 'jsonwebtoken';
 import * as path from 'path';
-import * as request from 'supertest';
-import * as pixelmatch from 'pixelmatch';
+import request from 'supertest';
+import pixelmatch from 'pixelmatch';
 import * as fastPng from 'fast-png';
 import * as promClient from 'prom-client';
 
@@ -10,6 +10,8 @@ import { HttpServer } from './http-server';
 import { ConsoleLogger } from '../logger';
 import { ServiceConfig } from './config';
 import { createSanitizer } from '../sanitizer/Sanitizer';
+
+import pluginInfo from '../../plugin.json';
 
 const testDashboardUid = 'd10881ec-0d35-4909-8de7-6ab563a9ab29';
 const allPanelsDashboardUid = 'edlopzu6hn4lcd';
@@ -36,6 +38,7 @@ const defaultServiceConfig: ServiceConfig = {
   service: {
     host: undefined,
     port: 8081,
+    protocol: 'http',
     metrics: {
       enabled: false,
       collectDefaultMetrics: true,
@@ -101,7 +104,7 @@ function getGrafanaEndpoint(domain: string) {
   return `http://${domain}:3000`;
 }
 
-let envSettings = {
+const envSettings = {
   saveDiff: false,
   updateGolden: false,
 };
@@ -138,7 +141,6 @@ describe('Test /render/version', () => {
   });
 
   it('should respond with the current plugin version', () => {
-    const pluginInfo = require('../../plugin.json');
     return request(server.app).get('/render/version').set('X-Auth-Token', '-').expect(200, { version: pluginInfo.info.version });
   });
 });
