@@ -59,6 +59,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ACTOR: ${{ github.actor }}
         run: echo "$GITHUB_TOKEN" | docker login ghcr.io -u "$ACTOR" --password-stdin
+      - uses: actions/checkout@v4
 
       - name: docker build
         env:
