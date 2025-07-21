@@ -14,7 +14,12 @@ concurrency:
 
 jobs:
   tests:
-    name: Tests
+    strategy:
+      fail-fast: false
+      matrix:
+        version: [lts/*, .nvmrc]
+
+    name: Tests (Node.js ${{ matrix.version }})
     runs-on: ubuntu-latest
     permissions:
       contents: read # clone the repository
@@ -30,7 +35,8 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: lts/*
+          node-version: ${{ matrix.version != '.nvmrc' && matrix.version }}
+          node-version-file: ${{ matrix.version == '.nvmrc' && matrix.version }}
       - run: yarn install --frozen-lockfile
 
       # Time to wait for Grafana to be ready, if it isn't already. (It probably is, but we can be sure for practically free...)
