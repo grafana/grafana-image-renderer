@@ -35,6 +35,7 @@ jobs:
           TAG="$(echo -n "dev-$REF_NAME-$COMMIT" | tr '[:upper:]' '[:lower:]' | tr -d '[:blank:]' | tr -c '[:alnum:]' '-')"
           echo "image tag: $TAG"
           echo "tag=ghcr.io/$REPOSITORY:$TAG" >> "$GITHUB_OUTPUT"
+      - uses: docker/setup-qemu-action@29109295f81e9208d7d86ff1c6c12d2833863392 # v3
       - uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3
         with:
           driver-opts: env.BUILDKIT_STEP_LOG_MAX_SIZE=-1,env.BUILDKIT_STEP_LOG_MAX_SPEED=-1
@@ -46,6 +47,7 @@ jobs:
       - name: docker build & push
         uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6
         with:
+          platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ steps.image_tag.outputs.tag }}
           provenance: mode=max
