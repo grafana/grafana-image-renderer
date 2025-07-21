@@ -23,13 +23,19 @@ jobs:
         with:
           persist-credentials: false
 
+      # We start the backend service while we install dependencies.
+      # We'll wait on it when we are about to start the actual tests.
+      - working-directory: devenv/docker/test
+        run: docker compose up -d
+
       - uses: actions/setup-node@v4
         with:
           node-version: lts/*
+      - run: yarn install --frozen-lockfile
 
+      # Time to wait for Grafana to be ready, if it isn't already. (It probably is, but we can be sure for practically free...)
       - working-directory: devenv/docker/test
         run: docker compose up -d --wait
-      - run: yarn install --frozen-lockfile
       - run: yarn run test-ci
         env:
           GRAFANA_DOMAIN: localhost
