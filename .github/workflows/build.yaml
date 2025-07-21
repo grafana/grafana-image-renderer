@@ -43,7 +43,7 @@ jobs:
           repo_secrets: |
             GRAFANA_ACCESS_POLICY_TOKEN=gcom-token:token
       - name: Sign package
-        run: npx @grafana/sign-plugin@latest ./dist/linux-x64-glibc/
+        run: yarn dlx @grafana/sign-plugin@latest ./dist/linux-x64-glibc/
 
       #- name: Sign manifest
       #- name: Archive target
