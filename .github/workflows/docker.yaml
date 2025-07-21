@@ -1,0 +1,69 @@
+name: Docker
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build and push dev image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # required to read the repository contents
+      packages: write # required to push the built image to the package registry
+      attestations: write # required to create attestations for the built image
+      id-token: write # required to create attestations for the built image
+      pull-requests: write # required to comment on the pull request
+    steps:
+      - name: Create image tag
+        id: image_tag
+        shell: bash
+        env:
+          REPOSITORY: ${{ github.repository }}
+          REF_NAME: ${{ github.ref_name }}
+          COMMIT: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          TAG="$(echo -n "dev-$REF_NAME-$COMMIT" | tr '[:upper:]' '[:lower:]' | tr -d '[:blank:]' | tr -c '[:alnum:]' '-')"
+          echo "image tag: $TAG"
+          echo "tag=ghcr.io/$REPOSITORY:$TAG" >> "$GITHUB_OUTPUT"
+      - uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3
+        with:
+          driver-opts: env.BUILDKIT_STEP_LOG_MAX_SIZE=-1,env.BUILDKIT_STEP_LOG_MAX_SPEED=-1
+      - name: Log into GHCR
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ACTOR: ${{ github.actor }}
+        run: echo "$GITHUB_TOKEN" | docker login ghcr.io -u "$ACTOR" --password-stdin
+      - name: docker build & push
+        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6
+        with:
+          push: true
+          tags: ${{ steps.image_tag.outputs.tag }}
+          provenance: mode=max
+          sbom: true
+      - name: Comment on PR
+        if: github.event_name == 'pull_request'
+        uses: mshick/add-pr-comment@b8f338c590a895d50bcbfa6c5859251edc8952fc # v2
+        continue-on-error: true # just check the actions log if ratelimits or whatever
+        with:
+          message: |
+            :whale: Docker image built and pushed to GitHub Container Registry.
+
+            You can pull it using:
+
+            ```bash
+            docker pull ${{ steps.image_tag.outputs.tag }}
+            ```
+
+            > [!WARNING]
+            > This is a development image and should not be used in production.
+            > It will be automatically removed after 2 weeks.
