@@ -1,11 +1,11 @@
-import * as os from 'os';
-import * as uniqueFilename from 'unique-filename';
+import os from 'os';
+import uniqueFilename from 'unique-filename';
 import * as puppeteer from 'puppeteer';
-import * as chokidar from 'chokidar';
-import * as path from 'path';
-import * as fs from 'fs';
-import * as promClient from 'prom-client';
-import * as Jimp from 'jimp';
+import chokidar from 'chokidar';
+import path from 'path';
+import fs from 'fs';
+import promClient from 'prom-client';
+import Jimp from 'jimp';
 import { Logger } from '../logger';
 import { RenderingConfig } from '../config/rendering';
 import { HTTPHeaders, ImageRenderOptions, RenderOptions } from '../types';
@@ -574,7 +574,7 @@ export class Browser {
     page.on('requestfailed', this.logRequestFailed);
     page.on('console', this.logConsoleMessage);
 
-    if (this.config.tracing.url.trim() != '') {
+    if (this.config.tracing.url.trim() !== '') {
       await page.setRequestInterception(true);
 
       page.on('request', this.addTracingHeaders(headers));

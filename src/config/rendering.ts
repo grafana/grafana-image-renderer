@@ -79,7 +79,7 @@ export enum Mode {
 }
 
 type Keys<T> = {
-  [K in keyof T]?: T[K] extends object ? (T[K] extends any[] ? string : Keys<T[K]>) : string;
+  [K in keyof T]-?: T[K] extends object ? (T[K] extends any[] ? string : Keys<NonNullable<T[K]>>) : string;
 };
 
 const envConfig: Record<Mode, Keys<RenderingConfig>> = {
@@ -101,13 +101,18 @@ const envConfig: Record<Mode, Keys<RenderingConfig>> = {
       mode: 'RENDERING_CLUSTERING_MODE',
       maxConcurrency: 'RENDERING_CLUSTERING_MAX_CONCURRENCY',
       timeout: 'RENDERING_CLUSTERING_TIMEOUT',
+      monitor: 'RENDERING_CLUSTERING_MONITOR',
     },
     verboseLogging: 'RENDERING_VERBOSE_LOGGING',
     dumpio: 'RENDERING_DUMPIO',
     timingMetrics: 'RENDERING_TIMING_METRICS',
     tracing: {
       url: 'RENDERING_TRACING_URL',
+      serviceName: 'RENDERING_TRACING_SERVICE_NAME',
     },
+    headed: 'RENDERING_HEADED',
+    emulateNetworkConditions: 'RENDERING_EMULATE_NETWORK_CONDITIONS',
+    networkConditions: 'RENDERING_NETWORK_CONDITIONS',
   },
   plugin: {
     chromeBin: 'GF_PLUGIN_RENDERING_CHROME_BIN',
@@ -127,26 +132,30 @@ const envConfig: Record<Mode, Keys<RenderingConfig>> = {
       mode: 'GF_PLUGIN_RENDERING_CLUSTERING_MODE',
       maxConcurrency: 'GF_PLUGIN_RENDERING_CLUSTERING_MAX_CONCURRENCY',
       timeout: 'GF_PLUGIN_RENDERING_CLUSTERING_TIMEOUT',
+      monitor: 'GF_PLUGIN_RENDERING_CLUSTERING_MONITOR',
     },
     verboseLogging: 'GF_PLUGIN_RENDERING_VERBOSE_LOGGING',
     dumpio: 'GF_PLUGIN_RENDERING_DUMPIO',
     timingMetrics: 'GF_PLUGIN_RENDERING_TIMING_METRICS',
     tracing: {
       url: 'GF_PLUGIN_RENDERING_TRACING_URL',
-
+      serviceName: 'GF_PLUGIN_RENDERING_TRACING_SERVICE_NAME',
     },
+    headed: 'GF_PLUGIN_RENDERING_HEADED',
+    emulateNetworkConditions: 'GF_PLUGIN_RENDERING_EMULATE_NETWORK_CONDITIONS',
+    networkConditions: 'GF_PLUGIN_RENDERING_NETWORK_CONDITIONS',
   },
 };
 
 export function populateRenderingConfigFromEnv(config: RenderingConfig, env: NodeJS.ProcessEnv, mode: Mode) {
   const envKeys = envConfig[mode];
 
-  if (env[envKeys.chromeBin!]) {
-    config.chromeBin = env[envKeys.chromeBin!];
+  if (env[envKeys.chromeBin]) {
+    config.chromeBin = env[envKeys.chromeBin];
   }
 
-  if (env[envKeys.args!]) {
-    const args = env[envKeys.args!] as string;
+  if (env[envKeys.args]) {
+    const args = env[envKeys.args] as string;
     if (args.length > 0) {
       const argsList = args.split(',');
       if (argsList.length > 0) {
@@ -155,77 +164,95 @@ export function populateRenderingConfigFromEnv(config: RenderingConfig, env: Nod
     }
   }
 
-  if (env[envKeys.ignoresHttpsErrors!]) {
-    config.ignoresHttpsErrors = env[envKeys.ignoresHttpsErrors!] === 'true';
+  if (env[envKeys.ignoresHttpsErrors]) {
+    config.ignoresHttpsErrors = env[envKeys.ignoresHttpsErrors] === 'true';
   }
 
-  if (env[envKeys.timezone!]) {
-    config.timezone = env[envKeys.timezone!];
+  if (env[envKeys.timezone]) {
+    config.timezone = env[envKeys.timezone];
   } else if (env['TZ']) {
     config.timezone = env['TZ'];
   }
 
-  if (env[envKeys.acceptLanguage!]) {
-    config.acceptLanguage = env[envKeys.acceptLanguage!];
+  if (env[envKeys.acceptLanguage]) {
+    config.acceptLanguage = env[envKeys.acceptLanguage];
   }
 
-  if (env[envKeys.width!]) {
-    config.width = parseInt(env[envKeys.width!] as string, 10);
+  if (env[envKeys.width]) {
+    config.width = parseInt(env[envKeys.width] as string, 10);
   }
 
-  if (env[envKeys.height!]) {
-    config.height = parseInt(env[envKeys.height!] as string, 10);
+  if (env[envKeys.height]) {
+    config.height = parseInt(env[envKeys.height] as string, 10);
   }
 
-  if (env[envKeys.deviceScaleFactor!]) {
-    config.deviceScaleFactor = parseFloat(env[envKeys.deviceScaleFactor!] as string);
+  if (env[envKeys.deviceScaleFactor]) {
+    config.deviceScaleFactor = parseFloat(env[envKeys.deviceScaleFactor] as string);
   }
 
-  if (env[envKeys.maxWidth!]) {
-    config.maxWidth = parseInt(env[envKeys.maxWidth!] as string, 10);
+  if (env[envKeys.maxWidth]) {
+    config.maxWidth = parseInt(env[envKeys.maxWidth] as string, 10);
   }
 
-  if (env[envKeys.maxHeight!]) {
-    config.maxHeight = parseInt(env[envKeys.maxHeight!] as string, 10);
+  if (env[envKeys.maxHeight]) {
+    config.maxHeight = parseInt(env[envKeys.maxHeight] as string, 10);
   }
 
-  if (env[envKeys.maxDeviceScaleFactor!]) {
-    config.maxDeviceScaleFactor = parseFloat(env[envKeys.maxDeviceScaleFactor!] as string);
+  if (env[envKeys.maxDeviceScaleFactor]) {
+    config.maxDeviceScaleFactor = parseFloat(env[envKeys.maxDeviceScaleFactor] as string);
   }
 
-  if (env[envKeys.pageZoomLevel!]) {
-    config.pageZoomLevel = parseFloat(env[envKeys.pageZoomLevel!] as string);
+  if (env[envKeys.pageZoomLevel]) {
+    config.pageZoomLevel = parseFloat(env[envKeys.pageZoomLevel] as string);
   }
 
-  if (env[envKeys.mode!]) {
-    config.mode = env[envKeys.mode!] as string;
+  if (env[envKeys.mode]) {
+    config.mode = env[envKeys.mode] as string;
   }
 
-  if (env[envKeys.clustering?.mode!]) {
-    config.clustering.mode = env[envKeys.clustering?.mode!] as string;
+  if (env[envKeys.clustering.mode]) {
+    config.clustering.mode = env[envKeys.clustering.mode] as string;
+  }
+  if (env[envKeys.clustering.maxConcurrency]) {
+    config.clustering.maxConcurrency = parseInt(env[envKeys.clustering.maxConcurrency] as string, 10);
+  }
+  if (env[envKeys.clustering.timeout]) {
+    config.clustering.timeout = parseInt(env[envKeys.clustering.timeout] as string, 10);
+  }
+  if (env[envKeys.clustering.monitor]) {
+    config.clustering.monitor = env[envKeys.clustering.monitor] === 'true';
   }
 
-  if (env[envKeys.clustering?.maxConcurrency!]) {
-    config.clustering.maxConcurrency = parseInt(env[envKeys.clustering?.maxConcurrency!] as string, 10);
+  if (env[envKeys.verboseLogging]) {
+    config.verboseLogging = env[envKeys.verboseLogging] === 'true';
   }
 
-  if (env[envKeys.clustering?.timeout!]) {
-    config.clustering.timeout = parseInt(env[envKeys.clustering?.timeout!] as string, 10);
+  if (env[envKeys.dumpio]) {
+    config.dumpio = env[envKeys.dumpio] === 'true';
   }
 
-  if (env[envKeys.verboseLogging!]) {
-    config.verboseLogging = env[envKeys.verboseLogging!] === 'true';
+  if (env[envKeys.timingMetrics]) {
+    config.timingMetrics = env[envKeys.timingMetrics] === 'true';
   }
 
-  if (env[envKeys.dumpio!]) {
-    config.dumpio = env[envKeys.dumpio!] === 'true';
+  if (env[envKeys.tracing.url]) {
+    config.tracing.url = env[envKeys.tracing.url] as string;
+  }
+  if (env[envKeys.tracing.serviceName]) {
+    config.tracing.serviceName = env[envKeys.tracing.serviceName] as string;
   }
 
-  if (env[envKeys.timingMetrics!]) {
-    config.timingMetrics = env[envKeys.timingMetrics!] === 'true';
+  if (env[envKeys.headed]) {
+    config.headed = env[envKeys.headed] === 'true';
   }
-
-  if (env[envKeys.tracing?.url!]) {
-    config.tracing.url = env[envKeys.tracing?.url!] as string;
+  if (env[envKeys.emulateNetworkConditions]) {
+    config.emulateNetworkConditions = env[envKeys.emulateNetworkConditions] === 'true';
+  }
+  if (env[envKeys.networkConditions]) {
+    try {
+      config.networkConditions = JSON.parse(env[envKeys.networkConditions] as string);
+    } catch (e) {
+      throw new Error(`Invalid network conditions JSON: ${env[envKeys.networkConditions]}`);
+    }
   }
 }

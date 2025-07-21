@@ -1,0 +1,41 @@
+name: GHCR Clean-up
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "25 2 * * *" # every day at 02:25 UTC
+
+permissions: {}
+
+jobs:
+  clean:
+    runs-on: ubuntu-latest
+    name: Delete old test images
+    permissions:
+      packages: write # required to delete images from the package registry
+    steps:
+      - uses: snok/container-retention-policy@4f22ef80902ad409ed55a99dc5133cc1250a0d03 # v3.0.0
+        id: retention
+        with:
+          account: grafana
+          token: ${{ secrets.GITHUB_TOKEN }}
+          image-names: "grafana-image-renderer"
+          image-tags: "dev*"
+          cut-off: 2w
+          dry-run: false
+      - name: Summary
+        uses: actions/github-script@v7
+        if: success() || failure()
+        env:
+          LIST: ${{ steps.retention.outputs.deleted }}
+          FAILED: ${{ steps.retention.outputs.failed }}
+        with:
+          script: |
+            const list = process.env.LIST.split(',').filter(Boolean);
+            const failed = process.env.FAILED.split(',').filter(Boolean);
+            await core.summary.addHeading('GHCR Clean-up')
+              .addRaw(`Deleted images: ${list.length}`, true)
+              .addList(list)
+              .addRaw(`Failed to delete images: ${failed.length}`, true)
+              .addList(failed)
+              .write();

@@ -1,4 +1,4 @@
-const { DefaultReporter } = require('@jest/reporters')
+import { DefaultReporter } from '@jest/reporters'
 
 class Reporter extends DefaultReporter
 {
@@ -22,4 +22,4 @@ class Reporter extends DefaultReporter
 	}
 }
 
-module.exports = Reporter
+export default Reporter

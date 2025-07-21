@@ -5,7 +5,7 @@ import * as promClient from 'prom-client';
 import { GrpcPlugin } from '../../node-plugin';
 import { Logger } from '../../logger';
 import { PluginConfig } from './config';
-import { SecurityConfig, isAuthTokenValid } from '../../config/security';
+import { isAuthTokenValid } from '../../config/security';
 import { createBrowser, Browser } from '../../browser';
 import { HTTPHeaders, ImageRenderOptions, RenderOptions } from '../../types';
 import {
@@ -241,7 +241,7 @@ class PluginGRPCServer {
   getHeaders(req: RenderRequest | RenderCSVRequest): HTTPHeaders {
     const headers: HTTPHeaders = {};
 
-    if (req.headers?.hasOwnProperty('Accept-Language')) {
+    if (req.headers && 'Accept-Language' in req.headers) {
       const h = req.headers['Accept-Language'];
       headers['Accept-Language'] = h.values.join(';');
     }

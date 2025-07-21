@@ -10,7 +10,9 @@
     "typeRoots": [
       "node_modules/@types"
     ],
-    "rootDir": "src"
+    "rootDir": "src",
+    "resolveJsonModule": true,
+    "esModuleInterop": true
   },
   "include": [
     "./src/*.ts",
