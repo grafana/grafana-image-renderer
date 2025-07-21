@@ -19,6 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read # clone the repository
+      id-token: write # required to read secrets
     steps:
       - uses: actions/checkout@v4
         with:
@@ -33,6 +34,16 @@ jobs:
       # Assume env: GRAFANA_API_KEY
 
       - name: Package
-        run: ./scripts/package_target.sh linux-x64-glibc
+        run: ./scripts/package_target.sh linux-x64-glibc ./dist/linux-x64-glibc/
+
+      - name: Acquire Grafana API key
+        id: grafana_api_key
+        uses: grafana/shared-workflows/actions/get-vault-secrets@get-vault-secrets/v1
+        with:
+          repo_secrets: |
+            GRAFANA_ACCESS_POLICY_TOKEN=gcom-token:token
+      - name: Sign package
+        run: npx @grafana/sign-plugin@latest ./dist/linux-x64-glibc/
+
       #- name: Sign manifest
       #- name: Archive target
