@@ -14,6 +14,7 @@ concurrency:
 
 jobs:
   tag:
+    name: Create image tag
     runs-on: ubuntu-latest
     outputs:
       tag: ${{ steps.image_tag.outputs.tag }}
@@ -23,7 +24,7 @@ jobs:
         shell: bash
         env:
           REPOSITORY: ${{ github.repository }}
-          REF_NAME: ${{ github.ref_name }}
+          REF_NAME: ${{ (github.event_name == 'pull_request' && format('pull-{0}', github.event.pull_request.number)) || github.ref_name }}
           COMMIT: ${{ github.sha }}
         run: |
           set -euo pipefail
