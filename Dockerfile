@@ -41,6 +41,8 @@ COPY --from=debs /dpkg /
 USER root
 SHELL ["/bin/busybox", "sh", "-c"]
 RUN /bin/busybox --install
+# Verify that Chrome was actually installed.
+RUN /opt/google/chrome/google-chrome --version
 USER nonroot
 
 ENV CHROME_BIN="/opt/google/chrome/google-chrome"
