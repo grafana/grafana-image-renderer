@@ -14,9 +14,6 @@ Breaking changes:
 - Docker: Move to distroless Debian, [#661](https://github.com/grafana/grafana-image-renderer/pull/661), [Proximyst](https://github.com/Proximyst)
   - In practice, this SHOULD come with no changes for most users.
   - If you are building a new Docker image on top of us, you will have to adapt to distroless Debian instead of Alpine.
-- Docker: Use Google Chrome instead of Chromium, [#661](https://github.com/grafana/grafana-image-renderer/pull/661), [Proximyst](https://github.com/Proximyst)
-  - In practice, this SHOULD come with no changes for most users.
-  - If you depend on us having specifically Chromium (e.g. by the path), you will have to adapt to this. The software is otherwise mostly the same.
 
 ## 3.12.9 (2025-07-01)
 
