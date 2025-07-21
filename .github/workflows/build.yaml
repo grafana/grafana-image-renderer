@@ -44,6 +44,11 @@ jobs:
             GRAFANA_ACCESS_POLICY_TOKEN=gcom-token:token
       - name: Sign package
         run: yarn sign-plugin --distDir ./dist/linux-x64-glibc/
-
-      #- name: Sign manifest
-      #- name: Archive target
+      - name: Create ZIP
+        working-directory: dist/
+        run: zip -yqr linux-x64-glibc.zip linux-x64-glibc/
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-x64-glibc.zip
+          path: dist/linux-x64-glibc.zip
