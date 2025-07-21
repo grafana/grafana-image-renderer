@@ -13,6 +13,27 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  tests:
+    name: Tests
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # clone the repository
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+
+      - working-directory: devenv/docker/test
+        run: docker compose up -d --wait
+      - run: yarn install --frozen-lockfile
+      - run: yarn run test-ci
+        env:
+          GRAFANA_DOMAIN: localhost
+
   eslint:
     name: ESLint
     runs-on: ubuntu-latest

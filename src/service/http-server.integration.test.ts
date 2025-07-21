@@ -118,7 +118,9 @@ afterEach(() => {
 });
 
 function setupTestEnv(config?: ServiceConfig) {
-  if (process.env['CI'] === 'true') {
+  if (process.env['GRAFANA_DOMAIN']) {
+    domain = process.env['GRAFANA_DOMAIN'];
+  } else if (process.env['CI'] === 'true') {
     domain = 'grafana';
   }
 
