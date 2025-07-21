@@ -39,7 +39,7 @@ jobs:
           COMMIT: ${{ github.sha }}
         run: |
           set -euo pipefail
-          TAG="$(echo "dev-$REF_NAME-$COMMIT" | tr '[:upper:]' '[:lower:]' | tr -c '[:alnum:]' '-')"
+          TAG="$(echo -n "dev-$REF_NAME-$COMMIT" | tr '[:upper:]' '[:lower:]' | tr -d '[:blank:]' | tr -c '[:alnum:]' '-')"
           echo "image tag: $TAG"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
       - uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3
