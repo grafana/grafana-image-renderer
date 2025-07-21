@@ -17,8 +17,8 @@ COPY --from=chrome-repository /etc/apt/sources.list.d/google.list /etc/apt/sourc
 COPY --from=chrome-repository /usr/share/keyrings/googlechrome-linux-keyring.gpg /usr/share/keyrings/googlechrome-linux-keyring.gpg
 RUN apt-get update
 
-RUN apt-get download $(apt-cache depends google-chrome-stable fonts-ipafont-gothic fonts-wqy-zenhei fonts-thai-tlwg fonts-khmeros fonts-kacst fonts-freefont-ttf libxss1 unifont fonts-open-sans fonts-roboto fonts-inter bash busybox \
-    --recurse --no-recommends --no-suggests --no-conflicts --no-breaks --no-replaces --no-enhances --no-pre-depends | grep '^\w')
+RUN apt-cache depends google-chrome-stable fonts-ipafont-gothic fonts-wqy-zenhei fonts-thai-tlwg fonts-khmeros fonts-kacst fonts-freefont-ttf libxss1 unifont fonts-open-sans fonts-roboto fonts-inter bash busybox \
+    --recurse --no-recommends --no-suggests --no-conflicts --no-breaks --no-replaces --no-enhances --no-pre-depends | grep '^\w' | xargs apt-get download
 RUN mkdir /dpkg && \
     find . -type f -name '*.deb' -exec sh -c 'dpkg --extract "$1" /dpkg || exit 5' sh '{}' \;
 
