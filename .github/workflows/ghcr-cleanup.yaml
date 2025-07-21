@@ -34,9 +34,8 @@ jobs:
             const list = process.env.LIST.split(',').filter(Boolean);
             const failed = process.env.FAILED.split(',').filter(Boolean);
             await core.summary.addHeading('GHCR Clean-up')
-              .addRaw(`Deleted images: ${list.length}`)
+              .addRaw(`Deleted images: ${list.length}`, true)
               .addList(list)
-              .addBreak()
-              .addRaw(`Failed to delete images: ${failed.length}`)
+              .addRaw(`Failed to delete images: ${failed.length}`, true)
               .addList(failed)
               .write();
