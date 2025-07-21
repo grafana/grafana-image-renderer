@@ -14,16 +14,8 @@ concurrency:
 
 jobs:
   build:
-    strategy:
-      matrix:
-        include:
-          - os: ubuntu-24.04
-            arch: amd64
-          - os: ubuntu-24.04-arm
-            arch: arm64
-
-    name: Ensures Dockerfile builds (${{ matrix.arch }})
-    runs-on: ${{ matrix.os }}
+    name: Ensures Dockerfile builds
+    runs-on: ubuntu-latest
     permissions:
       contents: read # required to read the repository contents
       packages: write # required to push the built image to the package registry
@@ -37,10 +29,9 @@ jobs:
           REPOSITORY: ${{ github.repository }}
           REF_NAME: ${{ github.ref_name }}
           COMMIT: ${{ github.sha }}
-          ARCH: ${{ matrix.arch }}
         run: |
           set -euo pipefail
-          TAG="$(echo -n "dev-$REF_NAME-$COMMIT" | tr '[:upper:]' '[:lower:]' | tr -d '[:blank:]' | tr -c '[:alnum:]' '-')-$ARCH"
+          TAG="$(echo -n "dev-$REF_NAME-$COMMIT" | tr '[:upper:]' '[:lower:]' | tr -d '[:blank:]' | tr -c '[:alnum:]' '-')"
           echo "image tag: $TAG"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
       - uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3
