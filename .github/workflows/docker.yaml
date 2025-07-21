@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   build:
-    name: Ensures Dockerfile builds
+    name: Build and push dev image
     runs-on: ubuntu-latest
     permissions:
       contents: read # required to read the repository contents
