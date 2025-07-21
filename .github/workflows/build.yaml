@@ -34,7 +34,7 @@ jobs:
       # Assume env: GRAFANA_API_KEY
 
       - name: Package
-        run: ./scripts/package_target.sh linux-x64-glibc false ./dist/linux-x64-glibc/
+        run: ./scripts/package_target.sh linux-x64-glibc false linux-x64-glibc/
 
       - name: Acquire Grafana API key
         id: grafana_api_key
