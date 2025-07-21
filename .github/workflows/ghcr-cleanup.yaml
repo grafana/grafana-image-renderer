@@ -22,7 +22,7 @@ jobs:
           image-names: "grafana-image-renderer"
           image-tags: "dev*"
           cut-off: 2w
-          dry-run: true
+          dry-run: false
       - name: Summary
         uses: actions/github-script@v7
         if: success() || failure()
