@@ -27,10 +27,9 @@ jobs:
     permissions:
       contents: read # required to read the repository contents
       packages: write # required to push the built image to the package registry
+      attestations: write # required to create attestations for the built image
+      id-token: write # required to create attestations for the built image
     steps:
-      - uses: actions/checkout@v4
-        with:
-          persist-credentials: false
       - name: Create image tag
         id: image_tag
         shell: bash
@@ -43,22 +42,13 @@ jobs:
           TAG="$(echo "dev-$REF_NAME-$COMMIT" | tr '[:upper:]' '[:lower:]' | tr -c '[:alnum:]' '-')"
           echo "image tag: $TAG"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
-          echo "image=ghcr.io/$REPOSITORY:$TAG" >> "$GITHUB_OUTPUT"
-      - name: docker build .
-        run: docker build . -t "$TAG"
-        env:
-          # We don't want Docker to stop logging output.
-          BUILDKIT_STEP_LOG_MAX_SIZE: '-1'
-          BUILDKIT_STEP_LOG_MAX_SPEED: '-1'
-          TAG: ${{ steps.image_tag.outputs.image }}
-      - name: docker push
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          ACTOR: ${{ github.actor }}
-          REPOSITORY: ${{ github.repository }}
-          IMAGE: ${{ steps.image_tag.outputs.image }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          echo "$GITHUB_TOKEN" | docker login ghcr.io -u "$ACTOR" --password-stdin
-          docker push "$IMAGE"
+      - uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3
+        with:
+          driver-opts: env.BUILDKIT_STEP_LOG_MAX_SIZE=-1,env.BUILDKIT_STEP_LOG_MAX_SPEED=-1
+      - name: docker build & push
+        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6
+        with:
+          push: true
+          tags: ${{ steps.image_tag.outputs.tag }}
+          provenance: mode=max
+          sbom: true
