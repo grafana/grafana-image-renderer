@@ -21,6 +21,7 @@ jobs:
       packages: write # required to push the built image to the package registry
       attestations: write # required to create attestations for the built image
       id-token: write # required to create attestations for the built image
+      pull-requests: write # required to comment on the pull request
     steps:
       - name: Create image tag
         id: image_tag
@@ -49,3 +50,20 @@ jobs:
           tags: ${{ steps.image_tag.outputs.tag }}
           provenance: mode=max
           sbom: true
+      - name: Comment on PR
+        if: github.event_name == 'pull_request'
+        uses: mshick/add-pr-comment@b8f338c590a895d50bcbfa6c5859251edc8952fc # v2
+        continue-on-error: true # just check the actions log if ratelimits or whatever
+        with:
+          message: |
+            :whale: Docker image built and pushed to GitHub Container Registry.
+
+            You can pull it using:
+
+            ```bash
+            docker pull ${{ steps.image_tag.outputs.tag }}
+            ```
+
+            > [!WARNING]
+            > This is a development image and should not be used in production.
+            > It will be automatically removed after 2 weeks.
