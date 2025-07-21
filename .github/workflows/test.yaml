@@ -13,6 +13,39 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  tests:
+    strategy:
+      fail-fast: false
+      matrix:
+        version: [lts/*, .nvmrc]
+
+    name: Tests (Node.js ${{ matrix.version }})
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # clone the repository
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      # We start the backend service while we install dependencies.
+      # We'll wait on it when we are about to start the actual tests.
+      - working-directory: devenv/docker/test
+        run: docker compose up -d
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ (matrix.version != '.nvmrc' && matrix.version) || '' }}
+          node-version-file: ${{ (matrix.version == '.nvmrc' && matrix.version) || '' }}
+      - run: yarn install --frozen-lockfile
+
+      # Time to wait for Grafana to be ready, if it isn't already. (It probably is, but we can be sure for practically free...)
+      - working-directory: devenv/docker/test
+        run: docker compose up -d --wait
+      - run: yarn run test-ci
+        env:
+          GRAFANA_DOMAIN: localhost
+
   eslint:
     name: ESLint
     runs-on: ubuntu-latest

@@ -7,6 +7,12 @@ services:
       - 3000:3000
     environment:
       GF_FEATURE_TOGGLES_ENABLE: renderAuthJWT
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/healthz"]
+      start_period: 15s # give it a while to startup and do migrations
+      interval: 5s
+      timeout: 3s
+      retries: 5
     volumes:
       - ./dashboards.yaml:/etc/grafana/provisioning/dashboards/dashboards.yaml
       - ../../../scripts/drone/provisioning/dashboards:/usr/share/grafana/dashboards
