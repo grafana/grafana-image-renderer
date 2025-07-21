@@ -11,10 +11,9 @@ ENV XDG_CACHE_HOME=/tmp/.chromium
 WORKDIR /usr/src/app
 
 # We use edge for Chromium to get the latest release.
-# Can be back to stable when 3.22 gets .103.
 RUN apk --no-cache upgrade && \
     apk add --no-cache udev ttf-opensans unifont ca-certificates dumb-init && \
-    apk add --no-cache 'chromium>=138.0.7204.93' 'chromium-swiftshader>=138.0.7204.93' --repository=https://dl-cdn.alpinelinux.org/alpine/edge/community && \
+    apk add --no-cache 'chromium>=138.0.7204.157' 'chromium-swiftshader>=138.0.7204.157' --repository=https://dl-cdn.alpinelinux.org/alpine/edge/main --repository=https://dl-cdn.alpinelinux.org/alpine/edge/community && \
     # Remove NPM-related files and directories
     rm -rf /usr/local/lib/node_modules/npm && \
     rm -rf /usr/local/bin/npm && \
