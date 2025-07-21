@@ -1,0 +1,64 @@
+name: Docker
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            arch: amd64
+          - os: ubuntu-24.04-arm
+            arch: arm64
+
+    name: Ensures Dockerfile builds (${{ matrix.arch }})
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read # required to read the repository contents
+      packages: write # required to push the built image to the package registry
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Create image tag
+        id: image_tag
+        shell: bash
+        env:
+          REPOSITORY: ${{ github.repository }}
+          REF_NAME: ${{ github.ref_name }}
+          COMMIT: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          TAG="$(echo "dev-$REF_NAME-$COMMIT" | tr '[:upper:]' '[:lower:]' | tr -c '[:alnum:]' '-')"
+          echo "image tag: $TAG"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "image=ghcr.io/$REPOSITORY:$TAG" >> "$GITHUB_OUTPUT"
+      - name: docker build .
+        run: docker build . -t "$TAG"
+        env:
+          # We don't want Docker to stop logging output.
+          BUILDKIT_STEP_LOG_MAX_SIZE: '-1'
+          BUILDKIT_STEP_LOG_MAX_SPEED: '-1'
+          TAG: ${{ steps.image_tag.outputs.image }}
+      - name: docker push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ACTOR: ${{ github.actor }}
+          REPOSITORY: ${{ github.repository }}
+          IMAGE: ${{ steps.image_tag.outputs.image }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "$GITHUB_TOKEN" | docker login ghcr.io -u "$ACTOR" --password-stdin
+          docker push "$IMAGE"
