@@ -4,6 +4,7 @@ on:
   workflow_dispatch:
   schedule:
     - cron: "25 2 * * *" # every day at 02:25 UTC
+  push:
 
 permissions: {}
 
@@ -21,7 +22,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           image-names: "grafana-image-renderer"
           image-tags: "dev*"
-          cut-off: 2w 3d
+          cut-off: 1d
           dry-run: true
       - name: Summary
         uses: actions/github-script@v7
