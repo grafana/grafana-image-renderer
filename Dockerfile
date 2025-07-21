@@ -9,7 +9,7 @@ FROM debian-updated AS chrome-repository
 
 RUN apt-get install -y wget gnupg && \
     wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /usr/share/keyrings/googlechrome-linux-keyring.gpg && \
-    sh -c 'echo "deb [arch=amd64 signed-by=/usr/share/keyrings/googlechrome-linux-keyring.gpg] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list'
+    sh -c 'echo "deb [arch=$(uname -m | sed 's/x86_/amd/' | sed 's/aarch/arm/') signed-by=/usr/share/keyrings/googlechrome-linux-keyring.gpg] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list'
 
 FROM debian-updated AS debs
 
