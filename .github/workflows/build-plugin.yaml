@@ -63,7 +63,7 @@ jobs:
 
   release:
     needs: build
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+    if: github.event_name == 'push' && github.ref_type == 'tag'
     name: Release plugin
     runs-on: ubuntu-latest
     permissions:
@@ -78,3 +78,20 @@ jobs:
         with:
           node-version-file: .nvmrc
       - run: yarn install --frozen-lockfile
+
+      - uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+          path: artifacts/
+      # FIXME: Why do we use MD5?? Why not SHA-2/SHA-512?
+      - name: Generate MD5 sums
+        run: ./scripts/generate_md5sum.sh artifacts/
+
+      - uses: softprops/action-gh-release@72f2c25fcb47643c292f7107632f7a47c1df5cd8 # v2
+        with:
+          files: |
+            artifacts/*.zip
+            artifacts/md5sums.txt
+          fail_on_unmatched_files: true
+          make_latest: 'true'
+          generate_release_notes: true
