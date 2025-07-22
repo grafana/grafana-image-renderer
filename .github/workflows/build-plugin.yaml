@@ -87,6 +87,24 @@ jobs:
       - name: Generate MD5 sums
         run: ./scripts/generate_md5sum.sh artifacts/
 
+      - name: Create Gcom API plugin JSON payload
+        env:
+          COMMIT: ${{ github.sha }}
+          BASE_URL: https://github.com/${{ github.repository }}
+        run: |
+          set -euo pipefail
+          cat artifacts/md5sums.txt | jq --slurp --raw-input \
+            --arg commit "$COMMIT" \
+            --arg baseUrl "$BASE_URL" \
+            'split("\n")[:-1] | map(split("  ")) | map({(.[1] | sub("^artifacts/"; "")): .[0]}) | add | { commit: $commit, url: $baseUrl, download: .}' | tee gcom.json
+
+      - name: Acquire Grafana API key
+        id: grafana_api_key
+        uses: grafana/shared-workflows/actions/get-vault-secrets@get-vault-secrets/v1
+        with:
+          repo_secrets: |
+            GRAFANA_ACCESS_POLICY_TOKEN=gcom-token:token
+
       - uses: softprops/action-gh-release@72f2c25fcb47643c292f7107632f7a47c1df5cd8 # v2
         with:
           files: |
@@ -95,3 +113,13 @@ jobs:
           fail_on_unmatched_files: true
           make_latest: 'true'
           generate_release_notes: true
+      - run: |
+          set -euo pipefail
+          curl --silent --show-error \
+            --header 'User-Agent: grafana-image-renderer:/plugins/publish' \
+            --header 'Content-Type: application/json' \
+            --header 'Authorization: Bearer '"$GRAFANA_ACCESS_POLICY_TOKEN" \
+            --request POST \
+            --data @gcom.json \
+            --location \
+            https://grafana.com/api/plugins
