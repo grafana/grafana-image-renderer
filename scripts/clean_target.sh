@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 ARCH="${1:-}"
 OUT="${2:-}"

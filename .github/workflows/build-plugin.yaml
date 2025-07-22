@@ -1,0 +1,119 @@
+name: Build plugin
+
+on:
+  push:
+    branches:
+      - master
+    tags:
+      - 'v*'
+  pull_request:
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        target:
+          - linux-x64-glibc
+          - darwin-x64-unknown
+          - win32-x64-unknown
+
+    name: Build plugin for ${{ matrix.target }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # clone the repository
+      id-token: write # required to read secrets
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - run: yarn install --frozen-lockfile
+      - run: yarn run build
+
+      - name: Package
+        run: ./scripts/package_target.sh ${{ matrix.target }} false ${{ matrix.target }}/
+
+      - name: Acquire Grafana API key
+        id: grafana_api_key
+        uses: grafana/shared-workflows/actions/get-vault-secrets@get-vault-secrets/v1
+        with:
+          repo_secrets: |
+            GRAFANA_ACCESS_POLICY_TOKEN=gcom-token:token
+      - name: Sign package
+        run: yarn sign-plugin --distDir ./dist/${{ matrix.target }}/
+
+      - name: Create ZIP
+        working-directory: dist/
+        run: zip -yqr ${{ matrix.target }}.zip ${{ matrix.target }}/
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.target }}.zip
+          path: dist/${{ matrix.target }}.zip
+
+  release:
+    needs: build
+    if: github.event_name == 'push' && github.ref_type == 'tag'
+    name: Release plugin
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # create a release
+      id-token: write # required to read secrets
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+          path: artifacts/
+      # FIXME: Why do we use MD5?? Why not SHA-2/SHA-512?
+      - name: Generate MD5 sums
+        run: ./scripts/generate_md5sum.sh artifacts/
+
+      - name: Create Gcom API plugin JSON payload
+        env:
+          COMMIT: ${{ github.sha }}
+          BASE_URL: https://github.com/${{ github.repository }}
+        run: |
+          set -euo pipefail
+          cat artifacts/md5sums.txt | jq --slurp --raw-input \
+            --arg commit "$COMMIT" \
+            --arg baseUrl "$BASE_URL" \
+            'split("\n")[:-1] | map(split("  ")) | map({(.[1] | sub("^artifacts/"; "")): .[0]}) | add | { commit: $commit, url: $baseUrl, download: .}' | tee gcom.json
+
+      - name: Acquire Grafana API key
+        id: grafana_api_key
+        uses: grafana/shared-workflows/actions/get-vault-secrets@get-vault-secrets/v1
+        with:
+          repo_secrets: |
+            GRAFANA_ACCESS_POLICY_TOKEN=gcom-token:token
+
+      - uses: softprops/action-gh-release@72f2c25fcb47643c292f7107632f7a47c1df5cd8 # v2
+        with:
+          files: |
+            artifacts/*.zip
+            artifacts/md5sums.txt
+          fail_on_unmatched_files: true
+          make_latest: 'true'
+          generate_release_notes: true
+      - run: |
+          set -euo pipefail
+          curl --silent --show-error \
+            --header 'User-Agent: grafana-image-renderer:/plugins/publish' \
+            --header 'Content-Type: application/json' \
+            --header 'Authorization: Bearer '"$GRAFANA_ACCESS_POLICY_TOKEN" \
+            --request POST \
+            --data @gcom.json \
+            --location \
+            https://grafana.com/api/plugins
