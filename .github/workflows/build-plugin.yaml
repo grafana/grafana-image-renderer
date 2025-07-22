@@ -36,7 +36,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
-      - run: yarn install --production --frozen-lockfile
+      - run: yarn install --frozen-lockfile
       - run: yarn run build
 
       - name: Package
@@ -48,7 +48,6 @@ jobs:
         with:
           repo_secrets: |
             GRAFANA_ACCESS_POLICY_TOKEN=gcom-token:token
-      - run: yarn install --frozen-lockfile
       - name: Sign package
         run: yarn sign-plugin --distDir ./dist/${{ matrix.target }}/
 
