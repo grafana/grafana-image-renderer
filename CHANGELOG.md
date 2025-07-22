@@ -1,6 +1,6 @@
-## 4.0.1 & 4.0.2 (2025-07-22)
+## 4.0.1, 4.0.2 & 4.0.3 (2025-07-22)
 
-This release only touches the build process of the plugin, as v4.0.0 and v4.0.1 did not release on the plugin catalog.
+This release only touches the build process of the plugin, as v4.0.0, .1, and .2 did not release on the plugin catalog.
 There is no difference from v4.0.0 for Docker users.
 
 ## 4.0.0 (2025-07-22)
