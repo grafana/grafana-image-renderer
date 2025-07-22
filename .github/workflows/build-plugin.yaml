@@ -147,7 +147,7 @@ jobs:
         with:
           files: |
             artifacts/*.zip
-            md5sums.txt
+            artifacts/md5sums.txt
           fail_on_unmatched_files: true
           make_latest: 'true'
           generate_release_notes: true
