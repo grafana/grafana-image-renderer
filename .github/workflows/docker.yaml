@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - master
+    tags:
+      - 'v*'
   pull_request:
 
 permissions: {}
@@ -13,45 +15,141 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
-    name: Build and push dev image
+  tag:
+    name: Create image tag
     runs-on: ubuntu-latest
+    outputs:
+      subject: ${{ steps.image_tag.outputs.subject }}
+      tag: ${{ steps.image_tag.outputs.tag }}
+    steps:
+      - name: Use ghcr.io
+        if: github.event_name != 'push' || github.ref_type != 'tag'
+        env:
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          echo "REGISTRY=ghcr.io" >> "$GITHUB_ENV"
+          echo "REPOSITORY=$REPOSITORY" >> "$GITHUB_ENV"
+      - name: Use docker.io
+        if: github.event_name == 'push' && github.ref_type == 'tag'
+        run: |
+          echo "REGISTRY=docker.io" >> "$GITHUB_ENV"
+          echo "REPOSITORY=grafana/grafana-image-renderer" >> "$GITHUB_ENV"
+
+      - name: Use Git tag for image tag
+        if: github.event_name == 'push' && github.ref_type == 'tag'
+        run: echo "REF_NAME=${{ github.ref_name }}" >> "$GITHUB_ENV"
+      - name: Use PR number for image tag
+        if: github.event_name == 'pull_request'
+        run: echo "REF_NAME=dev-pull-${{ github.event.pull_request.number }}-${{ github.sha }}" >> "$GITHUB_ENV"
+      - name: Use branch and commit for image tag
+        if: github.event_name == 'push' && github.ref_type == 'branch'
+        run: echo "REF_NAME=dev-$(echo "${{ github.ref_name }}" | tr '[:upper:]' '[:lower:]' | tr -d '[:blank:]' | tr -c '[:alnum:]' '-')-${{ github.sha }}" >> "$GITHUB_ENV"
+
+      - name: Create image tag
+        id: image_tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "subject=$REGISTRY/$REPOSITORY" >> "$GITHUB_OUTPUT"
+          echo "tag=$REGISTRY/$REPOSITORY:$REF_NAME" >> "$GITHUB_OUTPUT"
+
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runs-on: ubuntu-24.04
+            arch: amd64
+          - runs-on: ubuntu-24.04-arm
+            arch: arm64
+
+    needs: tag
+    name: Build image for ${{ matrix.arch }}
+    runs-on: ${{ matrix.runs-on }}
     permissions:
       contents: read # required to read the repository contents
       packages: write # required to push the built image to the package registry
       attestations: write # required to create attestations for the built image
-      id-token: write # required to create attestations for the built image
+      id-token: write # required to create attestations for the built image, and to read secrets
       pull-requests: write # required to comment on the pull request
     steps:
-      - name: Create image tag
-        id: image_tag
-        shell: bash
-        env:
-          REPOSITORY: ${{ github.repository }}
-          REF_NAME: ${{ github.ref_name }}
-          COMMIT: ${{ github.sha }}
-        run: |
-          set -euo pipefail
-          TAG="$(echo -n "dev-$REF_NAME-$COMMIT" | tr '[:upper:]' '[:lower:]' | tr -d '[:blank:]' | tr -c '[:alnum:]' '-')"
-          echo "image tag: $TAG"
-          echo "tag=ghcr.io/$REPOSITORY:$TAG" >> "$GITHUB_OUTPUT"
-      - uses: docker/setup-qemu-action@29109295f81e9208d7d86ff1c6c12d2833863392 # v3
-      - uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3
-        with:
-          driver-opts: env.BUILDKIT_STEP_LOG_MAX_SIZE=-1,env.BUILDKIT_STEP_LOG_MAX_SPEED=-1
       - name: Log into GHCR
+        if: github.event_name != 'push' || github.ref_type != 'tag'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ACTOR: ${{ github.actor }}
         run: echo "$GITHUB_TOKEN" | docker login ghcr.io -u "$ACTOR" --password-stdin
-      - name: docker build & push
-        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6
+      - name: Log into DockerHub
+        if: github.event_name == 'push' && github.ref_type == 'tag'
+        uses: grafana/shared-workflows/actions/dockerhub-login@dockerhub-login/v1
+
+      - uses: actions/checkout@v4
         with:
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: ${{ steps.image_tag.outputs.tag }}
-          provenance: mode=max
-          sbom: true
+          persist-credentials: false
+
+      - name: docker build
+        env:
+          DOCKER_BUILDKIT: 1
+          BUILDKIT_STEP_LOG_MAX_SIZE: -1
+          BUILDKIT_STEP_LOG_MAX_SPEED: -1
+          TAG: ${{ needs.tag.outputs.tag }}-${{ matrix.arch }}
+        run: docker build . -t "$TAG"
+      - name: docker push
+        env:
+          TAG: ${{ needs.tag.outputs.tag }}-${{ matrix.arch }}
+        run: docker push "$TAG"
+      - name: Get digest
+        id: digest
+        env:
+          TAG: ${{ needs.tag.outputs.tag }}-${{ matrix.arch }}
+        run: |
+          set -euo pipefail
+          DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' "$TAG" | cut -d@ -f2)
+          echo "Digest: $DIGEST"
+          echo "digest=$DIGEST" >> "$GITHUB_OUTPUT"
+      - uses: actions/attest-build-provenance@v2
+        with:
+          subject-name: ${{ needs.tag.outputs.subject }}
+          subject-digest: ${{ steps.digest.outputs.digest }}
+          push-to-registry: true
+
+  manifest:
+    needs: [tag, build]
+    name: Create manifests
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write # required to create the manifest list in the package registry
+      id-token: write # required to create the manifest list in the package registry
+      pull-requests: write # required to comment on the pull request
+    steps:
+      - name: Log into GHCR
+        if: github.event_name != 'push' || github.ref_type != 'tag'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ACTOR: ${{ github.actor }}
+        run: echo "$GITHUB_TOKEN" | docker login ghcr.io -u "$ACTOR" --password-stdin
+      - name: Log into DockerHub
+        if: github.event_name == 'push' && github.ref_type == 'tag'
+        uses: grafana/shared-workflows/actions/dockerhub-login@dockerhub-login/v1
+
+      - name: Create and push manifest
+        env:
+          TAG: ${{ needs.tag.outputs.tag }}
+        run: |
+          set -euo pipefail
+          docker manifest create "$TAG" "$TAG"-amd64 "$TAG"-arm64
+          docker manifest push "$TAG"
+      - name: Create and push :latest manifest
+        if: github.event_name == 'push' && github.ref_type == 'tag'
+        env:
+          TAG: ${{ needs.tag.outputs.tag }}
+          SUBJECT: ${{ needs.tag.outputs.subject }}
+        run: |
+          set -euo pipefail
+          docker manifest create "$SUBJECT":latest "$TAG"-amd64 "$TAG"-arm64
+          docker manifest push "$SUBJECT":latest
+
       - name: Comment on PR
         if: github.event_name == 'pull_request'
         uses: mshick/add-pr-comment@b8f338c590a895d50bcbfa6c5859251edc8952fc # v2
@@ -63,7 +161,7 @@ jobs:
             You can pull it using:
 
             ```bash
-            docker pull ${{ steps.image_tag.outputs.tag }}
+            docker pull ${{ needs.tag.outputs.tag }}
             ```
 
             > [!WARNING]
