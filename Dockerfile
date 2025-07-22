@@ -14,6 +14,11 @@ RUN apt-cache depends chromium chromium-driver chromium-shell chromium-sandbox f
 RUN mkdir /dpkg && \
     find . -type f -name '*.deb' -exec sh -c 'dpkg --extract "$1" /dpkg || exit 5' sh '{}' \;
 
+FROM debian:testing-slim AS ca-certs
+
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates
+RUN update-ca-certificates --fresh
+
 FROM node:22-alpine AS build
 
 WORKDIR /src
@@ -29,6 +34,7 @@ LABEL maintainer="Grafana team <hello@grafana.com>"
 LABEL org.opencontainers.image.source="https://github.com/grafana/grafana-image-renderer/tree/master/Dockerfile"
 
 COPY --from=debs /dpkg /
+COPY --from=ca-certs /etc/ssl/certs /etc/ssl/certs
 
 USER root
 SHELL ["/bin/busybox", "sh", "-c"]
