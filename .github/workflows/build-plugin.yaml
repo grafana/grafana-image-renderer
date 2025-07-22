@@ -62,6 +62,7 @@ jobs:
 
   generate:
     needs: build
+    name: Generate plugin metadata
     runs-on: ubuntu-latest
     permissions:
       contents: read # clone the repository
