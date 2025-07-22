@@ -22,7 +22,6 @@ jobs:
           - linux-x64-glibc
           - darwin-x64-unknown
           - win32-x64-unknown
-          # TODO: Support non-Chromium
 
     name: Build plugin for ${{ matrix.target }}
     runs-on: ubuntu-latest
