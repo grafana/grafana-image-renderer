@@ -60,27 +60,14 @@ jobs:
           name: plugin-${{ matrix.target }}.zip
           path: dist/plugin-${{ matrix.target }}.zip
 
-  release:
-    needs: build
-    if: github.event_name == 'push' && github.ref_type == 'tag'
-    name: Release plugin
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write # create a release
-      id-token: write # required to read secrets
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-
-      - uses: actions/download-artifact@v4
-        with:
-          merge-multiple: true
-          path: artifacts/
+      - name: Move to artifacts dir
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+          mv dist/*.zip artifacts/
       # FIXME: Why do we use MD5?? Why not SHA-2/SHA-512?
       - name: Generate MD5 sums
         run: ./scripts/generate_md5sum.sh artifacts/
-
       - name: Create Gcom API plugin JSON payload
         env:
           COMMIT: ${{ github.sha }}
@@ -106,6 +93,36 @@ jobs:
               })
             | add
             | { commit: $commit, url: $baseUrl, download: .}' | tee gcom.json
+      - name: Upload generated artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: generated-artifacts
+          path: |
+            gcom.json
+            artifacts/md5sums.txt
+
+  release:
+    needs: build
+    if: github.event_name == 'push' && github.ref_type == 'tag'
+    name: Release plugin
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # create a release
+      id-token: write # required to read secrets
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+          path: artifacts/
+          pattern: plugin-*.zip
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: generated-artifacts
 
       - name: Acquire Grafana API key
         id: grafana_api_key
@@ -118,7 +135,7 @@ jobs:
         with:
           files: |
             artifacts/*.zip
-            artifacts/md5sums.txt
+            md5sums.txt
           fail_on_unmatched_files: true
           make_latest: 'true'
           generate_release_notes: true
