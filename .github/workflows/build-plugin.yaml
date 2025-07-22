@@ -176,11 +176,12 @@ jobs:
                         | sub("x64"; "amd64")
                         | sub(".zip$"; "")
                       ) as $key
+                    | select($old[$key])
                     | { ($key): { md5: $old[$key], url: $a.browser_download_url } }
                   )
                 | add
               )
-          ' gcom.json > with-urls.json
+          ' gcom.json | tee with-urls.json
 
       - name: Publish to grafana.com
         run: |
