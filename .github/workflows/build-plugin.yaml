@@ -1,4 +1,4 @@
-name: Build
+name: Build plugin
 
 on:
   push:
@@ -14,8 +14,15 @@ concurrency:
 
 jobs:
   build:
-    # TODO: Support more platforms & architectures.
-    name: Build plugin for linux-x64-glibc
+    strategy:
+      matrix:
+        target:
+          - linux-x64-glibc
+          - darwin-x64-unknown
+          - win32-x64-unknown
+          # TODO: Support non-Chromium
+
+    name: Build plugin for ${{ matrix.target }}
     runs-on: ubuntu-latest
     permissions:
       contents: read # clone the repository
@@ -31,10 +38,8 @@ jobs:
       - run: yarn install --frozen-lockfile
       - run: yarn run build
 
-      # Assume env: GRAFANA_API_KEY
-
       - name: Package
-        run: ./scripts/package_target.sh linux-x64-glibc false linux-x64-glibc/
+        run: ./scripts/package_target.sh ${{ matrix.target }} false ${{ matrix.target }}/
 
       - name: Acquire Grafana API key
         id: grafana_api_key
@@ -43,12 +48,13 @@ jobs:
           repo_secrets: |
             GRAFANA_ACCESS_POLICY_TOKEN=gcom-token:token
       - name: Sign package
-        run: yarn sign-plugin --distDir ./dist/linux-x64-glibc/
+        run: yarn sign-plugin --distDir ./dist/${{ matrix.target }}/
+
       - name: Create ZIP
         working-directory: dist/
-        run: zip -yqr linux-x64-glibc.zip linux-x64-glibc/
+        run: zip -yqr ${{ matrix.target }}.zip ${{ matrix.target }}/
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: linux-x64-glibc.zip
-          path: dist/linux-x64-glibc.zip
+          name: ${{ matrix.target }}.zip
+          path: dist/${{ matrix.target }}.zip
