@@ -33,8 +33,10 @@ You can install the plugin using Grafana CLI (recommended way) or with Grafana D
 ### Grafana CLI (recommended)
 
 ```bash
-grafana-cli plugins install grafana-image-renderer
+grafana cli plugins install grafana-image-renderer
 ```
+
+Please run this as the same user that Grafana runs as.
 
 ### Grafana Docker image
 

@@ -1,4 +1,4 @@
-## Unreleased (4.0.0)
+## 4.0.0 (2025-07-22)
 
 - Build: Update all dependencies, [#663](https://github.com/grafana/grafana-image-renderer/pull/663), [Proximyst](https://github.com/Proximyst)
 - Docker: Update Chromium (CVE-2025-6558, CVE-2025-7656, CVE-2025-7657), [#667](https://github.com/grafana/grafana-image-renderer/pull/667), [Proximyst](https://github.com/Proximyst)
@@ -11,6 +11,9 @@ Breaking changes:
 - Plugin: Update minimum Grafana version to 11.3.8, [#663](https://github.com/grafana/grafana-image-renderer/pull/663), [Proximyst](https://github.com/Proximyst)
   - If you use any Grafana version newer than 11.3.8 (incl. 11.4.x, 11.5.x, 11.6.x, 12.x), you will not have to do anything.
   - If you are not in that group, you must update Grafana before updating.
+- Docker: Move to distroless Debian, [#661](https://github.com/grafana/grafana-image-renderer/pull/661), [Proximyst](https://github.com/Proximyst)
+  - In practice, this SHOULD come with no changes for most users.
+  - If you are building a new Docker image on top of us, you will have to adapt to distroless Debian instead of Alpine.
 
 ## 3.12.9 (2025-07-01)
 
