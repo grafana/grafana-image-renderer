@@ -96,10 +96,10 @@ jobs:
                   | sub("^artifacts/"; "")
                   | sub(".zip$"; "")
                   | sub("plugin-"; "")
-                  | sub("win32", "windows")
-                  | sub("x64", "amd64")
-                  | sub("-unknown", "")
-                  | sub("-glibc", "")
+                  | sub("win32"; "windows")
+                  | sub("x64"; "amd64")
+                  | sub("-unknown"; "")
+                  | sub("-glibc"; "")
                 ): .[0]
               })
             | add
