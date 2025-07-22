@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - master
+    tags:
+      - 'v*'
   pull_request:
 
 permissions: {}
@@ -58,3 +60,21 @@ jobs:
         with:
           name: ${{ matrix.target }}.zip
           path: dist/${{ matrix.target }}.zip
+
+  release:
+    needs: build
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+    name: Release plugin
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # create a release
+      id-token: write # required to read secrets
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - run: yarn install --frozen-lockfile
