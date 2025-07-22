@@ -1,4 +1,4 @@
-## Unreleased (4.0.0)
+## 4.0.0 (2025-07-22)
 
 - Build: Update all dependencies, [#663](https://github.com/grafana/grafana-image-renderer/pull/663), [Proximyst](https://github.com/Proximyst)
 - Docker: Update Chromium (CVE-2025-6558, CVE-2025-7656, CVE-2025-7657), [#667](https://github.com/grafana/grafana-image-renderer/pull/667), [Proximyst](https://github.com/Proximyst)
