@@ -40,7 +40,7 @@ jobs:
       - run: yarn run build
 
       - name: Package
-        run: ./scripts/package_target.sh ${{ matrix.target }} false ${{ matrix.target }}/
+        run: ./scripts/package_target.sh ${{ matrix.target }} false plugin-${{ matrix.target }}/
 
       - name: Acquire Grafana API key
         id: grafana_api_key
@@ -49,19 +49,72 @@ jobs:
           repo_secrets: |
             GRAFANA_ACCESS_POLICY_TOKEN=gcom-token:token
       - name: Sign package
-        run: yarn sign-plugin --distDir ./dist/${{ matrix.target }}/
+        run: yarn sign-plugin --distDir ./dist/plugin-${{ matrix.target }}/
 
       - name: Create ZIP
         working-directory: dist/
-        run: zip -yqr ${{ matrix.target }}.zip ${{ matrix.target }}/
+        run: zip -yqr plugin-${{ matrix.target }}.zip plugin-${{ matrix.target }}/
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.target }}.zip
-          path: dist/${{ matrix.target }}.zip
+          name: plugin-${{ matrix.target }}.zip
+          path: dist/plugin-${{ matrix.target }}.zip
+
+  generate:
+    needs: build
+    name: Generate plugin metadata
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # clone the repository
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+          path: artifacts/
+          pattern: plugin-*.zip
+
+      # FIXME: Why do we use MD5?? Why not SHA-2/SHA-512?
+      - name: Generate MD5 sums
+        run: ./scripts/generate_md5sum.sh artifacts/
+      - name: Create Gcom API plugin JSON payload
+        env:
+          COMMIT: ${{ github.sha }}
+          BASE_URL: https://github.com/${{ github.repository }}
+        run: |
+          set -euo pipefail
+          cat artifacts/md5sums.txt | jq --slurp --raw-input \
+            --arg commit "$COMMIT" \
+            --arg baseUrl "$BASE_URL" \
+            'split("\n")[:-1]
+            | map(split("  "))
+            | map({
+                (
+                  .[1]
+                  | sub("^artifacts/"; "")
+                  | sub(".zip$"; "")
+                  | sub("plugin-"; "")
+                  | sub("win32"; "windows")
+                  | sub("x64"; "amd64")
+                  | sub("-unknown"; "")
+                  | sub("-glibc"; "")
+                ): .[0]
+              })
+            | add
+            | { commit: $commit, url: $baseUrl, download: .}' | tee gcom.json
+      - name: Upload generated artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: generated-artifacts
+          path: |
+            gcom.json
+            artifacts/md5sums.txt
 
   release:
-    needs: build
+    needs: [build, generate]
     if: github.event_name == 'push' && github.ref_type == 'tag'
     name: Release plugin
     runs-on: ubuntu-latest
@@ -77,20 +130,11 @@ jobs:
         with:
           merge-multiple: true
           path: artifacts/
-      # FIXME: Why do we use MD5?? Why not SHA-2/SHA-512?
-      - name: Generate MD5 sums
-        run: ./scripts/generate_md5sum.sh artifacts/
+          pattern: plugin-*.zip
 
-      - name: Create Gcom API plugin JSON payload
-        env:
-          COMMIT: ${{ github.sha }}
-          BASE_URL: https://github.com/${{ github.repository }}
-        run: |
-          set -euo pipefail
-          cat artifacts/md5sums.txt | jq --slurp --raw-input \
-            --arg commit "$COMMIT" \
-            --arg baseUrl "$BASE_URL" \
-            'split("\n")[:-1] | map(split("  ")) | map({(.[1] | sub("^artifacts/"; "")): .[0]}) | add | { commit: $commit, url: $baseUrl, download: .}' | tee gcom.json
+      - uses: actions/download-artifact@v4
+        with:
+          name: generated-artifacts
 
       - name: Acquire Grafana API key
         id: grafana_api_key
@@ -103,7 +147,7 @@ jobs:
         with:
           files: |
             artifacts/*.zip
-            artifacts/md5sums.txt
+            md5sums.txt
           fail_on_unmatched_files: true
           make_latest: 'true'
           generate_release_notes: true

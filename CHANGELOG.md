@@ -1,3 +1,8 @@
+## 4.0.1 (2025-07-22)
+
+This release only touches the build process of the plugin, as v4.0.0 did not release on the plugin catalog.
+There is no difference from v4.0.0 for Docker users.
+
 ## 4.0.0 (2025-07-22)
 
 - Build: Update all dependencies, [#663](https://github.com/grafana/grafana-image-renderer/pull/663), [Proximyst](https://github.com/Proximyst)
