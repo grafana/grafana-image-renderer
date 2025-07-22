@@ -40,7 +40,7 @@ jobs:
       - run: yarn run build
 
       - name: Package
-        run: ./scripts/package_target.sh ${{ matrix.target }} false ${{ matrix.target }}/
+        run: ./scripts/package_target.sh ${{ matrix.target }} false plugin-${{ matrix.target }}/
 
       - name: Acquire Grafana API key
         id: grafana_api_key
@@ -49,16 +49,16 @@ jobs:
           repo_secrets: |
             GRAFANA_ACCESS_POLICY_TOKEN=gcom-token:token
       - name: Sign package
-        run: yarn sign-plugin --distDir ./dist/${{ matrix.target }}/
+        run: yarn sign-plugin --distDir ./dist/plugin-${{ matrix.target }}/
 
       - name: Create ZIP
         working-directory: dist/
-        run: zip -yqr ${{ matrix.target }}.zip ${{ matrix.target }}/
+        run: zip -yqr plugin-${{ matrix.target }}.zip plugin-${{ matrix.target }}/
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.target }}.zip
-          path: dist/${{ matrix.target }}.zip
+          name: plugin-${{ matrix.target }}.zip
+          path: dist/plugin-${{ matrix.target }}.zip
 
   release:
     needs: build
@@ -90,7 +90,22 @@ jobs:
           cat artifacts/md5sums.txt | jq --slurp --raw-input \
             --arg commit "$COMMIT" \
             --arg baseUrl "$BASE_URL" \
-            'split("\n")[:-1] | map(split("  ")) | map({(.[1] | sub("^artifacts/"; "")): .[0]}) | add | { commit: $commit, url: $baseUrl, download: .}' | tee gcom.json
+            'split("\n")[:-1]
+            | map(split("  "))
+            | map({
+                (
+                  .[1]
+                  | sub("^artifacts/"; "")
+                  | sub(".zip$"; "")
+                  | sub("plugin-"; "")
+                  | sub("win32", "windows")
+                  | sub("x64", "amd64")
+                  | sub("-unknown", "")
+                  | sub("-glibc", "")
+                ): .[0]
+              })
+            | add
+            | { commit: $commit, url: $baseUrl, download: .}' | tee gcom.json
 
       - name: Acquire Grafana API key
         id: grafana_api_key
