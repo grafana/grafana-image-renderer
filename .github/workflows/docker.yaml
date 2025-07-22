@@ -38,13 +38,17 @@ jobs:
 
       - name: Use Git tag for image tag
         if: github.event_name == 'push' && github.ref_type == 'tag'
-        run: echo "REF_NAME=${{ github.ref_name }}" >> "$GITHUB_ENV"
+        env:
+          GITHUB_REF_NAME: ${{ github.ref_name }}
+        run: echo "REF_NAME=$GITHUB_REF_NAME" >> "$GITHUB_ENV"
       - name: Use PR number for image tag
         if: github.event_name == 'pull_request'
         run: echo "REF_NAME=dev-pull-${{ github.event.pull_request.number }}-${{ github.sha }}" >> "$GITHUB_ENV"
       - name: Use branch and commit for image tag
         if: github.event_name == 'push' && github.ref_type == 'branch'
-        run: echo "REF_NAME=dev-$(echo "${{ github.ref_name }}" | tr '[:upper:]' '[:lower:]' | tr -d '[:blank:]' | tr -c '[:alnum:]' '-')-${{ github.sha }}" >> "$GITHUB_ENV"
+        env:
+          GITHUB_REF_NAME: ${{ github.ref_name }}
+        run: echo "REF_NAME=dev-$(echo "$GITHUB_REF_NAME" | tr '[:upper:]' '[:lower:]' | tr -d '[:blank:]' | tr -c '[:alnum:]' '-')-${{ github.sha }}" >> "$GITHUB_ENV"
 
       - name: Create image tag
         id: image_tag
