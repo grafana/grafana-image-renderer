@@ -60,11 +60,22 @@ jobs:
           name: plugin-${{ matrix.target }}.zip
           path: dist/plugin-${{ matrix.target }}.zip
 
-      - name: Move to artifacts dir
-        run: |
-          set -euo pipefail
-          mkdir -p artifacts
-          mv dist/*.zip artifacts/
+  generate:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # clone the repository
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+          path: artifacts/
+          pattern: plugin-*.zip
+
       # FIXME: Why do we use MD5?? Why not SHA-2/SHA-512?
       - name: Generate MD5 sums
         run: ./scripts/generate_md5sum.sh artifacts/
@@ -102,7 +113,7 @@ jobs:
             artifacts/md5sums.txt
 
   release:
-    needs: build
+    needs: [build, generate]
     if: github.event_name == 'push' && github.ref_type == 'tag'
     name: Release plugin
     runs-on: ubuntu-latest
