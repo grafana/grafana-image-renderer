@@ -9,7 +9,7 @@ RUN echo 'cachebuster 2025-07-16' && apt-get update
 
 FROM debian-updated AS debs
 
-RUN apt-cache depends chromium chromium-driver chromium-shell chromium-sandbox font-gothic fonts-wqy-zenhei fonts-thai-tlwg fonts-khmeros fonts-kacst fonts-freefont-ttf libxss1 unifont fonts-open-sans fonts-roboto fonts-inter bash busybox util-linux openssl \
+RUN apt-cache depends chromium chromium-driver chromium-shell chromium-sandbox font-gothic fonts-wqy-zenhei fonts-thai-tlwg fonts-khmeros fonts-kacst fonts-freefont-ttf libxss1 unifont fonts-open-sans fonts-roboto fonts-inter bash busybox util-linux openssl tini \
     --recurse --no-recommends --no-suggests --no-conflicts --no-breaks --no-replaces --no-enhances --no-pre-depends | grep '^\w' | xargs apt-get download
 RUN mkdir /dpkg && \
     find . -type f -name '*.deb' -exec sh -c 'dpkg --extract "$1" /dpkg || exit 5' sh '{}' \;
@@ -56,4 +56,5 @@ COPY --from=build /src/plugin.json plugin.json
 
 EXPOSE 8081
 
+ENTRYPOINT ["tini", "--", "/nodejs/bin/node"]
 CMD ["build/app.js", "server", "--config=config.json"]
