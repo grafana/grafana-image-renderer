@@ -1,3 +1,8 @@
+## 4.0.5 (2025-07-23)
+
+- Docker: Use tini
+  - This fixes #677, reported by [@mbentley](https://github.com/mbentley). Thanks!
+
 ## 4.0.1, 4.0.2, 4.0.3 & 4.0.4 (2025-07-22)
 
 This release only touches the build process of the plugin, as v4.0.0, .1, .2, and .3 did not release on the plugin catalog.
