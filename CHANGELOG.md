@@ -2,6 +2,8 @@
 
 - Docker: Use tini, [#678](https://github.com/grafana/grafana-image-renderer/pull/678), [Proximyst](https://github.com/Proximyst)
   - This fixes #677, reported by [@mbentley](https://github.com/mbentley). Thanks!
+- Docker: Include ca-certificates package, [#679](https://github.com/grafana/grafana-image-renderer/pull/679), [Proximyst](https://github.com/Proximyst)
+  - This fixes #676, reported by [@roock](https://github.com/roock). Thanks!
 
 ## 4.0.1, 4.0.2, 4.0.3 & 4.0.4 (2025-07-22)
 
