@@ -9,7 +9,7 @@ RUN echo 'cachebuster 2025-07-24' && apt-get update
 
 FROM debian-updated AS debs
 
-RUN apt-cache depends chromium chromium-driver chromium-shell chromium-sandbox font-gothic fonts-wqy-zenhei fonts-thai-tlwg fonts-khmeros fonts-kacst fonts-freefont-ttf libxss1 unifont fonts-open-sans fonts-roboto fonts-inter bash busybox util-linux openssl tini ca-certificates \
+RUN apt-cache depends chromium chromium-driver chromium-shell chromium-sandbox font-gothic fonts-wqy-zenhei fonts-thai-tlwg fonts-khmeros fonts-kacst fonts-freefont-ttf libxss1 unifont fonts-open-sans fonts-roboto fonts-inter bash busybox util-linux openssl tini ca-certificates locales \
     --recurse --no-recommends --no-suggests --no-conflicts --no-breaks --no-replaces --no-enhances --no-pre-depends | grep '^\w' | xargs apt-get download
 RUN mkdir /dpkg && \
     find . -type f -name '*.deb' -exec sh -c 'dpkg --extract "$1" /dpkg || exit 5' sh '{}' \;
@@ -44,6 +44,8 @@ SHELL ["/bin/busybox", "sh", "-c"]
 RUN /bin/busybox --install
 # Verify that the browser was actually installed.
 RUN /usr/bin/chromium --version
+# This is so the browser can write file names that contain non-ASCII characters.
+RUN echo "en_US.UTF-8 UTF-8" > /etc/locale.gen && locale-gen en_US.UTF-8
 RUN fc-cache -fr
 RUN update-ca-certificates --fresh
 USER nonroot
@@ -51,6 +53,8 @@ USER nonroot
 ENV CHROME_BIN="/usr/bin/chromium"
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD="true"
 ENV NODE_ENV=production
+ENV LANG=en_US.UTF-8
+ENV LC_ALL=en_US.UTF-8
 
 COPY --from=build /src/node_modules node_modules
 COPY --from=build /src/build build
