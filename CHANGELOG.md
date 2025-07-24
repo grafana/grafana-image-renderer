@@ -1,6 +1,6 @@
 ## 4.0.6 (2025-07-24)
 
-- Docker: Update Chromium (CVE-2025-8010, CVE-2025-8011), [#680](https://github.com/grafana/grafana-image-renderer/pull/680), [macabu](https://github.com/macabu)
+- Docker: Update Chromium (CVE-2025-8010, CVE-2025-8011), [#682](https://github.com/grafana/grafana-image-renderer/pull/682), [macabu](https://github.com/macabu)
 
 ## 4.0.5 (2025-07-23)
 
