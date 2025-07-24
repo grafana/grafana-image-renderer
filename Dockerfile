@@ -5,7 +5,7 @@ SHELL ["/bin/bash", "-euo", "pipefail", "-c"]
 # If we ever need to bust the cache, just change the date here.
 # While we don't cache anything in Drone, that might not be true when we migrate to GitHub Actions where some action might automatically enable layer caching.
 # This is fine, but is terrible in situations where we want to _force_ an update of a package.
-RUN echo 'cachebuster 2025-07-16' && apt-get update
+RUN echo 'cachebuster 2025-07-24' && apt-get update
 
 FROM debian-updated AS debs
 
