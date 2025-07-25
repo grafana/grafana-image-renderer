@@ -1,3 +1,8 @@
+## 4.0.7 (2025-07-25)
+
+- Docker: Install locales and use en_US.UTF-8 to save non-ASCII files, [#683](https://github.com/grafana/grafana-image-renderer/pull/683), [macabu](https://github.com/macabu)
+  - This fixes #680
+
 ## 4.0.6 (2025-07-24)
 
 - Docker: Update Chromium (CVE-2025-8010, CVE-2025-8011), [#682](https://github.com/grafana/grafana-image-renderer/pull/682), [macabu](https://github.com/macabu)
