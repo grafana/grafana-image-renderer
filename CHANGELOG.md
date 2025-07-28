@@ -1,3 +1,9 @@
+## 4.0.9 (2025-07-28)
+
+- Docker: Use numeric UID, [#686](https://github.com/grafana/grafana-image-renderer/issues/686), [Proximyst](https://github.com/Proximyst)
+  - This fixes #686, which is useful for some Kubernetes users. It was reported by [@mhulscher](https://github.com/mhulscher). Thanks!
+  - The bug only manifests if you use `securityContext.runAsNonRoot` in your `Deployment`.
+
 ## 4.0.8 (2025-07-28)
 
 - Docker: Include libnss3-tools, [#685](https://github.com/grafana/grafana-image-renderer/pull/685), [Proximyst](https://github.com/Proximyst), [roock](https://github.com/roock)
