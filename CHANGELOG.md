@@ -1,3 +1,9 @@
+## 4.0.8 (2025-07-28)
+
+- Docker: Include libnss3-tools, [#685](https://github.com/grafana/grafana-image-renderer/pull/685), [Proximyst](https://github.com/Proximyst), [roock](https://github.com/roock)
+  - This fixes #676 for edge-cases, reported by [@roock](https://github.com/roock).
+  - Thanks to [@roock](https://github.com/roock) for this fix.
+
 ## 4.0.7 (2025-07-25)
 
 - Docker: Install locales and use en_US.UTF-8 to save non-ASCII files, [#683](https://github.com/grafana/grafana-image-renderer/pull/683), [macabu](https://github.com/macabu)
