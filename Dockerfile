@@ -1,4 +1,4 @@
-FROM debian:12-slim AS debian-updated
+FROM docker.io/debian:12-slim AS debian-updated
 
 SHELL ["/bin/bash", "-euo", "pipefail", "-c"]
 
@@ -12,17 +12,17 @@ FROM debian-updated AS debs
 RUN apt-cache depends chromium chromium-driver chromium-shell chromium-sandbox font-gothic fonts-wqy-zenhei fonts-thai-tlwg fonts-khmeros fonts-kacst fonts-freefont-ttf libxss1 unifont fonts-open-sans fonts-roboto fonts-inter bash busybox util-linux openssl tini ca-certificates locales libnss3-tools \
     --recurse --no-recommends --no-suggests --no-conflicts --no-breaks --no-replaces --no-enhances --no-pre-depends | grep '^\w' | xargs apt-get download
 RUN mkdir /dpkg && \
-    find . -type f -name '*.deb' -exec sh -c 'dpkg --extract "$1" /dpkg || exit 5' sh '{}' \;
+    find . -maxdepth 1 -type f -name '*.deb' -exec sh -c 'dpkg --extract "$1" /dpkg || exit 5' sh '{}' \;
 
-FROM debian:testing-slim AS ca-certs
+FROM docker.io/debian:testing-slim AS ca-certs
 
 RUN apt-get update
 RUN apt-cache depends ca-certificates \
     --recurse --no-recommends --no-suggests --no-conflicts --no-breaks --no-replaces --no-enhances --no-pre-depends | grep '^\w' | xargs apt-get download
 RUN mkdir /dpkg && \
-    find . -type f -name '*.deb' -exec sh -c 'dpkg --extract "$1" /dpkg || exit 5' sh '{}' \;
+    find . -maxdepth 1 -type f -name '*.deb' -exec sh -c 'dpkg --extract "$1" /dpkg || exit 5' sh '{}' \;
 
-FROM node:22-alpine AS build
+FROM docker.io/node:22-alpine AS build
 
 WORKDIR /src
 COPY . ./
@@ -66,7 +66,6 @@ EXPOSE 8081
 
 # Simple regression test for: https://github.com/grafana/grafana-image-renderer/issues/686
 RUN test "$(id -u)" -eq 65532
-USER 65532
 
 ENTRYPOINT ["tini", "--", "/nodejs/bin/node"]
 CMD ["build/app.js", "server", "--config=config.json"]
