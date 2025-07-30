@@ -1,0 +1,25 @@
+name: Deploy Grafana Image Renderer
+on:
+  pull_request:
+    branches: [main]
+jobs:
+  cd-auto-deploy-dev:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      pull-requests: read
+    steps:
+      - id: "submit-argowfs-deployment"
+        name: "Trigger Argo Workflow Auto Deploy Dev"
+        uses: grafana/shared-workflows/actions/trigger-argo-workflow@main
+        with:
+          instance: "dev"
+          namespace: "render-service-cd"
+          workflow_template: "auto-deploy-dev"
+          parameters: |
+            dockertag=${{ env.IMAGE_TAG }}
+      - name: Print URI
+        run: |
+          echo "URI: ${{ steps.submit-argowfs-deployment.outputs.uri }}"
