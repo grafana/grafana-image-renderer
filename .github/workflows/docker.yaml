@@ -173,3 +173,24 @@ jobs:
             > [!WARNING]
             > This is a development image and should not be used in production.
             > It will be automatically removed after 2 weeks.
+
+  cd-auto-deploy-dev:
+    name: Deploy to dev
+    needs: [tag, build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - id: "trigger-argowfs-deployment"
+        name: "Trigger Argo Workflow"
+        uses: grafana/shared-workflows/actions/trigger-argo-workflow@5d7e361bc7e0a183cde8afe9899fb7b596d2659b
+        with:
+          instance: "dev"
+          namespace: "render-service-cd"
+          workflow_template: "auto-deploy-dev"
+          parameters: |
+            dockertag=${{ needs.tag.outputs.tag }}
+      - name: Print URI
+        run: |
+          echo "URI: ${{ steps.submit-argowfs-deployment.outputs.uri }}"
