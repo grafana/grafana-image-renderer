@@ -22,6 +22,7 @@ jobs:
       subject: ${{ steps.image_tag.outputs.subject }}
       tag: ${{ steps.image_tag.outputs.tag }}
       registry: ${{ steps.image_tag.outputs.registry }}
+      ref_name: ${{ steps.image_tag.outputs.ref_name }}
     steps:
       - name: Use ghcr.io
         if: github.event_name != 'push' || github.ref_type != 'tag'
@@ -59,6 +60,7 @@ jobs:
           echo "registry=$REGISTRY" >> "$GITHUB_OUTPUT"
           echo "subject=$REGISTRY/$REPOSITORY" >> "$GITHUB_OUTPUT"
           echo "tag=$REGISTRY/$REPOSITORY:$REF_NAME" >> "$GITHUB_OUTPUT"
+          echo "ref_name=$REF_NAME" >> "$GITHUB_OUTPUT"
 
   build:
     strategy:
@@ -191,7 +193,7 @@ jobs:
           namespace: "render-service-cd"
           workflow_template: "auto-deploy-dev"
           parameters: |
-            dockertag=${{ env.REF_NAME }}
+            dockertag=${{ needs.tag.outputs.ref_name }}
       - name: Print URI
         run: |
-          echo "URI: ${{ steps.submit-argowfs-deployment.outputs.uri }}"
+          echo "URI: ${{ steps.trigger-argowfs-deployment.outputs.uri }}"
