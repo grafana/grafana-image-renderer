@@ -26,94 +26,69 @@ We recommend a minimum of 16GB of free memory on the system rendering images.
 
 Rendering multiple images in parallel requires an even bigger memory footprint. You can use the remote rendering service in order to render images on a remote system, so your local system resources are not affected.
 
-## Plugin installation
+## Installation
 
-You can install the plugin using Grafana CLI (recommended way) or with Grafana Docker image.
+We offer two installation methods: as a plugin and as a remote service. We always recommend using the remote service if possible, as this is how we deploy the service in Grafana Cloud, and thus gets the most attention in bug handling.
 
-### Grafana CLI (recommended)
+**I deploy Grafana in Docker/Kubernetes/...:** Use the Docker image.
 
-```bash
-grafana cli plugins install grafana-image-renderer
+**I deploy Grafana as a user/in systemd/...:**
+
+  * Prefer the Docker image with `--networking=host` passed to the Docker container.
+  * If that is not fitting, prefer the standalone server.
+  * If that is not fitting, use the plugin.
+
+### Docker image (recommended)
+
+If you want to run the service as a Docker container, use the Docker image we publish [to DockerHub][image].
+
+With `docker run`:
+
+```shell
+$ docker network create grafana
+$ docker run --network grafana --name renderer --rm --detach grafana/grafana-image-renderer:latest
+# The following is not a production-ready Grafana instance, but shows what env vars you should set:
+$ docker run --network grafana --name grafana --rm --detach --env GF_RENDERING_SERVER_URL=http://renderer:8081/render --env http://grafana:3000/ --port 3000:3000 grafana/grafana-enterprise:latest
 ```
 
-Please run this as the same user that Grafana runs as.
+With `docker compose`:
 
-### Grafana Docker image
+```yaml
+services:
+  renderer:
+    image: grafana/grafana-image-renderer:latest
 
-This plugin is not compatible with the current Grafana Docker image and requires additional system-level dependencies. We recommend setting up another Docker container for rendering and using remote rendering instead. For instruction, refer to [Run in Docker](#run-in-docker).
+  grafana:
+    image: grafana/grafana-enterprise:latest
+    ports:
+      - '3000:3000'
+    environment:
+      GF_RENDERING_SERVER_URL: http://renderer:8081/render
+      GF_RENDERING_CALLBACK_URL: http://grafana:3000/
+```
 
-If you still want to install the plugin with the Grafana Docker image, refer to the instructions on building a custom Grafana image in [Grafana Docker documentation](https://grafana.com/docs/grafana/latest/setup-grafana/configure-docker/#build-a-custom-grafana-docker-image).
+With Kubernetes, see our [k3s setup](./devenv/k3s/grafana.yaml).
 
-## Remote rendering service installation
-
-> **Note:** Requires an internet connection.
-
-You can run this plugin as a remote HTTP rendering service. In this setup, Grafana renders an image by making an HTTP request to the remote rendering service, which in turn renders the image and returns it back in the HTTP response to Grafana.
-
-You can run the remote HTTP rendering service using Docker or as a standalone Node.js application.
-
-### Run in Docker
-
-Grafana Docker images are published at [Docker Hub](https://hub.docker.com/r/grafana/grafana-image-renderer).
-
-The following example shows how you can run Grafana and the remote HTTP rendering service in two separate Docker containers using Docker Compose.
-
-1. Create a `docker-compose.yml` with the following content:
-
-   ```yaml
-   version: '2'
-
-   services:
-     grafana:
-       image: grafana/grafana:latest
-       ports:
-         - '3000:3000'
-       environment:
-         GF_RENDERING_SERVER_URL: http://renderer:8081/render
-         GF_RENDERING_CALLBACK_URL: http://grafana:3000/
-         GF_LOG_FILTERS: rendering:debug
-     renderer:
-       image: grafana/grafana-image-renderer:latest
-       ports:
-         - 8081
-   ```
-
-1. Next, run docker compose.
-
-   ```bash
-   docker-compose up
-   ```
+[image]: https://hub.docker.com/r/grafana/grafana-image-renderer
 
 ### Run as standalone Node.js application
 
 The following example describes how to build and run the remote HTTP rendering service as a standalone Node.js application and configure Grafana appropriately.
 
 1. Clone the [Grafana image renderer plugin](https://github.com/grafana/grafana-image-renderer/) Git repository.
-1. Install dependencies and build:
+2. Install dependencies and build:
 
    ```bash
    yarn install --pure-lockfile
    yarn run build
    ```
 
-1. Run the server:
-   - Using default configuration 
+3. Run the server:
+   - Using default configuration: `node build/app.js server`
+   - Using custom [configuration](https://grafana.com/docs/grafana/latest/image-rendering/#configuration): `node build/app.js server --config=dev.json`
+   - Using environment variables: `HTTP_PORT=8085 LOG_LEVEL=debug node build/app.js server`
 
-      ```bash
-      node build/app.js server
-      ```
-   - Using custom [configuration](https://grafana.com/docs/grafana/latest/image-rendering/#configuration)
-
-      ```bash
-      node build/app.js server --config=dev.json
-      ```   
-   - Using environment variables
-
-      ```bash
-      HTTP_PORT=8085 LOG_LEVEL=debug node build/app.js server
-      ```   
-
-1. Update Grafana configuration:
+4. Update Grafana configuration:
 
    ```
    [rendering]
@@ -122,6 +97,18 @@ The following example describes how to build and run the remote HTTP rendering s
    ```
 
 1. Restart Grafana.
+
+### Plugin: Grafana CLI
+
+You can install the plugin with Grafana CLI:
+
+```shell
+$ grafana cli plugins install grafana-image-renderer
+# alternatively, if you want to install a specific version:
+$ grafana cli plugins install grafana-image-renderer $VERSION
+```
+
+Please run this as the same user that Grafana runs as, otherwise the plugin may not work!
 
 ## Security
 
