@@ -178,7 +178,7 @@ jobs:
 
   cd-auto-deploy-dev:
     name: Deploy to dev
-    # if: github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/v')
+    if: github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/v')
     needs: [tag, build]
     runs-on: ubuntu-latest
     permissions:
