@@ -1,7 +1,7 @@
 name: Deploy Grafana Image Renderer
 on:
   pull_request:
-    branches: [main]
+    branches: [master]
 jobs:
   cd-auto-deploy-dev:
     runs-on: ubuntu-latest
