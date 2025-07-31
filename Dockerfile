@@ -64,7 +64,7 @@ COPY --from=build /src/plugin.json plugin.json
 
 USER root
 
-RUN chown -R nonroot:0 /home/nonroot && chmod -R go=u /home/nonroot
+RUN chgrp -R 0 /home/nonroot && chmod -R g=u /home/nonroot
 
 USER 65532
 
