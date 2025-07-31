@@ -58,7 +58,7 @@ _wait_for_healthy() {
     START_TIME="$(date +%s)"
     END_TIME=$((START_TIME + TIMEOUT))
     while [ "$(date +%s)" -lt "$END_TIME" ]; do
-        if _docker inspect --format '{{.State.Health.Status}}' "$CONTAINER_NAME" | grep -q 'healthy'; then
+        if [ "$(_docker inspect --format '{{.State.Health.Status}}' "$CONTAINER_NAME")" = "healthy" ]; then
             return 0
         fi
         sleep 0.2
