@@ -58,6 +58,10 @@ _wait_for_healthy() {
     START_TIME="$(date +%s)"
     END_TIME=$((START_TIME + TIMEOUT))
     while [ "$(date +%s)" -lt "$END_TIME" ]; do
+        if [ "$(_docker inspect --format '{{.State.Running}}' "$CONTAINER_NAME")" != "true" ]; then
+            echo "error: container $CONTAINER_NAME is not running" >&2
+            return 1
+        fi
         if [ "$(_docker inspect --format '{{.State.Health.Status}}' "$CONTAINER_NAME")" = "healthy" ]; then
             return 0
         fi
