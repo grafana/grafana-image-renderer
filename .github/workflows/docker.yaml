@@ -189,7 +189,7 @@ jobs:
         name: "Trigger Argo Workflow"
         uses: grafana/shared-workflows/actions/trigger-argo-workflow@5d7e361bc7e0a183cde8afe9899fb7b596d2659b
         with:
-          instance: "dev"
+          instance: "ops"
           namespace: "render-service-cd"
           workflow_template: "auto-deploy-dev"
           parameters: |
