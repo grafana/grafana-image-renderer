@@ -15,7 +15,7 @@ function teardown() {
 
 @test "docker image starts" {
     # We want the container to start and be healthy.
-    run _docker run --health-start-period=1s --health-start-interval=1s --rm --name "$(_container_name)" -d "$DOCKER_IMAGE"
+    run _docker run --health-start-period=1s --health-start-interval=0.1s --rm --name "$(_container_name)" -d "$DOCKER_IMAGE"
     [ "$status" -eq 0 ]
     [ -n "$output" ]
 
