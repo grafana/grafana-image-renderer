@@ -29,19 +29,21 @@ _docker() {
     $SUDO "$DOCKER" "$@"
 }
 
-CONTAINER_NAME_PREFIX="${CONTAINER_NAME_PREFIX:-image-renderer-bats-}"
+CONTAINER_NAME_PREFIX="${CONTAINER_NAME_PREFIX:-image-renderer-bats}"
 
 _container_name() {
     local random_suffix
     random_suffix=$(tr -dc 'a-z0-9' < /dev/urandom | head -c 8)
-    echo "${CONTAINER_NAME_PREFIX}${random_suffix}"
+    echo "${CONTAINER_NAME_PREFIX}-${BATS_SUITE_TEST_NUMBER}-${random_suffix}"
 }
 
 _remove_docker() {
-    _docker ps -a --filter "name=${CONTAINER_NAME_PREFIX}" --format "{{.ID}}" | while read -r container_id; do
+    # The trailing dash is important to avoid removing unrelated containers.
+    # E.g. prefix-2 would match prefix-20-abc, but prefix-2- would not.
+    _docker ps -a --filter "name=${CONTAINER_NAME_PREFIX}-${BATS_SUITE_TEST_NUMBER}-" --format "{{.ID}}" | while read -r container_id; do
         if [ -n "$container_id" ]; then
             _docker rm -f "$container_id" || true # we don't really mind if we fail to clean up
-            echo "info: removed container $container_id"
+            echo "info: removed container $container_id" >&2
         fi
     done
 }
