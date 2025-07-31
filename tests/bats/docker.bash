@@ -68,5 +68,6 @@ _wait_for_healthy() {
         sleep 0.2
     done
     echo "error: container $CONTAINER_NAME did not become healthy within $TIMEOUT seconds" >&2
+    docker logs "$CONTAINER_NAME" >&2 || true # print the container log if possible.
     return 1
 }

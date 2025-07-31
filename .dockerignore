@@ -14,3 +14,4 @@ Dockerfile
 Makefile
 plugin_start*
 tslint.json
+tests/bats/
