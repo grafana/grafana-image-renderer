@@ -19,7 +19,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runs-on: [ubuntu-latest, ubuntu-24.04-arm]
+        # TODO: Use self-hosted runners when available.
+        runs-on: [github-hosted-ubuntu-arm64-large, github-hosted-ubuntu-x64-large]
 
     name: bats (${{ matrix.runs-on }})
     runs-on: ${{ matrix.runs-on }}
