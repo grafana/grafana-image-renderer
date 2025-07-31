@@ -54,10 +54,9 @@ _wait_for_healthy() {
         return 1
     fi
     CONTAINER_NAME="$1"
-    TIMEOUT="${2:-10}" # default timeout is 10 seconds
-    START_TIME="$(date +%s)"
-    END_TIME=$((START_TIME + TIMEOUT))
-    while [ "$(date +%s)" -lt "$END_TIME" ]; do
+    TIMEOUT="${2:-30}"
+    # Stupid simple way to check timeouts. The docker commands are practically instant, so we just *5 (as we sleep 0.2s at a time) and iterate.
+    for _i in $(seq 1 $((TIMEOUT * 5))); do
         if [ "$(_docker inspect --format '{{.State.Running}}' "$CONTAINER_NAME")" != "true" ]; then
             echo "error: container $CONTAINER_NAME is not running" >&2
             return 1
