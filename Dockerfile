@@ -62,9 +62,13 @@ COPY --from=build /src/proto proto
 COPY --from=build /src/default.json config.json
 COPY --from=build /src/plugin.json plugin.json
 
-EXPOSE 8081
+USER root
+
+RUN chown -R nonroot:0 /home/nonroot && chmod -R go=u /home/nonroot
 
 USER 65532
+
+EXPOSE 8081
 
 ENTRYPOINT ["tini", "--", "/nodejs/bin/node"]
 CMD ["build/app.js", "server", "--config=config.json"]
