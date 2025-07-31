@@ -1,3 +1,8 @@
+## 4.0.10 (2025-07-31)
+
+- Docker: Update Chromium (CVE-2025-8292), [#695](https://github.com/grafana/grafana-image-renderer/pull/695), [macabu](https://github.com/macabu)
+- Tests: Add Docker image test suite, [#693](https://github.com/grafana/grafana-image-renderer/pull/693), [Proximyst](https://github.com/Proximyst)
+
 ## 4.0.9 (2025-07-28)
 
 - Docker: Use numeric UID, [#686](https://github.com/grafana/grafana-image-renderer/issues/686), [Proximyst](https://github.com/Proximyst)
