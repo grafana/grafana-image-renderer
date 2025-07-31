@@ -64,9 +64,9 @@ COPY --from=build /src/plugin.json plugin.json
 
 EXPOSE 8081
 
-# Simple regression test for: https://github.com/grafana/grafana-image-renderer/issues/686
-RUN test "$(id -u)" -eq 65532
 USER 65532
 
 ENTRYPOINT ["tini", "--", "/nodejs/bin/node"]
 CMD ["build/app.js", "server", "--config=config.json"]
+HEALTHCHECK --interval=10s --retries=3 --timeout=3s \
+    CMD ["wget", "-O-", "-q", "http://localhost:8081/"]
