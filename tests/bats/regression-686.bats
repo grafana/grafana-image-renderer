@@ -20,7 +20,7 @@ function teardown() {
     run _docker image inspect --format '{{json .Config.User}}' "$DOCKER_IMAGE"
     [ "$status" -eq 0 ]
     IMG_USER="${output//\"/}" # strip the quotes around the JSON value
-    run _docker run --entrypoint sh --user nonroot --rm "$DOCKER_IMAGE" -c 'id -u'
+    run _docker run --entrypoint sh --user nonroot --name "$(_container_name)" "$DOCKER_IMAGE" -c 'id -u'
     [ "$status" -eq 0 ]
     [ "${lines[0]}" = "$IMG_USER" ]
 }

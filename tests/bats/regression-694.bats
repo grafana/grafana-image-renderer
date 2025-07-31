@@ -15,7 +15,7 @@ function teardown() {
     #   > Because the container user is always a member of the root group, the container user can read and write these files.
     # https://www.redhat.com/en/blog/a-guide-to-openshift-and-uids
     #   > Notice the Container is using the UID from the Namespace. An important detail to notice is that the user in the Container always has GID=0, which is the root group. 
-    run _docker run --user "$RANDOM_UID":0 --health-start-period=1s --health-start-interval=0.1s --name "$(_container_name)" --rm -d "$DOCKER_IMAGE"
+    run _docker run --user "$RANDOM_UID":0 --health-start-period=1s --health-start-interval=0.1s --name "$(_container_name)" -d "$DOCKER_IMAGE"
     [ "$status" -eq 0 ]
     [ -n "$output" ]
 
