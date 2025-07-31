@@ -42,7 +42,8 @@ _remove_docker() {
     # E.g. prefix-2 would match prefix-20-abc, but prefix-2- would not.
     _docker ps -a --filter "name=${CONTAINER_NAME_PREFIX}-${BATS_SUITE_TEST_NUMBER}-" --format "{{.ID}}" | while read -r container_id; do
         if [ -n "$container_id" ]; then
-            _docker rm -f "$container_id" || true # we don't really mind if we fail to clean up
+            _docker kill "$container_id" &>/dev/null || true
+            _docker rm -f "$container_id" &>/dev/null || true # we don't really mind if we fail to clean up
             echo "info: removed container $container_id" >&2
         fi
     done
@@ -59,6 +60,7 @@ _wait_for_healthy() {
     for _i in $(seq 1 $((TIMEOUT * 5))); do
         if [ "$(_docker inspect --format '{{.State.Running}}' "$CONTAINER_NAME")" != "true" ]; then
             echo "error: container $CONTAINER_NAME is not running" >&2
+            docker logs "$CONTAINER_NAME" >&2 || true # print the container log if possible.
             return 1
         fi
         if [ "$(_docker inspect --format '{{.State.Health.Status}}' "$CONTAINER_NAME")" = "healthy" ]; then
