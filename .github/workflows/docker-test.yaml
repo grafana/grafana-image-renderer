@@ -40,3 +40,5 @@ jobs:
       - name: bats
         working-directory: tests/bats
         run: ./test.sh image-renderer
+        env:
+          TERM: linux
