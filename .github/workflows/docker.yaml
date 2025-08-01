@@ -176,9 +176,10 @@ jobs:
             > This is a development image and should not be used in production.
             > It will be automatically removed after 2 weeks.
 
+# Workflow: https://argo-workflows.grafana.net/workflow-templates/render-service-cd/auto-deploy-dev
   cd-auto-deploy-dev:
     name: Deploy to dev
-    if: github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/v')
+    if: startsWith(github.ref, 'refs/tags/v')
     needs: [tag, build]
     runs-on: ubuntu-latest
     permissions:
@@ -192,6 +193,29 @@ jobs:
           instance: "ops"
           namespace: "render-service-cd"
           workflow_template: "auto-deploy-dev"
+          parameters: |
+            dockertag=${{ needs.tag.outputs.ref_name }}
+      - name: Print URI
+        run: |
+          echo "URI: ${{ steps.trigger-argowfs-deployment.outputs.uri }}"
+
+# Workflow: https://argo-workflows.grafana.net/workflow-templates/render-service-cd/deploy-prod
+  cd-deploy-prod:
+    name: Deploy to prod
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [tag, build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - id: "trigger-argowfs-deployment"
+        name: "Trigger Argo Workflow"
+        uses: grafana/shared-workflows/actions/trigger-argo-workflow@5d7e361bc7e0a183cde8afe9899fb7b596d2659b
+        with:
+          instance: "ops"
+          namespace: "render-service-cd"
+          workflow_template: "deploy-prod"
           parameters: |
             dockertag=${{ needs.tag.outputs.ref_name }}
       - name: Print URI
