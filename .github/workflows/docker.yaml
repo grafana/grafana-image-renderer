@@ -188,7 +188,7 @@ jobs:
     steps:
       - id: "trigger-argowfs-deployment"
         name: "Trigger Argo Workflow"
-        uses: grafana/shared-workflows/actions/trigger-argo-workflow@d21f5e2ae948c17ab5239c00113351201bfb09b9
+        uses: grafana/shared-workflows/actions/trigger-argo-workflow@trigger-argo-workflow/v1.1.2
         with:
           instance: "ops"
           namespace: "render-service-cd"
@@ -211,7 +211,7 @@ jobs:
     steps:
       - id: "trigger-argowfs-deployment"
         name: "Trigger Argo Workflow"
-        uses: grafana/shared-workflows/actions/trigger-argo-workflow@d21f5e2ae948c17ab5239c00113351201bfb09b9
+        uses: grafana/shared-workflows/actions/trigger-argo-workflow@trigger-argo-workflow/v1.1.2
         with:
           instance: "ops"
           namespace: "render-service-cd"
