@@ -1,4 +1,4 @@
-FROM debian:12-slim AS debian-updated
+FROM debian:12-slim@sha256:2424c1850714a4d94666ec928e24d86de958646737b1d113f5b2207be44d37d8 AS debian-updated
 
 SHELL ["/bin/bash", "-euo", "pipefail", "-c"]
 
@@ -14,7 +14,7 @@ RUN apt-cache depends chromium chromium-driver chromium-shell chromium-sandbox f
 RUN mkdir /dpkg && \
     find . -type f -name '*.deb' -exec sh -c 'dpkg --extract "$1" /dpkg || exit 5' sh '{}' \;
 
-FROM debian:testing-slim AS ca-certs
+FROM debian:testing-slim@sha256:aaa28744f5b892a7ccc3e97c0e9b9cdd0fcc447227efaf9e54080801b990f973 AS ca-certs
 
 RUN apt-get update
 RUN apt-cache depends ca-certificates \
@@ -22,7 +22,7 @@ RUN apt-cache depends ca-certificates \
 RUN mkdir /dpkg && \
     find . -type f -name '*.deb' -exec sh -c 'dpkg --extract "$1" /dpkg || exit 5' sh '{}' \;
 
-FROM node:22-alpine AS build
+FROM node:22-alpine@sha256:1b2479dd35a99687d6638f5976fd235e26c5b37e8122f786fcd5fe231d63de5b AS build
 
 WORKDIR /src
 COPY . ./
@@ -31,7 +31,7 @@ RUN yarn install --pure-lockfile
 RUN yarn run build
 RUN rm -rf node_modules/ && yarn install --pure-lockfile --production
 
-FROM gcr.io/distroless/nodejs22-debian12:nonroot
+FROM gcr.io/distroless/nodejs22-debian12:nonroot@sha256:79c2a8243e0b0b6ca5eefdc5751aeed2cafadbb55a9ebf05d60aad574b1b2a8b
 
 LABEL maintainer="Grafana team <hello@grafana.com>"
 LABEL org.opencontainers.image.source="https://github.com/grafana/grafana-image-renderer/tree/master/Dockerfile"
