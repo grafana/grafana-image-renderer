@@ -1,0 +1,10 @@
+{
+    "ignorePresets": [
+        "github>grafana/grafana-renovate-config//presets/automerge",
+        "github>grafana/grafana-renovate-config//presets/labels",
+        "github>grafana/grafana-renovate-config//presets/security",
+        "github>grafana/grafana-renovate-config//presets/github-actions",
+        "github>grafana/grafana-renovate-config//presets/helm",
+        "github>grafana/grafana-renovate-config//presets/shared-workflows"
+    ]
+  }
