@@ -1,6 +1,6 @@
 services:
   grafana:
-    image: grafana/grafana:latest
+    image: grafana/grafana:latest@sha256:a1701c2180249361737a99a01bc770db39381640e4d631825d38ff4535efa47d
     ports:
       - 3000:3000
     environment:
@@ -8,13 +8,13 @@ services:
       GF_RENDERING_CALLBACK_URL: http://grafana:3000/
       GF_LOG_FILTERS: rendering:debug
   renderer:
-    image: grafana/grafana-image-renderer:latest
+    image: grafana/grafana-image-renderer:latest@sha256:ad45676a30678ffb922399b48b076f800c4167b8feb8343b8f87f4a9a30aacd6
     ports:
       - 8081
     volumes:
       - ./config.json:/usr/src/app/config.json
   redis:
-    image: redis:latest
+    image: redis:latest@sha256:e7d6b261beaa22b1dc001f438b677f1c691ac7805607d8979bae65fe0615c2e6
     ports:
       - 6379
 

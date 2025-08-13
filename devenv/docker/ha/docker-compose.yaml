@@ -2,7 +2,7 @@ version: "2.1"
 
 services:
   nginx-proxy:
-    image: jwilder/nginx-proxy
+    image: jwilder/nginx-proxy@sha256:ed8b769dcb0150bd608e9163b7f8a96f2c3e3b1dba8b7cb9b88c86ae114db871
     ports:
       - "80:80"
     volumes:
@@ -12,7 +12,7 @@ services:
         condition: service_healthy
 
   db:
-    image: mysql:5.6
+    image: mysql:5.6@sha256:20575ecebe6216036d25dab5903808211f1e9ba63dc7825ac20cb975e34cfcae
     environment:
       MYSQL_ROOT_PASSWORD: rootpass
       MYSQL_DATABASE: grafana
@@ -27,7 +27,7 @@ services:
       retries: 10
 
   mysqld-exporter:
-    image: prom/mysqld-exporter
+    image: prom/mysqld-exporter@sha256:20b5b23a98ce3998349042a999e56d22819b46da38fa4e4e9ca0155c975c95d5
     environment:
       - DATA_SOURCE_NAME=root:rootpass@(db:3306)/
     ports:
@@ -78,7 +78,7 @@ services:
     # memswap_limit: 1gb
 
   prometheus:
-    image: prom/prometheus:v2.14.0
+    image: prom/prometheus:v2.14.0@sha256:907e20b3b0f8b0a76a33c088fe9827e8edc180e874bd2173c27089eade63d8b8
     volumes:
       - ./prometheus/:/etc/prometheus/
     environment:
@@ -87,7 +87,7 @@ services:
       - 9090
 
   cadvisor:
-    image: google/cadvisor:latest
+    image: google/cadvisor:latest@sha256:815386ebbe9a3490f38785ab11bda34ec8dacf4634af77b8912832d4f85dca04
     environment:
       - VIRTUAL_HOST=cadvisor.loc
     ports:

@@ -1,4 +1,4 @@
-FROM alpine:edge AS builder
+FROM alpine:edge@sha256:115729ec5cb049ba6359c3ab005ac742012d92bbaa5b8bc1a878f1e8f62c0cb8 AS builder
 
 WORKDIR /src
 RUN apk add --no-cache openssl
@@ -6,7 +6,7 @@ RUN apk add --no-cache openssl
 COPY ./rootCA.pem ca.pem
 RUN openssl x509 -inform PEM -in ca.pem -out ca.crt
 
-FROM grafana/grafana-enterprise:latest
+FROM grafana/grafana-enterprise:latest@sha256:1d6b24fd4121d97bde0dea8aa19a357306a48dbfb7f61303649c4b6db5d327b7
 
 COPY --from=builder /src/ca.crt /usr/local/share/ca-certificates/ca.crt
 COPY --chown=grafana ./grafana.localhost+1.pem /grafana.localhost.pem
