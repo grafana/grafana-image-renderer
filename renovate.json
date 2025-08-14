@@ -6,5 +6,8 @@
         "github>grafana/grafana-renovate-config//presets/github-actions",
         "github>grafana/grafana-renovate-config//presets/helm",
         "github>grafana/grafana-renovate-config//presets/shared-workflows"
-    ]
-  }
+    ],
+    "npm": {
+        "enabled": false
+    }
+}
