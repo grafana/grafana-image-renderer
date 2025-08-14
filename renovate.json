@@ -9,15 +9,11 @@
         "github>grafana/grafana-renovate-config//presets/shared-workflows"
     ],
     "enabledManagers": ["dockerfile", "custom.regex"],
-    "ignorePaths": [
-        "**/devenv/**"
-    ],
+    "ignorePaths": ["**/devenv/**"],
     "packageRules": [
         {"matchCategories": ["node"], "enabled": false},
         {
-            "matchFileNames": [
-                "Dockerfile"
-            ],
+            "matchFileNames": ["Dockerfile"],
             "groupName": "Dockerfile",
             "matchManagers": ["dockerfile", "regex"],
             "pinDigests": true,
@@ -27,12 +23,8 @@
     "customManagers": [
         {
             "customType": "regex",
-            "managerFilePatterns": [
-                "Dockerfile"
-        ],
-            "matchStrings": [
-                "CHROMIUM_VERSION=(?<currentValue>[\\w:~.+-]+)"
-        ],
+            "managerFilePatterns": ["Dockerfile"],
+            "matchStrings": ["CHROMIUM_VERSION=(?<currentValue>[\\w:~.+-]+)"],
             "depNameTemplate": "chromium",
             "datasourceTemplate": "deb",
             "packageNameTemplate": "chromium",
