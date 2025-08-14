@@ -9,5 +9,8 @@
     ],
     "npm": {
         "enabled": false
+    },
+    "node": {
+        "enabled": false
     }
 }
