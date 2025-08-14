@@ -90,9 +90,9 @@ jobs:
         run: echo "$GITHUB_TOKEN" | docker login ghcr.io -u "$ACTOR" --password-stdin
       - name: Log into DockerHub
         if: needs.tag.outputs.registry == 'docker.io'
-        uses: grafana/shared-workflows/actions/dockerhub-login@dockerhub-login/v1
+        uses: grafana/shared-workflows/actions/dockerhub-login@c6d954f7cd9c0022018982e01268de6cb75b913c # dockerhub-login/v1
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
         with:
           persist-credentials: false
 
@@ -116,7 +116,7 @@ jobs:
           DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' "$TAG" | cut -d@ -f2)
           echo "Digest: $DIGEST"
           echo "digest=$DIGEST" >> "$GITHUB_OUTPUT"
-      - uses: actions/attest-build-provenance@v2
+      - uses: actions/attest-build-provenance@e8998f949152b193b063cb0ec769d69d929409be # v2
         with:
           subject-name: ${{ needs.tag.outputs.subject }}
           subject-digest: ${{ steps.digest.outputs.digest }}
@@ -139,7 +139,7 @@ jobs:
         run: echo "$GITHUB_TOKEN" | docker login ghcr.io -u "$ACTOR" --password-stdin
       - name: Log into DockerHub
         if: needs.tag.outputs.registry == 'docker.io'
-        uses: grafana/shared-workflows/actions/dockerhub-login@dockerhub-login/v1
+        uses: grafana/shared-workflows/actions/dockerhub-login@c6d954f7cd9c0022018982e01268de6cb75b913c # dockerhub-login/v1
 
       - name: Create and push manifest
         env:

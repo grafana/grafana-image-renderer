@@ -2,14 +2,14 @@ version: '2'
 
 services:
   docker-puppeteer:
-    image: grafana/docker-puppeteer:pre-node-20
+    image: grafana/docker-puppeteer:pre-node-20@sha256:77451c4522c5a7bb00aad3fe9fa61eceef208306a9146caee7b6dc4a20cf261c
     volumes:
       - "../../..:/drone/src"
     stdin_open: true # docker run -i
     tty: true        # docker run -t
     entrypoint: bash
   grafana:
-    image: grafana/grafana-enterprise:latest
+    image: grafana/grafana-enterprise:latest@sha256:6f9edf04510e8d219131ee6da55af53ea13e53699d784470ac41e2f1e7733dc8
     ports:
       - 3000:3000
     environment:

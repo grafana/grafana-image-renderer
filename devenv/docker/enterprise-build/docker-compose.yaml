@@ -1,6 +1,6 @@
 services:
   grafana:
-    image: grafana/grafana-enterprise:latest
+    image: grafana/grafana-enterprise:latest@sha256:6f9edf04510e8d219131ee6da55af53ea13e53699d784470ac41e2f1e7733dc8
     ports:
       - 3000:3000
     environment:
