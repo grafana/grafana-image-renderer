@@ -9,7 +9,7 @@ RUN echo 'cachebuster 2025-08-04' && apt-get update
 
 FROM debian-updated AS debs
 
-ARG CHROMIUM_VERSION=122.0.6261.69-1~deb12u1
+ARG CHROMIUM_VERSION=139.0.7204.183
 RUN apt-cache depends chromium=${CHROMIUM_VERSION} chromium-driver chromium-shell chromium-sandbox font-gothic fonts-wqy-zenhei fonts-thai-tlwg fonts-khmeros fonts-kacst fonts-freefont-ttf libxss1 unifont fonts-open-sans fonts-roboto fonts-inter bash busybox util-linux openssl tini ca-certificates locales libnss3-tools \
     --recurse --no-recommends --no-suggests --no-conflicts --no-breaks --no-replaces --no-enhances --no-pre-depends | grep '^\w' | xargs apt-get download
 RUN mkdir /dpkg && \

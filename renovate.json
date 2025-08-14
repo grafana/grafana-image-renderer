@@ -1,6 +1,5 @@
 {
   "ignorePresets": [
-        "github>grafana/grafana-renovate-config//presets/base",
         "github>grafana/grafana-renovate-config//presets/automerge",
         "github>grafana/grafana-renovate-config//presets/docker",
         "github>grafana/grafana-renovate-config//presets/labels",
@@ -9,14 +8,18 @@
         "github>grafana/grafana-renovate-config//presets/helm",
         "github>grafana/grafana-renovate-config//presets/shared-workflows"
     ],
-    "npm": {"enabled": false},
+    "enabledManagers": ["dockerfile", "custom.regex"],
+    "ignorePaths": [
+        "**/devenv/**"
+    ],
     "packageRules": [
         {"matchCategories": ["node"], "enabled": false},
         {
             "matchFileNames": [
                 "Dockerfile"
             ],
-            "matchManagers": ["dockerfile"],
+            "groupName": "Dockerfile",
+            "matchManagers": ["dockerfile", "regex"],
             "pinDigests": true,
             "labels": ["docker"]
         }
