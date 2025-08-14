@@ -7,7 +7,6 @@
         "github>grafana/grafana-renovate-config//presets/helm",
         "github>grafana/grafana-renovate-config//presets/shared-workflows"
     ],
-    "npm": {
-        "enabled": false
-    }
+    "npm": {"enabled": false},
+    "packageRules": [{"matchCategories": ["node"], "enabled": false}]
 }
