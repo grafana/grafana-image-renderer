@@ -1,5 +1,5 @@
 {
-    "ignorePresets": [
+  "ignorePresets": [
         "github>grafana/grafana-renovate-config//presets/base",
         "github>grafana/grafana-renovate-config//presets/automerge",
         "github>grafana/grafana-renovate-config//presets/docker",
@@ -9,7 +9,9 @@
         "github>grafana/grafana-renovate-config//presets/helm",
         "github>grafana/grafana-renovate-config//presets/shared-workflows"
     ],
+    "npm": {"enabled": false},
     "packageRules": [
+        {"matchCategories": ["node"], "enabled": false},
         {
             "matchFileNames": [
                 "Dockerfile"
