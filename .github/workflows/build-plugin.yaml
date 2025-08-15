@@ -29,7 +29,7 @@ jobs:
       contents: read # clone the repository
       id-token: write # required to read secrets
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
         with:
           persist-credentials: false
 
@@ -67,7 +67,7 @@ jobs:
     permissions:
       contents: read # clone the repository
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
         with:
           persist-credentials: false
 
@@ -122,7 +122,7 @@ jobs:
       contents: write # create a release
       id-token: write # required to read secrets
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
         with:
           persist-credentials: false
 
