@@ -1,5 +1,5 @@
 {
-  "ignorePresets": [
+    "ignorePresets": [
         "github>grafana/grafana-renovate-config//presets/automerge",
         "github>grafana/grafana-renovate-config//presets/docker",
         "github>grafana/grafana-renovate-config//presets/labels",
@@ -11,11 +11,14 @@
     "enabledManagers": ["dockerfile", "custom.regex"],
     "ignorePaths": ["**/devenv/**"],
     "packageRules": [
-        {"matchCategories": ["node"], "enabled": false},
+        {
+            "matchCategories": ["node"],
+            "enabled": false
+        },
         {
             "matchFileNames": ["Dockerfile"],
             "groupName": "Dockerfile",
-            "matchManagers": ["dockerfile", "regex"],
+            "matchManagers": ["dockerfile", "custom.regex"],
             "pinDigests": true,
             "labels": ["docker"]
         }
@@ -31,4 +34,4 @@
             "versioningTemplate": "deb"
         }
     ]
-  }
+}
