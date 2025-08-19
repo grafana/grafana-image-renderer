@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/grafana/grafana-image-renderer/cmd/config"
 	"github.com/grafana/grafana-image-renderer/pkg/api"
 	"github.com/grafana/grafana-image-renderer/pkg/chromium"
 	"github.com/grafana/grafana-image-renderer/pkg/metrics"
@@ -16,15 +17,17 @@ func NewCmd() *cli.Command {
 		Usage: "Run the server part of the service.",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
-				Name:  "addr",
-				Usage: "The address to listen on for HTTP requests.",
-				Value: ":8081",
+				Name:    "addr",
+				Usage:   "The address to listen on for HTTP requests.",
+				Value:   ":8081",
+				Sources: config.FromConfig("server.addr"),
 			},
 			&cli.StringFlag{
 				Name:      "browser",
 				Usage:     "The path to the browser's binary. This is resolved against PATH.",
 				TakesFile: true,
 				Value:     "chromium",
+				Sources:   config.FromConfig("browser.path"),
 			},
 		},
 		Action: run,
