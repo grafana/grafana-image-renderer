@@ -17,7 +17,7 @@ func NewRegistry() *prometheus.Registry {
 		middleware.MetricRequestsInFlight,
 		middleware.MetricRequestDurations,
 		middleware.MetricRecoveredRequests,
-		middleware.MetricTrustedUrlRequests,
+		middleware.MetricTrustedURLRequests,
 	)
 	return registry
 }

@@ -7,7 +7,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-var MetricTrustedUrlRequests = prometheus.NewCounterVec(prometheus.CounterOpts{
+var MetricTrustedURLRequests = prometheus.NewCounterVec(prometheus.CounterOpts{
 	Name: "http_trusted_url_requests",
 	Help: "Counts the requests with URL queries",
 }, []string{"result"})
@@ -18,12 +18,12 @@ func TrustedURL(h http.Handler) http.Handler {
 		url := r.URL.Query().Get("url")
 		if url != "" && !strings.HasPrefix(url, "http://") && !strings.HasPrefix(url, "https://") {
 			http.Error(w, "Forbidden query url protocol", http.StatusForbidden) // TODO: Wrong use of Forbidden, should be BadRequest...
-			MetricTrustedUrlRequests.WithLabelValues("invalid-protocol").Inc()
+			MetricTrustedURLRequests.WithLabelValues("invalid-protocol").Inc()
 			return
 		} else if url == "" {
-			MetricTrustedUrlRequests.WithLabelValues("missing-query").Inc()
+			MetricTrustedURLRequests.WithLabelValues("missing-query").Inc()
 		} else {
-			MetricTrustedUrlRequests.WithLabelValues("valid").Inc()
+			MetricTrustedURLRequests.WithLabelValues("valid").Inc()
 		}
 		h.ServeHTTP(w, r)
 	})
