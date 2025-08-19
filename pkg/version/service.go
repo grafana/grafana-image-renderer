@@ -5,7 +5,7 @@ import "runtime/debug"
 // ServiceVersion returns the service's version data. It is complete only if `-buildvcs` is passed to the Go build command.
 func ServiceVersion() string {
 	var (
-		revision string = "<no vcs info in build>"
+		revision = "<no vcs info in build>"
 		time     string
 		modified = true
 	)
