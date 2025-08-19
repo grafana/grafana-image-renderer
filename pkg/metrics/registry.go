@@ -1,7 +1,7 @@
 package metrics
 
 import (
-	"github.com/grafana/grafana-image-renderer/pkg/middleware"
+	"github.com/grafana/grafana-image-renderer/pkg/api/middleware"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/collectors"
 )

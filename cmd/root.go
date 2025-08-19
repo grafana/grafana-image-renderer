@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"runtime/debug"
 
 	"github.com/grafana/grafana-image-renderer/cmd/server"
+	"github.com/grafana/grafana-image-renderer/pkg/version"
 	"github.com/urfave/cli/v3"
 )
 
@@ -14,7 +14,7 @@ func NewRootCmd() *cli.Command {
 	return &cli.Command{
 		Name:    "grafana-image-renderer",
 		Usage:   "A service for Grafana to render images and documents from Grafana websites.",
-		Version: calculateVersion(),
+		Version: version.ServiceVersion(),
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:  "log-level",
@@ -50,41 +50,4 @@ func NewRootCmd() *cli.Command {
 			server.NewCmd(),
 		},
 	}
-}
-
-func calculateVersion() string {
-	var (
-		revision string = "<no vcs info in build>"
-		time     string
-		modified = true
-	)
-
-	info, ok := debug.ReadBuildInfo()
-	if !ok {
-		return revision + "+dirty"
-	}
-
-	for _, setting := range info.Settings {
-		switch setting.Key {
-		case "vcs.revision":
-			revision = setting.Value
-		case "vcs.time":
-			time = setting.Value
-		case "vcs.modified":
-			modified = setting.Value == "true"
-		default:
-			continue
-		}
-	}
-
-	if modified {
-		revision += "+dirty"
-	}
-	if time != "" {
-		revision += " (committed " + time + ")"
-	}
-	if info.GoVersion != "" {
-		revision += " (" + info.GoVersion + ")"
-	}
-	return revision
 }

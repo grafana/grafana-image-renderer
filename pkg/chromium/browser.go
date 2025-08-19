@@ -1,21 +1,30 @@
 package chromium
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"os/exec"
 )
 
-type BrowserOpts struct {
+type Browser struct {
 	// Binary is a path to the browser's binary on the file-system.
 	Binary string
 }
 
+func NewBrowser(
+	binary string,
+) (*Browser, error) {
+	return &Browser{
+		Binary: binary,
+	}, nil
+}
+
 // GetVersion finds the version of the browser.
-func (opts *BrowserOpts) GetVersion(ctx context.Context) (string, error) {
-	version, err := exec.CommandContext(ctx, opts.Binary, "--version").Output()
+func (b *Browser) GetVersion(ctx context.Context) (string, error) {
+	version, err := exec.CommandContext(ctx, b.Binary, "--version").Output()
 	if err != nil {
 		return "", fmt.Errorf("failed to get version of browser: %w", err)
 	}
-	return string(version), nil
+	return string(bytes.TrimSpace(version)), nil
 }
