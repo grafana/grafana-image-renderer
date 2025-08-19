@@ -33,6 +33,7 @@ func TestTrustedURL(t *testing.T) {
 		"chrome:// url query": {Value: "chrome://version", ExpectedStatus: http.StatusForbidden},
 		"http:// url query":   {Value: "http://example.com", ExpectedStatus: http.StatusOK},
 		"https:// url query":  {Value: "https://example.com", ExpectedStatus: http.StatusOK},
+		"invalid URL":         {Value: "://", ExpectedStatus: http.StatusBadRequest},
 	} {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
