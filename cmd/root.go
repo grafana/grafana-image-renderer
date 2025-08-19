@@ -17,9 +17,9 @@ func NewRootCmd() *cli.Command {
 		Version: calculateVersion(),
 		Flags: []cli.Flag{
 			&cli.StringFlag{
-				Name:        "log-level",
-				Usage:       "The minimum level to log at (enum: debug, info, warn, error)",
-				DefaultText: "info",
+				Name:  "log-level",
+				Usage: "The minimum level to log at (enum: debug, info, warn, error)",
+				Value: "info",
 				Validator: func(s string) error {
 					if s != "debug" && s != "info" && s != "warn" && s != "error" {
 						return fmt.Errorf("invalid log level: %s", s)
