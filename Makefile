@@ -32,11 +32,3 @@ build_package: clean clean_package build package archive
 
 docker:
 	docker build -t grafana/grafana-image-renderer:${DOCKER_TAG} .
-
-# This repository's configuration is protected (https://readme.drone.io/signature/).
-# Use this make target to regenerate the configuration YAML files when
-# you modify starlark files.
-drone:
-	drone starlark --format
-	drone lint .drone.yml --trusted
-	drone --server https://drone.grafana.net sign --save grafana/grafana-image-renderer
