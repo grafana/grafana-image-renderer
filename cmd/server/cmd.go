@@ -29,6 +29,17 @@ func NewCmd() *cli.Command {
 				Value:     "chromium",
 				Sources:   config.FromConfig("browser.path"),
 			},
+			&cli.StringSliceFlag{
+				Name:    "browser-flags",
+				Usage:   "Flags to pass to the browser. These are syntaxed `<flag>` or `<flag>=<value>`. No -- should be passed in for the flag; these are implied.",
+				Sources: config.FromConfig("browser.flags"),
+			},
+			&cli.StringFlag{
+				Name:    "auth-token",
+				Usage:   "The X-Auth-Token header value that must be sent to the service to permit requests.",
+				Value:   "-",
+				Sources: config.FromConfig("auth.token"),
+			},
 		},
 		Action: run,
 	}
@@ -36,11 +47,11 @@ func NewCmd() *cli.Command {
 
 func run(ctx context.Context, c *cli.Command) error {
 	metrics := metrics.NewRegistry()
-	browser, err := chromium.NewBrowser(c.String("browser"))
+	browser, err := chromium.NewBrowser(c.String("browser"), c.StringSlice("browser-flags"))
 	if err != nil {
 		return fmt.Errorf("failed to create browser: %w", err)
 	}
-	handler, err := api.NewHandler(metrics, browser)
+	handler, err := api.NewHandler(metrics, browser, api.AuthToken(c.String("auth-token")))
 	if err != nil {
 		return fmt.Errorf("failed to create API handler: %w", err)
 	}

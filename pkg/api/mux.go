@@ -16,13 +16,17 @@ func NewHandler(
 		prometheus.Registerer
 	},
 	browser *chromium.Browser,
+	token AuthToken,
 ) (http.Handler, error) {
 	mux := http.NewServeMux()
 	mux.Handle("GET /metrics", promhttp.HandlerFor(metrics, promhttp.HandlerOpts{Registry: metrics}))
 	mux.Handle("GET /healthz", HandleGetHealthz())
 	mux.Handle("GET /version", HandleGetVersion(browser))
+	mux.Handle("POST /render", middleware.RequireAuthToken(middleware.TrustedURL(HandlePostRender(browser)), string(token)))
 
 	handler := middleware.RequestMetrics(mux)
 	handler = middleware.Recovery(handler) // must come last!
 	return handler, nil
 }
+
+type AuthToken string
