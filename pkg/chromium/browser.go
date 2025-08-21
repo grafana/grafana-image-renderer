@@ -20,67 +20,20 @@ type Browser struct {
 	// Args is the arguments to give to the browser.
 	Args []string
 
-	// Width is the width of the viewport in pixels.
-	Width int
-	// Height is the height of the viewport in pixels.
-	Height int
-	// TimeZone is the IANA time-zone name, e.g. `Etc/UTC`.
-	TimeZone string
-
-	// PaperSize is how large a PDF should be per page.
-	PaperSize PaperSize
-	// Landscape defines which orientation PDFs should be in: vertical (default) or landscape (aka horizontal).
-	Landscape bool
-	// PrintBackground defines whether to include background graphics, such as div backgrounds or dark page backgrounds.
-	// You generally want this to preserve contrasts, but it is possibly wasteful if you intend on printing the document to physical paper later on.
-	PrintBackground bool
-
-	// RenderTimeout is the duration of time we'll wait on render requests to complete.
-	RenderTimeout time.Duration
-}
-
-type browserOption func(*Browser) error
-
-func WithViewport(width, height int) browserOption {
-	return func(b *Browser) error {
-		b.Width = width
-		b.Height = height
-		return nil
-	}
-}
-
-func WithTimeZone(timeZone string) browserOption {
-	return func(b *Browser) error {
-		b.TimeZone = timeZone
-		return nil
-	}
+	// RenderingOptionsPrototype is a clonable instance of the options we want to apply to rendering requests.
+	RenderingOptionsPrototype RenderingOptions
 }
 
 func NewBrowser(
 	binary string,
 	args []string,
-	options ...browserOption,
+	prototype RenderingOptions,
 ) (*Browser, error) {
-	browser := &Browser{
-		Binary: binary,
-		Args:   args,
-
-		Width:    1920,
-		Height:   1080,
-		TimeZone: "Etc/UTC",
-
-		PaperSize:       PaperA4,
-		Landscape:       false,
-		PrintBackground: true,
-
-		RenderTimeout: time.Second * 30,
-	}
-	for _, opt := range options {
-		if err := opt(browser); err != nil {
-			return nil, err
-		}
-	}
-	return browser, nil
+	return &Browser{
+		Binary:                    binary,
+		Args:                      args,
+		RenderingOptionsPrototype: prototype,
+	}, nil
 }
 
 // GetVersion finds the version of the browser.
@@ -92,98 +45,47 @@ func (b *Browser) GetVersion(ctx context.Context) (string, error) {
 	return string(bytes.TrimSpace(version)), nil
 }
 
-type requestOptions struct {
-	timeZone        string
-	width, height   int
-	fullHeight      bool
-	paperSize       PaperSize
-	landscape       bool
-	printBackground bool
-	timeout         time.Duration
-}
+type RenderingOptions struct {
+	// URL is the location to visit. This is required.
+	URL string
 
-type requestOption func(*requestOptions) error
+	// Width is the width of the viewport in pixels.
+	Width int
+	// Height is the height of the viewport in pixels.
+	Height int
+	// TimeZone is the IANA time-zone name, e.g. `Etc/UTC`.
+	TimeZone string
 
-// OverridingTimeZone sets the time zone for the request.
-//
-// This overrides the time-zone used by the application-level browser configuration.
-// The time-zone is expected to be in the format of e.g. `Etc/UTC`; if it is not, it might just not apply or break entirely.
-func OverridingTimeZone(timeZone string) requestOption {
-	return func(opts *requestOptions) error {
-		opts.timeZone = timeZone
-		return nil
-	}
-}
+	// FullHeight defines whether an image render should include the entire height of the webpage.
+	FullHeight bool
 
-// OverridingViewport changes the viewport of the browser itself.
-//
-// If either value is less than or equal to zero, it will not be changed.
-func OverridingViewport(width, height int) requestOption {
-	return func(opts *requestOptions) error {
-		if width > 0 {
-			opts.width = width
-		}
-		if height > 0 {
-			opts.height = height
-		}
-		return nil
-	}
-}
+	// PaperSize is how large a PDF should be per page.
+	PaperSize PaperSize
+	// Landscape defines which orientation PDFs should be in: vertical (default) or landscape (aka horizontal).
+	Landscape bool
+	// PrintBackground defines whether to include background graphics, such as div backgrounds or dark page backgrounds.
+	// You generally want this to preserve contrasts, but it is possibly wasteful if you intend on printing the document to physical paper later on.
+	PrintBackground bool
 
-// OverridingFullHeight changes whether the _entire_ web-page will be included in the render.
-//
-// When used, it will override the viewport height to be 75% of the width.
-// This should only be used for image renders; PDFs don't have a concept of this.
-func OverridingFullHeight(fullHeight bool) requestOption {
-	return func(ro *requestOptions) error {
-		ro.fullHeight = fullHeight
-		if fullHeight {
-			ro.height = int(float64(ro.width) * 0.75)
-		}
-		return nil
-	}
-}
-
-// OverridingPaperSize changes the size of paper intended in the PDF export.
-//
-// This is a no-op on image renders.
-func OverridingPaperSize(paperSize PaperSize) requestOption {
-	return func(ro *requestOptions) error {
-		ro.paperSize = paperSize
-		return nil
-	}
-}
-
-// OverridingPrintBackground defines whether to include background graphics, such as div backgrounds or dark page backgrounds.
-// You generally want this to preserve contrasts, but it is possibly wasteful if you intend on printing the document to physical paper later on.
-func OverridingPrintBackground(printBackground bool) requestOption {
-	return func(ro *requestOptions) error {
-		ro.printBackground = printBackground
-		return nil
-	}
-}
-
-// OverridingRenderTimeout sets the timeout for the render request; after this time, the browser will be killed and an error returned.
-func OverridingRenderTimeout(timeout time.Duration) requestOption {
-	return func(ro *requestOptions) error {
-		if timeout > 0 {
-			ro.timeout = timeout
-		}
-		return nil
-	}
+	// Timeout is the duration of time we'll wait on render requests to complete.
+	Timeout time.Duration
 }
 
 // RenderPDF visits the website and waits for it to be fully rendered.
 //
 // The entire PDF is returned as a byte slice.
-func (b *Browser) RenderPDF(ctx context.Context, url string, reqOpts ...requestOption) ([]byte, error) {
+func (b *Browser) RenderPDF(ctx context.Context, renderingOptions RenderingOptions) ([]byte, error) {
+	if renderingOptions.URL == "" {
+		return nil, fmt.Errorf("rendering options must have a URL set")
+	}
+
 	browserID, err := uuid.NewRandom() // TODO: Use traceID if exists in context
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate browser ID: %w", err)
 	}
 	log := slog.With("browser_id", browserID.String())
 
-	allocatorOptions, requestOptions, err := b.createAllocatorOptions(reqOpts)
+	allocatorOptions, err := b.createAllocatorOptions(renderingOptions)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create allocator options: %w", err)
 	}
@@ -192,15 +94,14 @@ func (b *Browser) RenderPDF(ctx context.Context, url string, reqOpts ...requestO
 	browserCtx, cancelBrowser := chromedp.NewContext(allocatorCtx, browserLoggers(ctx, log))
 	defer cancelBrowser()
 
-	fileChan := make(chan []byte, 1)
+	fileChan := make(chan []byte, 1) // buffered: we don't want the browser to stick around while we try to export this value.
 	actions := []chromedp.Action{
-		chromedp.Navigate(url),
-		printPDF(requestOptions, fileChan),
+		chromedp.Navigate(renderingOptions.URL),
+		printPDF(renderingOptions, fileChan),
 	}
 
-	timeoutCtx, cancelTimeout := context.WithTimeout(browserCtx, requestOptions.timeout)
+	timeoutCtx, cancelTimeout := context.WithTimeout(browserCtx, renderingOptions.Timeout)
 	defer cancelTimeout()
-
 	if err := chromedp.Run(timeoutCtx, actions...); err != nil {
 		return nil, fmt.Errorf("failed to run browser: %w", err)
 	}
@@ -232,7 +133,7 @@ func browserLoggers(ctx context.Context, log *slog.Logger) chromedp.ContextOptio
 	)
 }
 
-func (b *Browser) createAllocatorOptions(reqOpts []requestOption) ([]chromedp.ExecAllocatorOption, *requestOptions, error) {
+func (b *Browser) createAllocatorOptions(renderingOptions RenderingOptions) ([]chromedp.ExecAllocatorOption, error) {
 	opts := chromedp.DefaultExecAllocatorOptions[:]
 	opts = append(opts, chromedp.Headless, chromedp.DisableGPU)              // TODO: make configurable?
 	opts = append(opts, chromedp.NoFirstRun, chromedp.NoDefaultBrowserCheck) // TODO: make configurable?
@@ -248,33 +149,19 @@ func (b *Browser) createAllocatorOptions(reqOpts []requestOption) ([]chromedp.Ex
 		}
 	}
 
-	requestOptions := &requestOptions{
-		timeZone:        b.TimeZone,
-		width:           b.Width,
-		height:          b.Height,
-		paperSize:       b.PaperSize,
-		landscape:       b.Landscape,
-		printBackground: b.PrintBackground,
-		timeout:         b.RenderTimeout,
-	}
-	for _, opt := range reqOpts {
-		if err := opt(requestOptions); err != nil {
-			return nil, nil, err
-		}
-	}
-	opts = append(opts, chromedp.Env("TZ="+requestOptions.timeZone))
-	opts = append(opts, chromedp.WindowSize(requestOptions.width, requestOptions.height))
+	opts = append(opts, chromedp.Env("TZ="+renderingOptions.TimeZone))
+	opts = append(opts, chromedp.WindowSize(renderingOptions.Width, renderingOptions.Height))
 
-	return opts, requestOptions, nil
+	return opts, nil
 }
 
-func printPDF(requestOptions *requestOptions, dst chan []byte) chromedp.Action {
+func printPDF(requestOptions RenderingOptions, dst chan []byte) chromedp.Action {
 	return chromedp.ActionFunc(func(ctx context.Context) error {
 		// We don't need the stream return value; we don't ask for a stream.
-		width, height := requestOptions.paperSize.FormatInches()
+		width, height := requestOptions.PaperSize.FormatInches()
 		output, _, err := page.PrintToPDF().
-			WithPrintBackground(requestOptions.printBackground).
-			WithLandscape(requestOptions.landscape).
+			WithPrintBackground(requestOptions.PrintBackground).
+			WithLandscape(requestOptions.Landscape).
 			WithPaperWidth(width).
 			WithPaperHeight(height).
 			Do(ctx)

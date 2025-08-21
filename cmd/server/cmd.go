@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/grafana/grafana-image-renderer/cmd/config"
 	"github.com/grafana/grafana-image-renderer/pkg/api"
@@ -47,7 +48,16 @@ func NewCmd() *cli.Command {
 
 func run(ctx context.Context, c *cli.Command) error {
 	metrics := metrics.NewRegistry()
-	browser, err := chromium.NewBrowser(c.String("browser"), c.StringSlice("browser-flags"))
+	browser, err := chromium.NewBrowser(c.String("browser"), c.StringSlice("browser-flags"), chromium.RenderingOptions{
+		Width:           1920,
+		Height:          1080,
+		TimeZone:        "Etc/UTC",
+		PaperSize:       chromium.PaperA4,
+		PrintBackground: true,
+		Timeout:         time.Second * 30,
+		FullHeight:      false,
+		Landscape:       false,
+	})
 	if err != nil {
 		return fmt.Errorf("failed to create browser: %w", err)
 	}
