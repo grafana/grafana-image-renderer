@@ -3,6 +3,7 @@ module github.com/grafana/grafana-image-renderer
 go 1.24.6
 
 require (
+	github.com/Masterminds/semver/v3 v3.4.0
 	github.com/chromedp/cdproto v0.0.0-20250724212937-08a3db8b4327
 	github.com/chromedp/chromedp v0.14.1
 	github.com/google/uuid v1.6.0
