@@ -6,6 +6,8 @@ import path from 'path';
 import fs from 'fs';
 import promClient from 'prom-client';
 import Jimp from 'jimp';
+import configure from "@jimp/custom";
+import png from "@jimp/png";
 import { Logger } from '../logger';
 import { RenderingConfig } from '../config/rendering';
 import { HTTPHeaders, ImageRenderOptions, RenderOptions } from '../types';
@@ -417,6 +419,22 @@ export class Browser {
           .writeAsync(scaled);
 
         fs.renameSync(scaled, options.filePath);
+      });
+    }
+
+    if (options.greyScaleImage && !isPDF) {
+      await this.performStep('greyScale', options.url, signal, async () => {
+        const jimp = configure({ types: [png] }, Jimp);
+        const greyScaled = `${options.filePath}_${Date.now()}_greyscaled.png`;
+
+        const file = await jimp.read(options.filePath);
+        await file
+          .greyscale()
+          .deflateStrategy(0)
+          .colorType(0)
+          .writeAsync(greyScaled);
+
+        fs.renameSync(greyScaled, options.filePath);
       });
     }
 
