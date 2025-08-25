@@ -24,3 +24,12 @@ func HandleGetVersion(browser *chromium.Browser) http.Handler {
 		_, _ = w.Write([]byte("browser " + version + "\n"))
 	})
 }
+
+// HandleGetRenderVersion returns the service and browser versions.
+func HandleGetRenderVersion() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		response := `{"version": "` + version.SEMVER + `"}`
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(response))
+	})
+}

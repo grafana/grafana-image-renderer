@@ -49,14 +49,17 @@ func NewCmd() *cli.Command {
 func run(ctx context.Context, c *cli.Command) error {
 	metrics := metrics.NewRegistry()
 	browser, err := chromium.NewBrowser(c.String("browser"), c.StringSlice("browser-flags"), chromium.RenderingOptions{
-		Width:           1920,
-		Height:          1080,
-		TimeZone:        "Etc/UTC",
-		PaperSize:       chromium.PaperA4,
-		PrintBackground: true,
-		Timeout:         time.Second * 30,
-		FullHeight:      false,
-		Landscape:       false,
+		Width:              1000,
+		Height:             500,
+		TimeZone:           "Etc/UTC",
+		PaperSize:          chromium.PaperA4,
+		PrintBackground:    true,
+		Timeout:            time.Second * 30,
+		FullHeight:         false,
+		Landscape:          true,
+		Format:             chromium.RenderingFormatPDF,
+		DeviceScaleFactor:  2,
+		TimeBetweenScrolls: time.Millisecond * 50,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to create browser: %w", err)

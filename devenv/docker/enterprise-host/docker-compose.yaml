@@ -1,0 +1,12 @@
+services:
+  grafana:
+    image: grafana/grafana-enterprise:main
+    network_mode: host
+    environment:
+      GF_RENDERING_SERVER_URL: http://localhost:8081/render
+      GF_RENDERING_CALLBACK_URL: http://localhost:3000/
+      GF_LOG_FILTERS: rendering:debug
+
+  prometheus:
+    image: prom/prometheus
+    network_mode: host
