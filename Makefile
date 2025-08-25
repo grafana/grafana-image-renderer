@@ -1,4 +1,4 @@
-.PHONY: all clean deps build clean_package package archive build_package docker-alpine docker-debian
+.PHONY: all clean deps build clean_package package archive build_package docker
 
 ARCH = darwin-x64-unknown
 SKIP_CHROMIUM =
@@ -30,16 +30,5 @@ archive:
 
 build_package: clean clean_package build package archive
 
-docker-alpine:
+docker:
 	docker build -t grafana/grafana-image-renderer:${DOCKER_TAG} .
-
-docker-debian:
-	docker build -t grafana/grafana-image-renderer:${DOCKER_TAG}-debian -f debian.Dockerfile .
-
-# This repository's configuration is protected (https://readme.drone.io/signature/).
-# Use this make target to regenerate the configuration YAML files when
-# you modify starlark files.
-drone:
-	drone starlark --format
-	drone lint .drone.yml --trusted
-	drone --server https://drone.grafana.net sign --save grafana/grafana-image-renderer

@@ -25,6 +25,7 @@ bower_components
 # Editors
 .idea
 *.iml
+.vscode/
 
 # OS metadata
 .DS_Store
@@ -41,3 +42,5 @@ scripts/tmp
 tests/testdata/diff_*
 
 cache
+
+/devenv/docker/tracing/tempo-data/

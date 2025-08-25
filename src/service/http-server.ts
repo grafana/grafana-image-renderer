@@ -1,25 +1,28 @@
-import * as bodyParser from 'body-parser';
+import bodyParser from 'body-parser';
 import * as boom from '@hapi/boom';
-import * as contentDisposition from 'content-disposition';
-import * as express from 'express';
-import * as fs from 'fs';
-import * as http from 'http';
-import * as https from 'https';
-import * as morgan from 'morgan';
-import * as multer from 'multer';
-import * as net from 'net';
-import * as path from 'path';
+import contentDisposition from 'content-disposition';
+import express, { Express, Request, Response, NextFunction } from 'express';
+import fs from 'fs';
+import http from 'http';
+import https from 'https';
+import morgan from 'morgan';
+import multer from 'multer';
+import net from 'net';
+import path from 'path';
 import * as promClient from 'prom-client';
 
 import { Logger } from '../logger';
 import { Browser, createBrowser } from '../browser';
 import { ServiceConfig } from './config';
 import { setupHttpServerMetrics } from './metrics';
+import { setupRateLimiter } from './ratelimiter';
 import { HTTPHeaders, ImageRenderOptions, RenderOptions } from '../types';
 import { Sanitizer } from '../sanitizer/Sanitizer';
 import { isSanitizeRequest } from '../sanitizer/types';
-import { asyncMiddleware, trustedUrlMiddleware, authTokenMiddleware } from './middlewares';
+import { asyncMiddleware, trustedUrlMiddleware, authTokenMiddleware, rateLimiterMiddleware } from './middlewares';
 import { SecureVersion } from 'tls';
+
+import pluginInfo from '../../plugin.json';
 
 const upload = multer({ storage: multer.memoryStorage() });
 
@@ -29,7 +32,7 @@ enum SanitizeRequestPartName {
 }
 
 export class HttpServer {
-  app: express.Express;
+  app: Express;
   browser: Browser;
   server: http.Server;
 
@@ -37,21 +40,22 @@ export class HttpServer {
 
   async start() {
     this.app = express();
+
     this.app.use(
       morgan('combined', {
-        skip: (req, res) => {
+        skip: (_, res) => {
           return res.statusCode >= 400;
         },
         stream: this.log.debugWriter,
-      })
+      } as morgan.Options<Request, Response>)
     );
     this.app.use(
       morgan('combined', {
-        skip: (req, res) => {
+        skip: (_, res) => {
           return res.statusCode < 400;
         },
         stream: this.log.errorWriter,
-      })
+      } as morgan.Options<Request, Response>)
     );
 
     this.app.use(bodyParser.json());
@@ -60,18 +64,22 @@ export class HttpServer {
       setupHttpServerMetrics(this.app, this.config.service.metrics, this.log);
     }
 
-    this.app.get('/', (req: express.Request, res: express.Response) => {
+    this.app.get('/', (_: Request, res: Response) => {
       res.send('Grafana Image Renderer');
     });
 
     // Middlewares for /render endpoints
     this.app.use('/render', authTokenMiddleware(this.config.service.security), trustedUrlMiddleware);
+    const rateLimiterConfig = this.config.service.rateLimiter;
+    if (rateLimiterConfig.enabled) {
+      const rateLimiter = setupRateLimiter(rateLimiterConfig, this.log);
+      this.app.use('/render', rateLimiterMiddleware(rateLimiter));
+    }
 
     // Set up /render endpoints
     this.app.get('/render', asyncMiddleware(this.render));
     this.app.get('/render/csv', asyncMiddleware(this.renderCSV));
-    this.app.get('/render/version', (req: express.Request, res: express.Response) => {
-      const pluginInfo = require('../../plugin.json');
+    this.app.get('/render/version', (_: Request, res: Response) => {
       res.send({ version: pluginInfo.info.version });
     });
 
@@ -88,14 +96,14 @@ export class HttpServer {
       asyncMiddleware(this.sanitize)
     );
 
-    this.app.use((err, req, res, next) => {
+    this.app.use((err: Error | boom.Boom<any>, req: Request, res: Response, _: NextFunction) => {
       if (err.stack) {
         this.log.error('Request failed', 'url', req.url, 'stack', err.stack);
       } else {
         this.log.error('Request failed', 'url', req.url, 'error', err);
       }
 
-      if (err.output) {
+      if (boom.isBoom(err) && err.output) {
         return res.status(err.output.statusCode).json(err.output.payload);
       }
 
@@ -123,6 +131,7 @@ export class HttpServer {
 
       try {
         const browserVersion = await this.browser.getBrowserVersion();
+        this.log.info('Browser version', 'version', browserVersion);
         browserInfo.labels(browserVersion).set(1);
       } catch {
         this.log.error('Failed to get browser version');
@@ -183,12 +192,6 @@ export class HttpServer {
       throw boom.badRequest('Missing url parameter');
     }
 
-    const headers: HTTPHeaders = {};
-
-    if (req.headers['Accept-Language']) {
-      headers['Accept-Language'] = (req.headers['Accept-Language'] as string[]).join(';');
-    }
-
     const options: ImageRenderOptions = {
       url: req.query.url,
       width: req.query.width,
@@ -201,7 +204,7 @@ export class HttpServer {
       encoding: req.query.encoding,
       deviceScaleFactor: req.query.deviceScaleFactor,
       greyScaleImage: req.query.greyScaleImage,
-      headers: headers,
+      headers: this.getHeaders(req),
     };
 
     this.log.debug('Render request received', 'url', options.url);
@@ -277,12 +280,6 @@ export class HttpServer {
       throw boom.badRequest('Missing url parameter');
     }
 
-    const headers: HTTPHeaders = {};
-
-    if (req.headers['Accept-Language']) {
-      headers['Accept-Language'] = (req.headers['Accept-Language'] as string[]).join(';');
-    }
-
     const options: RenderOptions = {
       url: req.query.url,
       filePath: req.query.filePath,
@@ -291,7 +288,7 @@ export class HttpServer {
       domain: req.query.domain,
       timezone: req.query.timezone,
       encoding: req.query.encoding,
-      headers: headers,
+      headers: this.getHeaders(req),
     };
 
     this.log.debug('Render request received', 'url', options.url);
@@ -331,4 +328,20 @@ export class HttpServer {
       return res.status(500).json({ error: e.message });
     }
   };
+
+  getHeaders(req: express.Request<any, any, any, RenderOptions, any>): HTTPHeaders {
+    const headers: HTTPHeaders = {};
+
+    if (req.headers['Accept-Language']) {
+      headers['Accept-Language'] = (req.headers['Accept-Language'] as string[]).join(';');
+    }
+
+    // Propagate traces (only if tracing is enabled)
+    if (this.config.rendering.tracing.url && req.headers['traceparent']) {
+      headers['traceparent'] = req.headers['traceparent'] as string;
+      headers['tracestate'] = (req.headers['tracestate'] as string) ?? '';
+    }
+
+    return headers;
+  }
 }

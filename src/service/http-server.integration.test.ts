@@ -1,14 +1,17 @@
 import * as fs from 'fs';
 import * as jwt from 'jsonwebtoken';
 import * as path from 'path';
-import * as request from 'supertest';
-import * as pixelmatch from 'pixelmatch';
+import request from 'supertest';
+import pixelmatch from 'pixelmatch';
 import * as fastPng from 'fast-png';
+import * as promClient from 'prom-client';
 
 import { HttpServer } from './http-server';
 import { ConsoleLogger } from '../logger';
 import { ServiceConfig } from './config';
 import { createSanitizer } from '../sanitizer/Sanitizer';
+
+import pluginInfo from '../../plugin.json';
 
 const testDashboardUid = 'd10881ec-0d35-4909-8de7-6ab563a9ab29';
 const allPanelsDashboardUid = 'edlopzu6hn4lcd';
@@ -31,10 +34,11 @@ const renderKey = jwt.sign(
 );
 
 const goldenFilesFolder = './tests/testdata';
-const serviceConfig: ServiceConfig = {
+const defaultServiceConfig: ServiceConfig = {
   service: {
     host: undefined,
     port: 8081,
+    protocol: 'http',
     metrics: {
       enabled: false,
       collectDefaultMetrics: true,
@@ -49,6 +53,10 @@ const serviceConfig: ServiceConfig = {
     },
     security: {
       authToken: '-',
+    },
+    rateLimiter: {
+      enabled: false,
+      requestsPerSecond: 5,
     },
   },
   rendering: {
@@ -70,6 +78,10 @@ const serviceConfig: ServiceConfig = {
       timeout: 30,
     },
     timingMetrics: false,
+    tracing: {
+      url: '',
+      serviceName: '',
+    },
     emulateNetworkConditions: false,
     // Set to true to get more logs
     verboseLogging: false, // true,
@@ -85,32 +97,45 @@ const imageDiffThreshold = 0.01 * imageHeight * imageWidth;
 const matchingThreshold = 0.3;
 
 const sanitizer = createSanitizer();
-const server = new HttpServer(serviceConfig, new ConsoleLogger(serviceConfig.service.logging), sanitizer);
+let server;
 
 let domain = 'localhost';
 function getGrafanaEndpoint(domain: string) {
   return `http://${domain}:3000`;
 }
 
-let envSettings = {
+const envSettings = {
   saveDiff: false,
   updateGolden: false,
-}
+};
 
-beforeAll(() => {
-  if (process.env['CI'] === 'true') {
+beforeEach(async () => {
+  return setupTestEnv();
+});
+
+afterEach(() => {
+  return cleanUpTestEnv();
+});
+
+function setupTestEnv(config?: ServiceConfig) {
+  if (process.env['GRAFANA_DOMAIN']) {
+    domain = process.env['GRAFANA_DOMAIN'];
+  } else if (process.env['CI'] === 'true') {
     domain = 'grafana';
   }
-  
-  envSettings.saveDiff = process.env['SAVE_DIFF'] === 'true'
-  envSettings.updateGolden = process.env['UPDATE_GOLDEN'] === 'true'
 
+  envSettings.saveDiff = process.env['SAVE_DIFF'] === 'true';
+  envSettings.updateGolden = process.env['UPDATE_GOLDEN'] === 'true';
+
+  const currentConfig = config ?? defaultServiceConfig;
+  server = new HttpServer(currentConfig, new ConsoleLogger(currentConfig.service.logging), sanitizer);
   return server.start();
-});
+}
 
-afterAll(() => {
+function cleanUpTestEnv() {
+  promClient.register.clear();
   return server.close();
-});
+}
 
 describe('Test /render/version', () => {
   it('should respond with unauthorized', () => {
@@ -118,8 +143,6 @@ describe('Test /render/version', () => {
   });
 
   it('should respond with the current plugin version', () => {
-    const pluginInfo = require('../../plugin.json');
-
     return request(server.app).get('/render/version').set('X-Auth-Token', '-').expect(200, { version: pluginInfo.info.version });
   });
 });
@@ -180,14 +203,11 @@ describe('Test /render', () => {
     expect(pixelDiff).toBeLessThan(imageDiffThreshold);
   });
 
-  
   it('should take a full dashboard screenshot', async () => {
     const url = `${getGrafanaEndpoint(domain)}/d/${allPanelsDashboardUid}?render=1&from=1699333200000&to=1699344000000&kiosk=true`;
     const response = await request(server.app)
       .get(
-        `/render?url=${encodeURIComponent(
-          url
-        )}&timeout=5&renderKey=${renderKey}&domain=${domain}&width=${imageWidth}&height=-1&deviceScaleFactor=1`
+        `/render?url=${encodeURIComponent(url)}&timeout=5&renderKey=${renderKey}&domain=${domain}&width=${imageWidth}&height=-1&deviceScaleFactor=1`
       )
       .set('X-Auth-Token', '-');
 
@@ -196,6 +216,17 @@ describe('Test /render', () => {
 
     const pixelDiff = compareImage('full-page-screenshot', response.body);
     expect(pixelDiff).toBeLessThan(imageDiffThreshold);
+  });
+
+  it('should respond with too many requests', async () => {
+    await cleanUpTestEnv();
+    const config = JSON.parse(JSON.stringify(defaultServiceConfig));
+    config.service.rateLimiter.enabled = true;
+    config.service.rateLimiter.requestsPerSecond = 0;
+    await setupTestEnv(config);
+
+    const response = await request(server.app).get('/render').set('X-Auth-Token', '-');
+    expect(response.statusCode).toEqual(429);
   });
 });
 

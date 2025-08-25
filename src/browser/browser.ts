@@ -1,18 +1,19 @@
-import * as os from 'os';
-import * as uniqueFilename from 'unique-filename';
+import os from 'os';
+import uniqueFilename from 'unique-filename';
 import * as puppeteer from 'puppeteer';
-import * as chokidar from 'chokidar';
-import * as path from 'path';
-import * as fs from 'fs';
-import * as promClient from 'prom-client';
-import * as Jimp from 'jimp';
+import chokidar from 'chokidar';
+import path from 'path';
+import fs from 'fs';
+import promClient from 'prom-client';
+import Jimp from 'jimp';
 import configure from "@jimp/custom";
 import png from "@jimp/png";
 import { Logger } from '../logger';
 import { RenderingConfig } from '../config/rendering';
-import { ImageRenderOptions, RenderOptions } from '../types';
+import { HTTPHeaders, ImageRenderOptions, RenderOptions } from '../types';
 import { StepTimeoutError } from './error';
 import { getPDFOptionsFromURL } from './pdf';
+import { trace, Tracer } from '@opentelemetry/api';
 
 export interface Metrics {
   durationHistogram: promClient.Histogram;
@@ -31,8 +32,13 @@ type DashboardScrollingResult = { scrolled: false } | { scrolled: true; scrollHe
 type PuppeteerLaunchOptions = Parameters<typeof puppeteer['launch']>[0];
 
 export class Browser {
+  tracer: Tracer;
+
   constructor(protected config: RenderingConfig, protected log: Logger, protected metrics: Metrics) {
     this.log.debug('Browser initialized', 'config', this.config);
+    if (config.tracing.url) {
+      this.tracer = trace.getTracer('browser');
+    }
   }
 
   async getBrowserVersion(): Promise<string> {
@@ -60,15 +66,10 @@ export class Browser {
     }
 
     options.headers = options.headers || {};
-    const headers = {};
 
-    if (options.headers['Accept-Language']) {
-      headers['Accept-Language'] = options.headers['Accept-Language'];
-    } else if (this.config.acceptLanguage) {
-      headers['Accept-Language'] = this.config.acceptLanguage;
+    if (!options.headers['Accept-Language'] && this.config.acceptLanguage) {
+      options.headers['Accept-Language'] = this.config.acceptLanguage;
     }
-
-    options.headers = headers;
 
     if (typeof options.timeout === 'string') {
       options.timeout = parseInt(options.timeout as unknown as string, 10);
@@ -169,9 +170,11 @@ export class Browser {
       });
     }
 
-    if (options.headers && Object.keys(options.headers).length > 0) {
-      this.log.debug(`Setting extra HTTP headers for page`, 'headers', options.headers);
-      await page.setExtraHTTPHeaders(options.headers as any);
+    if (options.headers && options.headers['Accept-Language']) {
+      const headers = { 'Accept-Language': options.headers['Accept-Language'] };
+      this.log.debug(`Setting extra HTTP headers for page`, 'headers', headers);
+
+      await page.setExtraHTTPHeaders(headers as any);
     }
 
     // automatically accept "Changes you made may not be saved" dialog which could be triggered by saving migrated dashboard schema
@@ -269,17 +272,17 @@ export class Browser {
     let page: puppeteer.Page | undefined = undefined;
 
     try {
-      browser = await this.withTimingMetrics<puppeteer.Browser>('launch', () => {
+      browser = await this.withMonitoring<puppeteer.Browser>('launch', () => {
         this.validateImageOptions(options);
         const launcherOptions = this.getLauncherOptions(options);
         return puppeteer.launch(launcherOptions);
       });
 
-      page = await this.withTimingMetrics<puppeteer.Page>('newPage', () => {
+      page = await this.withMonitoring<puppeteer.Page>('newPage', () => {
         return browser!.newPage();
       });
 
-      this.addPageListeners(page);
+      await this.addPageListeners(page, options.headers);
 
       return await this.takeScreenshot(page, options, signal);
     } finally {
@@ -383,6 +386,7 @@ export class Browser {
           });
         }
 
+        const timeoutMs = options.timeout * 1000;
         return page.pdf({
           ...getPDFOptionsFromURL(options.url),
           margin: {
@@ -393,6 +397,7 @@ export class Browser {
           },
           path: options.filePath,
           scale: 1 / scale,
+          timeout: timeoutMs,
         });
       }
 
@@ -446,7 +451,7 @@ export class Browser {
       browser = await puppeteer.launch(launcherOptions);
       page = await browser.newPage();
 
-      this.addPageListeners(page);
+      await this.addPageListeners(page, options.headers);
 
       return await this.exportCSV(page, options, signal);
     } finally {
@@ -529,7 +534,7 @@ export class Browser {
     }
 
     try {
-      const res = await this.withTimingMetrics(step, callback);
+      const res = await this.withMonitoring(step, callback);
 
       if (signal.aborted) {
         this.log.warn('Signal aborted while performing step', 'step', step, 'url', url);
@@ -551,23 +556,47 @@ export class Browser {
     }
   }
 
-  async withTimingMetrics<T>(step: string, callback: () => Promise<T>): Promise<T> {
-    if (this.config.timingMetrics) {
-      const endTimer = this.metrics.durationHistogram.startTimer({ step });
-      const res = await callback();
-      endTimer();
-
-      return res;
-    } else {
-      return callback();
+  async withMonitoring<T>(step: string, callback: () => Promise<T>): Promise<T> {
+    // Wrap callback with tracing if enabled (inner layer)
+    if (this.tracer) {
+      const originalCallback = callback;
+      callback = () =>
+        this.tracer.startActiveSpan(step, async (span) => {
+          try {
+            return await originalCallback();
+          } finally {
+            span.end();
+          }
+        });
     }
+
+    // Wrap callback with timing metrics if enabled (outer layer)
+    if (this.config.timingMetrics) {
+      const originalCallback = callback;
+      callback = async () => {
+        const endTimer = this.metrics.durationHistogram.startTimer({ step });
+        try {
+          return await originalCallback();
+        } finally {
+          endTimer();
+        }
+      };
+    }
+
+    return callback();
   }
 
-  addPageListeners(page: puppeteer.Page) {
+  async addPageListeners(page: puppeteer.Page, headers?: HTTPHeaders) {
     page.on('error', this.logError);
     page.on('pageerror', this.logPageError);
     page.on('requestfailed', this.logRequestFailed);
     page.on('console', this.logConsoleMessage);
+
+    if (this.config.tracing.url.trim() !== '') {
+      await page.setRequestInterception(true);
+
+      page.on('request', this.addTracingHeaders(headers));
+    }
 
     if (this.config.verboseLogging) {
       page.on('request', this.logRequest);
@@ -583,13 +612,45 @@ export class Browser {
     page.off('requestfailed', this.logRequestFailed);
     page.off('console', this.logConsoleMessage);
 
+    // page.off('request', ...) does not work so best to remove all listeners for this event
+    page.removeAllListeners('request');
+
     if (this.config.verboseLogging) {
-      page.off('request', this.logRequest);
       page.off('requestfinished', this.logRequestFinished);
       page.off('close', this.logPageClosed);
       page.off('response', this.logRedirectResponse);
     }
   }
+
+  addTracingHeaders = (optionsHeaders?: HTTPHeaders) => {
+    return (req: puppeteer.HTTPRequest) => {
+      if (!optionsHeaders) {
+        req.continue();
+        return;
+      }
+
+      const headers = req.headers();
+      const url = req.url();
+      const method = req.method();
+      const referer = headers['referer'] ?? '';
+
+      try {
+        const urlHostname = new URL(url).hostname;
+        const refererHostname = referer ? new URL(referer).hostname : '';
+        const shouldAddHeaders = req.isNavigationRequest() || urlHostname === refererHostname;
+        this.log.debug('Comparing referer and URL hostnames', 'method', method, 'shouldAddHeaders', shouldAddHeaders, 'url', url, 'referer', referer);
+
+        if (shouldAddHeaders) {
+          headers['traceparent'] = optionsHeaders['traceparent'] ?? '';
+          headers['tracestate'] = optionsHeaders['tracestate'] ?? '';
+        }
+      } catch (error) {
+        this.log.debug('Failed to add tracing headers', 'url', url, 'referer', referer, 'error', error.message);
+      }
+
+      req.continue({ headers });
+    };
+  };
 
   logError = (err: Error) => {
     this.log.error('Browser page crashed', 'error', err.toString());
@@ -614,7 +675,7 @@ export class Browser {
     this.log.debug(`Browser console ${msgType}`, 'msg', msg.text(), 'url', loc.url, 'line', loc.lineNumber, 'column', loc.columnNumber);
   };
 
-  logRequest = (req: any) => {
+  logRequest = (req: puppeteer.HTTPRequest) => {
     this.log.debug('Browser request', 'url', req.url(), 'method', req.method());
   };
 

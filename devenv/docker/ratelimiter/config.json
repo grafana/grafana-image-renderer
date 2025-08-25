@@ -1,0 +1,56 @@
+{
+  "service": {
+    "host": null,
+    "port": 8081,
+
+    "metrics": {
+      "enabled": true,
+      "collectDefaultMetrics": true,
+      "requestDurationBuckets": [1, 5, 7, 9, 11, 13, 15, 20, 30]
+    },
+
+    "logging": {
+      "level": "debug",
+      "console": {
+        "json": true,
+        "colorize": false
+      }
+    },
+
+    "rateLimiter": {
+      "enabled": true,
+      "redisHost": "redis",
+      "redisPort": 6379,
+      "requestsPerSecond": 5
+    }
+  },
+  "rendering": {
+    "chromeBin": null,
+    "args": [
+      "--no-sandbox",
+      "--disable-setuid-sandbox",
+      "--disable-gpu",
+      "--use-gl=swiftshader"
+    ],
+    "ignoresHttpsErrors": false,
+
+    "timezone": null,
+    "acceptLanguage": null,
+    "width": 1000,
+    "height": 500,
+    "deviceScaleFactor": 1,
+    "maxWidth": 3080,
+    "maxHeight": 3000,
+    "maxDeviceScaleFactor": 4,
+
+    "mode": "clustered",
+    "clustering": {
+      "mode": "context",
+      "maxConcurrency": 5,
+      "timeout": 30
+    },
+
+    "verboseLogging": false,
+    "dumpio": false
+  }
+}

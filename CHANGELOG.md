@@ -1,3 +1,95 @@
+## 4.0.10 (2025-07-31)
+
+- Docker: Update Chromium (CVE-2025-8292), [#695](https://github.com/grafana/grafana-image-renderer/pull/695), [macabu](https://github.com/macabu)
+- Tests: Add Docker image test suite, [#693](https://github.com/grafana/grafana-image-renderer/pull/693), [Proximyst](https://github.com/Proximyst)
+- Docker: Inherit permissions from user, [#697](https://github.com/grafana/grafana-image-renderer/pull/697), [Proximyst](https://github.com/Proximyst)
+  - This fixes #694, which applies to RedHat OpenShift users. It was reported by [@mcapala](https://github.com/mcapala). Thanks!
+
+## 4.0.9 (2025-07-28)
+
+- Docker: Use numeric UID, [#686](https://github.com/grafana/grafana-image-renderer/issues/686), [Proximyst](https://github.com/Proximyst)
+  - This fixes #686, which is useful for some Kubernetes users. It was reported by [@mhulscher](https://github.com/mhulscher). Thanks!
+  - The bug only manifests if you use `securityContext.runAsNonRoot` in your `Deployment`.
+
+## 4.0.8 (2025-07-28)
+
+- Docker: Include libnss3-tools, [#685](https://github.com/grafana/grafana-image-renderer/pull/685), [Proximyst](https://github.com/Proximyst), [roock](https://github.com/roock)
+  - This fixes #676 for edge-cases, reported by [@roock](https://github.com/roock).
+  - Thanks to [@roock](https://github.com/roock) for this fix.
+
+## 4.0.7 (2025-07-25)
+
+- Docker: Install locales and use en_US.UTF-8 to save non-ASCII files, [#683](https://github.com/grafana/grafana-image-renderer/pull/683), [macabu](https://github.com/macabu)
+  - This fixes #680
+
+## 4.0.6 (2025-07-24)
+
+- Docker: Update Chromium (CVE-2025-8010, CVE-2025-8011), [#682](https://github.com/grafana/grafana-image-renderer/pull/682), [macabu](https://github.com/macabu)
+
+## 4.0.5 (2025-07-23)
+
+- Docker: Use tini, [#678](https://github.com/grafana/grafana-image-renderer/pull/678), [Proximyst](https://github.com/Proximyst)
+  - This fixes #677, reported by [@mbentley](https://github.com/mbentley). Thanks!
+- Docker: Include ca-certificates package, [#679](https://github.com/grafana/grafana-image-renderer/pull/679), [Proximyst](https://github.com/Proximyst)
+  - This fixes #676, reported by [@roock](https://github.com/roock). Thanks!
+
+## 4.0.1, 4.0.2, 4.0.3 & 4.0.4 (2025-07-22)
+
+This release only touches the build process of the plugin, as v4.0.0, .1, .2, and .3 did not release on the plugin catalog.
+There is no difference from v4.0.0 for Docker users.
+
+## 4.0.0 (2025-07-22)
+
+- Build: Update all dependencies, [#663](https://github.com/grafana/grafana-image-renderer/pull/663), [Proximyst](https://github.com/Proximyst)
+- Docker: Update Chromium (CVE-2025-6558, CVE-2025-7656, CVE-2025-7657), [#667](https://github.com/grafana/grafana-image-renderer/pull/667), [Proximyst](https://github.com/Proximyst)
+
+Breaking changes:
+
+- Build: Bump minimum Node.js version from v20 to v22 (LTS), [#663](https://github.com/grafana/grafana-image-renderer/pull/663), [Proximyst](https://github.com/Proximyst)
+  - If you use the Docker image, you will not have to update anything.
+  - If you run grafana-image-renderer yourself, you may need to update Node.js.
+- Plugin: Update minimum Grafana version to 11.3.8, [#663](https://github.com/grafana/grafana-image-renderer/pull/663), [Proximyst](https://github.com/Proximyst)
+  - If you use any Grafana version newer than 11.3.8 (incl. 11.4.x, 11.5.x, 11.6.x, 12.x), you will not have to do anything.
+  - If you are not in that group, you must update Grafana before updating.
+- Docker: Move to distroless Debian, [#661](https://github.com/grafana/grafana-image-renderer/pull/661), [Proximyst](https://github.com/Proximyst)
+  - In practice, this SHOULD come with no changes for most users.
+  - If you are building a new Docker image on top of us, you will have to adapt to distroless Debian instead of Alpine.
+
+## 3.12.9 (2025-07-01)
+
+- Docker: Update Chromium in Alpine (CVE-2025-6554), [#655](https://github.com/grafana/grafana-image-renderer/pull/655), [Proximyst](https://github.com/Proximyst)
+
+## 3.12.8 (2025-06-25)
+
+- Chore: Update base Docker image to latest (CVE-2025-6191, CVE-2025-6192), [#654](https://github.com/grafana/grafana-image-renderer/pull/654), [Proximyst](https://github.com/Proximyst)
+
+## 3.12.7 (2025-06-19)
+
+- Chore: Update base Docker image to latest (CVE-2025-5959), [#647](https://github.com/grafana/grafana-image-renderer/pull/647), [#648](https://github.com/grafana/grafana-image-renderer/pull/648), [macabu](https://github.com/macabu), [Proximyst](https://github.com/Proximyst)
+- Tracing: Add debug logs when verbose logging is enabled [#644](https://github.com/grafana/grafana-image-renderer/pull/644), [AgnesToulet](https://github.com/AgnesToulet)
+
+## 3.12.6 (2025-05-23)
+
+- Chore: Upgrade multer 2.0.0 [#642](https://github.com/grafana/grafana-image-renderer/pull/642), [evictorero](https://github.com/evictorero)
+- Tracing: Fix tracing headers causing CORS issue [#640](https://github.com/grafana/grafana-image-renderer/pull/640), [AgnesToulet](https://github.com/AgnesToulet)
+- Tracing: improve logs [#639](https://github.com/grafana/grafana-image-renderer/pull/639), [AgnesToulet](https://github.com/AgnesToulet)
+- Image Render: Support tracing [#612](https://github.com/grafana/grafana-image-renderer/pull/612), [lucychen-grafana](https://github.com/lucychen-grafana)
+- CI: Fix Docker secrets [#636](https://github.com/grafana/grafana-image-renderer/pull/636), [AgnesToulet](https://github.com/AgnesToulet)
+- Server: Add rate limiter [#627](https://github.com/grafana/grafana-image-renderer/pull/627), [AgnesToulet](https://github.com/AgnesToulet)
+- Bump formidable from 3.5.2 to 3.5.4 [#634](https://github.com/grafana/grafana-image-renderer/pull/634), [dependabot[bot]](https://github.com/apps/dependabot)
+- CI: improve workflow security [#635](https://github.com/grafana/grafana-image-renderer/pull/635), [AgnesToulet](https://github.com/AgnesToulet)
+
+## 3.12.5 (2025-04-22)
+
+- PDF: Use sent timeout [#628](https://github.com/grafana/grafana-image-renderer/pull/628), [AgnesToulet](https://github.com/AgnesToulet)
+- Docker: Remove unused NPM files [#625](https://github.com/grafana/grafana-image-renderer/pull/625), [AgnesToulet](https://github.com/AgnesToulet)
+- Docker: Add chromium-swiftshader to support webGL [#623](https://github.com/grafana/grafana-image-renderer/pull/623), [AgnesToulet](https://github.com/AgnesToulet)
+
+## 3.12.4 (2025-03-27)
+
+- Chore: Update dompurify to fix CVE [#614](https://github.com/grafana/grafana-image-renderer/pull/614), [lucychen-grafana](https://github.com/lucychen-grafana)
+- Chore: Downgrade to Node 20 [#619](https://github.com/grafana/grafana-image-renderer/pull/619), [evictorero](https://github.com/evictorero)
+
 ## 3.12.3 (2025-03-12)
 
 - 3.12.2 does not work due to Image Render: Support Tracing [#586](https://github.com/grafana/grafana-image-renderer/pull/586). Revert "Image Render: Support Tracing (#586)" [#609](https://github.com/grafana/grafana-image-renderer/pull/609), [lucychen-grafana](https://github.com/lucychen-grafana)

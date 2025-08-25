@@ -1,0 +1,47 @@
+name: Docker Tests
+
+on:
+  push:
+    branches:
+      - master
+    tags:
+      - 'v*'
+  pull_request:
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  bats:
+    strategy:
+      fail-fast: false
+      matrix:
+        file: [Dockerfile, go.Dockerfile]
+        # TODO: Use self-hosted runners when available.
+        runs-on: [github-hosted-ubuntu-arm64-large, github-hosted-ubuntu-x64-large]
+
+    name: bats (${{ matrix.runs-on }}, ${{ matrix.file }})
+    runs-on: ${{ matrix.runs-on }}
+    permissions:
+      contents: read # clone the repository
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: bats-core/bats-action@42fcc8700f773c075a16a90eb11674c0318ad507 # 3.0.1
+
+      - name: docker build
+        env:
+          DOCKER_BUILDKIT: 1
+          BUILDKIT_STEP_LOG_MAX_SIZE: -1
+          BUILDKIT_STEP_LOG_MAX_SPEED: -1
+          FILE: ${{ matrix.file }}
+        run: docker build . -t image-renderer -f "$FILE"
+      - name: bats
+        working-directory: tests/bats
+        run: ./test.sh image-renderer
+        env:
+          TERM: linux

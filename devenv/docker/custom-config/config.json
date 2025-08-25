@@ -20,7 +20,10 @@
   "rendering": {
     "chromeBin": null,
     "args": [
-      "--no-sandbox"
+      "--no-sandbox",
+      "--disable-setuid-sandbox",
+      "--disable-gpu",
+      "--use-gl=swiftshader"
     ],
     "ignoresHttpsErrors": false,
 
@@ -41,6 +44,11 @@
     },
 
     "verboseLogging": false,
-    "dumpio": false
+    "dumpio": false,
+
+    "tracing": {
+      "url": "",
+      "serviceName": ""
+    }
   }
 }

@@ -1,12 +1,12 @@
-import * as promBundle from 'express-prom-bundle';
+import promBundle from 'express-prom-bundle';
 import * as promClient from 'prom-client';
-import * as onFinished from 'on-finished';
-import express = require('express');
+import onFinished from 'on-finished';
+import { Express } from 'express';
 
 import { MetricsConfig } from './config';
 import { Logger } from '../logger';
 
-export const setupHttpServerMetrics = (app: express.Express, config: MetricsConfig, log: Logger) => {
+export const setupHttpServerMetrics = (app: Express, config: MetricsConfig, log: Logger) => {
   log.info(
     'Metrics enabled',
     'collectDefaultMetrics',
@@ -20,26 +20,28 @@ export const setupHttpServerMetrics = (app: express.Express, config: MetricsConf
   //   - /render/version
   const excludeRegExp = /^(((?!(render)).)*|.*version.*)$/;
 
-  const opts = {
+  const opts: promBundle.Opts = {
     httpDurationMetricName: 'grafana_image_renderer_service_http_request_duration_seconds',
     metricType: 'histogram',
     buckets: config.requestDurationBuckets,
     excludeRoutes: [excludeRegExp],
     promClient: {},
     formatStatusCode: (res) => {
-      if (res && res.req && res.req.aborted) {
+      if (res && res.req && res.destroyed) {
         // Nginx non-standard code 499 Client Closed Request
         // Used when the client has closed the request before
         // the server could send a response.
         return 499;
       }
 
-      return res.status_code || res.statusCode;
+      return res.statusCode;
     },
-  } as any;
+  };
 
   if (config.collectDefaultMetrics) {
-    opts.promClient.collectDefaultMetrics = {};
+    opts.promClient = {
+      collectDefaultMetrics: {},
+    };
   }
 
   const metricsMiddleware = promBundle(opts);

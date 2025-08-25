@@ -1,0 +1,138 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: image-renderer
+  namespace: grafana
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: image-renderer
+  replicas: 1 # production? use an HPA!
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: image-renderer
+    spec:
+      containers:
+        - name: image-renderer
+          image: docker.io/grafana/grafana-image-renderer:latest # dev? docker save local-image/here | sudo k3s ctr images import -
+          # dev? you might want env LOG_LEVEL=debug
+          ports:
+            - containerPort: 8081
+              name: http
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: image-renderer
+  namespace: grafana
+spec:
+  selector:
+    app.kubernetes.io/name: image-renderer
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: http
+
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: image-renderer
+  namespace: grafana
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - kind: Rule
+      match: Host(`image-renderer.k3s.localhost`)
+      services:
+        - kind: Service
+          name: image-renderer
+          namespace: grafana
+          port: http
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana
+  namespace: grafana
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: grafana
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: grafana
+    spec:
+      volumes:
+        - name: grafana-data
+          persistentVolumeClaim:
+            claimName: grafana-data
+      containers:
+        - name: grafana
+          image: docker.io/grafana/grafana-enterprise:latest
+          ports:
+            - containerPort: 3000
+              name: http
+          env: # production? set this up properly with the docs applicable to the version you use!
+            - name: GF_RENDERING_SERVER_URL
+              value: http://image-renderer.grafana.svc.cluster.local.:8081/render
+            - name: GF_RENDERING_CALLBACK_URL
+              value: http://grafana.grafana.svc.cluster.local.:3000/
+          volumeMounts:
+            - name: grafana-data
+              mountPath: /var/lib/grafana
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: grafana-data
+  namespace: grafana
+spec:
+  storageClassName: local-path # production? use a proper storage class
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana
+  namespace: grafana
+spec:
+  selector:
+    app.kubernetes.io/name: grafana
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: http
+
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: grafana
+  namespace: grafana
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - kind: Rule
+      match: Host(`grafana.k3s.localhost`)
+      services:
+        - kind: Service
+          name: grafana
+          namespace: grafana
+          port: http

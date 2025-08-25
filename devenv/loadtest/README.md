@@ -4,7 +4,8 @@ Runs load tests and checks using [k6](https://k6.io/).
 
 ## Prerequisites
 
-Docker
+- Docker
+- Grafana instance running (you can use the environment in `devenv/docker/simple`)
 
 ## Run
 
@@ -20,11 +21,6 @@ Run load test for custom duration:
 $ ./run.sh -d 10s
 ```
 
-Run only 1 iteration of the load test (useful for testing):
-
-```bash
-$ ./run.sh -i 1
-
 Run load test for custom target url:
 
 ```bash
@@ -35,6 +31,18 @@ Run load test for 10 virtual users:
 
 ```bash
 $ ./run.sh -v 10
+```
+
+Run only 1 iteration of the load test (useful for testing), note that the number of iterations can't be less than the number of virtual users:
+
+```bash
+$ ./run.sh -i 1 -v 1
+```
+
+Run load test using a service account token instead of default username/password:
+
+```bash
+$ ./run.sh -a glsa_xxxx
 ```
 
 Example output:

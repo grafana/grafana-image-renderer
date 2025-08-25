@@ -8,6 +8,8 @@ A Grafana backend plugin that handles rendering panels and dashboards to PNGs us
 - Windows (x64)
 - Mac OS X (x64)
 
+For Mac ARM64, you need to [build the plugin from source](https://github.com/grafana/grafana-image-renderer/blob/master/docs/building_from_source.md) or use the [remote rendering installation](https://github.com/grafana/grafana-image-renderer?tab=readme-ov-file#remote-rendering-service-installation).
+
 ### Dependencies
 
 This plugin is packaged in a single executable with [Node.js](https://nodejs.org/) runtime and [Chromium browser](https://www.chromium.org/Home).
@@ -24,92 +26,69 @@ We recommend a minimum of 16GB of free memory on the system rendering images.
 
 Rendering multiple images in parallel requires an even bigger memory footprint. You can use the remote rendering service in order to render images on a remote system, so your local system resources are not affected.
 
-## Plugin installation
+## Installation
 
-You can install the plugin using Grafana CLI (recommended way) or with Grafana Docker image.
+We offer two installation methods: as a plugin and as a remote service. We always recommend using the remote service if possible, as this is how we deploy the service in Grafana Cloud, and thus gets the most attention in bug handling.
 
-### Grafana CLI (recommended)
+**I deploy Grafana in Docker/Kubernetes/...:** Use the Docker image.
 
-```bash
-grafana-cli plugins install grafana-image-renderer
+**I deploy Grafana as a user/in systemd/...:**
+
+  * Prefer the Docker image with `--networking=host` passed to the Docker container.
+  * If that is not fitting, prefer the standalone server.
+  * If that is not fitting, use the plugin.
+
+### Docker image (recommended)
+
+If you want to run the service as a Docker container, use the Docker image we publish [to DockerHub][image].
+
+With `docker run`:
+
+```shell
+$ docker network create grafana
+$ docker run --network grafana --name renderer --rm --detach grafana/grafana-image-renderer:latest
+# The following is not a production-ready Grafana instance, but shows what env vars you should set:
+$ docker run --network grafana --name grafana --rm --detach --env GF_RENDERING_SERVER_URL=http://renderer:8081/render --env http://grafana:3000/ --port 3000:3000 grafana/grafana-enterprise:latest
 ```
 
-### Grafana Docker image
+With `docker compose`:
 
-This plugin is not compatible with the current Grafana Docker image and requires additional system-level dependencies. We recommend setting up another Docker container for rendering and using remote rendering instead. For instruction, refer to [Run in Docker](#run-in-docker).
+```yaml
+services:
+  renderer:
+    image: grafana/grafana-image-renderer:latest
 
-If you still want to install the plugin with the Grafana Docker image, refer to the instructions on building a custom Grafana image in [Grafana Docker documentation](https://grafana.com/docs/grafana/latest/setup-grafana/configure-docker/#build-a-custom-grafana-docker-image).
+  grafana:
+    image: grafana/grafana-enterprise:latest
+    ports:
+      - '3000:3000'
+    environment:
+      GF_RENDERING_SERVER_URL: http://renderer:8081/render
+      GF_RENDERING_CALLBACK_URL: http://grafana:3000/
+```
 
-## Remote rendering service installation
+With Kubernetes, see our [k3s setup](./devenv/k3s/grafana.yaml).
 
-> **Note:** Requires an internet connection.
-
-You can run this plugin as a remote HTTP rendering service. In this setup, Grafana renders an image by making an HTTP request to the remote rendering service, which in turn renders the image and returns it back in the HTTP response to Grafana.
-
-You can run the remote HTTP rendering service using Docker or as a standalone Node.js application.
-
-### Run in Docker
-
-Grafana Docker images are published at [Docker Hub](https://hub.docker.com/r/grafana/grafana-image-renderer).
-
-The following example shows how you can run Grafana and the remote HTTP rendering service in two separate Docker containers using Docker Compose.
-
-1. Create a `docker-compose.yml` with the following content:
-
-   ```yaml
-   version: '2'
-
-   services:
-     grafana:
-       image: grafana/grafana:latest
-       ports:
-         - '3000:3000'
-       environment:
-         GF_RENDERING_SERVER_URL: http://renderer:8081/render
-         GF_RENDERING_CALLBACK_URL: http://grafana:3000/
-         GF_LOG_FILTERS: rendering:debug
-     renderer:
-       image: grafana/grafana-image-renderer:latest
-       ports:
-         - 8081
-   ```
-
-1. Next, run docker compose.
-
-   ```bash
-   docker-compose up
-   ```
+[image]: https://hub.docker.com/r/grafana/grafana-image-renderer
 
 ### Run as standalone Node.js application
 
 The following example describes how to build and run the remote HTTP rendering service as a standalone Node.js application and configure Grafana appropriately.
 
 1. Clone the [Grafana image renderer plugin](https://github.com/grafana/grafana-image-renderer/) Git repository.
-1. Install dependencies and build:
+2. Install dependencies and build:
 
    ```bash
    yarn install --pure-lockfile
    yarn run build
    ```
 
-1. Run the server:
-   - Using default configuration 
+3. Run the server:
+   - Using default configuration: `node build/app.js server`
+   - Using custom [configuration](https://grafana.com/docs/grafana/latest/image-rendering/#configuration): `node build/app.js server --config=dev.json`
+   - Using environment variables: `HTTP_PORT=8085 LOG_LEVEL=debug node build/app.js server`
 
-      ```bash
-      node build/app.js server
-      ```
-   - Using custom [configuration](https://grafana.com/docs/grafana/latest/image-rendering/#configuration)
-
-      ```bash
-      node build/app.js server --config=dev.json
-      ```   
-   - Using environment variables
-
-      ```bash
-      HTTP_PORT=8085 LOG_LEVEL=debug node build/app.js server
-      ```   
-
-1. Update Grafana configuration:
+4. Update Grafana configuration:
 
    ```
    [rendering]
@@ -118,6 +97,18 @@ The following example describes how to build and run the remote HTTP rendering s
    ```
 
 1. Restart Grafana.
+
+### Plugin: Grafana CLI
+
+You can install the plugin with Grafana CLI:
+
+```shell
+$ grafana cli plugins install grafana-image-renderer
+# alternatively, if you want to install a specific version:
+$ grafana cli plugins install grafana-image-renderer $VERSION
+```
+
+Please run this as the same user that Grafana runs as, otherwise the plugin may not work!
 
 ## Security
 
@@ -133,44 +124,3 @@ For available configuration settings, please refer to [Grafana Image Rendering d
 
 For troubleshooting help, refer to
 [Grafana Image Rendering troubleshooting documentation](https://grafana.com/docs/grafana/latest/image-rendering/troubleshooting/).
-
-## Testing
-
-In order to run the image-renderer automated test suites, you need to run the following command from the root folder:
-
-```
-yarn test
-```
-
-This will launch a Grafana instance in Docker and, then, run the test suites.
-
-_Notes:_
-
-If there are some expected changes in the reference image files (located in `/tests/testdata`), run `yarn test-update` and push the updated references.
-
-If the tests are failing and you want to see the difference between the image you get and the reference image, run `yarn test-diff`. This will generate images (called `diff_<test case>.png`) containing the differences in the `/tests/testdata` folder.
-
-### Fixing Drone issues
-
-If tests are successful in your local environement but fail in Drone. You can follow these steps to run the tests in an environment similar to the Drone pipeline. This will mount your local files of the `grafana-image-renderer` repo in the Docker image so any change that happens in the Docker image will be available in your local environment. This allows you to run `yarn test-diff` and `yarn test-update` in Docker and see the results locally. 
-
-1. Run the Drone environment in Docker:
-
-```
-cd ./devenv/docker/drone
-docker-compose up
-```
-
-2. Open a terminal within the `drone-docker-puppeteer` container and run the following commands:
-
-```
-cd /drone/src
-PUPPETEER_CACHE_DIR=/drone/src/cache yarn install --frozen-lockfile --no-progress
-PUPPETEER_CACHE_DIR=/drone/src/cache CI=true yarn test-ci
-```
-
-_Notes:_
-The tests might take longer in the Docker container. If you run into timeout issues, you can run the test command with the `--testTimeout option`:
-```
-PUPPETEER_CACHE_DIR=/drone/src/cache CI=true yarn test-ci --testTimeout=10000
-```

@@ -79,7 +79,7 @@ export class ClusteredBrowser extends Browser {
       }
 
       try {
-        this.addPageListeners(page);
+        await this.addPageListeners(page, options.headers);
         switch (renderType) {
           case RenderType.CSV:
             return await this.exportCSV(page, options, signal);

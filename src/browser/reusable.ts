@@ -21,7 +21,7 @@ export class ReusableBrowser extends Browser {
     let page: puppeteer.Page | undefined;
 
     try {
-      page = await this.withTimingMetrics<puppeteer.Page>('newPage', async () => {
+      page = await this.withMonitoring<puppeteer.Page>('newPage', async () => {
         this.validateImageOptions(options);
         context = await this.browser.createBrowserContext();
         return context.newPage();
@@ -32,7 +32,7 @@ export class ReusableBrowser extends Browser {
         await page.emulateTimezone(options.timezone);
       }
 
-      this.addPageListeners(page);
+      await this.addPageListeners(page, options.headers);
 
       return await this.takeScreenshot(page, options, signal);
     } finally {
@@ -60,7 +60,7 @@ export class ReusableBrowser extends Browser {
         await page.emulateTimezone(options.timezone);
       }
 
-      this.addPageListeners(page);
+      await this.addPageListeners(page, options.headers);
 
       return await this.exportCSV(page, options, signal);
     } finally {
