@@ -2,6 +2,8 @@ package version
 
 import "runtime/debug"
 
+const SEMVER = "5.0.0" // TODO: Define this on build-time from the Git tag instead.
+
 // ServiceVersion returns the service's version data. It is complete only if `-buildvcs` is passed to the Go build command.
 func ServiceVersion() string {
 	var (
