@@ -58,6 +58,7 @@ RUN fc-cache -fr
 RUN update-ca-certificates --fresh
 USER nonroot
 
+ENV CHROME_BIN="/usr/bin/chromium"
 ENV LANG=en_US.UTF-8
 ENV LC_ALL=en_US.UTF-8
 
@@ -69,3 +70,5 @@ EXPOSE 8081
 
 ENTRYPOINT ["tini", "--", "/usr/bin/grafana-image-renderer"]
 CMD ["server"]
+HEALTHCHECK --interval=10s --retries=3 --timeout=3s \
+    CMD ["/usr/bin/grafana-image-renderer", "healthcheck"]
