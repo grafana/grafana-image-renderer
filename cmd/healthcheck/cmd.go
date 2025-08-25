@@ -46,7 +46,10 @@ func run(ctx context.Context, c *cli.Command) error {
 	if err != nil {
 		return fmt.Errorf("failed to perform health check request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		// We don't care about the body, so we can ignore closing errors, too.
+		_ = resp.Body.Close()
+	}()
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		return fmt.Errorf("health check request returned non-2xx status code: %d", resp.StatusCode)
