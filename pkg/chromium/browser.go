@@ -158,7 +158,11 @@ func (b *Browser) createAllocatorOptions(renderingOptions RenderingOptions) ([]c
 func printPDF(requestOptions RenderingOptions, dst chan []byte) chromedp.Action {
 	return chromedp.ActionFunc(func(ctx context.Context) error {
 		// We don't need the stream return value; we don't ask for a stream.
-		width, height := requestOptions.PaperSize.FormatInches()
+		width, height, err := requestOptions.PaperSize.FormatInches()
+		if err != nil {
+			return fmt.Errorf("failed to get paper size dimensions: %w", err)
+		}
+
 		output, _, err := page.PrintToPDF().
 			WithPrintBackground(requestOptions.PrintBackground).
 			WithLandscape(requestOptions.Landscape).

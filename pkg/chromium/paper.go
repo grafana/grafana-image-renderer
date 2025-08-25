@@ -55,31 +55,31 @@ func (p *PaperSize) UnmarshalJSON(data []byte) error {
 
 // FormatInches returns the dimensions of the paper size in inches.
 // If the paper size is unknown, (-1, -1) is returned.
-func (p PaperSize) FormatInches() (width float64, height float64) {
+func (p PaperSize) FormatInches() (width float64, height float64, err error) {
 	switch p {
 	case PaperLetter:
-		return 8.5, 11
+		return 8.5, 11, nil
 	case PaperLegal:
-		return 8.5, 14
+		return 8.5, 14, nil
 	case PaperTabloid:
-		return 11, 17
+		return 11, 17, nil
 	case PaperLedger:
-		return 17, 11
+		return 17, 11, nil
 	case PaperA0:
-		return 33.1102, 46.811
+		return 33.1102, 46.811, nil
 	case PaperA1:
-		return 23.3858, 33.1102
+		return 23.3858, 33.1102, nil
 	case PaperA2:
-		return 16.5354, 23.3858
+		return 16.5354, 23.3858, nil
 	case PaperA3:
-		return 11.6929, 16.5354
+		return 11.6929, 16.5354, nil
 	case PaperA4:
-		return 8.2677, 11.6929
+		return 8.2677, 11.6929, nil
 	case PaperA5:
-		return 5.8268, 8.2677
+		return 5.8268, 8.2677, nil
 	case PaperA6:
-		return 4.1339, 5.8268
+		return 4.1339, 5.8268, nil
 	default:
-		return -1, -1
+		return -1, -1, fmt.Errorf("unknown paper size: %q", p)
 	}
 }
