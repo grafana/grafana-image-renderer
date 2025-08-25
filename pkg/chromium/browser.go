@@ -96,7 +96,7 @@ func (r *RenderingOptions) SetHeader(key, value string) {
 
 func (r *RenderingOptions) Normalise(prototype RenderingOptions) error {
 	if strings.HasPrefix(r.URL, "socket://") {
-		return fmt.Errorf("Image rendering in socket mode is not supported")
+		return fmt.Errorf("image rendering in socket mode is not supported")
 	}
 
 	if r.Timeout <= 0 {
