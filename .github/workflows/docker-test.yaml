@@ -19,10 +19,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        file: [Dockerfile, go.Dockerfile]
         # TODO: Use self-hosted runners when available.
         runs-on: [github-hosted-ubuntu-arm64-large, github-hosted-ubuntu-x64-large]
 
-    name: bats (${{ matrix.runs-on }})
+    name: bats (${{ matrix.runs-on }}, ${{ matrix.file }})
     runs-on: ${{ matrix.runs-on }}
     permissions:
       contents: read # clone the repository
@@ -37,7 +38,8 @@ jobs:
           DOCKER_BUILDKIT: 1
           BUILDKIT_STEP_LOG_MAX_SIZE: -1
           BUILDKIT_STEP_LOG_MAX_SPEED: -1
-        run: docker build . -t image-renderer
+          FILE: ${{ matrix.file }}
+        run: docker build . -t image-renderer -f "$FILE"
       - name: bats
         working-directory: tests/bats
         run: ./test.sh image-renderer
