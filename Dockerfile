@@ -9,12 +9,12 @@ RUN echo 'cachebuster 2025-08-04' && apt-get update
 
 FROM debian-updated AS debs
 
-RUN apt-get install -y wget
-RUN wget --remote-name -q https://storage.googleapis.com/mariellhoversholm-grafanalabs-dev/debian/chromium_139.0.7258.138-1~deb12u1_arm64.deb && \
-    wget --remote-name -q https://storage.googleapis.com/mariellhoversholm-grafanalabs-dev/debian/chromium-sandbox_139.0.7258.138-1~deb12u1_arm64.deb && \
-    wget --remote-name -q https://storage.googleapis.com/mariellhoversholm-grafanalabs-dev/debian/chromium-driver_139.0.7258.138-1~deb12u1_arm64.deb && \
-    wget --remote-name -q https://storage.googleapis.com/mariellhoversholm-grafanalabs-dev/debian/chromium-common_139.0.7258.138-1~deb12u1_arm64.deb && \
-    wget --remote-name -q https://storage.googleapis.com/mariellhoversholm-grafanalabs-dev/debian/chromium-shell_139.0.7258.138-1~deb12u1_arm64.deb
+RUN apt-get install -y curl
+RUN curl -OsSLf https://storage.googleapis.com/mariellhoversholm-grafanalabs-dev/debian/chromium_139.0.7258.138-1~deb12u1_arm64.deb && \
+    curl -OsSLf https://storage.googleapis.com/mariellhoversholm-grafanalabs-dev/debian/chromium-sandbox_139.0.7258.138-1~deb12u1_arm64.deb && \
+    curl -OsSLf https://storage.googleapis.com/mariellhoversholm-grafanalabs-dev/debian/chromium-driver_139.0.7258.138-1~deb12u1_arm64.deb && \
+    curl -OsSLf https://storage.googleapis.com/mariellhoversholm-grafanalabs-dev/debian/chromium-common_139.0.7258.138-1~deb12u1_arm64.deb && \
+    curl -OsSLf https://storage.googleapis.com/mariellhoversholm-grafanalabs-dev/debian/chromium-shell_139.0.7258.138-1~deb12u1_arm64.deb
 
 RUN apt-cache depends ./*.deb font-gothic fonts-wqy-zenhei fonts-thai-tlwg fonts-khmeros fonts-kacst fonts-freefont-ttf libxss1 unifont fonts-open-sans fonts-roboto fonts-inter bash busybox util-linux openssl tini ca-certificates locales libnss3-tools \
     --recurse --no-recommends --no-suggests --no-conflicts --no-breaks --no-replaces --no-enhances --no-pre-depends | grep '^\w' | xargs apt-get download
