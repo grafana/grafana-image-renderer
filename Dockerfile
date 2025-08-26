@@ -9,6 +9,7 @@ RUN echo 'cachebuster 2025-08-04' && apt-get update
 
 FROM debian-updated AS debs
 
+RUN apt-get install -y wget
 RUN wget --remote-name -q https://storage.googleapis.com/mariellhoversholm-grafanalabs-dev/debian/chromium_139.0.7258.138-1~deb12u1_arm64.deb && \
     wget --remote-name -q https://storage.googleapis.com/mariellhoversholm-grafanalabs-dev/debian/chromium-sandbox_139.0.7258.138-1~deb12u1_arm64.deb && \
     wget --remote-name -q https://storage.googleapis.com/mariellhoversholm-grafanalabs-dev/debian/chromium-driver_139.0.7258.138-1~deb12u1_arm64.deb && \
