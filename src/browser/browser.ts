@@ -321,9 +321,9 @@ export class Browser {
       await this.setTimezone(page, options);
 
       if (this.config.verboseLogging) {
-        this.log.debug('Moving mouse on page', 'x', options.width, 'y', options.height);
+        this.log.debug('Moving mouse on page', 'x', -1, 'y', -1);
       }
-      return page.mouse.move(+options.width, +options.height);
+      return page.mouse.move(-1, -1);
     });
 
     await this.performStep('navigate', options.url, signal, async () => {
