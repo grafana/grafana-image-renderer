@@ -8,6 +8,7 @@ import (
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/grafana/grafana-image-renderer/pkg/api"
+	"github.com/grafana/grafana-image-renderer/pkg/service"
 	"github.com/stretchr/testify/require"
 )
 
@@ -18,7 +19,7 @@ func TestGetRenderVersion(t *testing.T) {
 		t.Parallel()
 
 		rec := httptest.NewRecorder()
-		handler := api.HandleGetRenderVersion()
+		handler := api.HandleGetRenderVersion(service.NewVersionService())
 		req := httptest.NewRequestWithContext(t.Context(), "GET", "/render/version", nil)
 		handler.ServeHTTP(rec, req)
 

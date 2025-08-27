@@ -6,7 +6,13 @@ services:
       GF_RENDERING_SERVER_URL: http://localhost:8081/render
       GF_RENDERING_CALLBACK_URL: http://localhost:3000/
       GF_LOG_FILTERS: rendering:debug
+      GF_FEATURE_TOGGLES_ENABLE: sharingDashboardImage
+    volumes:
+      - grafana-data:/var/lib/grafana
 
   prometheus:
     image: prom/prometheus
     network_mode: host
+
+volumes:
+  grafana-data:
