@@ -186,6 +186,13 @@ func WithPageScaleFactor(factor float64) RenderingOption {
 	}
 }
 
+func WithLandscape(landscape bool) RenderingOption {
+	return func(ro *renderingOptions) error {
+		ro.landscape = landscape
+		return nil
+	}
+}
+
 type renderingOptions struct {
 	gpu                bool
 	sandbox            bool
@@ -198,6 +205,7 @@ type renderingOptions struct {
 	viewportHeight     int
 	pageScaleFactor    float64
 	printer            printer
+	landscape          bool
 }
 
 func (s *BrowserService) Render(ctx context.Context, url string, optionFuncs ...RenderingOption) ([]byte, string, error) {
@@ -217,6 +225,7 @@ func (s *BrowserService) Render(ctx context.Context, url string, optionFuncs ...
 		viewportHeight:     500,
 		pageScaleFactor:    1.0,                 // no scaling by default
 		printer:            defaultPDFPrinter(), // print as PDF if no other format is requested
+		landscape:          true,
 	}
 	for _, f := range s.defaultRenderingOptions {
 		if err := f(opts); err != nil {
@@ -246,9 +255,14 @@ func (s *BrowserService) Render(ctx context.Context, url string, optionFuncs ...
 	browserCtx, cancelBrowser := chromedp.NewContext(allocatorCtx, browserLoggers(ctx, log))
 	defer cancelBrowser()
 
+	orientation := chromedp.EmulatePortrait
+	if opts.landscape {
+		orientation = chromedp.EmulateLandscape
+	}
 	fileChan := make(chan []byte, 1) // buffered: we don't want the browser to stick around while we try to export this value.
 	actions := []chromedp.Action{
 		emulation.SetPageScaleFactor(opts.pageScaleFactor),
+		chromedp.EmulateViewport(int64(opts.viewportWidth), int64(opts.viewportHeight), orientation),
 		setHeaders(opts.headers),
 		setCookies(opts.cookies),
 		chromedp.Navigate(url),
@@ -403,7 +417,6 @@ type printer interface {
 
 type pdfPrinter struct {
 	paperSize       PaperSize
-	landscape       bool
 	printBackground bool
 }
 
@@ -422,7 +435,7 @@ func (p *pdfPrinter) action(dst chan []byte, req *renderingOptions) chromedp.Act
 		// We don't need the stream return value; we don't ask for a stream.
 		output, _, err := page.PrintToPDF().
 			WithPrintBackground(p.printBackground).
-			WithLandscape(p.landscape).
+			WithLandscape(req.landscape).
 			WithPaperWidth(width).
 			WithPaperHeight(height).
 			WithScale(scale).
@@ -452,13 +465,6 @@ func WithPaperSize(size PaperSize) PDFPrinterOption {
 	}
 }
 
-func WithLandscape(landscape bool) PDFPrinterOption {
-	return func(pp *pdfPrinter) error {
-		pp.landscape = landscape
-		return nil
-	}
-}
-
 func WithPrintingBackground(printBackground bool) PDFPrinterOption {
 	return func(pp *pdfPrinter) error {
 		pp.printBackground = printBackground
@@ -469,7 +475,6 @@ func WithPrintingBackground(printBackground bool) PDFPrinterOption {
 func defaultPDFPrinter() *pdfPrinter {
 	return &pdfPrinter{
 		paperSize:       PaperA4,
-		landscape:       true,
 		printBackground: true,
 	}
 }

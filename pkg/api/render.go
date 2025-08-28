@@ -85,6 +85,9 @@ func HandlePostRender(browser *service.BrowserService) http.Handler {
 			}
 			options = append(options, service.WithTimeZone(timeZone))
 		}
+		if landscape := r.URL.Query().Get("landscape"); landscape != "" {
+			options = append(options, service.WithLandscape(landscape == "true"))
+		}
 		renderKey := r.URL.Query().Get("renderKey")
 		domain := r.URL.Query().Get("domain")
 		if renderKey != "" && domain != "" {
@@ -93,11 +96,7 @@ func HandlePostRender(browser *service.BrowserService) http.Handler {
 		encoding := r.URL.Query().Get("encoding")
 		switch encoding {
 		case "", "pdf":
-			var printerOpts []service.PDFPrinterOption
-			if landscape := r.URL.Query().Get("landscape"); landscape != "" {
-				printerOpts = append(printerOpts, service.WithLandscape(landscape == "true"))
-			}
-			options = append(options, service.WithPDFPrinter(printerOpts...))
+			options = append(options, service.WithPDFPrinter())
 		case "png":
 			var printerOpts []service.PNGPrinterOption
 			if height == -1 {
