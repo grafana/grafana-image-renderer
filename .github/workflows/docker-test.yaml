@@ -42,8 +42,8 @@ jobs:
           BUILDKIT_STEP_LOG_MAX_SPEED: -1
           FILE: ${{ matrix.file }}
         run: docker build . -t image-renderer -f "$FILE"
-      - name: go test ./acceptance/...
-        run: go test ./acceptance/... -count=1
+      - name: go test ./tests/acceptance/...
+        run: go test ./tests/acceptance/... -count=1
         env:
           TERM: linux
           IMAGE: image-renderer
