@@ -58,12 +58,29 @@ func WithUser(user string) ContainerOption {
 
 func WithEnv(k, v string) ContainerOption {
 	return func(tb testing.TB, gcr *testcontainers.GenericContainerRequest) {
+		tb.Helper()
 		require.NotEmpty(tb, k, "env key (with value %q) cannot be empty", v)
 		if gcr.Env == nil {
 			gcr.Env = make(map[string]string)
 		}
 		gcr.Env[k] = v
 	}
+}
+
+func WithNetwork(net *testcontainers.DockerNetwork, netAlias string) ContainerOption {
+	return func(tb testing.TB, gcr *testcontainers.GenericContainerRequest) {
+		tb.Helper()
+		gcr.Networks = append(gcr.Networks, net.Name)
+		gcr.NetworkAliases = map[string][]string{
+			net.Name: {netAlias},
+		}
+	}
+}
+
+func WithArgs(args ...string) ContainerOption {
+	return WithConfigModifier(func(c *container.Config) {
+		c.Cmd = args
+	})
 }
 
 type ImageRenderer struct {
@@ -100,6 +117,7 @@ func StartImageRenderer(tb testing.TB, options ...ContainerOption) *ImageRendere
 
 	container, err := testcontainers.GenericContainer(tb.Context(), req)
 	require.NoError(tb, err, "could not start service container?")
+	testcontainers.CleanupContainer(tb, container)
 
 	endpoint, err := container.PortEndpoint(tb.Context(), httpPort, "http")
 	require.NoError(tb, err, "could not get HTTP endpoint of container")
@@ -142,4 +160,41 @@ func RunImageRendererWithCommand(tb testing.TB, entrypoint []string, cmd []strin
 	require.NoError(tb, err, "could not read container logs")
 
 	return state.ExitCode, strings.TrimSpace(string(contents))
+}
+
+type Grafana struct {
+	testcontainers.Container
+	HTTPEndpoint string
+}
+
+func StartGrafana(tb testing.TB, options ...ContainerOption) *Grafana {
+	tb.Helper()
+
+	httpPort, err := nat.NewPort("tcp", "3000")
+	require.NoError(tb, err, "could not construct a TCP port for 3000")
+
+	req := testcontainers.GenericContainerRequest{
+		Logger:  log.TestLogger(tb),
+		Started: true,
+		ContainerRequest: testcontainers.ContainerRequest{
+			Image:        "docker.io/grafana/grafana-enterprise:main",
+			WaitingFor:   wait.ForHTTP("/healthz").WithPort(httpPort).WithAllowInsecure(true),
+			ExposedPorts: []string{"3000/tcp"},
+		},
+	}
+	for _, f := range options {
+		f(tb, &req)
+	}
+
+	container, err := testcontainers.GenericContainer(tb.Context(), req)
+	require.NoError(tb, err, "could not start service container?")
+	testcontainers.CleanupContainer(tb, container)
+
+	endpoint, err := container.PortEndpoint(tb.Context(), httpPort, "http")
+	require.NoError(tb, err, "could not get HTTP endpoint of container")
+
+	return &Grafana{
+		Container:    container,
+		HTTPEndpoint: endpoint,
+	}
 }

@@ -8,6 +8,7 @@ import (
 )
 
 func TestMetricsEndpoint(t *testing.T) {
+	LongTest(t)
 	t.Parallel()
 
 	svc := StartImageRenderer(t,

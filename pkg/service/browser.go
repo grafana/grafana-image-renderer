@@ -284,6 +284,7 @@ func (s *BrowserService) createAllocatorOptions(renderingOptions *renderingOptio
 	opts = append(opts, chromedp.NoFirstRun, chromedp.NoDefaultBrowserCheck) // TODO: make configurable?
 	opts = append(opts, chromedp.NoSandbox)                                  // TODO: Make this configurable, so we can slowly phase it back in
 	opts = append(opts, chromedp.ExecPath(s.binary))
+	opts = append(opts, chromedp.WindowSize(renderingOptions.viewportWidth, renderingOptions.viewportHeight))
 	for _, arg := range s.args {
 		arg = strings.TrimPrefix(arg, "--")
 		equals := strings.Index(arg, "=")

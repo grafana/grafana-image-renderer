@@ -9,6 +9,7 @@ import (
 )
 
 func TestAuthTokenFailures(t *testing.T) {
+	LongTest(t)
 	t.Parallel()
 
 	svc := StartImageRenderer(t)
@@ -36,6 +37,7 @@ func TestAuthTokenFailures(t *testing.T) {
 }
 
 func TestRejectedURLs(t *testing.T) {
+	LongTest(t)
 	t.Parallel()
 
 	svc := StartImageRenderer(t)
@@ -62,6 +64,7 @@ func TestRejectedURLs(t *testing.T) {
 }
 
 func TestInvalidQueryParameters(t *testing.T) {
+	LongTest(t)
 	t.Parallel()
 
 	svc := StartImageRenderer(t)
