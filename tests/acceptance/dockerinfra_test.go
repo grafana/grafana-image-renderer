@@ -56,6 +56,16 @@ func WithUser(user string) ContainerOption {
 	})
 }
 
+func WithEnv(k, v string) ContainerOption {
+	return func(tb testing.TB, gcr *testcontainers.GenericContainerRequest) {
+		require.NotEmpty(tb, k, "env key (with value %q) cannot be empty", v)
+		if gcr.Env == nil {
+			gcr.Env = make(map[string]string)
+		}
+		gcr.Env[k] = v
+	}
+}
+
 type ImageRenderer struct {
 	testcontainers.Container
 	HTTPEndpoint string
