@@ -30,7 +30,6 @@ func TestRegression694(t *testing.T) {
 		require.NoError(t, err, "could not construct HTTP request to /")
 		resp, err := http.DefaultClient.Do(req)
 		require.NoError(t, err, "could not make HTTP request to /")
-		defer resp.Body.Close()
 		require.Equal(t, http.StatusOK, resp.StatusCode, "expected HTTP 200 OK from /")
 	})
 }

@@ -155,7 +155,7 @@ func RunImageRendererWithCommand(tb testing.TB, entrypoint []string, cmd []strin
 
 	logs, err := container.Logs(tb.Context())
 	require.NoError(tb, err, "could not get container logs")
-	defer logs.Close()
+	defer func() { _ = logs.Close() }()
 	contents, err := io.ReadAll(logs)
 	require.NoError(tb, err, "could not read container logs")
 

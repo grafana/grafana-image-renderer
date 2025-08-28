@@ -26,7 +26,6 @@ func TestBasicRenders(t *testing.T) {
 		req.Header.Set("X-Auth-Token", "-")
 		resp, err := http.DefaultClient.Do(req)
 		require.NoError(t, err, "could not make HTTP request to /render")
-		defer resp.Body.Close()
 		require.Equal(t, http.StatusOK, resp.StatusCode, "expected HTTP 200 OK from /render")
 
 		body, err := io.ReadAll(resp.Body)
@@ -48,7 +47,6 @@ func TestBasicRenders(t *testing.T) {
 		req.Header.Set("X-Auth-Token", "-")
 		resp, err := http.DefaultClient.Do(req)
 		require.NoError(t, err, "could not make HTTP request to /render")
-		defer resp.Body.Close()
 		require.Equal(t, http.StatusOK, resp.StatusCode, "expected HTTP 200 OK from /render")
 
 		_, err = png.Decode(resp.Body)

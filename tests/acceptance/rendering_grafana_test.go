@@ -49,7 +49,6 @@ func TestRenderingGrafana(t *testing.T) {
 
 		resp, err := http.DefaultClient.Do(req)
 		require.NoError(t, err, "could not send HTTP request to Grafana")
-		defer resp.Body.Close()
 		require.Equal(t, http.StatusOK, resp.StatusCode, "unexpected HTTP status code from Grafana")
 
 		fixture, err := os.Open("fixtures/grafana-login-page.png")
