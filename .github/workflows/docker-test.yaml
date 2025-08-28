@@ -15,7 +15,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  bats:
+  acceptance:
     strategy:
       fail-fast: false
       matrix:
@@ -23,7 +23,7 @@ jobs:
         # TODO: Use self-hosted runners when available.
         runs-on: [github-hosted-ubuntu-arm64-large, github-hosted-ubuntu-x64-large]
 
-    name: bats (${{ matrix.runs-on }}, ${{ matrix.file }})
+    name: acceptance tests (${{ matrix.runs-on }}, ${{ matrix.file }})
     runs-on: ${{ matrix.runs-on }}
     permissions:
       contents: read # clone the repository
@@ -31,7 +31,9 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
-      - uses: bats-core/bats-action@42fcc8700f773c075a16a90eb11674c0318ad507 # 3.0.1
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
 
       - name: docker build
         env:
@@ -40,8 +42,46 @@ jobs:
           BUILDKIT_STEP_LOG_MAX_SPEED: -1
           FILE: ${{ matrix.file }}
         run: docker build . -t image-renderer -f "$FILE"
-      - name: bats
-        working-directory: tests/bats
-        run: ./test.sh image-renderer
+      - name: go test ./acceptance/...
+        run: go test ./acceptance/... -count=1
         env:
           TERM: linux
+          IMAGE: image-renderer
+
+  # This is the job that is actually required by rulesets.
+  required-acceptance-tests:
+    needs:
+      - acceptance
+    # always() is the best function here.
+    # success() || failure() will skip this function if any need is also skipped.
+    # That means conditional test suites will fail the entire requirement check.
+    if: always()
+
+    name: All acceptance tests complete
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check test suites
+        shell: bash
+        env:
+          NEEDS: ${{ needs }}
+          FAILURE_MSG: Acceptance tests failed
+          SUCCESS_MSG: Acceptance tests succeeded
+        run: |
+          set -euo pipefail
+
+          # Print the needs context, debugging
+          echo "$NEEDS" | jq
+
+          # Extract failures
+          FAILURES="$(echo "$NEEDS" | jq 'with_entries(select(.value.result == "failure")) | map_values(.result)')"
+
+          # Check if there are any failures
+          if [ "$(echo "$FAILURES" | jq '. | length')" != "0" ]; then
+            echo "❌ $FAILURE_MSG"
+            echo "Failed suites:"
+            echo "$FAILURES" | jq -r 'to_entries[] | "- \(.key): \(.value)"'
+            echo "any-failed=true" >> "$GITHUB_OUTPUT"
+            exit 1
+          fi
+
+          echo "✅ $SUCCESS_MSG"

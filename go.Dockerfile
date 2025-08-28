@@ -70,5 +70,5 @@ EXPOSE 8081
 
 ENTRYPOINT ["tini", "--", "/usr/bin/grafana-image-renderer"]
 CMD ["server"]
-HEALTHCHECK --interval=10s --retries=3 --timeout=3s \
+HEALTHCHECK --interval=10s --retries=3 --timeout=3s --start-interval=250ms --start-period=30s \
     CMD ["/usr/bin/grafana-image-renderer", "healthcheck"]
