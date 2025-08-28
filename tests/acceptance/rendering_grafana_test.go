@@ -61,6 +61,9 @@ func TestRenderingGrafana(t *testing.T) {
 		bodyImg, err := png.Decode(bytes.NewReader(body))
 		require.NoError(t, err, "could not decode response PNG image")
 
+		assert.Equal(t, bodyImg.Bounds().Max.X, 1200, "rendered image has wrong width")
+		assert.Equal(t, bodyImg.Bounds().Max.Y, 900, "rendered image has wrong height")
+
 		diff, err := imgDiff(fixtureImg, bodyImg)
 		ok := assert.NoError(t, err, "could not diff images") && assert.LessOrEqual(t, diff, uint64(3000), "rendered login page has changed significantly")
 		if !ok && os.Getenv("UPDATE_FIXTURES") == "true" {
