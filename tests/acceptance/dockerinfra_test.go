@@ -1,6 +1,8 @@
 package acceptance
 
 import (
+	"bytes"
+	_ "embed"
 	"io"
 	"os"
 	"strings"
@@ -167,6 +169,12 @@ type Grafana struct {
 	HTTPEndpoint string
 }
 
+//go:embed fixtures/dashboards-provisioner.yaml
+var dashboardsProvisioner []byte
+
+//go:embed fixtures/all-panels.json
+var allPanelsDashboard []byte
+
 func StartGrafana(tb testing.TB, options ...ContainerOption) *Grafana {
 	tb.Helper()
 
@@ -177,9 +185,24 @@ func StartGrafana(tb testing.TB, options ...ContainerOption) *Grafana {
 		Logger:  log.TestLogger(tb),
 		Started: true,
 		ContainerRequest: testcontainers.ContainerRequest{
-			Image:        "docker.io/grafana/grafana-enterprise:main",
-			WaitingFor:   wait.ForHTTP("/healthz").WithPort(httpPort).WithAllowInsecure(true),
+			Image: "docker.io/grafana/grafana-enterprise:main",
+			WaitingFor: wait.ForAll(
+				wait.ForHTTP("/healthz").WithPort(httpPort).WithAllowInsecure(true),
+				wait.ForLog("finished to provision dashboards"), // from the provisioning files we add
+			),
 			ExposedPorts: []string{"3000/tcp"},
+			Files: []testcontainers.ContainerFile{
+				{
+					Reader:            bytes.NewReader(dashboardsProvisioner),
+					ContainerFilePath: "/etc/grafana/provisioning/dashboards/dashboards.yaml",
+					FileMode:          0o777,
+				},
+				{
+					Reader:            bytes.NewReader(allPanelsDashboard),
+					ContainerFilePath: "/usr/share/grafana/dashboards/all-panels.json",
+					FileMode:          0o777,
+				},
+			},
 		},
 	}
 	for _, f := range options {
