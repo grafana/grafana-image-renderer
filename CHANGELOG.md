@@ -1,3 +1,8 @@
+## 4.0.11 (2025-09-01)
+
+- CI: Configure Renovate and pin dependencies, [#712](https://github.com/grafana/grafana-image-renderer/pull/712) + [#723](https://github.com/grafana/grafana-image-renderer/pull/723) + [#734](https://github.com/grafana/grafana-image-renderer/pull/734), [lucychen-grafana](https://github.com/lucychen-grafana)
+- Docker: Update Chromium (CVE-2025-8879, CVE-2025-8880, CVE-2025-8901, CVE-2025-9478) [#754](https://github.com/grafana/grafana-image-renderer/pull/754), [macabu](https://github.com/macabu)
+
 ## 4.0.10 (2025-07-31)
 
 - Docker: Update Chromium (CVE-2025-8292), [#695](https://github.com/grafana/grafana-image-renderer/pull/695), [macabu](https://github.com/macabu)
