@@ -2,11 +2,8 @@ package acceptance
 
 import (
 	"bytes"
-	"fmt"
-	"image"
 	"image/png"
 	"io"
-	"math"
 	"net/http"
 	"os"
 	"strings"
@@ -80,36 +77,11 @@ func TestRenderingGrafana(t *testing.T) {
 		assert.Equal(t, bodyImg.Bounds().Max.X, 1000, "rendered image has wrong width")
 		assert.Equal(t, bodyImg.Bounds().Max.Y, 800, "rendered image has wrong height")
 
-		diff, err := imgDiff(fixtureImg, bodyImg)
-		ok := assert.NoError(t, err, "could not diff images") && assert.LessOrEqual(t, diff, uint64(3000), "rendered image has changed significantly")
+		diff, err := CountPixelDifferences(fixtureImg, bodyImg)
+		ok := assert.NoError(t, err, "could not diff images") && assert.LessOrEqual(t, diff, uint64(150_000), "rendered image has changed significantly")
 		if !ok && os.Getenv("UPDATE_FIXTURES") == "true" {
 			err := os.WriteFile(fixturePath, body, 0o644)
 			require.NoError(t, err, "could not update fixture file")
 		}
 	})
-}
-
-func imgDiff(a, b image.Image) (uint64, error) {
-	castA, ok := a.(*image.RGBA)
-	if !ok {
-		return 0, fmt.Errorf("a is not RGBA")
-	}
-	castB, ok := b.(*image.RGBA)
-	if !ok {
-		return 0, fmt.Errorf("b is not RGBA")
-	}
-	return imgDiffRGBA(castA, castB)
-}
-
-func imgDiffRGBA(a, b *image.RGBA) (uint64, error) {
-	if a.Bounds() != b.Bounds() {
-		return 0, fmt.Errorf("images have different sizes")
-	}
-
-	diffs := int(0)
-	for i := range a.Pix {
-		d := int(a.Pix[i]) - int(b.Pix[i])
-		diffs += d * d
-	}
-	return uint64(math.Sqrt(float64(diffs))), nil
 }
