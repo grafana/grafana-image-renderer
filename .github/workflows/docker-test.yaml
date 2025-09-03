@@ -50,15 +50,17 @@ jobs:
           IMAGE: image-renderer
 
       - name: Tar changed files
+        if: success() || failure()
+        id: tar
         run: |
           set -euo pipefail
           readarray -t files < <(git diff --name-only)
-          echo "CHANGED_FILES=${#files[@]}" >> "$GITHUB_ENV"
           if [ "${#files[@]}" != "0" ]; then
             tar cJf changed-files.tar.xz "${files[@]}"
+            echo 'upload=true' >> "$GITHUB_OUTPUT"
           fi
       - name: Upload changed files
-        if: ${{ env.CHANGED_FILES != '0' }}
+        if: ${{ steps.tar.outputs.upload == 'true' && (success() || failure()) }}
         uses: actions/upload-artifact@v4
         with:
           name: changed-files-${{ matrix.file }}-${{ matrix.runs-on }}
