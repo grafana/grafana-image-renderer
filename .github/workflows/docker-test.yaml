@@ -48,16 +48,19 @@ jobs:
         env:
           TERM: linux
           IMAGE: image-renderer
+          UPDATE_FIXTURES: 'true' # this will make changes, so we can see them
 
       - name: Tar changed files
-        if: success() || failure()
+        if: failure()
         id: tar
         run: |
           set -euo pipefail
           readarray -t files < <(git diff --name-only)
-          if [ "${#files[@]}" != "0" ]; then
+          if [ "${#files[@]}" -gt "0" ]; then
             tar cJf changed-files.tar.xz "${files[@]}"
             echo 'upload=true' >> "$GITHUB_OUTPUT"
+          else
+            echo "No files changed :)"
           fi
       - name: Upload changed files
         if: ${{ steps.tar.outputs.upload == 'true' && (success() || failure()) }}
