@@ -78,7 +78,7 @@ func TestRenderingGrafana(t *testing.T) {
 		assert.Equal(t, bodyImg.Bounds().Max.Y, 800, "rendered image has wrong height")
 
 		diff, err := CountPixelDifferences(fixtureImg, bodyImg)
-		ok := assert.NoError(t, err, "could not diff images") && assert.LessOrEqual(t, diff, uint64(150_000), "rendered image has changed significantly")
+		ok := assert.NoError(t, err, "could not diff images") && assert.LessOrEqual(t, diff, uint64(1_000), "rendered image has changed significantly")
 		if !ok && os.Getenv("UPDATE_FIXTURES") == "true" {
 			err := os.WriteFile(fixturePath, body, 0o644)
 			require.NoError(t, err, "could not update fixture file")
