@@ -49,6 +49,19 @@ jobs:
           TERM: linux
           IMAGE: image-renderer
 
+      - name: Tar changed files
+        run: |
+          set -euo pipefail
+          readarray -t files < <(git diff --name-only)
+          tar cJf changed-files.tar.xz "${files[@]}"
+          echo "CHANGED_FILES=${#files[@]}" >> "$GITHUB_ENV"
+      - name: Upload changed files
+        if: ${{ env.CHANGED_FILES != '0' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: changed-files-${{ matrix.file }}-${{ matrix.runs-on }}
+          path: changed-files.tar.xz
+
   # This is the job that is actually required by rulesets.
   required-acceptance-tests:
     needs:
