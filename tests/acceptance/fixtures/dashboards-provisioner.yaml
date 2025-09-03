@@ -1,0 +1,10 @@
+apiVersion: 1
+
+providers:
+  - name: Tests
+    folder: tests
+    type: file
+    allowUiUpdates: false
+    updateIntervalSeconds: 60
+    options:
+      path: dashboards

@@ -8,7 +8,7 @@ import (
 	"github.com/grafana/grafana-image-renderer/cmd/config"
 	"github.com/grafana/grafana-image-renderer/cmd/healthcheck"
 	"github.com/grafana/grafana-image-renderer/cmd/server"
-	"github.com/grafana/grafana-image-renderer/pkg/version"
+	"github.com/grafana/grafana-image-renderer/pkg/service"
 	"github.com/urfave/cli/v3"
 )
 
@@ -16,7 +16,7 @@ func NewRootCmd() *cli.Command {
 	return &cli.Command{
 		Name:    "grafana-image-renderer",
 		Usage:   "A service for Grafana to render images and documents from Grafana websites.",
-		Version: version.ServiceVersion(),
+		Version: service.NewVersionService().GetPrettyVersion(),
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:    "log-level",

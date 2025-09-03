@@ -1,16 +1,15 @@
 package api
 
 import (
-	"errors"
 	"fmt"
 	"log/slog"
-	"math"
 	"net/http"
 	"regexp"
 	"strconv"
 	"time"
+	_ "time/tzdata" // fallback where we have no tzdata on the distro; used in LoadLocation
 
-	"github.com/grafana/grafana-image-renderer/pkg/chromium"
+	"github.com/grafana/grafana-image-renderer/pkg/service"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -26,112 +25,91 @@ var (
 	regexpOnlyNumbers = regexp.MustCompile(`^[0-9]+$`)
 )
 
-func HandlePostRender(browser *chromium.Browser) http.Handler {
-	createRenderingOptions := func(r *http.Request) (chromium.RenderingOptions, int, error) {
-		renderingOptions := browser.RenderingOptionsPrototype // create a copy
-
-		renderingOptions.URL = r.URL.Query().Get("url")
-		if renderingOptions.URL == "" {
-			return renderingOptions, http.StatusBadRequest, errors.New("missing 'url' query parameter")
+func HandlePostRender(browser *service.BrowserService) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		url := r.URL.Query().Get("url")
+		if url == "" {
+			http.Error(w, "missing 'url' query parameter", http.StatusBadRequest)
+			return
 		}
+		var options []service.RenderingOption
 
-		var err error
-		width := r.URL.Query().Get("width")
-		if width != "" {
-			if renderingOptions.Width, err = strconv.Atoi(width); err != nil {
-				return renderingOptions, http.StatusBadRequest, fmt.Errorf("invalid 'width' query parameter: %w", err)
-			}
-			if renderingOptions.Width < 10 {
-				renderingOptions.Width = browser.RenderingOptionsPrototype.Width
-			}
-		}
-
-		height := r.URL.Query().Get("height")
-		if height != "" {
-			if renderingOptions.Height, err = strconv.Atoi(height); err != nil {
-				return renderingOptions, http.StatusBadRequest, fmt.Errorf("invalid 'height' query parameter: %w", err)
-			}
-			if renderingOptions.Height == -1 {
-				renderingOptions.FullHeight = true
-				renderingOptions.Height = int(math.Floor(float64(renderingOptions.Width) * 0.75))
+		width, height := -1, -1
+		if widthStr := r.URL.Query().Get("width"); widthStr != "" {
+			var err error
+			width, err = strconv.Atoi(widthStr)
+			if err != nil {
+				http.Error(w, fmt.Sprintf("invalid 'width' query parameter: %v", err), http.StatusBadRequest)
+				return
 			}
 		}
-
-		timeout := r.URL.Query().Get("timeout")
-		if timeout != "" {
+		if heightStr := r.URL.Query().Get("height"); heightStr != "" {
+			var err error
+			height, err = strconv.Atoi(heightStr)
+			if err != nil {
+				http.Error(w, fmt.Sprintf("invalid 'height' query parameter: %v", err), http.StatusBadRequest)
+				return
+			}
+		}
+		options = append(options, service.WithViewport(width, height))
+		if timeout := r.URL.Query().Get("timeout"); timeout != "" {
 			if regexpOnlyNumbers.MatchString(timeout) {
 				seconds, err := strconv.Atoi(timeout)
 				if err != nil {
-					return renderingOptions, http.StatusBadRequest, fmt.Errorf("invalid 'timeout' query parameter: %w", err)
+					http.Error(w, fmt.Sprintf("invalid 'timeout' query parameter: %v", err), http.StatusBadRequest)
+					return
 				}
-				renderingOptions.Timeout = time.Duration(seconds) * time.Second
-			} else if renderingOptions.Timeout, err = time.ParseDuration(timeout); err != nil {
-				return renderingOptions, http.StatusBadRequest, fmt.Errorf("invalid 'timeout' query parameter: %w", err)
+				options = append(options, service.WithTimeout(time.Duration(seconds)*time.Second))
+			} else {
+				timeout, err := time.ParseDuration(timeout)
+				if err != nil {
+					http.Error(w, fmt.Sprintf("invalid 'timeout' query parameter: %v", err), http.StatusBadRequest)
+					return
+				}
+				options = append(options, service.WithTimeout(timeout))
 			}
 		}
-
-		renderingOptions.Landscape = r.URL.Query().Get("landscape") != "false"
-
-		timeZone := r.URL.Query().Get("timezone")
-		if timeZone != "" {
-			renderingOptions.TimeZone = timeZone
-		}
-
-		paper := r.URL.Query().Get("paper")
-		if paper != "" {
-			if err := renderingOptions.PaperSize.UnmarshalText([]byte(paper)); err != nil {
-				return renderingOptions, http.StatusBadRequest, fmt.Errorf("invalid 'paper' query parameter: %w", err)
+		if scaleFactor := r.URL.Query().Get("deviceScaleFactor"); scaleFactor != "" {
+			scaleFactor, err := strconv.ParseFloat(scaleFactor, 64)
+			if err != nil {
+				http.Error(w, fmt.Sprintf("invalid 'deviceScaleFactor' query parameter: %v", err), http.StatusBadRequest)
+				return
 			}
+			options = append(options, service.WithPageScaleFactor(scaleFactor))
 		}
-
-		encoding := r.URL.Query().Get("encoding")
-		switch encoding {
-		case "", "pdf":
-			renderingOptions.Format = chromium.RenderingFormatPDF
-		case "png":
-			renderingOptions.Format = chromium.RenderingFormatPNG
-		default:
-			return renderingOptions, http.StatusBadRequest, fmt.Errorf("invalid 'encoding' query parameter: %q", encoding)
-		}
-
-		scaleFactor := r.URL.Query().Get("deviceScaleFactor")
-		if scaleFactor != "" {
-			if renderingOptions.DeviceScaleFactor, err = strconv.ParseFloat(scaleFactor, 64); err != nil {
-				return renderingOptions, http.StatusBadRequest, fmt.Errorf("invalid 'deviceScaleFactor' query parameter: %w", err)
+		if timeZone := r.URL.Query().Get("timeZone"); timeZone != "" {
+			timeZone, err := time.LoadLocation(timeZone)
+			if err != nil {
+				http.Error(w, fmt.Sprintf("invalid 'timeZone' query parameter: %v", err), http.StatusBadRequest)
+				return
 			}
-			if renderingOptions.DeviceScaleFactor <= 0 {
-				renderingOptions.DeviceScaleFactor *= -1
-				renderingOptions.Width = int(math.Floor(float64(renderingOptions.Width) * renderingOptions.DeviceScaleFactor))
-				renderingOptions.Height = int(math.Floor(float64(renderingOptions.Height) * renderingOptions.DeviceScaleFactor))
-				// TODO: Resize image afterwards with our own logic
-			}
+			options = append(options, service.WithTimeZone(timeZone))
 		}
-
+		if landscape := r.URL.Query().Get("landscape"); landscape != "" {
+			options = append(options, service.WithLandscape(landscape == "true"))
+		}
 		renderKey := r.URL.Query().Get("renderKey")
 		domain := r.URL.Query().Get("domain")
 		if renderKey != "" && domain != "" {
-			renderingOptions.Cookies = append(renderingOptions.Cookies, chromium.Cookie{
-				Name:   "renderKey",
-				Value:  renderKey,
-				Domain: domain,
-			})
+			options = append(options, service.WithCookie("renderKey", renderKey, domain))
 		}
-
-		// TODO: Copy headers like in JS
-
-		// status is only used for errors, actually
-		return renderingOptions, http.StatusOK, nil
-	}
-
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		renderingOptions, status, err := createRenderingOptions(r)
-		if err != nil {
-			http.Error(w, err.Error(), status)
+		encoding := r.URL.Query().Get("encoding")
+		switch encoding {
+		case "", "pdf":
+			options = append(options, service.WithPDFPrinter())
+		case "png":
+			var printerOpts []service.PNGPrinterOption
+			if height == -1 {
+				printerOpts = append(printerOpts, service.WithFullHeight(true))
+			}
+			options = append(options, service.WithPNGPrinter(printerOpts...))
+		default:
+			http.Error(w, fmt.Sprintf("invalid 'encoding' query parameter: %q", encoding), http.StatusBadRequest)
 			return
 		}
 
 		start := time.Now()
-		body, err := browser.Render(r.Context(), renderingOptions)
+		body, contentType, err := browser.Render(r.Context(), url, options...)
 		if err != nil {
 			MetricRenderDuration.WithLabelValues("error").Observe(time.Since(start).Seconds())
 			slog.ErrorContext(r.Context(), "failed to render", "error", err)
@@ -140,7 +118,7 @@ func HandlePostRender(browser *chromium.Browser) http.Handler {
 		}
 		MetricRenderDuration.WithLabelValues("success").Observe(time.Since(start).Seconds())
 
-		w.Header().Set("Content-Type", renderingOptions.Format.ContentType())
+		w.Header().Set("Content-Type", contentType)
 		w.Header().Set("Content-Length", fmt.Sprintf("%d", len(body)))
 		w.WriteHeader(http.StatusOK)
 		// TODO(perf): we could stream the bytes through from the browser to the response...

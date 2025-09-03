@@ -4,13 +4,12 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/grafana/grafana-image-renderer/pkg/chromium"
-	"github.com/grafana/grafana-image-renderer/pkg/version"
+	"github.com/grafana/grafana-image-renderer/pkg/service"
 )
 
 // HandleGetVersion returns the service and browser versions.
-func HandleGetVersion(browser *chromium.Browser) http.Handler {
-	serviceVersion := version.ServiceVersion()
+func HandleGetVersion(versions *service.VersionService, browser *service.BrowserService) http.Handler {
+	serviceVersion := versions.GetPrettyVersion()
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		version, err := browser.GetVersion(r.Context())
@@ -26,9 +25,9 @@ func HandleGetVersion(browser *chromium.Browser) http.Handler {
 }
 
 // HandleGetRenderVersion returns the service and browser versions.
-func HandleGetRenderVersion() http.Handler {
+func HandleGetRenderVersion(versions *service.VersionService) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		response := `{"version": "` + version.SEMVER + `"}`
+		response := `{"version": "` + versions.GetRenderVersion() + `"}`
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = w.Write([]byte(response))
 	})

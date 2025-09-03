@@ -15,7 +15,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  bats:
+  acceptance:
     strategy:
       fail-fast: false
       matrix:
@@ -23,7 +23,7 @@ jobs:
         # TODO: Use self-hosted runners when available.
         runs-on: [github-hosted-ubuntu-arm64-large, github-hosted-ubuntu-x64-large]
 
-    name: bats (${{ matrix.runs-on }}, ${{ matrix.file }})
+    name: acceptance tests (${{ matrix.runs-on }}, ${{ matrix.file }})
     runs-on: ${{ matrix.runs-on }}
     permissions:
       contents: read # clone the repository
@@ -31,7 +31,10 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
-      - uses: bats-core/bats-action@42fcc8700f773c075a16a90eb11674c0318ad507 # 3.0.1
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: false
 
       - name: docker build
         env:
@@ -40,8 +43,45 @@ jobs:
           BUILDKIT_STEP_LOG_MAX_SPEED: -1
           FILE: ${{ matrix.file }}
         run: docker build . -t image-renderer -f "$FILE"
-      - name: bats
-        working-directory: tests/bats
-        run: ./test.sh image-renderer
+      - name: go test ./tests/acceptance/...
+        run: go test ./tests/acceptance/... -count=1
         env:
           TERM: linux
+          IMAGE: image-renderer
+          UPDATE_FIXTURES: 'true' # this will make changes, so we can see them
+
+      - name: Tar changed files
+        if: failure()
+        id: tar
+        run: |
+          set -euo pipefail
+          readarray -t files < <(git diff --name-only)
+          if [ "${#files[@]}" -gt "0" ]; then
+            tar cJf changed-files.tar.xz "${files[@]}"
+            echo 'upload=true' >> "$GITHUB_OUTPUT"
+          else
+            echo "No files changed :)"
+          fi
+      - name: Upload changed files
+        if: ${{ steps.tar.outputs.upload == 'true' && (success() || failure()) }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: changed-files-${{ matrix.file }}-${{ matrix.runs-on }}
+          path: changed-files.tar.xz
+
+  # This is the job that is actually required by rulesets.
+  required-acceptance-tests:
+    needs:
+      - acceptance
+    # always() is the best function here.
+    # success() || failure() will skip this function if any need is also skipped.
+    # That means conditional test suites will fail the entire requirement check.
+    if: always()
+
+    name: All acceptance tests complete
+    runs-on: ubuntu-latest
+    steps:
+      - name: Assert no failures
+        env:
+          NEEDS: ${{ toJson(needs) }}
+        run: exit $(echo "$NEEDS" | jq 'with_entries(select(.value.result == "failure")) | length')
