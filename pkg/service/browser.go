@@ -269,6 +269,7 @@ func (s *BrowserService) Render(ctx context.Context, url string, optionFuncs ...
 		chromedp.WaitReady("body", chromedp.ByQuery), // wait for a body to exist; this is when the page has started to actually render
 		scrollForElements(opts.timeBetweenScrolls),
 		waitForViz(),
+		waitForDuration(time.Second),
 		opts.printer.action(fileChan, opts),
 	}
 	if err := chromedp.Run(browserCtx, actions...); err != nil {
@@ -597,4 +598,15 @@ func waitForViz() chromedp.Action {
 		return !window.__grafanaSceneContext || window.__grafanaRunningQueryCount === 0;
 	})()`
 	return chromedp.Poll(script, nil, chromedp.WithPollingMutation(), chromedp.WithPollingTimeout(0))
+}
+
+func waitForDuration(d time.Duration) chromedp.Action {
+	return chromedp.ActionFunc(func(ctx context.Context) error {
+		select {
+		case <-time.After(d):
+		case <-ctx.Done():
+			return ctx.Err()
+		}
+		return nil
+	})
 }
