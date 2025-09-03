@@ -53,8 +53,10 @@ jobs:
         run: |
           set -euo pipefail
           readarray -t files < <(git diff --name-only)
-          tar cJf changed-files.tar.xz "${files[@]}"
           echo "CHANGED_FILES=${#files[@]}" >> "$GITHUB_ENV"
+          if [ "${#files[@]}" != "0" ]; then
+            tar cJf changed-files.tar.xz "${files[@]}"
+          fi
       - name: Upload changed files
         if: ${{ env.CHANGED_FILES != '0' }}
         uses: actions/upload-artifact@v4
