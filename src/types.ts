@@ -13,6 +13,7 @@ export interface RenderOptions {
   timezone?: string;
   encoding?: string;
   headers?: HTTPHeaders;
+  extraEnv?: typeof process.env;
 }
 
 export interface ImageRenderOptions extends RenderOptions {
