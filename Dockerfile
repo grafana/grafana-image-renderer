@@ -23,7 +23,7 @@ RUN apt-cache depends ca-certificates \
 RUN mkdir /dpkg && \
     find . -type f -name '*.deb' -exec sh -c 'dpkg --extract "$1" /dpkg || exit 5' sh '{}' \;
 
-FROM node:22-alpine@sha256:1b2479dd35a99687d6638f5976fd235e26c5b37e8122f786fcd5fe231d63de5b AS build
+FROM node:22-alpine@sha256:d2166de198f26e17e5a442f537754dd616ab069c47cc57b889310a717e0abbf9 AS build
 
 WORKDIR /src
 COPY . ./
@@ -32,7 +32,7 @@ RUN yarn install --pure-lockfile
 RUN yarn run build
 RUN rm -rf node_modules/ && yarn install --pure-lockfile --production
 
-FROM gcr.io/distroless/nodejs22-debian12:nonroot@sha256:8929dbab735ee399ff886ba7d81419dbe7df002993a7d69715e1c16b7d41c531
+FROM gcr.io/distroless/nodejs22-debian12:nonroot@sha256:944c88f0c5ffa6e1a589407fda6cc16ff71f1d88e92e7644678bbf4783fec0e3
 
 LABEL maintainer="Grafana team <hello@grafana.com>"
 LABEL org.opencontainers.image.source="https://github.com/grafana/grafana-image-renderer/tree/master/Dockerfile"
