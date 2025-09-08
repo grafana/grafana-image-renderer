@@ -1,10 +1,12 @@
 package acceptance
 
 import (
-	"bytes"
-	_ "embed"
+	"embed"
+	"fmt"
 	"io"
+	"io/fs"
 	"os"
+	"path"
 	"strings"
 	"testing"
 	"time"
@@ -169,11 +171,8 @@ type Grafana struct {
 	HTTPEndpoint string
 }
 
-//go:embed fixtures/dashboards-provisioner.yaml
-var dashboardsProvisioner []byte
-
-//go:embed fixtures/all-panels.json
-var allPanelsDashboard []byte
+//go:embed fixtures
+var fixturesFS embed.FS
 
 func StartGrafana(tb testing.TB, options ...ContainerOption) *Grafana {
 	tb.Helper()
@@ -188,21 +187,11 @@ func StartGrafana(tb testing.TB, options ...ContainerOption) *Grafana {
 			Image: "docker.io/grafana/grafana-enterprise:main",
 			WaitingFor: wait.ForAll(
 				wait.ForHTTP("/healthz").WithPort(httpPort).WithAllowInsecure(true),
-				wait.ForLog("finished to provision dashboards"), // from the provisioning files we add
+				wait.ForLog("inserting datasource from configuration"), // from the provisioning files we add
+				wait.ForLog("finished to provision dashboards"),        // from the provisioning files we add
 			),
 			ExposedPorts: []string{"3000/tcp"},
-			Files: []testcontainers.ContainerFile{
-				{
-					Reader:            bytes.NewReader(dashboardsProvisioner),
-					ContainerFilePath: "/etc/grafana/provisioning/dashboards/dashboards.yaml",
-					FileMode:          0o777,
-				},
-				{
-					Reader:            bytes.NewReader(allPanelsDashboard),
-					ContainerFilePath: "/usr/share/grafana/dashboards/all-panels.json",
-					FileMode:          0o777,
-				},
-			},
+			Files:        createGrafanaProvisioningFiles(tb),
 		},
 	}
 	for _, f := range options {
@@ -220,4 +209,88 @@ func StartGrafana(tb testing.TB, options ...ContainerOption) *Grafana {
 		Container:    container,
 		HTTPEndpoint: endpoint,
 	}
+}
+
+func createGrafanaProvisioningFiles(tb testing.TB) []testcontainers.ContainerFile {
+	tb.Helper()
+
+	files, err := fsToContainerFiles(embedFSSub(tb, fixturesFS, "fixtures/dashboards"), ".", "/usr/share/grafana/dashboards")
+	require.NoError(tb, err, "could not create container files from embedded dashboards")
+
+	provisioningFiles, err := fsToContainerFiles(embedFSSub(tb, fixturesFS, "fixtures/provisioning"), ".", "/etc/grafana/provisioning")
+	require.NoError(tb, err, "could not create container files from embedded provisioning datasources")
+	files = append(files, provisioningFiles...)
+
+	return files
+}
+
+type embedFS interface {
+	fs.FS
+	fs.ReadDirFS
+	fs.ReadFileFS
+}
+
+func embedFSSub(tb testing.TB, f embedFS, dir string) embedFS {
+	sub, err := fs.Sub(f, dir)
+	require.NoError(tb, err, "could not get sub fs for dir %q", dir)
+	if efs, ok := sub.(embedFS); ok {
+		return efs
+	}
+	require.Fail(tb, "sub fs is not an embedFS", "got type %T", sub)
+	panic("unreachable")
+}
+
+func fsToContainerFiles(fs embedFS, baseSrc, baseDst string) ([]testcontainers.ContainerFile, error) {
+	var files []testcontainers.ContainerFile
+
+	entries, err := fs.ReadDir(baseSrc)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read embedded dir %q: %w", baseSrc, err)
+	}
+	for _, f := range entries {
+		if f.IsDir() {
+			subFiles, err := fsToContainerFiles(fs, path.Join(baseSrc, f.Name()), path.Join(baseDst, f.Name()))
+			if err != nil {
+				return nil, fmt.Errorf("failed to join with subdir %q: %w", f.Name(), err)
+			}
+			files = append(files, subFiles...)
+			continue
+		}
+
+		file, err := fs.Open(path.Join(baseSrc, f.Name()))
+		if err != nil {
+			return nil, fmt.Errorf("failed to read file %q: %w", path.Join(baseSrc, f.Name()), err)
+		}
+
+		files = append(files, testcontainers.ContainerFile{
+			Reader:            file,
+			ContainerFilePath: path.Join(baseDst, f.Name()),
+			FileMode:          0o777,
+		})
+	}
+
+	return files, nil
+}
+
+func StartPrometheus(tb testing.TB, options ...ContainerOption) {
+	tb.Helper()
+
+	req := testcontainers.GenericContainerRequest{
+		Logger:  log.TestLogger(tb),
+		Started: true,
+		ContainerRequest: testcontainers.ContainerRequest{
+			Image: "prom/prometheus:latest",
+			WaitingFor: wait.ForAll(
+				wait.ForHTTP("/-/healthy"),
+				wait.ForLog("Server is ready"),
+			),
+		},
+	}
+	for _, f := range options {
+		f(tb, &req)
+	}
+
+	container, err := testcontainers.GenericContainer(tb.Context(), req)
+	require.NoError(tb, err, "could not start service container?")
+	testcontainers.CleanupContainer(tb, container)
 }

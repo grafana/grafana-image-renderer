@@ -122,13 +122,16 @@ export class Browser {
     }
   }
 
-  getLauncherOptions(options) {
+  getLauncherOptions(options: Partial<RenderOptions>) {
     const env = Object.assign({}, process.env);
     // set env timezone
     env.TZ = options.timezone || this.config.timezone;
 
     const launcherOptions: PuppeteerLaunchOptions = {
-      env: env,
+      env: {
+        ...env,
+        ...(options.extraEnv && { ...options.extraEnv }),
+      },
       ignoreHTTPSErrors: this.config.ignoresHttpsErrors,
       dumpio: this.config.dumpio,
       args: this.config.args,
