@@ -1,3 +1,10 @@
+## 4.0.13 (2025-09-08)
+
+This is a release that only changes the Docker image.
+The plugin does not benefit from updating this.
+
+- Docker: Install busybox as static from Debian 13, [#763](https://github.com/grafana/grafana-image-renderer/pull/763), [macabu](https://github.com/macabu)
+
 ## 4.0.12 (2025-09-08)
 
 - HTTPServer: Dynamically create and clean up XDG dirs on each request if not exists, [#756](https://github.com/grafana/grafana-image-renderer/pull/756), [macabu](https://github.com/macabu)
