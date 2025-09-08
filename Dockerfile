@@ -10,7 +10,7 @@ RUN echo 'cachebuster 2025-09-01' && apt-get update
 FROM debian-updated AS debs
 
 ARG CHROMIUM_VERSION=139.0.7258.154
-RUN apt-cache depends chromium=${CHROMIUM_VERSION} chromium-driver chromium-shell chromium-sandbox font-gothic fonts-wqy-zenhei fonts-thai-tlwg fonts-khmeros fonts-kacst fonts-freefont-ttf libxss1 unifont fonts-open-sans fonts-roboto fonts-inter bash busybox util-linux openssl tini ca-certificates locales libnss3-tools \
+RUN apt-cache depends chromium=${CHROMIUM_VERSION} chromium-driver chromium-shell chromium-sandbox font-gothic fonts-wqy-zenhei fonts-thai-tlwg fonts-khmeros fonts-kacst fonts-freefont-ttf libxss1 unifont fonts-open-sans fonts-roboto fonts-inter bash util-linux openssl tini ca-certificates locales libnss3-tools \
     --recurse --no-recommends --no-suggests --no-conflicts --no-breaks --no-replaces --no-enhances --no-pre-depends | grep '^\w' | xargs apt-get download
 RUN mkdir /dpkg && \
     find . -type f -name '*.deb' -exec sh -c 'dpkg --extract "$1" /dpkg || exit 5' sh '{}' \;
@@ -19,6 +19,15 @@ FROM debian:testing-slim@sha256:12ce5b90ca703a11ebaae907649af9b000e616f49199a211
 
 RUN apt-get update
 RUN apt-cache depends ca-certificates \
+    --recurse --no-recommends --no-suggests --no-conflicts --no-breaks --no-replaces --no-enhances --no-pre-depends | grep '^\w' | xargs apt-get download
+RUN mkdir /dpkg && \
+    find . -type f -name '*.deb' -exec sh -c 'dpkg --extract "$1" /dpkg || exit 5' sh '{}' \;
+
+# While we can't move to Debian 13 yet for the final image, use its new build of busybox with security fixes.
+FROM debian:13-slim@sha256:c85a2732e97694ea77237c61304b3bb410e0e961dd6ee945997a06c788c545bb AS busybox
+
+RUN apt-get update
+RUN apt-cache depends busybox-static \
     --recurse --no-recommends --no-suggests --no-conflicts --no-breaks --no-replaces --no-enhances --no-pre-depends | grep '^\w' | xargs apt-get download
 RUN mkdir /dpkg && \
     find . -type f -name '*.deb' -exec sh -c 'dpkg --extract "$1" /dpkg || exit 5' sh '{}' \;
@@ -38,6 +47,8 @@ LABEL maintainer="Grafana team <hello@grafana.com>"
 LABEL org.opencontainers.image.source="https://github.com/grafana/grafana-image-renderer/tree/master/Dockerfile"
 
 COPY --from=debs /dpkg /
+COPY --from=busybox /dpkg/usr/bin/busybox /bin/busybox
+COPY --from=busybox /dpkg/usr/bin/busybox /usr/bin/busybox
 COPY --from=ca-certs /dpkg/usr/share/ca-certificates /usr/share/ca-certificates
 
 USER root
