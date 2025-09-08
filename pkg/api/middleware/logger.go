@@ -10,7 +10,7 @@ func RequestLogger(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		lw := &loggingResponseWriter{w: w}
 		defer func() {
-			slog.InfoContext(r.Context(), "request complete",
+			slog.DebugContext(r.Context(), "request complete",
 				"method", r.Method,
 				"mux_pattern", r.Pattern,
 				"uri", r.URL,
