@@ -2,6 +2,7 @@ package acceptance
 
 import (
 	"bytes"
+	"encoding/csv"
 	"image/png"
 	"io"
 	"net/http"
@@ -41,10 +42,8 @@ func TestRenderingGrafana(t *testing.T) {
 		svc := StartImageRenderer(t, WithNetwork(net, "gir"))
 		_ = StartGrafana(t,
 			WithNetwork(net, "grafana"),
-			WithEnv("GF_FEATURE_TOGGLES_ENABLE", "renderAuthJWT"),
 			WithEnv("GF_RENDERING_SERVER_URL", "http://gir:8081/render"),
 			WithEnv("GF_RENDERING_CALLBACK_URL", "http://grafana:3000/"),
-			WithEnv("GF_LOG_FILTERS", "debug"),
 			WithEnv("GF_RENDERING_RENDERER_TOKEN", rendererAuthToken))
 
 		req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, svc.HTTPEndpoint+"/render", nil)
@@ -98,10 +97,8 @@ func TestRenderingGrafana(t *testing.T) {
 		svc := StartImageRenderer(t, WithNetwork(net, "gir"))
 		_ = StartGrafana(t,
 			WithNetwork(net, "grafana"),
-			WithEnv("GF_FEATURE_TOGGLES_ENABLE", "renderAuthJWT"),
 			WithEnv("GF_RENDERING_SERVER_URL", "http://gir:8081/render"),
 			WithEnv("GF_RENDERING_CALLBACK_URL", "http://grafana:3000/"),
-			WithEnv("GF_LOG_FILTERS", "debug"),
 			WithEnv("GF_RENDERING_RENDERER_TOKEN", rendererAuthToken))
 
 		req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, svc.HTTPEndpoint+"/render", nil)
@@ -141,5 +138,42 @@ func TestRenderingGrafana(t *testing.T) {
 			err := os.WriteFile(fixturePath, body, 0o644)
 			require.NoError(t, err, "could not update fixture file")
 		}
+	})
+
+	t.Run("render prometheus dashboard as CSV", func(t *testing.T) {
+		t.Parallel()
+		OnlyEnterprise(t)
+
+		net, err := network.New(t.Context())
+		require.NoError(t, err, "could not create Docker network")
+		testcontainers.CleanupNetwork(t, net)
+
+		StartPrometheus(t, WithNetwork(net, "prometheus"))
+		svc := StartImageRenderer(t, WithNetwork(net, "gir"))
+		_ = StartGrafana(t,
+			WithNetwork(net, "grafana"),
+			WithEnv("GF_RENDERING_SERVER_URL", "http://gir:8081/render"),
+			WithEnv("GF_RENDERING_CALLBACK_URL", "http://grafana:3000/"),
+			WithEnv("GF_RENDERING_RENDERER_TOKEN", rendererAuthToken))
+
+		req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, svc.HTTPEndpoint+"/render/csv", nil)
+		require.NoError(t, err, "could not construct HTTP request to Grafana")
+		req.Header.Set("Accept", "text/csv, */*")
+		req.Header.Set("X-Auth-Token", "-")
+		query := req.URL.Query()
+		query.Set("url", "http://grafana:3000/d-csv/provisioned-prom-testing?from=1699333200000&to=1699344000000&panelId=1&render=1&orgId=1&timezone=browser")
+		query.Set("encoding", "csv")
+		query.Set("renderKey", renderKey)
+		query.Set("domain", "grafana")
+		req.URL.RawQuery = query.Encode()
+
+		resp, err := http.DefaultClient.Do(req)
+		require.NoError(t, err, "could not send HTTP request to Grafana")
+		require.Equal(t, http.StatusOK, resp.StatusCode, "unexpected HTTP status code from Grafana")
+
+		reader := csv.NewReader(resp.Body)
+		reader.LazyQuotes = true
+		_, err = reader.ReadAll()
+		require.NoError(t, err, "could not parse CSV response from image-renderer")
 	})
 }

@@ -30,6 +30,7 @@ func NewHandler(
 	mux.Handle("GET /render/version", HandleGetRenderVersion(versions))
 
 	handler := middleware.RequestMetrics(mux)
+	handler = middleware.RequestLogger(handler)
 	handler = middleware.Recovery(handler) // must come last!
 	return handler, nil
 }
