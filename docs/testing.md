@@ -20,7 +20,14 @@ The docker image has tests that you can run on it.
 
 `IMAGE=X go test ./tests/acceptance/...`
 
-The image will be retrieve from docker hub if not present locally (might require login).
-If you [built from source](./building_from_source.md#docker-image) you can test it with
+If you [built the Docker image from source](./building_from_source.md#docker-image) you can test it with
 
 `IMAGE=custom-grafana-image-renderer go test ./tests/acceptance/...`
+
+Or you can also pull a specific image to test, for example:
+
+`docker image pull grafana/grafana-image-renderer:v4.0.13`
+
+And then run the tests
+
+`IMAGE=grafana/grafana-image-renderer:v4.0.13 go test ./tests/acceptance/...`
