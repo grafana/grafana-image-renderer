@@ -17,6 +17,17 @@ If the tests are failing and you want to see the difference between the image yo
 ## Test docker image
 
 The docker image has tests that you can run on it.
-You need Docker, bash, and bats available on your system.
 
-Once you've got a built image, run `./tests/bats/test.sh custom-grafana-image-renderer`.
+`IMAGE=X go test ./tests/acceptance/...`
+
+If you [built the Docker image from source](./building_from_source.md#docker-image) you can test it with
+
+`IMAGE=custom-grafana-image-renderer go test ./tests/acceptance/...`
+
+Or you can also pull a specific image to test, for example:
+
+`docker image pull grafana/grafana-image-renderer:v4.0.13`
+
+And then run the tests
+
+`IMAGE=grafana/grafana-image-renderer:v4.0.13 go test ./tests/acceptance/...`
