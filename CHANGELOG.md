@@ -1,3 +1,7 @@
+## 4.0.12 (2025-09-08)
+
+- HTTPServer: Dynamically create and clean up XDG dirs on each request if not exists, [#756](https://github.com/grafana/grafana-image-renderer/pull/756), [macabu](https://github.com/macabu)
+
 ## 4.0.11 (2025-09-01)
 
 - CI: Configure Renovate and pin dependencies, [#712](https://github.com/grafana/grafana-image-renderer/pull/712) + [#723](https://github.com/grafana/grafana-image-renderer/pull/723) + [#734](https://github.com/grafana/grafana-image-renderer/pull/734), [lucychen-grafana](https://github.com/lucychen-grafana)
