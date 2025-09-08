@@ -1,0 +1,99 @@
+name: Docker vulnerability scans
+
+on:
+  push:
+    branches:
+      - master
+    tags:
+      - 'v*'
+  pull_request:
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  grype:
+    strategy:
+      fail-fast: false
+      matrix:
+        file: [Dockerfile, go.Dockerfile]
+        # TODO: Use self-hosted runners when available.
+        runs-on: [github-hosted-ubuntu-arm64-large, github-hosted-ubuntu-x64-large]
+
+    name: grype scanning (${{ matrix.runs-on }}, ${{ matrix.file }})
+    runs-on: ${{ matrix.runs-on }}
+    permissions:
+      contents: read # clone the repository
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: false
+
+      - name: docker build
+        env:
+          DOCKER_BUILDKIT: 1
+          BUILDKIT_STEP_LOG_MAX_SIZE: -1
+          BUILDKIT_STEP_LOG_MAX_SPEED: -1
+          FILE: ${{ matrix.file }}
+        run: docker build . -t image-renderer -f "$FILE"
+
+      - name: Scan with Grype
+        id: scan
+        uses: anchore/scan-action@1638637db639e0ade3258b51db49a9a137574c3e # v6
+        with:
+          image: image-renderer
+          fail-build: true
+      - uses: github/codeql-action/upload-sarif@86b04fb0e47484f7282357688f21d5d0e32175fe # v3
+        if: success() || failure()
+        with:
+          sarif_file: ${{ steps.scan.outputs.sarif }}
+          category: Grype
+
+  trivy:
+    strategy:
+      fail-fast: false
+      matrix:
+        file: [Dockerfile, go.Dockerfile]
+        # TODO: Use self-hosted runners when available.
+        runs-on: [github-hosted-ubuntu-arm64-large, github-hosted-ubuntu-x64-large]
+
+    name: trivy scanning (${{ matrix.runs-on }}, ${{ matrix.file }})
+    runs-on: ${{ matrix.runs-on }}
+    permissions:
+      contents: read # clone the repository
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: false
+
+      - name: docker build
+        env:
+          DOCKER_BUILDKIT: 1
+          BUILDKIT_STEP_LOG_MAX_SIZE: -1
+          BUILDKIT_STEP_LOG_MAX_SPEED: -1
+          FILE: ${{ matrix.file }}
+        run: docker build . -t image-renderer -f "$FILE"
+
+      - name: Scan with Trivy
+        uses: aquasecurity/trivy-action@b6643a29fecd7f34b3597bc6acb0a98b03d33ff8 # 0.33.1
+        with:
+          image-ref: image-renderer
+          format: sarif
+          output: trivy-results.sarif
+          exit-code: 1
+      - uses: github/codeql-action/upload-sarif@86b04fb0e47484f7282357688f21d5d0e32175fe # v3
+        if: success() || failure()
+        with:
+          sarif_file: trivy-results.sarif
+          category: Trivy
