@@ -59,7 +59,7 @@ jobs:
           SECRET: ${{ fromJson(steps.license_secret.outputs.secrets).LICENSE_JWT }}
         run: |
           set -euo pipefail
-          LPATH="$(mktemp XXXXXXXXXXXX.jwt)"
+          LPATH="$(mktemp --tmpdir XXXXXXXXXXXX.jwt)"
           echo "$SECRET" > "$LPATH"
           echo "LICENSE_JWT=$LPATH" >> "$GITHUB_ENV"
 
