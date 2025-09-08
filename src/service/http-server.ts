@@ -9,6 +9,7 @@ import morgan from 'morgan';
 import multer from 'multer';
 import net from 'net';
 import path from 'path';
+import os from 'os';
 import * as promClient from 'prom-client';
 
 import { Logger } from '../logger';
@@ -206,9 +207,18 @@ export class HttpServer {
       headers: this.getHeaders(req),
     };
 
+    const xdgTempDir = await this.createTempXdgDir();
+    if (xdgTempDir) {
+      options.extraEnv = {
+        XDG_CACHE_HOME: process.env?.['XDG_CACHE_HOME'] || xdgTempDir,
+        XDG_CONFIG_HOME: process.env?.['XDG_CONFIG_HOME'] || xdgTempDir,
+      };
+    }
+
     this.log.debug('Render request received', 'url', options.url);
     req.on('close', (err) => {
       this.log.debug('Connection closed', 'url', options.url, 'error', err);
+      this.removeTempXdgDir(xdgTempDir);
       abortController.abort();
     });
 
@@ -290,9 +300,18 @@ export class HttpServer {
       headers: this.getHeaders(req),
     };
 
+    const xdgTempDir = await this.createTempXdgDir();
+    if (xdgTempDir) {
+      options.extraEnv = {
+        XDG_CACHE_HOME: process.env?.['XDG_CACHE_HOME'] || xdgTempDir,
+        XDG_CONFIG_HOME: process.env?.['XDG_CONFIG_HOME'] || xdgTempDir,
+      };
+    }
+
     this.log.debug('Render request received', 'url', options.url);
     req.on('close', (err) => {
       this.log.debug('Connection closed', 'url', options.url, 'error', err);
+      this.removeTempXdgDir(xdgTempDir);
       abortController.abort();
     });
 
@@ -342,5 +361,39 @@ export class HttpServer {
     }
 
     return headers;
+  }
+
+  async createTempXdgDir(): Promise<string | null> {
+    // If both are set, we can skip creating the temp dir.
+    if (process.env?.['XDG_CACHE_HOME'] && process.env?.['XDG_CONFIG_HOME']) {
+      return null;
+    }
+
+    let xdgTempDir: string | null = null;
+
+    try {
+      xdgTempDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'xdg-'));
+      if (!xdgTempDir) {
+        throw new Error('fs.promises.mkdtemp returned a null dir');
+      }
+
+      this.log.debug('Created temporary XDG directory', 'dir', xdgTempDir);
+    } catch (e) {
+      this.log.error('Failed to create temporary XDG directory', 'error', e.message);
+    }
+
+    return xdgTempDir;
+  }
+
+  removeTempXdgDir(xdgTempDir: string | null) {
+    if (xdgTempDir) {
+      fs.rm(xdgTempDir, { recursive: true, maxRetries: 3 }, (err) => {
+        if (err) {
+          this.log.error('Failed to delete temporary XDG directory', 'dir', xdgTempDir, 'error', err.message);
+        } else {
+          this.log.debug('Deleted temporary XDG directory', 'dir', xdgTempDir);
+        }
+      });
+    }
   }
 }
