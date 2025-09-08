@@ -1,0 +1,55 @@
+name: Docker vulnerability scans
+
+on:
+  push:
+    branches:
+      - master
+    tags:
+      - 'v*'
+  pull_request:
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  grype:
+    strategy:
+      fail-fast: false
+      matrix:
+        file: [Dockerfile, go.Dockerfile]
+        # TODO: Use self-hosted runners when available.
+        runs-on: [github-hosted-ubuntu-arm64-large, github-hosted-ubuntu-x64-large]
+
+    name: grype scanning (${{ matrix.runs-on }}, ${{ matrix.file }})
+    runs-on: ${{ matrix.runs-on }}
+    permissions:
+      contents: read # clone the repository
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: false
+
+      - name: docker build
+        env:
+          DOCKER_BUILDKIT: 1
+          BUILDKIT_STEP_LOG_MAX_SIZE: -1
+          BUILDKIT_STEP_LOG_MAX_SPEED: -1
+          FILE: ${{ matrix.file }}
+        run: docker build . -t image-renderer -f "$FILE"
+      - name: Scan with Grype
+        id: scan
+        uses: anchore/scan-action@1638637db639e0ade3258b51db49a9a137574c3e # v6
+        with:
+          image: image-renderer
+          fail-build: true
+      - uses: github/codeql-action/upload-sarif@v3
+        if: success() || failure()
+        with:
+          sarif_file: ${{ steps.scan.outputs.sarif }}
