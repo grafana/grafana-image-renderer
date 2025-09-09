@@ -336,6 +336,8 @@ func (s *BrowserService) RenderCSV(ctx context.Context, url, renderKey, domain s
 		}),
 		browser.SetDownloadBehavior(browser.SetDownloadBehaviorBehaviorAllow).WithDownloadPath(tmpDir),
 		chromedp.Navigate(url),
+		waitForViz(),
+		waitForDuration(time.Second),
 	}
 	if err := chromedp.Run(browserCtx, actions...); err != nil {
 		return nil, fmt.Errorf("failed to run browser: %w", err)
