@@ -5,6 +5,7 @@ import (
 	"encoding/csv"
 	"image/png"
 	"io"
+	"mime"
 	"net/http"
 	"os"
 	"strings"
@@ -173,6 +174,12 @@ func TestRenderingGrafana(t *testing.T) {
 		resp, err := http.DefaultClient.Do(req)
 		require.NoError(t, err, "could not send HTTP request to Grafana")
 		require.Equal(t, http.StatusOK, resp.StatusCode, "unexpected HTTP status code from Grafana")
+
+		// Grafana requires this to save the file somewhere.
+		contentDisposition := resp.Header.Get("Content-Disposition")
+		_, params, err := mime.ParseMediaType(contentDisposition)
+		require.NoError(t, err, "could not parse Content-Disposition header")
+		require.NotEmpty(t, params["filename"], "no filename in Content-Disposition header")
 
 		reader := csv.NewReader(transform.NewReader(resp.Body, unicode.BOMOverride(encoding.Nop.NewDecoder())))
 		reader.LazyQuotes = true
