@@ -15,6 +15,9 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/network"
+	"golang.org/x/text/encoding"
+	"golang.org/x/text/encoding/unicode"
+	"golang.org/x/text/transform"
 )
 
 func TestRenderingGrafana(t *testing.T) {
@@ -171,9 +174,10 @@ func TestRenderingGrafana(t *testing.T) {
 		require.NoError(t, err, "could not send HTTP request to Grafana")
 		require.Equal(t, http.StatusOK, resp.StatusCode, "unexpected HTTP status code from Grafana")
 
-		reader := csv.NewReader(resp.Body)
+		reader := csv.NewReader(transform.NewReader(resp.Body, unicode.BOMOverride(encoding.Nop.NewDecoder())))
 		reader.LazyQuotes = true
-		_, err = reader.ReadAll()
+		records, err := reader.ReadAll()
 		require.NoError(t, err, "could not parse CSV response from image-renderer")
+		require.Equal(t, []string{"Time", "1"}, records[0])
 	})
 }
