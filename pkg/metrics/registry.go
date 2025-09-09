@@ -21,6 +21,7 @@ func NewRegistry() *prometheus.Registry {
 		middleware.MetricTrustedURLRequests,
 
 		api.MetricRenderDuration,
+		api.MetricRenderCSVDuration,
 	)
 	return registry
 }

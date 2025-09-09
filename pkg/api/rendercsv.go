@@ -9,6 +9,17 @@ import (
 	"time"
 
 	"github.com/grafana/grafana-image-renderer/pkg/service"
+	"github.com/prometheus/client_golang/prometheus"
+)
+
+var (
+	// This also implicitly gives us a count for each result type, so we can calculate success rate.
+	MetricRenderCSVDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Name:        "http_render_csv_request_duration",
+		Help:        "How long does a single CSV render take?",
+		ConstLabels: prometheus.Labels{"unit": "seconds"},
+		Buckets:     []float64{0.5, 1, 3, 4, 5, 7, 9, 10, 11, 15, 19, 20, 21, 24, 27, 29, 30, 31, 35, 55, 95, 125, 305, 605},
+	}, []string{"result"})
 )
 
 func HandlePostRenderCSV(browser *service.BrowserService) http.Handler {
@@ -47,12 +58,15 @@ func HandlePostRenderCSV(browser *service.BrowserService) http.Handler {
 		renderKey := r.URL.Query().Get("renderKey")
 		domain := r.URL.Query().Get("domain")
 
+		start := time.Now()
 		contents, err := browser.RenderCSV(ctx, url, renderKey, domain)
 		if err != nil {
+			MetricRenderCSVDuration.WithLabelValues("error").Observe(time.Since(start).Seconds())
 			http.Error(w, "CSV rendering failed", http.StatusInternalServerError)
 			slog.ErrorContext(ctx, "failed to render CSV", "err", err)
 			return
 		}
+		MetricRenderCSVDuration.WithLabelValues("success").Observe(time.Since(start).Seconds())
 
 		w.Header().Set("Content-Type", "text/csv")
 		w.Write(contents)
