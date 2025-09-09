@@ -25,8 +25,13 @@ var (
 	regexpOnlyNumbers = regexp.MustCompile(`^[0-9]+$`)
 )
 
-func HandlePostRender(browser *service.BrowserService) http.Handler {
+func HandleGetRender(browser *service.BrowserService) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		tracer := tracer(r.Context())
+		ctx, span := tracer.Start(r.Context(), "HandleGetRender")
+		defer span.End()
+		r = r.WithContext(ctx)
+
 		url := r.URL.Query().Get("url")
 		if url == "" {
 			http.Error(w, "missing 'url' query parameter", http.StatusBadRequest)
