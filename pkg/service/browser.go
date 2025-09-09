@@ -291,6 +291,11 @@ func (s *BrowserService) Render(ctx context.Context, url string, optionFuncs ...
 	}
 }
 
+// RenderCSV visits a web page and downloads the CSV inside.
+//
+// You may be thinking: what the hell are we doing? Why are we using a browser for this?
+// The CSV endpoint just returns HTML. The actual query is done by the browser, and then a script _in the webpage_ downloads it as a CSV file.
+// This SHOULD be replaced at some point, such that the Grafana server does all the work; this is just not acceptable behaviour...
 func (s *BrowserService) RenderCSV(ctx context.Context, url, renderKey, domain string) ([]byte, error) {
 	if url == "" {
 		return nil, fmt.Errorf("url must not be empty")
