@@ -178,6 +178,7 @@ func TestRenderingGrafana(t *testing.T) {
 		reader.LazyQuotes = true
 		records, err := reader.ReadAll()
 		require.NoError(t, err, "could not parse CSV response from image-renderer")
+		require.NotEmpty(t, records, "no records in CSV response from image-renderer")
 		require.Equal(t, []string{"Time", "1"}, records[0])
 	})
 }
