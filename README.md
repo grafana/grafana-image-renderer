@@ -28,7 +28,7 @@ Rendering multiple images in parallel requires an even bigger memory footprint. 
 
 ## Installation
 
-We offer two installation methods: as a plugin and as a remote service. We always recommend using the remote service if possible, as this is how we deploy the service in Grafana Cloud, and thus gets the most attention in bug handling.
+We offer two installation methods: as a Docker image, and as a standalone service.
 
 **I deploy Grafana in Docker/Kubernetes/...:** Use the Docker image.
 
@@ -36,7 +36,6 @@ We offer two installation methods: as a plugin and as a remote service. We alway
 
   * Prefer the Docker image with `--networking=host` passed to the Docker container.
   * If that is not fitting, prefer the standalone server.
-  * If that is not fitting, use the plugin.
 
 ### Docker image (recommended)
 
@@ -99,6 +98,12 @@ The following example describes how to build and run the remote HTTP rendering s
 1. Restart Grafana.
 
 ### Plugin: Grafana CLI
+
+> [!CAUTION]
+> The plugin installation is deprecated.
+> This means that there is NO SUPPORT for it.
+> There may not be any bug fixes or security updates; if you require this, use the other installation methods.
+> When this breaks, it will remain broken.
 
 You can install the plugin with Grafana CLI:
 
