@@ -69,6 +69,6 @@ func HandlePostRenderCSV(browser *service.BrowserService) http.Handler {
 		MetricRenderCSVDuration.WithLabelValues("success").Observe(time.Since(start).Seconds())
 
 		w.Header().Set("Content-Type", "text/csv")
-		w.Write(contents)
+		_, _ = w.Write(contents)
 	})
 }
