@@ -19,7 +19,7 @@ var (
 		ConstLabels: prometheus.Labels{
 			"unit": "seconds",
 		},
-		Buckets: []float64{0.5, 1, 3, 4, 5, 7, 9, 10, 11, 15, 19, 20, 21, 24, 27, 29, 30, 31, 35, 55, 95, 125, 305, 605},
+		Buckets: []float64{0.1, 0.5, 1, 3, 4, 5, 7, 9, 10, 11, 15, 19, 20, 21, 24, 27, 29, 30, 31, 35, 55, 95, 125, 305, 605},
 	}, []string{"method", "path", "status_code"})
 )
 

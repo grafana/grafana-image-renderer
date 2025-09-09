@@ -64,7 +64,9 @@ services:
       GF_LOG_FILTERS: rendering:debug
     volumes:
       - grafana-data:/var/lib/grafana
-      - ./datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml
+      - ./datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml:ro
+      - ./dashboards.yaml:/etc/grafana/provisioning/dashboards/dashboards.yaml:ro
+      - ./dashboards:/usr/share/grafana/dashboards:ro
     restart: unless-stopped
 
 volumes:
