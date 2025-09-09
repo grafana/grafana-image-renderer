@@ -224,7 +224,7 @@ func StartGrafana(tb testing.TB, options ...ContainerOption) *Grafana {
 		Logger:  log.TestLogger(tb),
 		Started: true,
 		ContainerRequest: testcontainers.ContainerRequest{
-			Image: "docker.io/grafana/grafana-enterprise:nightly",
+			Image: "docker.io/grafana/grafana-enterprise:12.1.1",
 			Env: map[string]string{
 				"GF_FEATURE_TOGGLES_ENABLE":  "renderAuthJWT",
 				"GF_LOG_FILTERS":             "debug",
