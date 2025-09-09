@@ -10,7 +10,7 @@ RUN apk add --no-cache git
 WORKDIR /src
 COPY . ./
 
-RUN CGO_ENABLED=0 go build \
+RUN --mount=type=cache,target=/go/pkg/mod CGO_ENABLED=0 go build \
     -o grafana-image-renderer \
     -buildvcs \
     -ldflags '-s -w -extldflags "-static"' \
