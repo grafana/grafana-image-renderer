@@ -15,12 +15,11 @@ func HandleGetVersion(versions *service.VersionService, browser *service.Browser
 		tracer := tracer(r.Context())
 		ctx, span := tracer.Start(r.Context(), "HandleGetVersion")
 		defer span.End()
-		r = r.WithContext(ctx)
 
-		version, err := browser.GetVersion(r.Context())
+		version, err := browser.GetVersion(ctx)
 		if err != nil {
 			http.Error(w, "failed to get browser version", http.StatusInternalServerError)
-			slog.ErrorContext(r.Context(), "failed to get browser version", "error", err)
+			slog.ErrorContext(ctx, "failed to get browser version", "error", err)
 			return
 		}
 
@@ -33,9 +32,8 @@ func HandleGetVersion(versions *service.VersionService, browser *service.Browser
 func HandleGetRenderVersion(versions *service.VersionService) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		tracer := tracer(r.Context())
-		ctx, span := tracer.Start(r.Context(), "HandleGetRenderVersion")
+		_, span := tracer.Start(r.Context(), "HandleGetRenderVersion")
 		defer span.End()
-		r = r.WithContext(ctx)
 
 		response := `{"version": "` + versions.GetRenderVersion() + `"}`
 		w.Header().Set("Content-Type", "application/json")
