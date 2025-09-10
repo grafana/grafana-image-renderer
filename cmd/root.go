@@ -20,11 +20,10 @@ func NewRootCmd() *cli.Command {
 		Version: service.NewVersionService().GetPrettyVersion(),
 		Flags: []cli.Flag{
 			&cli.StringFlag{
-				Name:  "log-level",
-				Usage: "The minimum level to log at (enum: debug, info, warn, error)",
-				Value: "info",
-				Sources: config.FromConfig("log.level",
-					config.FromEnv("GF_RENDERER_LOG_LEVEL")),
+				Name:    "log-level",
+				Usage:   "The minimum level to log at (enum: debug, info, warn, error)",
+				Value:   "info",
+				Sources: config.FromConfig("log.level"),
 				Validator: func(s string) error {
 					if s != "debug" && s != "info" && s != "warn" && s != "error" {
 						return fmt.Errorf("invalid log level: %s", s)

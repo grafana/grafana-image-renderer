@@ -17,11 +17,10 @@ func NewCmd() *cli.Command {
 		Usage: "Check the server is running and is healthy.",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
-				Name:  "addr",
-				Usage: "The address to listen on for HTTP requests.",
-				Value: ":8081",
-				Sources: config.FromConfig("server.addr",
-					config.FromEnv("GF_RENDERER_SERVER_ADDR")),
+				Name:    "addr",
+				Usage:   "The address to listen on for HTTP requests.",
+				Value:   ":8081",
+				Sources: config.FromConfig("server.addr"),
 			},
 		},
 		Action: run,

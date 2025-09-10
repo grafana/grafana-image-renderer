@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
-	"strconv"
 	"strings"
 	"time"
 
@@ -43,10 +42,9 @@ func TracerFlags() []cli.Flag {
 	const category = "Tracing"
 	return []cli.Flag{
 		&cli.StringFlag{
-			Name:  "tracing-endpoint",
-			Usage: "The tracing endpoint to send spans to. Defaults to gRPC; if http:// or https:// is specified, HTTP will be used instead. grpc:// is fine but redundant.",
-			Sources: config.FromConfig("tracing.endpoint",
-				config.FromEnv("GF_RENDERER_TRACING_ENDPOINT")),
+			Name:     "tracing-endpoint",
+			Usage:    "The tracing endpoint to send spans to. Defaults to gRPC; if http:// or https:// is specified, HTTP will be used instead. grpc:// is fine but redundant.",
+			Sources:  config.FromConfig("tracing.endpoint"),
 			Category: category,
 			Validator: func(s string) error {
 				before, _, found := strings.Cut(s, "://")
@@ -65,15 +63,13 @@ func TracerFlags() []cli.Flag {
 			Name:     "tracing-insecure",
 			Usage:    "Whether to skip TLS verification when connecting. If set, the scheme in the endpoint is overridden to be insecure.",
 			Category: category,
-			Sources: config.FromConfig("tracing.insecure",
-				config.FromEnv("GF_RENDERER_TRACING_INSECURE")),
+			Sources:  config.FromConfig("tracing.insecure"),
 		},
 		&cli.StringSliceFlag{
 			Name:     "tracing-header",
 			Usage:    "A header to add to requests to the tracing endpoint. Syntax is `<key>=<value>`. May be repeated. This is useful for things like authentication.",
 			Category: category,
-			Sources: config.FromConfig("tracing.headers",
-				config.FromEnv("GF_RENDERER_TRACING_HEADERS")),
+			Sources:  config.FromConfig("tracing.headers"),
 			Validator: func(s []string) error {
 				for _, kv := range s {
 					if !strings.Contains(kv, "=") {
@@ -88,8 +84,7 @@ func TracerFlags() []cli.Flag {
 			Usage:    "The compression algorithm to use when sending traces. (enum: none, gzip)",
 			Value:    "none",
 			Category: category,
-			Sources: config.FromConfig("tracing.compressor",
-				config.FromEnv("GF_RENDERER_TRACING_COMPRESSOR")),
+			Sources:  config.FromConfig("tracing.compressor"),
 			Validator: func(s string) error {
 				if s == "" || s == "none" || s == "gzip" {
 					return nil
@@ -102,45 +97,35 @@ func TracerFlags() []cli.Flag {
 			Usage:    "The timeout for requests to the tracing endpoint.",
 			Value:    10 * time.Second,
 			Category: category,
-			Sources: config.FromConfig("tracing.timeout",
-				config.Mapping(config.FromEnv("GF_RENDERER_TRACING_TIMEOUT"), func(s string) string {
-					if ms, err := strconv.Atoi(s); err != nil {
-						return (time.Duration(ms) * time.Millisecond).String()
-					}
-					return s
-				})),
+			Sources:  config.FromConfig("tracing.timeout"),
 		},
 		&cli.StringFlag{
 			Name:      "tracing-trusted-certificate",
 			Usage:     "A path to a PEM-encoded certificate to use as a trusted root when connecting to the tracing endpoint over gRPC or HTTPS.",
 			Category:  category,
 			TakesFile: true,
-			Sources: config.FromConfig("tracing.trusted_certificate",
-				config.FromEnv("GF_RENDERER_TRACING_TRUSTED_CERTIFICATE")),
+			Sources:   config.FromConfig("tracing.trusted_certificate"),
 		},
 		&cli.StringFlag{
 			Name:      "tracing-client-certificate",
 			Usage:     "A path to a PEM-encoded client certificate to use for mTLS when connecting to the tracing endpoint over gRPC or HTTPS.",
 			Category:  category,
 			TakesFile: true,
-			Sources: config.FromConfig("tracing.client_certificate",
-				config.FromEnv("GF_RENDERER_TRACING_CLIENT_CERTIFICATE")),
+			Sources:   config.FromConfig("tracing.client_certificate"),
 		},
 		&cli.StringFlag{
 			Name:      "tracing-client-key",
 			Usage:     "A path to a PEM-encoded client key to use for mTLS when connecting to the tracing endpoint over gRPC or HTTPS.",
 			Category:  category,
 			TakesFile: true,
-			Sources: config.FromConfig("tracing.client_key",
-				config.FromEnv("GF_RENDERER_TRACING_CLIENT_KEY")),
+			Sources:   config.FromConfig("tracing.client_key"),
 		},
 		&cli.StringFlag{
 			Name:     "tracing-service-name",
 			Usage:    "The service name to use in traces.",
 			Category: category,
 			Value:    "grafana-image-renderer",
-			Sources: config.FromConfig("tracing.service_name",
-				config.FromEnv("GF_RENDERER_TRACING_SERVICE_NAME")),
+			Sources:  config.FromConfig("tracing.service_name"),
 		},
 	}
 }
