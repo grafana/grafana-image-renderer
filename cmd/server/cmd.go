@@ -12,6 +12,7 @@ import (
 	"github.com/grafana/grafana-image-renderer/pkg/traces"
 	"github.com/urfave/cli/v3"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/propagation"
 )
 
 func NewCmd() *cli.Command {
@@ -69,6 +70,7 @@ func run(ctx context.Context, c *cli.Command) error {
 		defer func() { _ = tracerProvider.Shutdown(ctx) }()
 		ctx = traces.WithTracerProvider(ctx, tracerProvider)
 		otel.SetTracerProvider(tracerProvider)
+		otel.SetTextMapPropagator(propagation.TraceContext{})
 	}
 	browser := service.NewBrowserService(c.String("browser"), c.StringSlice("browser-flags"),
 		service.WithViewport(1000, 500),
