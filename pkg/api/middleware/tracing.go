@@ -27,10 +27,7 @@ func Tracing(h http.Handler) http.Handler {
 
 		recorder := &statusRecordingResponseWriter{rw: w}
 		h.ServeHTTP(recorder, r)
-		span.SetAttributes(
-			attribute.String("http.pattern", r.Pattern),
-			attribute.Int("http.status_code", recorder.status),
-		)
+		span.SetAttributes(attribute.Int("http.status_code", recorder.status))
 		if recorder.status >= 400 {
 			span.SetStatus(codes.Error, http.StatusText(recorder.status))
 		} else {
