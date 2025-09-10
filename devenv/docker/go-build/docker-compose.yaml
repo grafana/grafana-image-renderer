@@ -62,6 +62,7 @@ services:
       GF_TRACING_OPENTELEMETRY_OTLP_ADDRESS: tempo:4317
       GF_INSTALL_PLUGINS: https://storage.googleapis.com/integration-artifacts/grafana-exploretraces-app/grafana-exploretraces-app-latest.zip;grafana-traces-app
       GF_LOG_FILTERS: rendering:debug
+      GF_FEATURE_TOGGLES_ENABLE: sharingDashboardImage
     volumes:
       - grafana-data:/var/lib/grafana
       - ./datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml:ro
