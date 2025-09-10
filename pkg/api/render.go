@@ -25,8 +25,13 @@ var (
 	regexpOnlyNumbers = regexp.MustCompile(`^[0-9]+$`)
 )
 
-func HandlePostRender(browser *service.BrowserService) http.Handler {
+func HandleGetRender(browser *service.BrowserService) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		tracer := tracer(r.Context())
+		ctx, span := tracer.Start(r.Context(), "HandleGetRender")
+		defer span.End()
+		r = r.WithContext(ctx)
+
 		url := r.URL.Query().Get("url")
 		if url == "" {
 			http.Error(w, "missing 'url' query parameter", http.StatusBadRequest)
@@ -109,10 +114,10 @@ func HandlePostRender(browser *service.BrowserService) http.Handler {
 		}
 
 		start := time.Now()
-		body, contentType, err := browser.Render(r.Context(), url, options...)
+		body, contentType, err := browser.Render(ctx, url, options...)
 		if err != nil {
 			MetricRenderDuration.WithLabelValues("error").Observe(time.Since(start).Seconds())
-			slog.ErrorContext(r.Context(), "failed to render", "error", err)
+			slog.ErrorContext(ctx, "failed to render", "error", err)
 			http.Error(w, "Failed to render", http.StatusInternalServerError)
 			return
 		}

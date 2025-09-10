@@ -23,7 +23,7 @@ func run(args []string) int {
 	defer cancel()
 
 	if err := cmd.NewRootCmd().Run(ctx, args); err != nil && !errors.Is(err, context.Canceled) {
-		slog.Error("error running command", "err", err)
+		slog.ErrorContext(ctx, "error running command", "err", err)
 		return 1
 	}
 

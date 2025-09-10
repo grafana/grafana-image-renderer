@@ -19,7 +19,8 @@ import (
 	"github.com/chromedp/cdproto/network"
 	"github.com/chromedp/cdproto/page"
 	"github.com/chromedp/chromedp"
-	"github.com/google/uuid"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 var ErrInvalidBrowserOption = errors.New("invalid browser option")
@@ -54,6 +55,10 @@ func NewBrowserService(binary string, args []string, defaultRenderingOptions ...
 // GetVersion runs the binary with only a `--version` argument.
 // Example output would be something like: `Brave Browser 139.1.81.131` or `Chromium 139.999.999.999`. Some browsers may include more details; do not try to parse this.
 func (s *BrowserService) GetVersion(ctx context.Context) (string, error) {
+	tracer := tracer(ctx)
+	ctx, span := tracer.Start(ctx, "BrowserService.GetVersion")
+	defer span.End()
+
 	version, err := exec.CommandContext(ctx, s.binary, "--version").Output()
 	if err != nil {
 		return "", fmt.Errorf("failed to get version of browser: %w", err)
@@ -229,6 +234,10 @@ func defaultRenderingOptions() *renderingOptions {
 }
 
 func (s *BrowserService) Render(ctx context.Context, url string, optionFuncs ...RenderingOption) ([]byte, string, error) {
+	tracer := tracer(ctx)
+	ctx, span := tracer.Start(ctx, "BrowserService.Render")
+	defer span.End()
+
 	if url == "" {
 		return nil, "text/plain", fmt.Errorf("url must not be empty")
 	}
@@ -244,12 +253,7 @@ func (s *BrowserService) Render(ctx context.Context, url string, optionFuncs ...
 			return nil, "text/plain", fmt.Errorf("failed to apply rendering option: %w", err)
 		}
 	}
-
-	traceID, err := getTraceID(ctx)
-	if err != nil {
-		return nil, "text/plain", fmt.Errorf("failed to get trace ID: %w", err)
-	}
-	log := s.log.With("trace_id", traceID)
+	span.AddEvent("options applied")
 
 	allocatorOptions, err := s.createAllocatorOptions(opts)
 	if err != nil {
@@ -259,8 +263,9 @@ func (s *BrowserService) Render(ctx context.Context, url string, optionFuncs ...
 	defer cancelTimeout()
 	allocatorCtx, cancelAllocator := chromedp.NewExecAllocator(timeoutCtx, allocatorOptions...)
 	defer cancelAllocator()
-	browserCtx, cancelBrowser := chromedp.NewContext(allocatorCtx, browserLoggers(ctx, log))
+	browserCtx, cancelBrowser := chromedp.NewContext(allocatorCtx, browserLoggers(ctx, s.log))
 	defer cancelBrowser()
+	span.AddEvent("browser allocated")
 
 	orientation := chromedp.EmulatePortrait
 	if opts.landscape {
@@ -268,25 +273,28 @@ func (s *BrowserService) Render(ctx context.Context, url string, optionFuncs ...
 	}
 	fileChan := make(chan []byte, 1) // buffered: we don't want the browser to stick around while we try to export this value.
 	actions := []chromedp.Action{
-		emulation.SetPageScaleFactor(opts.pageScaleFactor),
-		chromedp.EmulateViewport(int64(opts.viewportWidth), int64(opts.viewportHeight), orientation),
-		setHeaders(opts.headers),
-		setCookies(opts.cookies),
-		chromedp.Navigate(url),
-		chromedp.WaitReady("body", chromedp.ByQuery), // wait for a body to exist; this is when the page has started to actually render
-		scrollForElements(opts.timeBetweenScrolls),
-		waitForViz(),
-		waitForDuration(time.Second),
-		opts.printer.action(fileChan, opts),
+		tracingAction("SetPageScaleFactor", emulation.SetPageScaleFactor(opts.pageScaleFactor)),
+		tracingAction("EmulateViewport", chromedp.EmulateViewport(int64(opts.viewportWidth), int64(opts.viewportHeight), orientation)),
+		tracingAction("setHeaders", setHeaders(opts.headers)),
+		tracingAction("setCookies", setCookies(opts.cookies)),
+		tracingAction("Navigate", chromedp.Navigate(url)),
+		tracingAction("WaitReady(body)", chromedp.WaitReady("body", chromedp.ByQuery)), // wait for a body to exist; this is when the page has started to actually render
+		tracingAction("scrollForElements", scrollForElements(opts.timeBetweenScrolls)),
+		tracingAction("waitForViz", waitForViz()),
+		tracingAction("waitForDuration(1s)", waitForDuration(time.Second)),
+		tracingAction("printer.action", opts.printer.action(fileChan, opts)),
 	}
+	span.AddEvent("actions created")
 	if err := chromedp.Run(browserCtx, actions...); err != nil {
 		return nil, "text/plain", fmt.Errorf("failed to run browser: %w", err)
 	}
+	span.AddEvent("actions completed")
 
 	select {
 	case fileContents := <-fileChan:
 		return fileContents, opts.printer.contentType(), nil
 	default:
+		span.AddEvent("no data received from printer")
 		return nil, "text/plain", fmt.Errorf("failed to render: no data received after browser quit")
 	}
 }
@@ -301,28 +309,22 @@ func (s *BrowserService) RenderCSV(ctx context.Context, url, renderKey, domain s
 		return nil, fmt.Errorf("url must not be empty")
 	}
 
-	traceID, err := getTraceID(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get trace ID: %w", err)
-	}
-	log := s.log.With("trace_id", traceID)
-
 	allocatorOptions, err := s.createAllocatorOptions(defaultRenderingOptions())
 	if err != nil {
 		return nil, fmt.Errorf("failed to create allocator options: %w", err)
 	}
 	allocatorCtx, cancelAllocator := chromedp.NewExecAllocator(ctx, allocatorOptions...)
 	defer cancelAllocator()
-	browserCtx, cancelBrowser := chromedp.NewContext(allocatorCtx, browserLoggers(ctx, log))
+	browserCtx, cancelBrowser := chromedp.NewContext(allocatorCtx, browserLoggers(ctx, s.log))
 	defer cancelBrowser()
 
-	tmpDir, err := os.MkdirTemp("", "gir-csv-"+traceID+"-*")
+	tmpDir, err := os.MkdirTemp("", "gir-csv-*")
 	if err != nil {
 		return nil, fmt.Errorf("failed to create temporary directory: %w", err)
 	}
 	defer func() {
 		if err := os.RemoveAll(tmpDir); err != nil {
-			log.WarnContext(ctx, "failed to remove temporary directory", "path", tmpDir, "error", err)
+			s.log.WarnContext(ctx, "failed to remove temporary directory", "path", tmpDir, "error", err)
 		}
 	}()
 
@@ -362,15 +364,6 @@ func (s *BrowserService) RenderCSV(ctx context.Context, url, renderKey, domain s
 	}
 
 	return fileContents, nil
-}
-
-func getTraceID(context.Context) (string, error) {
-	// TODO: Use OTEL trace ID from context
-	id, err := uuid.NewRandom()
-	if err != nil {
-		return "", fmt.Errorf("failed to generate new UUID: %w", err)
-	}
-	return id.String(), nil
 }
 
 func (s *BrowserService) createAllocatorOptions(renderingOptions *renderingOptions) ([]chromedp.ExecAllocatorOption, error) {
@@ -641,25 +634,35 @@ func setCookies(cookies []*network.SetCookieParams) chromedp.Action {
 
 func scrollForElements(timeBetweenScrolls time.Duration) chromedp.Action {
 	return chromedp.ActionFunc(func(ctx context.Context) error {
+		tracer := tracer(ctx)
+		ctx, span := tracer.Start(ctx, "scrollForElements")
+		defer span.End()
+
 		var scrolls int
 		err := chromedp.Evaluate(`Math.floor(document.body.scrollHeight / window.innerHeight)`, &scrolls).Do(ctx)
 		if err != nil {
 			return fmt.Errorf("failed to calculate scrolls required: %w", err)
 		}
+		span.AddEvent("calculated scrolls", trace.WithAttributes(attribute.Int("scrolls", scrolls)))
 
 		select {
 		case <-time.After(timeBetweenScrolls):
+			span.AddEvent("initial wait complete")
 		case <-ctx.Done():
+			span.AddEvent("context completed before finishing initial wait")
 			return ctx.Err()
 		}
 		for range scrolls {
 			err := chromedp.Evaluate(`window.scrollBy(0, window.innerHeight, { behavior: 'instant' })`, nil).Do(ctx)
+			span.AddEvent("scrolled one viewport")
 			if err != nil {
 				return fmt.Errorf("failed to scroll: %w", err)
 			}
 			select {
 			case <-time.After(timeBetweenScrolls):
+				span.AddEvent("wait after scroll complete")
 			case <-ctx.Done():
+				span.AddEvent("context completed before finishing scroll wait")
 				return ctx.Err()
 			}
 		}
@@ -668,6 +671,7 @@ func scrollForElements(timeBetweenScrolls time.Duration) chromedp.Action {
 		if err != nil {
 			return fmt.Errorf("failed to scroll to top: %w", err)
 		}
+		span.AddEvent("scrolled to top")
 
 		return nil
 	})
@@ -688,5 +692,14 @@ func waitForDuration(d time.Duration) chromedp.Action {
 			return ctx.Err()
 		}
 		return nil
+	})
+}
+
+func tracingAction(name string, action chromedp.Action) chromedp.Action {
+	return chromedp.ActionFunc(func(ctx context.Context) error {
+		tracer := tracer(ctx)
+		ctx, span := tracer.Start(ctx, name)
+		defer span.End()
+		return action.Do(ctx)
 	})
 }

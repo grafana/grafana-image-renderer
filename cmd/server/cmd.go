@@ -3,19 +3,22 @@ package server
 import (
 	"context"
 	"fmt"
+	"slices"
 
 	"github.com/grafana/grafana-image-renderer/cmd/config"
 	"github.com/grafana/grafana-image-renderer/pkg/api"
 	"github.com/grafana/grafana-image-renderer/pkg/metrics"
 	"github.com/grafana/grafana-image-renderer/pkg/service"
+	"github.com/grafana/grafana-image-renderer/pkg/traces"
 	"github.com/urfave/cli/v3"
+	"go.opentelemetry.io/otel"
 )
 
 func NewCmd() *cli.Command {
 	return &cli.Command{
 		Name:  "server",
 		Usage: "Run the server part of the service.",
-		Flags: []cli.Flag{
+		Flags: slices.Concat([]cli.Flag{
 			&cli.StringFlag{
 				Name:     "addr",
 				Usage:    "The address to listen on for HTTP requests.",
@@ -23,11 +26,11 @@ func NewCmd() *cli.Command {
 				Value:    ":8081",
 				Sources:  config.FromConfig("server.addr"),
 			},
-			&cli.StringFlag{
+			&cli.StringSliceFlag{
 				Name:     "auth-token",
-				Usage:    "The X-Auth-Token header value that must be sent to the service to permit requests.",
+				Usage:    "The X-Auth-Token header value that must be sent to the service to permit requests. May be repeated.",
 				Category: "Server",
-				Value:    "-",
+				Value:    []string{"-"},
 				Sources:  config.FromConfig("auth.token"),
 			},
 
@@ -51,18 +54,27 @@ func NewCmd() *cli.Command {
 				Category: "Browser",
 				Sources:  config.FromConfig("browser.gpu"),
 			},
-		},
+		}, traces.TracerFlags()),
 		Action: run,
 	}
 }
 
 func run(ctx context.Context, c *cli.Command) error {
 	metrics := metrics.NewRegistry()
+	tracerProvider, err := traces.NewTracerProvider(ctx, c)
+	if err != nil {
+		return fmt.Errorf("failed to set up tracer: %w", err)
+	}
+	if tracerProvider != nil {
+		defer func() { _ = tracerProvider.Shutdown(ctx) }()
+		ctx = traces.WithTracerProvider(ctx, tracerProvider)
+		otel.SetTracerProvider(tracerProvider)
+	}
 	browser := service.NewBrowserService(c.String("browser"), c.StringSlice("browser-flags"),
 		service.WithViewport(1000, 500),
 		service.WithGPU(c.Bool("browser-gpu")))
 	versions := service.NewVersionService()
-	handler, err := api.NewHandler(metrics, browser, api.AuthToken(c.String("auth-token")), versions)
+	handler, err := api.NewHandler(metrics, browser, api.AuthTokens(c.StringSlice("auth-token")), versions)
 	if err != nil {
 		return fmt.Errorf("failed to create API handler: %w", err)
 	}

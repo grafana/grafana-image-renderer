@@ -3,6 +3,7 @@ package healthcheck
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"strings"
 
@@ -55,5 +56,6 @@ func run(ctx context.Context, c *cli.Command) error {
 		return fmt.Errorf("health check request returned non-2xx status code: %d", resp.StatusCode)
 	}
 
+	slog.InfoContext(ctx, "OK")
 	return nil
 }
