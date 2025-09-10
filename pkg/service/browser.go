@@ -21,6 +21,7 @@ import (
 	"github.com/chromedp/chromedp"
 	"github.com/prometheus/client_golang/prometheus"
 	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -550,8 +551,19 @@ type pdfPrinter struct {
 
 func (p *pdfPrinter) action(dst chan []byte, req *renderingOptions) chromedp.Action {
 	return chromedp.ActionFunc(func(ctx context.Context) error {
+		tracer := tracer(ctx)
+		ctx, span := tracer.Start(ctx, "pdfPrinter.action",
+			trace.WithAttributes(
+				attribute.String("paperSize", string(p.paperSize)),
+				attribute.Bool("printBackground", p.printBackground),
+				attribute.Bool("landscape", req.landscape),
+				attribute.Float64("pageScaleFactor", req.pageScaleFactor),
+			))
+		defer span.End()
+
 		width, height, err := p.paperSize.FormatInches()
 		if err != nil {
+			span.SetStatus(codes.Error, err.Error())
 			return fmt.Errorf("failed to get paper size dimensions: %w", err)
 		}
 
@@ -569,9 +581,11 @@ func (p *pdfPrinter) action(dst chan []byte, req *renderingOptions) chromedp.Act
 			WithScale(scale).
 			Do(ctx)
 		if err != nil {
+			span.SetStatus(codes.Error, err.Error())
 			return fmt.Errorf("failed to print to PDF: %w", err)
 		}
 		dst <- output
+		span.SetStatus(codes.Ok, "PDF printed successfully")
 		return nil
 	})
 }
@@ -626,14 +640,23 @@ type pngPrinter struct {
 
 func (p *pngPrinter) action(dst chan []byte, _ *renderingOptions) chromedp.Action {
 	return chromedp.ActionFunc(func(ctx context.Context) error {
+		tracer := tracer(ctx)
+		ctx, span := tracer.Start(ctx, "pngPrinter.action",
+			trace.WithAttributes(
+				attribute.Bool("fullHeight", p.fullHeight),
+			))
+		defer span.End()
+
 		output, err := page.CaptureScreenshot().
 			WithFormat(page.CaptureScreenshotFormatPng).
 			WithCaptureBeyondViewport(p.fullHeight).
 			Do(ctx)
 		if err != nil {
+			span.SetStatus(codes.Error, err.Error())
 			return fmt.Errorf("failed to capture screenshot: %w", err)
 		}
 		dst <- output
+		span.SetStatus(codes.Ok, "screenshot captured")
 		return nil
 	})
 }
@@ -758,8 +781,10 @@ func tracingAction(name string, action chromedp.Action) chromedp.Action {
 
 		err := action.Do(ctx)
 		if err != nil {
+			span.SetStatus(codes.Error, err.Error())
 			return err
 		}
+		span.SetStatus(codes.Ok, "action completed successfully")
 
 		MetricBrowserActionDuration.WithLabelValues(name).Observe(time.Since(start).Seconds())
 		return nil
