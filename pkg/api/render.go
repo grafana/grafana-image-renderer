@@ -114,10 +114,10 @@ func HandleGetRender(browser *service.BrowserService) http.Handler {
 		}
 
 		start := time.Now()
-		body, contentType, err := browser.Render(r.Context(), url, options...)
+		body, contentType, err := browser.Render(ctx, url, options...)
 		if err != nil {
 			MetricRenderDuration.WithLabelValues("error").Observe(time.Since(start).Seconds())
-			slog.ErrorContext(r.Context(), "failed to render", "error", err)
+			slog.ErrorContext(ctx, "failed to render", "error", err)
 			http.Error(w, "Failed to render", http.StatusInternalServerError)
 			return
 		}
