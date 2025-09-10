@@ -19,8 +19,40 @@ import (
 	"github.com/chromedp/cdproto/network"
 	"github.com/chromedp/cdproto/page"
 	"github.com/chromedp/chromedp"
+	"github.com/prometheus/client_golang/prometheus"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
+)
+
+var (
+	MetricBrowserGetVersionDuration = prometheus.NewHistogram(prometheus.HistogramOpts{
+		Name: "browser_get_version_duration",
+		ConstLabels: prometheus.Labels{
+			"unit": "seconds",
+		},
+	})
+
+	MetricBrowserRenderDuration = prometheus.NewHistogram(prometheus.HistogramOpts{
+		Name: "browser_render_duration",
+		ConstLabels: prometheus.Labels{
+			"unit": "seconds",
+		},
+		Buckets: []float64{0.1, 0.5, 1, 3, 4, 5, 7, 9, 10, 11, 15, 19, 20, 21, 24, 27, 29, 30, 31, 35, 55, 95, 125, 305, 605},
+	})
+	MetricBrowserRenderCSVDuration = prometheus.NewHistogram(prometheus.HistogramOpts{
+		Name: "browser_render_csv_duration",
+		ConstLabels: prometheus.Labels{
+			"unit": "seconds",
+		},
+		Buckets: []float64{0.1, 0.5, 1, 3, 4, 5, 7, 9, 10, 11, 15, 19, 20, 21, 24, 27, 29, 30, 31, 35, 55, 95, 125, 305, 605},
+	})
+	MetricBrowserActionDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Name: "browser_action_duration",
+		ConstLabels: prometheus.Labels{
+			"unit": "seconds",
+		},
+		Buckets: []float64{0.01, 0.03, 0.05, 0.1, 0.3, 0.5, 1, 3, 5, 7, 10, 15, 20, 30, 50, 70, 100, 150, 300},
+	}, []string{"action"})
 )
 
 var ErrInvalidBrowserOption = errors.New("invalid browser option")
@@ -59,10 +91,12 @@ func (s *BrowserService) GetVersion(ctx context.Context) (string, error) {
 	ctx, span := tracer.Start(ctx, "BrowserService.GetVersion")
 	defer span.End()
 
+	start := time.Now()
 	version, err := exec.CommandContext(ctx, s.binary, "--version").Output()
 	if err != nil {
 		return "", fmt.Errorf("failed to get version of browser: %w", err)
 	}
+	MetricBrowserGetVersionDuration.Observe(time.Since(start).Seconds())
 	return string(bytes.TrimSpace(version)), nil
 }
 
@@ -237,6 +271,7 @@ func (s *BrowserService) Render(ctx context.Context, url string, optionFuncs ...
 	tracer := tracer(ctx)
 	ctx, span := tracer.Start(ctx, "BrowserService.Render")
 	defer span.End()
+	start := time.Now()
 
 	if url == "" {
 		return nil, "text/plain", fmt.Errorf("url must not be empty")
@@ -292,6 +327,7 @@ func (s *BrowserService) Render(ctx context.Context, url string, optionFuncs ...
 
 	select {
 	case fileContents := <-fileChan:
+		MetricBrowserRenderDuration.Observe(time.Since(start).Seconds())
 		return fileContents, opts.printer.contentType(), nil
 	default:
 		span.AddEvent("no data received from printer")
@@ -305,6 +341,11 @@ func (s *BrowserService) Render(ctx context.Context, url string, optionFuncs ...
 // The CSV endpoint just returns HTML. The actual query is done by the browser, and then a script _in the webpage_ downloads it as a CSV file.
 // This SHOULD be replaced at some point, such that the Grafana server does all the work; this is just not acceptable behaviour...
 func (s *BrowserService) RenderCSV(ctx context.Context, url, renderKey, domain string) ([]byte, error) {
+	tracer := tracer(ctx)
+	ctx, span := tracer.Start(ctx, "BrowserService.RenderCSV")
+	defer span.End()
+	start := time.Now()
+
 	if url == "" {
 		return nil, fmt.Errorf("url must not be empty")
 	}
@@ -317,6 +358,7 @@ func (s *BrowserService) RenderCSV(ctx context.Context, url, renderKey, domain s
 	defer cancelAllocator()
 	browserCtx, cancelBrowser := chromedp.NewContext(allocatorCtx, browserLoggers(ctx, s.log))
 	defer cancelBrowser()
+	span.AddEvent("browser allocated")
 
 	tmpDir, err := os.MkdirTemp("", "gir-csv-*")
 	if err != nil {
@@ -325,25 +367,28 @@ func (s *BrowserService) RenderCSV(ctx context.Context, url, renderKey, domain s
 	defer func() {
 		if err := os.RemoveAll(tmpDir); err != nil {
 			s.log.WarnContext(ctx, "failed to remove temporary directory", "path", tmpDir, "error", err)
+			span.AddEvent("temporary directory removed", trace.WithAttributes(attribute.String("path", tmpDir)))
 		}
 	}()
+	span.AddEvent("temporary directory created", trace.WithAttributes(attribute.String("path", tmpDir)))
 
 	actions := []chromedp.Action{
-		setCookies([]*network.SetCookieParams{
+		tracingAction("setCookies", setCookies([]*network.SetCookieParams{
 			{
 				Name:   "renderKey",
 				Value:  renderKey,
 				Domain: domain,
 			},
-		}),
-		browser.SetDownloadBehavior(browser.SetDownloadBehaviorBehaviorAllow).WithDownloadPath(tmpDir),
-		chromedp.Navigate(url),
-		waitForViz(),
-		waitForDuration(time.Second),
+		})),
+		tracingAction("SetDownloadBehavior", browser.SetDownloadBehavior(browser.SetDownloadBehaviorBehaviorAllow).WithDownloadPath(tmpDir)),
+		tracingAction("Navigate", chromedp.Navigate(url)),
+		tracingAction("waitForViz", waitForViz()),
+		tracingAction("waitForDuration(1s)", waitForDuration(time.Second)),
 	}
 	if err := chromedp.Run(browserCtx, actions...); err != nil {
 		return nil, fmt.Errorf("failed to run browser: %w", err)
 	}
+	span.AddEvent("actions completed")
 
 	// Wait for the file to be downloaded.
 	var entries []os.DirEntry
@@ -356,13 +401,22 @@ func (s *BrowserService) RenderCSV(ctx context.Context, url, renderKey, domain s
 		if err == nil && len(entries) > 0 {
 			break // file exists now
 		}
+
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		case <-time.After(100 * time.Millisecond):
+			// try again
+		}
 	}
+	span.AddEvent("downloaded file located", trace.WithAttributes(attribute.String("path", filepath.Join(tmpDir, entries[0].Name()))))
 
 	fileContents, err := os.ReadFile(filepath.Join(tmpDir, entries[0].Name()))
 	if err != nil {
 		return nil, fmt.Errorf("failed to read temporary file: %w", err)
 	}
 
+	MetricBrowserRenderCSVDuration.Observe(time.Since(start).Seconds())
 	return fileContents, nil
 }
 
@@ -700,6 +754,14 @@ func tracingAction(name string, action chromedp.Action) chromedp.Action {
 		tracer := tracer(ctx)
 		ctx, span := tracer.Start(ctx, name)
 		defer span.End()
-		return action.Do(ctx)
+		start := time.Now()
+
+		err := action.Do(ctx)
+		if err != nil {
+			return err
+		}
+
+		MetricBrowserActionDuration.WithLabelValues(name).Observe(time.Since(start).Seconds())
+		return nil
 	})
 }
