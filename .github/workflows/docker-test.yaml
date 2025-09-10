@@ -27,6 +27,7 @@ jobs:
     runs-on: ${{ matrix.runs-on }}
     permissions:
       contents: read # clone the repository
+      id-token: write # required to read secrets
     steps:
       - uses: actions/checkout@v4
         with:
@@ -43,12 +44,33 @@ jobs:
           BUILDKIT_STEP_LOG_MAX_SPEED: -1
           FILE: ${{ matrix.file }}
         run: docker build . -t image-renderer -f "$FILE"
+
+      - name: Read license
+        if: ${{ github.event.repository.fork == false }}
+        id: license_secret
+        uses: grafana/shared-workflows/actions/get-vault-secrets@a37de51f3d713a30a9e4b21bcdfbd38170020593 # get-vault-secrets/v1
+        with:
+          export_env: false
+          repo_secrets: |
+            LICENSE_JWT=grafana-enterprise-license:license-jwt
+      - name: Write license to file system
+        if: ${{ github.event.repository.fork == false }}
+        env:
+          SECRET: ${{ fromJson(steps.license_secret.outputs.secrets).LICENSE_JWT }}
+        run: |
+          set -euo pipefail
+          LPATH="$(mktemp --tmpdir XXXXXXXXXXXX.jwt)"
+          echo "$SECRET" > "$LPATH"
+          echo "LICENSE_JWT=$LPATH" >> "$GITHUB_ENV"
+
       - name: go test ./tests/acceptance/...
         run: go test ./tests/acceptance/... -count=1
         env:
           TERM: linux
           IMAGE: image-renderer
           UPDATE_FIXTURES: 'true' # this will make changes, so we can see them
+          REQUIRE_ACCEPTANCE: 'true' # fail if no image can be found
+          REQUIRE_ENTERPRISE: ${{ github.event.repository.fork == false }}
 
       - name: Tar changed files
         if: failure()
