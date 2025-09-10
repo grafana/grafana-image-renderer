@@ -2,8 +2,11 @@ package traces
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"fmt"
 	"log/slog"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -18,6 +21,7 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.37.0"
 	"go.opentelemetry.io/otel/trace"
 	"go.opentelemetry.io/otel/trace/noop"
+	"google.golang.org/grpc/credentials"
 )
 
 type tracerProviderContextKey int
@@ -167,6 +171,37 @@ func NewTracerProvider(ctx context.Context, c *cli.Command) (*sdktrace.TracerPro
 	clientCertificate := c.String("tracing-client-certificate")
 	clientKey := c.String("tracing-client-key")
 
+	var tlsCfg *tls.Config
+	if trustedCertificate != "" || clientCertificate != "" || clientKey != "" {
+		tlsCfg = &tls.Config{}
+	}
+	if trustedCertificate != "" {
+		// read file
+		basePool, err := x509.SystemCertPool()
+		if err != nil {
+			// This isn't expected, but is fine; we've been given a certificate, so that should be _enough_... although it doesn't give us great hopes for Chromium's ability to work...
+			slog.WarnContext(ctx, "failed to load system cert pool, creating new cert pool", "error", err)
+			basePool = x509.NewCertPool()
+		}
+		certData, err := os.ReadFile(trustedCertificate)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read trusted certificate file at %q: %w", trustedCertificate, err)
+		}
+		if ok := basePool.AppendCertsFromPEM(certData); !ok {
+			return nil, fmt.Errorf("failed to parse any PEM certificates from trusted certificate file at %q", trustedCertificate)
+		}
+		tlsCfg.RootCAs = basePool
+	}
+	if clientCertificate != "" && clientKey != "" {
+		cert, err := tls.LoadX509KeyPair(clientCertificate, clientKey)
+		if err != nil {
+			return nil, fmt.Errorf("failed to load client certificate or key from %q and %q: %w", clientCertificate, clientKey, err)
+		}
+		tlsCfg.Certificates = []tls.Certificate{cert}
+	} else if (clientCertificate != "") != (clientKey != "") {
+		return nil, fmt.Errorf("both client certificate and client key must be set to use mTLS")
+	}
+
 	var exporter *otlptrace.Exporter
 	if strings.HasPrefix(endpoint, "http://") || strings.HasPrefix(endpoint, "https://") {
 		slog.InfoContext(ctx, "setting up HTTP trace exporter", "endpoint", endpoint)
@@ -197,8 +232,8 @@ func NewTracerProvider(ctx context.Context, c *cli.Command) (*sdktrace.TracerPro
 		if timeout > 0 {
 			opts = append(opts, otlptracehttp.WithTimeout(timeout))
 		}
-		if trustedCertificate != "" || clientCertificate != "" || clientKey != "" {
-			// TODO: Do the thing
+		if tlsCfg != nil {
+			opts = append(opts, otlptracehttp.WithTLSClientConfig(tlsCfg))
 		}
 
 		var err error
@@ -224,8 +259,8 @@ func NewTracerProvider(ctx context.Context, c *cli.Command) (*sdktrace.TracerPro
 		if timeout > 0 {
 			opts = append(opts, otlptracegrpc.WithTimeout(timeout))
 		}
-		if trustedCertificate != "" || clientCertificate != "" || clientKey != "" {
-			// TODO: do the thing
+		if tlsCfg != nil {
+			opts = append(opts, otlptracegrpc.WithTLSCredentials(credentials.NewTLS(tlsCfg)))
 		}
 
 		var err error
