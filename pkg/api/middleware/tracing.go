@@ -3,6 +3,7 @@ package middleware
 import (
 	"context"
 	"net/http"
+	"net/url"
 	"sync"
 
 	"github.com/grafana/grafana-image-renderer/pkg/traces"
@@ -15,11 +16,21 @@ func Tracing(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// TODO: Read traceparent header
 
+		sanitizedURL := *r.URL
+		if sanitizedURL.User != nil {
+			sanitizedURL.User = url.User(sanitizedURL.User.Username())
+		}
+		if sanitizedURL.Query().Has("renderKey") {
+			q := sanitizedURL.Query()
+			q.Set("renderKey", "<REDACTED>")
+			sanitizedURL.RawQuery = q.Encode()
+		}
+
 		tracer := tracer(r.Context())
 		ctx, span := tracer.Start(r.Context(), "HTTP request",
 			trace.WithAttributes(
 				attribute.String("http.method", r.Method),
-				attribute.String("http.url", r.URL.String()),
+				attribute.String("http.url", sanitizedURL.String()),
 				attribute.String("http.user_agent", r.UserAgent()),
 			))
 		defer span.End()
