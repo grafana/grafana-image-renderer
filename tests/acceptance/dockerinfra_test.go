@@ -26,11 +26,49 @@ func LongTest(tb testing.TB) {
 	}
 }
 
+func OnlyEnterprise(tb testing.TB) {
+	tb.Helper()
+	jwt := licensePath()
+	if _, err := os.Stat(jwt); os.IsNotExist(err) {
+		if os.Getenv("REQUIRE_ENTERPRISE") == "true" {
+			tb.Fatalf("enterprise license file %q does not exist, cannot run enterprise-only test", jwt)
+		} else {
+			tb.Skipf("enterprise license file %q does not exist, skipping enterprise-only test", jwt)
+		}
+	}
+}
+
+func licensePath() string {
+	if p := os.Getenv("LICENSE_JWT"); p != "" {
+		return p
+	}
+	return path.Join(findGitRoot(), "license.jwt")
+}
+
+func findGitRoot() string {
+	wd, err := os.Getwd()
+	if err != nil {
+		return "."
+	}
+
+	dir := wd
+	for {
+		if _, err := os.Stat(path.Join(dir, ".git")); err == nil {
+			return dir
+		}
+		parent := path.Dir(dir)
+		if parent == "." || parent == dir {
+			return wd
+		}
+		dir = parent
+	}
+}
+
 func GetDockerImage(tb testing.TB) string {
 	tb.Helper()
 	img := os.Getenv("IMAGE")
 	if img == "" {
-		if os.Getenv("REQUIRE_ACCEPTANCE") != "" {
+		if os.Getenv("REQUIRE_ACCEPTANCE") == "true" {
 			tb.Fatal("IMAGE environment variable not set, cannot run acceptance test")
 		} else {
 			tb.Skip("IMAGE environment variable not set, skipping acceptance test")
@@ -113,6 +151,7 @@ func StartImageRenderer(tb testing.TB, options ...ContainerOption) *ImageRendere
 				c.Healthcheck.StartInterval = time.Millisecond * 50
 				c.Healthcheck.StartPeriod = time.Second * 5
 			},
+			LogConsumerCfg: containerLogs(tb, "image-renderer"),
 		},
 	}
 	for _, f := range options {
@@ -141,10 +180,11 @@ func RunImageRendererWithCommand(tb testing.TB, entrypoint []string, cmd []strin
 		Started: true,
 		ContainerRequest: testcontainers.ContainerRequest{
 			// TODO: Use Dockerfile instead?
-			Image:      GetDockerImage(tb),
-			Entrypoint: entrypoint,
-			Cmd:        cmd,
-			WaitingFor: wait.ForExit(),
+			Image:          GetDockerImage(tb),
+			Entrypoint:     entrypoint,
+			Cmd:            cmd,
+			WaitingFor:     wait.ForExit(),
+			LogConsumerCfg: containerLogs(tb, "image-renderer"),
 		},
 	}
 	for _, f := range options {
@@ -184,15 +224,28 @@ func StartGrafana(tb testing.TB, options ...ContainerOption) *Grafana {
 		Logger:  log.TestLogger(tb),
 		Started: true,
 		ContainerRequest: testcontainers.ContainerRequest{
-			Image: "docker.io/grafana/grafana-enterprise:main",
+			Image: "docker.io/grafana/grafana-enterprise:12.1.1",
+			Env: map[string]string{
+				"GF_FEATURE_TOGGLES_ENABLE":  "renderAuthJWT",
+				"GF_LOG_FILTERS":             "debug",
+				"GF_ENTERPRISE_LICENSE_PATH": "/license.jwt",
+			},
 			WaitingFor: wait.ForAll(
 				wait.ForHTTP("/healthz").WithPort(httpPort).WithAllowInsecure(true),
 				wait.ForLog("inserting datasource from configuration"), // from the provisioning files we add
 				wait.ForLog("finished to provision dashboards"),        // from the provisioning files we add
 			),
-			ExposedPorts: []string{"3000/tcp"},
-			Files:        createGrafanaProvisioningFiles(tb),
+			ExposedPorts:   []string{"3000/tcp"},
+			Files:          createGrafanaProvisioningFiles(tb),
+			LogConsumerCfg: containerLogs(tb, "grafana"),
 		},
+	}
+	if _, err := os.Stat(licensePath()); err == nil {
+		req.Files = append(req.Files, testcontainers.ContainerFile{
+			HostFilePath:      licensePath(),
+			ContainerFilePath: "/license.jwt",
+			FileMode:          0o777,
+		})
 	}
 	for _, f := range options {
 		f(tb, &req)
@@ -284,6 +337,7 @@ func StartPrometheus(tb testing.TB, options ...ContainerOption) {
 				wait.ForHTTP("/-/healthy"),
 				wait.ForLog("Server is ready"),
 			),
+			LogConsumerCfg: containerLogs(tb, "prometheus"),
 		},
 	}
 	for _, f := range options {
@@ -293,4 +347,24 @@ func StartPrometheus(tb testing.TB, options ...ContainerOption) {
 	container, err := testcontainers.GenericContainer(tb.Context(), req)
 	require.NoError(tb, err, "could not start service container?")
 	testcontainers.CleanupContainer(tb, container)
+}
+
+func containerLogs(tb testing.TB, container string) *testcontainers.LogConsumerConfig {
+	tb.Helper()
+	return &testcontainers.LogConsumerConfig{
+		Consumers: []testcontainers.LogConsumer{
+			&testingLogConsumer{name: container, test: tb.Name()},
+		},
+	}
+}
+
+type testingLogConsumer struct {
+	name string
+	test string
+}
+
+func (t *testingLogConsumer) Accept(l testcontainers.Log) {
+	txt := string(l.Content)
+	txt = strings.TrimSpace(txt)
+	fmt.Printf("[%s|%s] %s\n", t.test, t.name, txt)
 }

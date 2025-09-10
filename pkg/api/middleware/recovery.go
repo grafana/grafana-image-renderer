@@ -26,7 +26,7 @@ func Recovery(h http.Handler) http.Handler {
 			if err := recover(); err != nil {
 				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 				MetricRecoveredRequests.Inc()
-				slog.Error("Request panicked", "panic", err, "url", r.URL, "method", r.Method)
+				slog.ErrorContext(ctx, "Request panicked", "panic", err, "url", r.URL, "method", r.Method)
 				span.SetStatus(codes.Error, "panic in HTTP handler")
 			}
 		}()

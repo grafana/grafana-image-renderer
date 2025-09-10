@@ -8,10 +8,13 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"time"
 
+	"github.com/chromedp/cdproto/browser"
 	"github.com/chromedp/cdproto/emulation"
 	"github.com/chromedp/cdproto/network"
 	"github.com/chromedp/cdproto/page"
@@ -213,16 +216,8 @@ type renderingOptions struct {
 	landscape          bool
 }
 
-func (s *BrowserService) Render(ctx context.Context, url string, optionFuncs ...RenderingOption) ([]byte, string, error) {
-	tracer := tracer(ctx)
-	ctx, span := tracer.Start(ctx, "BrowserService.Render")
-	defer span.End()
-
-	if url == "" {
-		return nil, "text/plain", fmt.Errorf("url must not be empty")
-	}
-
-	opts := &renderingOptions{ // set sensible defaults here; we want all values filled in to show explicit intent
+func defaultRenderingOptions() *renderingOptions {
+	return &renderingOptions{ // set sensible defaults here; we want all values filled in to show explicit intent
 		gpu:                false,                 // assume no GPU: this can be heavy, and if it exists, it likely exists for AI/ML/transcoding/... purposes, not for us
 		sandbox:            false,                 // FIXME: enable this; <https://github.com/grafana/grafana-operator-experience-squad/issues/1460>
 		timezone:           time.UTC,              // UTC ensures consistency when it is not configured but the users' servers are in multiple locations
@@ -236,6 +231,18 @@ func (s *BrowserService) Render(ctx context.Context, url string, optionFuncs ...
 		printer:            defaultPDFPrinter(), // print as PDF if no other format is requested
 		landscape:          true,
 	}
+}
+
+func (s *BrowserService) Render(ctx context.Context, url string, optionFuncs ...RenderingOption) ([]byte, string, error) {
+	tracer := tracer(ctx)
+	ctx, span := tracer.Start(ctx, "BrowserService.Render")
+	defer span.End()
+
+	if url == "" {
+		return nil, "text/plain", fmt.Errorf("url must not be empty")
+	}
+
+	opts := defaultRenderingOptions()
 	for _, f := range s.defaultRenderingOptions {
 		if err := f(opts); err != nil {
 			return nil, "text/plain", fmt.Errorf("failed to apply default rendering option: %w", err)
@@ -290,6 +297,73 @@ func (s *BrowserService) Render(ctx context.Context, url string, optionFuncs ...
 		span.AddEvent("no data received from printer")
 		return nil, "text/plain", fmt.Errorf("failed to render: no data received after browser quit")
 	}
+}
+
+// RenderCSV visits a web page and downloads the CSV inside.
+//
+// You may be thinking: what the hell are we doing? Why are we using a browser for this?
+// The CSV endpoint just returns HTML. The actual query is done by the browser, and then a script _in the webpage_ downloads it as a CSV file.
+// This SHOULD be replaced at some point, such that the Grafana server does all the work; this is just not acceptable behaviour...
+func (s *BrowserService) RenderCSV(ctx context.Context, url, renderKey, domain string) ([]byte, error) {
+	if url == "" {
+		return nil, fmt.Errorf("url must not be empty")
+	}
+
+	allocatorOptions, err := s.createAllocatorOptions(defaultRenderingOptions())
+	if err != nil {
+		return nil, fmt.Errorf("failed to create allocator options: %w", err)
+	}
+	allocatorCtx, cancelAllocator := chromedp.NewExecAllocator(ctx, allocatorOptions...)
+	defer cancelAllocator()
+	browserCtx, cancelBrowser := chromedp.NewContext(allocatorCtx, browserLoggers(ctx, s.log))
+	defer cancelBrowser()
+
+	tmpDir, err := os.MkdirTemp("", "gir-csv-*")
+	if err != nil {
+		return nil, fmt.Errorf("failed to create temporary directory: %w", err)
+	}
+	defer func() {
+		if err := os.RemoveAll(tmpDir); err != nil {
+			s.log.WarnContext(ctx, "failed to remove temporary directory", "path", tmpDir, "error", err)
+		}
+	}()
+
+	actions := []chromedp.Action{
+		setCookies([]*network.SetCookieParams{
+			{
+				Name:   "renderKey",
+				Value:  renderKey,
+				Domain: domain,
+			},
+		}),
+		browser.SetDownloadBehavior(browser.SetDownloadBehaviorBehaviorAllow).WithDownloadPath(tmpDir),
+		chromedp.Navigate(url),
+		waitForViz(),
+		waitForDuration(time.Second),
+	}
+	if err := chromedp.Run(browserCtx, actions...); err != nil {
+		return nil, fmt.Errorf("failed to run browser: %w", err)
+	}
+
+	// Wait for the file to be downloaded.
+	var entries []os.DirEntry
+	for {
+		if err := ctx.Err(); err != nil {
+			return nil, err
+		}
+
+		entries, err = os.ReadDir(tmpDir)
+		if err == nil && len(entries) > 0 {
+			break // file exists now
+		}
+	}
+
+	fileContents, err := os.ReadFile(filepath.Join(tmpDir, entries[0].Name()))
+	if err != nil {
+		return nil, fmt.Errorf("failed to read temporary file: %w", err)
+	}
+
+	return fileContents, nil
 }
 
 func (s *BrowserService) createAllocatorOptions(renderingOptions *renderingOptions) ([]chromedp.ExecAllocatorOption, error) {

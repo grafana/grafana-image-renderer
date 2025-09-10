@@ -31,3 +31,13 @@ Or you can also pull a specific image to test, for example:
 And then run the tests
 
 `IMAGE=grafana/grafana-image-renderer:v4.0.13 go test ./tests/acceptance/...`
+
+### Enterprise tests
+
+Some tests require an active Enterprise licence.
+
+If you're a Grafana Labs employee, you can find one of these in the `grafana-enterprise` repository:
+
+```shell
+$ ln -s ../grafana-enterprise/tools/license.jwt .
+```

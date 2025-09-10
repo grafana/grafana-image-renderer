@@ -27,9 +27,11 @@ func NewHandler(
 	mux.Handle("GET /healthz", HandleGetHealthz())
 	mux.Handle("GET /version", HandleGetVersion(versions, browser))
 	mux.Handle("GET /render", middleware.RequireAuthToken(middleware.TrustedURL(HandleGetRender(browser)), tokens...))
+	mux.Handle("GET /render/csv", middleware.RequireAuthToken(middleware.TrustedURL(HandlePostRenderCSV(browser)), tokens...))
 	mux.Handle("GET /render/version", HandleGetRenderVersion(versions))
 
 	handler := middleware.RequestMetrics(mux)
+	handler = middleware.RequestLogger(handler)
 	handler = middleware.Recovery(handler)
 	handler = middleware.Tracing(handler)
 	return handler, nil
