@@ -8,10 +8,13 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"maps"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/chromedp/cdproto/browser"
@@ -20,6 +23,7 @@ import (
 	"github.com/chromedp/cdproto/page"
 	"github.com/chromedp/chromedp"
 	"github.com/prometheus/client_golang/prometheus"
+	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
@@ -303,15 +307,18 @@ func (s *BrowserService) Render(ctx context.Context, url string, optionFuncs ...
 	defer cancelBrowser()
 	span.AddEvent("browser allocated")
 
+	s.handleNetworkEvents(browserCtx)
+
 	orientation := chromedp.EmulatePortrait
 	if opts.landscape {
 		orientation = chromedp.EmulateLandscape
 	}
 	fileChan := make(chan []byte, 1) // buffered: we don't want the browser to stick around while we try to export this value.
 	actions := []chromedp.Action{
+		tracingAction("network.Enable", network.Enable()),
 		tracingAction("SetPageScaleFactor", emulation.SetPageScaleFactor(opts.pageScaleFactor)),
 		tracingAction("EmulateViewport", chromedp.EmulateViewport(int64(opts.viewportWidth), int64(opts.viewportHeight), orientation)),
-		tracingAction("setHeaders", setHeaders(opts.headers)),
+		tracingAction("setHeaders", setHeaders(browserCtx, opts.headers)),
 		tracingAction("setCookies", setCookies(opts.cookies)),
 		tracingAction("Navigate", chromedp.Navigate(url)),
 		tracingAction("WaitReady(body)", chromedp.WaitReady("body", chromedp.ByQuery)), // wait for a body to exist; this is when the page has started to actually render
@@ -373,7 +380,11 @@ func (s *BrowserService) RenderCSV(ctx context.Context, url, renderKey, domain s
 	}()
 	span.AddEvent("temporary directory created", trace.WithAttributes(attribute.String("path", tmpDir)))
 
+	s.handleNetworkEvents(browserCtx)
+
 	actions := []chromedp.Action{
+		tracingAction("network.Enable", network.Enable()),
+		tracingAction("setHeaders", setHeaders(browserCtx, nil)),
 		tracingAction("setCookies", setCookies([]*network.SetCookieParams{
 			{
 				Name:   "renderKey",
@@ -441,6 +452,55 @@ func (s *BrowserService) createAllocatorOptions(renderingOptions *renderingOptio
 	opts = append(opts, chromedp.Env("TZ="+renderingOptions.timezone.String()))
 
 	return opts, nil
+}
+
+func (s *BrowserService) handleNetworkEvents(browserCtx context.Context) {
+	requests := make(map[network.RequestID]trace.Span)
+	mu := &sync.Mutex{}
+	tracer := tracer(browserCtx)
+
+	chromedp.ListenTarget(browserCtx, func(ev any) {
+		// We MUST NOT issue new actions within this goroutine. Spawn a new one, ALWAYS.
+		// See the docs of ListenTarget for more.
+
+		switch e := ev.(type) {
+		case *network.EventRequestWillBeSent:
+			mu.Lock()
+			defer mu.Unlock()
+
+			_, span := tracer.Start(browserCtx, "Browser HTTP request",
+				trace.WithTimestamp(e.Timestamp.Time()),
+				trace.WithAttributes(
+					attribute.String("requestID", string(e.RequestID)),
+					attribute.String("url", e.Request.URL),
+					attribute.String("method", e.Request.Method),
+					attribute.String("type", string(e.Type)),
+				))
+			requests[e.RequestID] = span
+
+		case *network.EventResponseReceived:
+			mu.Lock()
+			defer mu.Unlock()
+
+			span, ok := requests[e.RequestID]
+			if !ok {
+				return
+			}
+			span.SetAttributes(
+				attribute.Int("status", int(e.Response.Status)),
+				attribute.String("statusText", e.Response.StatusText),
+				attribute.String("mimeType", e.Response.MimeType),
+				attribute.String("protocol", e.Response.Protocol),
+				attribute.String("contentType", fmt.Sprintf("%v", e.Response.Headers["Content-Type"])),
+			)
+			if e.Response.Status >= 400 {
+				span.SetStatus(codes.Error, e.Response.StatusText)
+			} else {
+				span.SetStatus(codes.Ok, e.Response.StatusText)
+			}
+			span.End(trace.WithTimestamp(e.Timestamp.Time()))
+		}
+	})
 }
 
 func browserLoggers(ctx context.Context, log *slog.Logger) chromedp.ContextOption {
@@ -689,7 +749,14 @@ func WithPNGPrinter(opts ...PNGPrinterOption) RenderingOption {
 	}
 }
 
-func setHeaders(headers network.Headers) chromedp.Action {
+func setHeaders(browserCtx context.Context, headers network.Headers) chromedp.Action {
+	if sc := trace.SpanFromContext(browserCtx); sc != nil && sc.IsRecording() {
+		if headers == nil {
+			headers = make(network.Headers)
+		}
+		otel.GetTextMapPropagator().Inject(browserCtx, networkHeadersCarrier(headers))
+	}
+
 	return chromedp.ActionFunc(func(ctx context.Context) error {
 		if len(headers) == 0 {
 			return nil
@@ -789,4 +856,28 @@ func tracingAction(name string, action chromedp.Action) chromedp.Action {
 		MetricBrowserActionDuration.WithLabelValues(name).Observe(time.Since(start).Seconds())
 		return nil
 	})
+}
+
+type networkHeadersCarrier network.Headers
+
+func (c networkHeadersCarrier) Get(key string) string {
+	if len(c) == 0 { // nil-check
+		return ""
+	}
+	v, ok := c[key]
+	if !ok {
+		return ""
+	}
+	if vs, ok := v.(string); ok {
+		return vs
+	}
+	return fmt.Sprintf("%v", v)
+}
+
+func (c networkHeadersCarrier) Set(key string, value string) {
+	c[key] = value
+}
+
+func (c networkHeadersCarrier) Keys() []string {
+	return slices.Collect(maps.Keys(c))
 }
