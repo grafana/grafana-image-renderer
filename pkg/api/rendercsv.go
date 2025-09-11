@@ -57,9 +57,10 @@ func HandlePostRenderCSV(browser *service.BrowserService) http.Handler {
 		}
 		renderKey := r.URL.Query().Get("renderKey")
 		domain := r.URL.Query().Get("domain")
+		acceptLanguage := r.Header.Get("Accept-Language") // if empty, we just don't set it
 
 		start := time.Now()
-		contents, err := browser.RenderCSV(ctx, url, renderKey, domain)
+		contents, err := browser.RenderCSV(ctx, url, renderKey, domain, acceptLanguage)
 		if err != nil {
 			MetricRenderCSVDuration.WithLabelValues("error").Observe(time.Since(start).Seconds())
 			http.Error(w, "CSV rendering failed", http.StatusInternalServerError)
