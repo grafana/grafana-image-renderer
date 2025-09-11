@@ -63,6 +63,7 @@ jobs:
           echo "$SECRET" > "$LPATH"
           echo "LICENSE_JWT=$LPATH" >> "$GITHUB_ENV"
 
+      - run: sudo apt-get install -y chromium
       - name: go test ./tests/acceptance/...
         run: go test ./tests/acceptance/... -count=1
         env:
