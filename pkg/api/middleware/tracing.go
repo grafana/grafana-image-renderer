@@ -3,36 +3,36 @@ package middleware
 import (
 	"context"
 	"net/http"
-	"sync"
 
 	"github.com/grafana/grafana-image-renderer/pkg/traces"
-	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/trace"
 )
 
 func Tracing(h http.Handler) http.Handler {
+	// We want the traceparent to return back to the requester, so they know what to look up (or what to share with support).
+	h = returningTrace(h)
+	// otelhttp.NewHandler adds some trace info and starts an http-request span.
+	// It costs a few microseconds, but we can spare that.
+	h = otelhttp.NewHandler(h, "http-request")
+	// Finally, we want to use the same trace as the requester does.
+	return propagatingTrace(h)
+}
+
+func propagatingTrace(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// TODO: Read traceparent header
+		wireContext := otel.GetTextMapPropagator().Extract(r.Context(), propagation.HeaderCarrier(r.Header))
+		r = r.WithContext(wireContext)
+		h.ServeHTTP(w, r)
+	})
+}
 
-		tracer := tracer(r.Context())
-		ctx, span := tracer.Start(r.Context(), "HTTP request",
-			trace.WithAttributes(
-				attribute.String("http.method", r.Method),
-				attribute.String("http.url", r.URL.String()),
-				attribute.String("http.user_agent", r.UserAgent()),
-			))
-		defer span.End()
-		r = r.WithContext(ctx)
-
-		recorder := &statusRecordingResponseWriter{rw: w}
-		h.ServeHTTP(recorder, r)
-		span.SetAttributes(attribute.Int("http.status_code", recorder.status))
-		if recorder.status >= 400 {
-			span.SetStatus(codes.Error, http.StatusText(recorder.status))
-		} else {
-			span.SetStatus(codes.Ok, http.StatusText(recorder.status))
-		}
+func returningTrace(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		otel.GetTextMapPropagator().Inject(r.Context(), propagation.HeaderCarrier(w.Header()))
+		h.ServeHTTP(w, r)
 	})
 }
 
@@ -49,39 +49,4 @@ func TracingFor(name string, h http.Handler) http.Handler {
 
 func tracer(ctx context.Context) trace.Tracer {
 	return traces.TracerFromContext(ctx, "github.com/grafana/grafana-image-renderer/pkg/api/middleware")
-}
-
-var (
-	_ http.ResponseWriter = (*statusRecordingResponseWriter)(nil)
-	_ http.Flusher        = (*statusRecordingResponseWriter)(nil)
-)
-
-type statusRecordingResponseWriter struct {
-	rw     http.ResponseWriter
-	once   sync.Once
-	status int
-}
-
-func (s *statusRecordingResponseWriter) Header() http.Header {
-	return s.rw.Header()
-}
-
-func (s *statusRecordingResponseWriter) Write(b []byte) (int, error) {
-	s.once.Do(func() {
-		s.status = http.StatusOK
-	})
-	return s.rw.Write(b)
-}
-
-func (s *statusRecordingResponseWriter) WriteHeader(statusCode int) {
-	s.once.Do(func() {
-		s.status = statusCode
-	})
-	s.rw.WriteHeader(statusCode)
-}
-
-func (s *statusRecordingResponseWriter) Flush() {
-	if flusher, ok := s.rw.(http.Flusher); ok {
-		flusher.Flush()
-	}
 }

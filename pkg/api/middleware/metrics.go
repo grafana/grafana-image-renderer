@@ -3,6 +3,7 @@ package middleware
 import (
 	"net/http"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -38,4 +39,39 @@ func RequestMetrics(h http.Handler) http.Handler {
 		MetricRequestsInFlight.Dec()
 		MetricRequestDurations.WithLabelValues(r.Method, r.Pattern, strconv.Itoa(recorder.status)).Observe(time.Since(now).Seconds())
 	})
+}
+
+var (
+	_ http.ResponseWriter = (*statusRecordingResponseWriter)(nil)
+	_ http.Flusher        = (*statusRecordingResponseWriter)(nil)
+)
+
+type statusRecordingResponseWriter struct {
+	rw     http.ResponseWriter
+	once   sync.Once
+	status int
+}
+
+func (s *statusRecordingResponseWriter) Header() http.Header {
+	return s.rw.Header()
+}
+
+func (s *statusRecordingResponseWriter) Write(b []byte) (int, error) {
+	s.once.Do(func() {
+		s.status = http.StatusOK
+	})
+	return s.rw.Write(b)
+}
+
+func (s *statusRecordingResponseWriter) WriteHeader(statusCode int) {
+	s.once.Do(func() {
+		s.status = statusCode
+	})
+	s.rw.WriteHeader(statusCode)
+}
+
+func (s *statusRecordingResponseWriter) Flush() {
+	if flusher, ok := s.rw.(http.Flusher); ok {
+		flusher.Flush()
+	}
 }

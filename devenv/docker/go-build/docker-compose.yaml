@@ -46,6 +46,7 @@ services:
     command:
       - server
       - --tracing-endpoint=http://tempo:4318/v1/traces
+      - --log-level=debug
     ports:
       - 8081:8081
     depends_on:

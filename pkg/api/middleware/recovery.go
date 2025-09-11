@@ -31,5 +31,6 @@ func Recovery(h http.Handler) http.Handler {
 			}
 		}()
 		h.ServeHTTP(w, r)
+		span.SetStatus(codes.Ok, "no panic")
 	})
 }
