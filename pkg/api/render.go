@@ -132,8 +132,15 @@ func HandleGetRender(browser *service.BrowserService) http.Handler {
 				printerOpts = append(printerOpts, service.WithPrintingBackground(printBackground == "true"))
 			}
 
-			// TODO: printBackground
-			// TODO: pageRanges
+			pageRanges := r.URL.Query().Get("pdf.pageRanges")
+			if pageRanges == "" {
+				// FIXME: legacy support; remove in some future release.
+				pageRanges = targetURL.Query().Get("pdf.pageRanges")
+			}
+			if pageRanges != "" {
+				printerOpts = append(printerOpts, service.WithPageRanges(pageRanges))
+			}
+
 			options = append(options, service.WithPDFPrinter(printerOpts...))
 
 			if pdfLandscape := r.URL.Query().Get("pdfLandscape"); pdfLandscape != "" {

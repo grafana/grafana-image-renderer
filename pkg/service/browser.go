@@ -615,6 +615,7 @@ type printer interface {
 type pdfPrinter struct {
 	paperSize       PaperSize
 	printBackground bool
+	pageRanges      string // empty string is all pages
 }
 
 func (p *pdfPrinter) action(dst chan []byte, req *renderingOptions) chromedp.Action {
@@ -651,6 +652,7 @@ func (p *pdfPrinter) action(dst chan []byte, req *renderingOptions) chromedp.Act
 			WithPaperWidth(width).
 			WithPaperHeight(height).
 			WithScale(scale).
+			WithPageRanges(p.pageRanges).
 			Do(ctx)
 		if err != nil {
 			span.SetStatus(codes.Error, err.Error())
@@ -682,6 +684,13 @@ func WithPaperSize(size PaperSize) PDFPrinterOption {
 func WithPrintingBackground(printBackground bool) PDFPrinterOption {
 	return func(pp *pdfPrinter) error {
 		pp.printBackground = printBackground
+		return nil
+	}
+}
+
+func WithPageRanges(ranges string) PDFPrinterOption {
+	return func(pp *pdfPrinter) error {
+		pp.pageRanges = ranges
 		return nil
 	}
 }
