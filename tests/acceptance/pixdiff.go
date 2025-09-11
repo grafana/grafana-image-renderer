@@ -4,6 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"image"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func CountPixelDifferences(img1, img2 image.Image) (uint64, error) {
@@ -30,4 +33,11 @@ func CountPixelDifferences(img1, img2 image.Image) (uint64, error) {
 		}
 	}
 	return diff, nil
+}
+
+func AssertPixelDifference(tb testing.TB, img1, img2 image.Image, maxDiff uint64) bool {
+	tb.Helper()
+
+	diff, err := CountPixelDifferences(img1, img2)
+	return assert.NoError(tb, err, "could not compare images") && assert.LessOrEqual(tb, diff, maxDiff, "images differ in too many pixels (%d > %d)", diff, maxDiff)
 }

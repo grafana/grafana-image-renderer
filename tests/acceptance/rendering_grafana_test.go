@@ -1,18 +1,13 @@
 package acceptance
 
 import (
-	"bytes"
 	"encoding/csv"
-	"image/png"
-	"io"
 	"mime"
 	"net/http"
-	"os"
 	"strings"
 	"testing"
 
 	"github.com/go-jose/go-jose/v4"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/network"
@@ -67,26 +62,14 @@ func TestRenderingGrafana(t *testing.T) {
 		require.NoError(t, err, "could not send HTTP request to Grafana")
 		require.Equal(t, http.StatusOK, resp.StatusCode, "unexpected HTTP status code from Grafana")
 
-		const fixturePath = "fixtures/render-all-panels.png"
-		fixture, err := os.Open(fixturePath)
-		require.NoError(t, err, "could not read fixture file")
-		fixtureImg, err := png.Decode(fixture)
-		require.NoError(t, err, "could not decode fixture PNG image")
-		body, err := io.ReadAll(resp.Body)
-		require.NoError(t, err, "could not read response body")
-		bodyImg, err := png.Decode(bytes.NewReader(body))
-		require.NoError(t, err, "could not decode response PNG image")
-
-		assert.Equal(t, bodyImg.Bounds().Max.X, 1000, "rendered image has wrong width")
-		assert.Equal(t, bodyImg.Bounds().Max.Y, 800, "rendered image has wrong height")
-
-		diff, err := CountPixelDifferences(fixtureImg, bodyImg)
+		body := ReadBody(t, resp.Body)
+		bodyImg := ReadRGBA(t, body)
+		AssertRGBASize(t, bodyImg, 1000, 800)
+		const fixture = "render-all-panels.png"
+		fixtureImg := ReadFixtureRGBA(t, fixture)
 		// We happen to have a map on the image. It can mean significant change, because it renders differently for... some reason.
-		const pixelThreshold = 150_000
-		ok := assert.NoError(t, err, "could not diff images") && assert.LessOrEqual(t, diff, uint64(pixelThreshold), "rendered image has changed significantly")
-		if !ok && os.Getenv("UPDATE_FIXTURES") == "true" {
-			err := os.WriteFile(fixturePath, body, 0o644)
-			require.NoError(t, err, "could not update fixture file")
+		if !AssertPixelDifference(t, fixtureImg, bodyImg, 150_000) {
+			UpdateFixtureIfEnabled(t, fixture, body)
 		}
 	})
 
@@ -122,25 +105,13 @@ func TestRenderingGrafana(t *testing.T) {
 		require.NoError(t, err, "could not send HTTP request to Grafana")
 		require.Equal(t, http.StatusOK, resp.StatusCode, "unexpected HTTP status code from Grafana")
 
-		const fixturePath = "fixtures/render-prometheus.png"
-		fixture, err := os.Open(fixturePath)
-		require.NoError(t, err, "could not read fixture file")
-		fixtureImg, err := png.Decode(fixture)
-		require.NoError(t, err, "could not decode fixture PNG image")
-		body, err := io.ReadAll(resp.Body)
-		require.NoError(t, err, "could not read response body")
-		bodyImg, err := png.Decode(bytes.NewReader(body))
-		require.NoError(t, err, "could not decode response PNG image")
-
-		assert.Equal(t, bodyImg.Bounds().Max.X, 1400, "rendered image has wrong width")
-		assert.Equal(t, bodyImg.Bounds().Max.Y, 800, "rendered image has wrong height")
-
-		diff, err := CountPixelDifferences(fixtureImg, bodyImg)
-		const pixelThreshold = 17_000
-		ok := assert.NoError(t, err, "could not diff images") && assert.LessOrEqual(t, diff, uint64(pixelThreshold), "rendered image has changed significantly")
-		if !ok && os.Getenv("UPDATE_FIXTURES") == "true" {
-			err := os.WriteFile(fixturePath, body, 0o644)
-			require.NoError(t, err, "could not update fixture file")
+		body := ReadBody(t, resp.Body)
+		bodyImg := ReadRGBA(t, body)
+		AssertRGBASize(t, bodyImg, 1400, 800)
+		const fixture = "render-prometheus.png"
+		fixtureImg := ReadFixtureRGBA(t, fixture)
+		if !AssertPixelDifference(t, fixtureImg, bodyImg, 17_000) {
+			UpdateFixtureIfEnabled(t, fixture, body)
 		}
 	})
 
