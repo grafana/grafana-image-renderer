@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"net/url"
 	"regexp"
 	"strconv"
 	"time"
@@ -32,9 +33,14 @@ func HandleGetRender(browser *service.BrowserService) http.Handler {
 		defer span.End()
 		r = r.WithContext(ctx)
 
-		url := r.URL.Query().Get("url")
-		if url == "" {
+		rawTargetURL := r.URL.Query().Get("url")
+		if rawTargetURL == "" {
 			http.Error(w, "missing 'url' query parameter", http.StatusBadRequest)
+			return
+		}
+		targetURL, err := url.Parse(rawTargetURL)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("invalid 'url' query parameter: %v", err), http.StatusBadRequest)
 			return
 		}
 		var options []service.RenderingOption
@@ -101,7 +107,32 @@ func HandleGetRender(browser *service.BrowserService) http.Handler {
 		encoding := r.URL.Query().Get("encoding")
 		switch encoding {
 		case "", "pdf":
-			options = append(options, service.WithPDFPrinter())
+			var printerOpts []service.PDFPrinterOption
+			if paper := r.URL.Query().Get("pdf.format"); paper != "" {
+				var psz service.PaperSize
+				if err := psz.UnmarshalText([]byte(paper)); err != nil {
+					http.Error(w, fmt.Sprintf("invalid 'pdf.format' query parameter: %v", err), http.StatusBadRequest)
+					return
+				}
+				printerOpts = append(printerOpts, service.WithPaperSize(psz))
+			} else if paper := targetURL.Query().Get("pdf.format"); paper != "" {
+				// TODO: DRY
+				// FIXME: This should not be supported...
+				var psz service.PaperSize
+				if err := psz.UnmarshalText([]byte(paper)); err != nil {
+					http.Error(w, fmt.Sprintf("invalid 'pdf.format' query parameter: %v", err), http.StatusBadRequest)
+					return
+				}
+				printerOpts = append(printerOpts, service.WithPaperSize(psz))
+			}
+			// TODO: omitBackground???
+			// TODO: printBackground
+			// TODO: pageRanges
+			options = append(options, service.WithPDFPrinter(printerOpts...))
+
+			if pdfLandscape := r.URL.Query().Get("pdfLandscape"); pdfLandscape != "" {
+				options = append(options, service.WithLandscape(pdfLandscape == "true"))
+			}
 		case "png":
 			var printerOpts []service.PNGPrinterOption
 			if height == -1 {
@@ -114,7 +145,7 @@ func HandleGetRender(browser *service.BrowserService) http.Handler {
 		}
 
 		start := time.Now()
-		body, contentType, err := browser.Render(ctx, url, options...)
+		body, contentType, err := browser.Render(ctx, rawTargetURL, options...)
 		if err != nil {
 			MetricRenderDuration.WithLabelValues("error").Observe(time.Since(start).Seconds())
 			slog.ErrorContext(ctx, "failed to render", "error", err)
