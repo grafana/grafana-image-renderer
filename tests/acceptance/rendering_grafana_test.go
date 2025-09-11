@@ -189,7 +189,6 @@ func TestRenderingGrafana(t *testing.T) {
 				query.Set("encoding", "pdf")
 				query.Set("renderKey", renderKey)
 				query.Set("domain", "grafana")
-				query.Set("pdf.format", paper)
 				req.URL.RawQuery = query.Encode()
 
 				resp, err := http.DefaultClient.Do(req)
