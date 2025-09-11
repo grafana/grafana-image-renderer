@@ -63,7 +63,6 @@ jobs:
           echo "$SECRET" > "$LPATH"
           echo "LICENSE_JWT=$LPATH" >> "$GITHUB_ENV"
 
-      - run: sudo apt-get install -y chromium
       - name: go test ./tests/acceptance/...
         run: go test ./tests/acceptance/... -count=1
         env:
@@ -72,7 +71,6 @@ jobs:
           UPDATE_FIXTURES: 'true' # this will make changes, so we can see them
           REQUIRE_ACCEPTANCE: 'true' # fail if no image can be found
           REQUIRE_ENTERPRISE: ${{ github.event.repository.fork == false }}
-          BROWSER: chromium # arm64 doesn't have google-chrome; thanks, Google
 
       - name: Tar changed files
         if: failure()
