@@ -1,3 +1,10 @@
+## 4.0.14 (2025-09-11)
+
+The Grafana Image Renderer plugin has been deprecated.
+If you use the plugin, please migrate to the remote server; the plugin will eventually stop receiving updates.
+
+- Docker: Update Chromium to 140.0.7339.127 (CVE-2025-10200, CVE-2025-102201), [#x](https://github.com/grafana/grafana-image-renderer/pull/x), [Proximyst](https://github.com/Proximyst)
+
 ## 4.0.13 (2025-09-08)
 
 This is a release that only changes the Docker image.
