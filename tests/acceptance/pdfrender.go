@@ -16,7 +16,11 @@ func PDFtoImage(tb testing.TB, pdf []byte) *image.RGBA {
 
 	doc, err := fitz.NewFromMemory(pdf)
 	require.NoError(tb, err, "failed to open PDF from memory")
-	defer doc.Close()
+	defer func() {
+		if err := doc.Close(); err != nil {
+			tb.Logf("failed to close PDF document: %v", err)
+		}
+	}()
 
 	var imgs []*image.RGBA
 	for page := range doc.NumPage() {
