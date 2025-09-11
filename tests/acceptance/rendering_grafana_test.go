@@ -2,6 +2,7 @@ package acceptance
 
 import (
 	"encoding/csv"
+	"fmt"
 	"mime"
 	"net/http"
 	"strings"
@@ -175,30 +176,35 @@ func TestRenderingGrafana(t *testing.T) {
 			WithEnv("GF_RENDERING_CALLBACK_URL", "http://grafana:3000/"),
 			WithEnv("GF_RENDERING_RENDERER_TOKEN", rendererAuthToken))
 
-		req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, svc.HTTPEndpoint+"/render", nil)
-		require.NoError(t, err, "could not construct HTTP request to Grafana")
-		req.Header.Set("Accept", "application/pdf")
-		req.Header.Set("X-Auth-Token", "-")
-		query := req.URL.Query()
-		query.Set("url", "http://grafana:3000/d/provisioned-prom-testing?render=1&from=1699333200000&to=1699344000000&kiosk=true")
-		query.Set("encoding", "pdf")
-		query.Set("width", "1400")
-		query.Set("height", "800")
-		query.Set("renderKey", renderKey)
-		query.Set("domain", "grafana")
-		req.URL.RawQuery = query.Encode()
+		for _, paper := range []string{"letter", "legal", "tabloid", "ledger", "a0", "a1", "a2", "a3", "a4", "a5", "a6"} {
+			t.Run("print with paper="+paper, func(t *testing.T) {
+				t.Parallel()
 
-		resp, err := http.DefaultClient.Do(req)
-		require.NoError(t, err, "could not send HTTP request to Grafana")
-		require.Equal(t, http.StatusOK, resp.StatusCode, "unexpected HTTP status code from Grafana")
+				req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, svc.HTTPEndpoint+"/render", nil)
+				require.NoError(t, err, "could not construct HTTP request to Grafana")
+				req.Header.Set("Accept", "application/pdf")
+				req.Header.Set("X-Auth-Token", "-")
+				query := req.URL.Query()
+				query.Set("url", "http://grafana:3000/d/provisioned-prom-testing?render=1&from=1699333200000&to=1699344000000&kiosk=true&pdf.format="+paper)
+				query.Set("encoding", "pdf")
+				query.Set("renderKey", renderKey)
+				query.Set("domain", "grafana")
+				query.Set("pdf.format", paper)
+				req.URL.RawQuery = query.Encode()
 
-		pdfBody := ReadBody(t, resp.Body)
-		image := PDFtoImage(t, pdfBody)
-		const fixture = "render-prometheus-pdf.png"
-		fixtureImg := ReadFixtureRGBA(t, fixture)
-		if !AssertPixelDifference(t, fixtureImg, image, 17_000) {
-			UpdateFixtureIfEnabled(t, fixture+".pdf", pdfBody)
-			UpdateFixtureIfEnabled(t, fixture, EncodePNG(t, image))
+				resp, err := http.DefaultClient.Do(req)
+				require.NoError(t, err, "could not send HTTP request to Grafana")
+				require.Equal(t, http.StatusOK, resp.StatusCode, "unexpected HTTP status code from Grafana")
+
+				pdfBody := ReadBody(t, resp.Body)
+				image := PDFtoImage(t, pdfBody)
+				fixture := fmt.Sprintf("render-prometheus-pdf-%s.png", paper)
+				fixtureImg := ReadFixtureRGBA(t, fixture)
+				if !AssertPixelDifference(t, fixtureImg, image, 17_000) {
+					UpdateFixtureIfEnabled(t, fmt.Sprintf("render-prometheus-pdf-%s.pdf", paper), pdfBody)
+					UpdateFixtureIfEnabled(t, fixture, EncodePNG(t, image))
+				}
+			})
 		}
 	})
 }

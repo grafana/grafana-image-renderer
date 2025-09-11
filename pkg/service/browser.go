@@ -571,6 +571,9 @@ func (p *PaperSize) UnmarshalJSON(data []byte) error {
 // FormatInches returns the dimensions of the paper size in inches.
 // If the paper size is unknown, (-1, -1) is returned along with an error.
 func (p PaperSize) FormatInches() (width float64, height float64, err error) {
+	// BUG: The puppeteer code have differences with what works in practice; where they exist, it's _always_ 4 pixels.
+	//      I haven't figured out why, but this makes a _tiny_ difference in practice. Best guess, it's some JS rounding error(???).
+	// https://github.com/puppeteer/puppeteer/blob/e09d56b6559460bc98d8a2811b32852d79135f7b/packages/puppeteer-core/src/common/PDFOptions.ts#L226-L274
 	switch p {
 	case PaperLetter:
 		return 8.5, 11, nil
@@ -581,17 +584,19 @@ func (p PaperSize) FormatInches() (width float64, height float64, err error) {
 	case PaperLedger:
 		return 17, 11, nil
 	case PaperA0:
-		return 33.1102, 46.811, nil
+		// BUG: The puppeteer code says 33.1102 x 46.811, but in practice, it becomes 46.80 high.
+		return 33.1102, 46.80, nil
 	case PaperA1:
-		return 23.3858, 33.1102, nil
+		// BUG: The puppeteer code says 23.3858 x 33.1102, but in practice, it becomes 23.39 wide. As opposed to height in A0. WTF?
+		return 23.39, 33.1102, nil
 	case PaperA2:
-		return 16.5354, 23.3858, nil
+		// BUG: The puppeteer code says 16.5354 x 23.3858, but in practice, it becomes 23.39 high.
+		return 16.5354, 23.39, nil
 	case PaperA3:
-		return 11.6929, 16.5354, nil
+		// BUG: The puppeteer code says 11.6929 x 16.5354, but in practice, it becomes 11.70 wide.
+		return 11.70, 16.5354, nil
 	case PaperA4:
-		// BUG: The puppeteer code says 8.2677 x 11.6929, but in practice, it becomes 11.70 high.
-		//      I haven't figured out why, but this makes a _tiny_ difference in practice. Best guess, it's some JS rounding error(???).
-		// https://github.com/puppeteer/puppeteer/blob/e09d56b6559460bc98d8a2811b32852d79135f7b/packages/puppeteer-core/src/common/PDFOptions.ts#L262-L265
+		// BUG: The puppeteer code says 8.2677 x 11.6929, but in practice, it becomes 11.70 high... which is the opposite way of A0. WTF?
 		return 8.2677, 11.70, nil
 	case PaperA5:
 		return 5.8268, 8.2677, nil
