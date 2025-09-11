@@ -27,6 +27,7 @@ func PDFFiletoPNG(tb testing.TB, pdfFile string) []byte {
 	opts := chromedp.DefaultExecAllocatorOptions[:]
 	opts = append(opts, chromedp.WindowSize(2000, 1200))
 	opts = append(opts, chromedp.Env("TZ=Etc/UTC"))
+	opts = append(opts, chromedp.NoSandbox) // this is a test, not a prod env, so we should be fine.
 	if browser := os.Getenv("BROWSER"); browser != "" {
 		opts = append(opts, chromedp.ExecPath(browser))
 	}
