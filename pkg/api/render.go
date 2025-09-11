@@ -108,16 +108,13 @@ func HandleGetRender(browser *service.BrowserService) http.Handler {
 		switch encoding {
 		case "", "pdf":
 			var printerOpts []service.PDFPrinterOption
-			if paper := r.URL.Query().Get("pdf.format"); paper != "" {
-				var psz service.PaperSize
-				if err := psz.UnmarshalText([]byte(paper)); err != nil {
-					http.Error(w, fmt.Sprintf("invalid 'pdf.format' query parameter: %v", err), http.StatusBadRequest)
-					return
-				}
-				printerOpts = append(printerOpts, service.WithPaperSize(psz))
-			} else if paper := targetURL.Query().Get("pdf.format"); paper != "" {
-				// TODO: DRY
-				// FIXME: This should not be supported...
+
+			paper := r.URL.Query().Get("pdf.format")
+			if paper == "" {
+				// FIXME: legacy support; remove in some future release.
+				paper = targetURL.Query().Get("pdf.format")
+			}
+			if paper != "" {
 				var psz service.PaperSize
 				if err := psz.UnmarshalText([]byte(paper)); err != nil {
 					http.Error(w, fmt.Sprintf("invalid 'pdf.format' query parameter: %v", err), http.StatusBadRequest)
@@ -125,7 +122,7 @@ func HandleGetRender(browser *service.BrowserService) http.Handler {
 				}
 				printerOpts = append(printerOpts, service.WithPaperSize(psz))
 			}
-			// TODO: omitBackground???
+
 			// TODO: printBackground
 			// TODO: pageRanges
 			options = append(options, service.WithPDFPrinter(printerOpts...))
