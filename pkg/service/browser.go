@@ -589,7 +589,10 @@ func (p PaperSize) FormatInches() (width float64, height float64, err error) {
 	case PaperA3:
 		return 11.6929, 16.5354, nil
 	case PaperA4:
-		return 8.2677, 11.6929, nil
+		// BUG: The puppeteer code says 8.2677 x 11.6929, but in practice, it becomes 11.70 high.
+		//      I haven't figured out why, but this makes a _tiny_ difference in practice. Best guess, it's some JS rounding error(???).
+		// https://github.com/puppeteer/puppeteer/blob/e09d56b6559460bc98d8a2811b32852d79135f7b/packages/puppeteer-core/src/common/PDFOptions.ts#L262-L265
+		return 8.2677, 11.70, nil
 	case PaperA5:
 		return 5.8268, 8.2677, nil
 	case PaperA6:
@@ -635,6 +638,10 @@ func (p *pdfPrinter) action(dst chan []byte, req *renderingOptions) chromedp.Act
 		// We don't need the stream return value; we don't ask for a stream.
 		output, _, err := page.PrintToPDF().
 			WithPrintBackground(p.printBackground).
+			WithMarginBottom(0).
+			WithMarginLeft(0).
+			WithMarginRight(0).
+			WithMarginTop(0).
 			WithLandscape(req.landscape).
 			WithPaperWidth(width).
 			WithPaperHeight(height).
