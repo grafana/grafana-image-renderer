@@ -3,6 +3,7 @@ package acceptance
 import (
 	"bytes"
 	"image"
+	"image/draw"
 	"image/png"
 	"io"
 	"os"
@@ -46,8 +47,14 @@ func ReadFixtureRGBA(tb testing.TB, name string) *image.RGBA {
 	data := ReadFixture(tb, name)
 	img, err := png.Decode(bytes.NewReader(data))
 	require.NoError(tb, err, "could not decode fixture image %q", name)
+	if nrgba, ok := img.(*image.NRGBA); ok {
+		// Convert NRGBA to RGBA
+		rgba := image.NewRGBA(nrgba.Bounds())
+		draw.Draw(rgba, nrgba.Rect, nrgba, image.Point{}, draw.Src)
+		return rgba
+	}
 	rgba, ok := img.(*image.RGBA)
-	require.True(tb, ok, "fixture image %q is not in RGBA format", name)
+	require.True(tb, ok, "fixture image %q is not in RGBA format (got %T)", name, img)
 	return rgba
 }
 

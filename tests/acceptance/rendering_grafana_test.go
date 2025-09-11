@@ -193,12 +193,12 @@ func TestRenderingGrafana(t *testing.T) {
 		require.Equal(t, http.StatusOK, resp.StatusCode, "unexpected HTTP status code from Grafana")
 
 		pdfBody := ReadBody(t, resp.Body)
-		pngBody := PDFtoPNG(t, pdfBody)
-		png := ReadRGBA(t, pngBody)
+		image := PDFtoImage(t, pdfBody)
 		const fixture = "render-prometheus-pdf.png"
 		fixtureImg := ReadFixtureRGBA(t, fixture)
-		if !AssertPixelDifference(t, fixtureImg, png, 17_000) {
-			UpdateFixtureIfEnabled(t, fixture, pngBody)
+		if !AssertPixelDifference(t, fixtureImg, image, 17_000) {
+			UpdateFixtureIfEnabled(t, fixture+".pdf", pdfBody)
+			UpdateFixtureIfEnabled(t, fixture, EncodePNG(t, image))
 		}
 	})
 }
