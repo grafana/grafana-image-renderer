@@ -123,6 +123,15 @@ func HandleGetRender(browser *service.BrowserService) http.Handler {
 				printerOpts = append(printerOpts, service.WithPaperSize(psz))
 			}
 
+			printBackground := r.URL.Query().Get("pdf.printBackground")
+			if printBackground == "" {
+				// FIXME: legacy support; remove in some future release.
+				printBackground = targetURL.Query().Get("pdf.printBackground")
+			}
+			if printBackground != "" {
+				printerOpts = append(printerOpts, service.WithPrintingBackground(printBackground == "true"))
+			}
+
 			// TODO: printBackground
 			// TODO: pageRanges
 			options = append(options, service.WithPDFPrinter(printerOpts...))

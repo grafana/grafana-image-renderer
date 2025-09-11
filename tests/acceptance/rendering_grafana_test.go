@@ -163,5 +163,35 @@ func TestRenderingGrafana(t *testing.T) {
 				}
 			})
 		}
+
+		for _, printBackground := range []bool{true, false} {
+			t.Run(fmt.Sprintf("print with background=%v", printBackground), func(t *testing.T) {
+				t.Parallel()
+
+				req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, svc.HTTPEndpoint+"/render", nil)
+				require.NoError(t, err, "could not construct HTTP request to Grafana")
+				req.Header.Set("Accept", "application/pdf")
+				req.Header.Set("X-Auth-Token", "-")
+				query := req.URL.Query()
+				query.Set("url", fmt.Sprintf("http://grafana:3000/d/provisioned-prom-testing?render=1&from=1699333200000&to=1699344000000&kiosk=true&pdf.printBackground=%v", printBackground))
+				query.Set("encoding", "pdf")
+				query.Set("renderKey", renderKey)
+				query.Set("domain", "grafana")
+				req.URL.RawQuery = query.Encode()
+
+				resp, err := http.DefaultClient.Do(req)
+				require.NoError(t, err, "could not send HTTP request to Grafana")
+				require.Equal(t, http.StatusOK, resp.StatusCode, "unexpected HTTP status code from Grafana")
+
+				pdfBody := ReadBody(t, resp.Body)
+				image := PDFtoImage(t, pdfBody)
+				fixture := fmt.Sprintf("render-prometheus-pdf-printBackground-%v.png", printBackground)
+				fixtureImg := ReadFixtureRGBA(t, fixture)
+				if !AssertPixelDifference(t, fixtureImg, image, 17_000) {
+					UpdateFixtureIfEnabled(t, fmt.Sprintf("render-prometheus-pdf-printBackground-%v.pdf", printBackground), pdfBody)
+					UpdateFixtureIfEnabled(t, fixture, EncodePNG(t, image))
+				}
+			})
+		}
 	})
 }
