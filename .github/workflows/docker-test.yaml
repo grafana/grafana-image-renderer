@@ -71,6 +71,7 @@ jobs:
           UPDATE_FIXTURES: 'true' # this will make changes, so we can see them
           REQUIRE_ACCEPTANCE: 'true' # fail if no image can be found
           REQUIRE_ENTERPRISE: ${{ github.event.repository.fork == false }}
+          BROWSER: chromium # arm64 doesn't have google-chrome; thanks, Google
 
       - name: Tar changed files
         if: failure()
