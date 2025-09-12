@@ -1,7 +1,6 @@
 package acceptance
 
 import (
-	"encoding/csv"
 	"fmt"
 	"mime"
 	"net/http"
@@ -10,12 +9,10 @@ import (
 	"testing"
 
 	"github.com/go-jose/go-jose/v4"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/network"
-	"golang.org/x/text/encoding"
-	"golang.org/x/text/encoding/unicode"
-	"golang.org/x/text/transform"
 )
 
 func TestRenderingGrafana(t *testing.T) {
@@ -91,33 +88,36 @@ func TestRenderingGrafana(t *testing.T) {
 			WithEnv("GF_RENDERING_CALLBACK_URL", "http://grafana:3000/"),
 			WithEnv("GF_RENDERING_RENDERER_TOKEN", rendererAuthToken))
 
-		req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, svc.HTTPEndpoint+"/render/csv", nil)
-		require.NoError(t, err, "could not construct HTTP request to Grafana")
-		req.Header.Set("Accept", "text/csv, */*")
-		req.Header.Set("X-Auth-Token", "-")
-		query := req.URL.Query()
-		query.Set("url", "http://grafana:3000/d-csv/provisioned-prom-testing?from=1699333200000&to=1699344000000&panelId=1&render=1&orgId=1&timezone=browser")
-		query.Set("encoding", "csv")
-		query.Set("renderKey", renderKey)
-		query.Set("domain", "grafana")
-		req.URL.RawQuery = query.Encode()
+		t.Run("with defaults", func(t *testing.T) {
+			t.Parallel()
 
-		resp, err := http.DefaultClient.Do(req)
-		require.NoError(t, err, "could not send HTTP request to Grafana")
-		require.Equal(t, http.StatusOK, resp.StatusCode, "unexpected HTTP status code from Grafana")
+			req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, svc.HTTPEndpoint+"/render/csv", nil)
+			require.NoError(t, err, "could not construct HTTP request to Grafana")
+			req.Header.Set("Accept", "text/csv, */*")
+			req.Header.Set("X-Auth-Token", "-")
+			query := req.URL.Query()
+			query.Set("url", "http://grafana:3000/d-csv/provisioned-prom-testing?from=1699333200000&to=1699344000000&panelId=1&render=1&orgId=1&timezone=browser")
+			query.Set("encoding", "csv")
+			query.Set("renderKey", renderKey)
+			query.Set("domain", "grafana")
+			req.URL.RawQuery = query.Encode()
 
-		// Grafana requires this to save the file somewhere.
-		contentDisposition := resp.Header.Get("Content-Disposition")
-		_, params, err := mime.ParseMediaType(contentDisposition)
-		require.NoError(t, err, "could not parse Content-Disposition header")
-		require.NotEmpty(t, params["filename"], "no filename in Content-Disposition header")
+			resp, err := http.DefaultClient.Do(req)
+			require.NoError(t, err, "could not send HTTP request to Grafana")
+			require.Equal(t, http.StatusOK, resp.StatusCode, "unexpected HTTP status code from Grafana")
 
-		reader := csv.NewReader(transform.NewReader(resp.Body, unicode.BOMOverride(encoding.Nop.NewDecoder())))
-		reader.LazyQuotes = true
-		records, err := reader.ReadAll()
-		require.NoError(t, err, "could not parse CSV response from image-renderer")
-		require.NotEmpty(t, records, "no records in CSV response from image-renderer")
-		require.Equal(t, []string{"Time", "1"}, records[0])
+			// Grafana requires this to save the file somewhere.
+			contentDisposition := resp.Header.Get("Content-Disposition")
+			_, params, err := mime.ParseMediaType(contentDisposition)
+			require.NoError(t, err, "could not parse Content-Disposition header")
+			require.NotEmpty(t, params["filename"], "no filename in Content-Disposition header")
+
+			body := ReadBody(t, resp.Body)
+			const fixture = "render-prometheus-defaults.csv"
+			if !assert.Equal(t, string(ReadFixture(t, fixture)), string(body), "fixture and actual CSV responses from renderer differ") {
+				UpdateFixtureIfEnabled(t, fixture, body)
+			}
+		})
 	})
 
 	t.Run("render prometheus dashboard as PDF", func(t *testing.T) {
