@@ -18,7 +18,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 2,
+  "id": 4,
   "links": [],
   "panels": [
     {
@@ -55,6 +55,7 @@
               "type": "linear"
             },
             "showPoints": "auto",
+            "showValues": false,
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -88,6 +89,8 @@
         "y": 0
       },
       "id": 1,
+      "interval": "5m",
+      "maxDataPoints": 1000,
       "options": {
         "legend": {
           "calcs": [],
@@ -101,7 +104,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "12.2.0-92405",
+      "pluginVersion": "12.2.0-17567790421",
       "targets": [
         {
           "datasource": {
@@ -120,7 +123,7 @@
     }
   ],
   "preload": false,
-  "schemaVersion": 41,
+  "schemaVersion": 42,
   "tags": [],
   "templating": {
     "list": [
@@ -146,5 +149,5 @@
   "timezone": "browser",
   "title": "Provisioned Prometheus testing",
   "uid": "provisioned-prom-testing",
-  "version": 2
+  "version": 3
 }
