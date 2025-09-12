@@ -1,7 +1,6 @@
 package acceptance
 
 import (
-	"encoding/csv"
 	"fmt"
 	"mime"
 	"net/http"
@@ -10,12 +9,10 @@ import (
 	"testing"
 
 	"github.com/go-jose/go-jose/v4"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/network"
-	"golang.org/x/text/encoding"
-	"golang.org/x/text/encoding/unicode"
-	"golang.org/x/text/transform"
 )
 
 func TestRenderingGrafana(t *testing.T) {
@@ -112,12 +109,13 @@ func TestRenderingGrafana(t *testing.T) {
 		require.NoError(t, err, "could not parse Content-Disposition header")
 		require.NotEmpty(t, params["filename"], "no filename in Content-Disposition header")
 
-		reader := csv.NewReader(transform.NewReader(resp.Body, unicode.BOMOverride(encoding.Nop.NewDecoder())))
-		reader.LazyQuotes = true
-		records, err := reader.ReadAll()
-		require.NoError(t, err, "could not parse CSV response from image-renderer")
-		require.NotEmpty(t, records, "no records in CSV response from image-renderer")
-		require.Equal(t, []string{"Time", "1"}, records[0])
+		body := string(ReadBody(t, resp.Body))
+		require.Greater(t, len(body), 10, "CSV response from image-renderer too short to be valid")
+		const fixture = "render-prometheus.csv"
+		fixtureBody := string(ReadFixture(t, fixture))
+		if !assert.Equal(t, fixtureBody, body) {
+			UpdateFixtureIfEnabled(t, fixture, []byte(body))
+		}
 	})
 
 	t.Run("render prometheus dashboard as PDF", func(t *testing.T) {
