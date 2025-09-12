@@ -348,7 +348,7 @@ func (s *BrowserService) Render(ctx context.Context, url string, optionFuncs ...
 // You may be thinking: what the hell are we doing? Why are we using a browser for this?
 // The CSV endpoint just returns HTML. The actual query is done by the browser, and then a script _in the webpage_ downloads it as a CSV file.
 // This SHOULD be replaced at some point, such that the Grafana server does all the work; this is just not acceptable behaviour...
-func (s *BrowserService) RenderCSV(ctx context.Context, url, renderKey, domain string) ([]byte, error) {
+func (s *BrowserService) RenderCSV(ctx context.Context, url, renderKey, domain, acceptLanguage string) ([]byte, error) {
 	tracer := tracer(ctx)
 	ctx, span := tracer.Start(ctx, "BrowserService.RenderCSV")
 	defer span.End()
@@ -380,11 +380,18 @@ func (s *BrowserService) RenderCSV(ctx context.Context, url, renderKey, domain s
 	}()
 	span.AddEvent("temporary directory created", trace.WithAttributes(attribute.String("path", tmpDir)))
 
+	var headers network.Headers
+	if acceptLanguage != "" {
+		headers = network.Headers{
+			"Accept-Language": acceptLanguage,
+		}
+	}
+
 	s.handleNetworkEvents(browserCtx)
 
 	actions := []chromedp.Action{
 		tracingAction("network.Enable", network.Enable()),
-		tracingAction("setHeaders", setHeaders(browserCtx, nil)),
+		tracingAction("setHeaders", setHeaders(browserCtx, headers)),
 		tracingAction("setCookies", setCookies([]*network.SetCookieParams{
 			{
 				Name:   "renderKey",

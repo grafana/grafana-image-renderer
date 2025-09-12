@@ -156,6 +156,9 @@ func HandleGetRender(browser *service.BrowserService) http.Handler {
 			http.Error(w, fmt.Sprintf("invalid 'encoding' query parameter: %q", encoding), http.StatusBadRequest)
 			return
 		}
+		if acceptLanguage := r.Header.Get("Accept-Language"); acceptLanguage != "" {
+			options = append(options, service.WithHeader("Accept-Language", acceptLanguage))
+		}
 
 		start := time.Now()
 		body, contentType, err := browser.Render(ctx, rawTargetURL, options...)
