@@ -69,11 +69,23 @@ jobs:
         include:
           - runs-on: ubuntu-24.04
             arch: amd64
+            dockerfile: Dockerfile
+            suffix: ''
           - runs-on: ubuntu-24.04-arm
             arch: arm64
+            dockerfile: Dockerfile
+            suffix: ''
+          - runs-on: ubuntu-24.04
+            arch: amd64
+            dockerfile: go.Dockerfile
+            suffix: '-golang'
+          - runs-on: ubuntu-24.04-arm
+            arch: arm64
+            dockerfile: go.Dockerfile
+            suffix: '-golang'
 
     needs: tag
-    name: Build image for ${{ matrix.arch }}
+    name: Build ${{ matrix.dockerfile }} image for ${{ matrix.arch }}
     runs-on: ${{ matrix.runs-on }}
     permissions:
       contents: read # required to read the repository contents
@@ -101,16 +113,16 @@ jobs:
           DOCKER_BUILDKIT: 1
           BUILDKIT_STEP_LOG_MAX_SIZE: -1
           BUILDKIT_STEP_LOG_MAX_SPEED: -1
-          TAG: ${{ needs.tag.outputs.tag }}-${{ matrix.arch }}
-        run: docker build . -t "$TAG"
+          TAG: ${{ needs.tag.outputs.tag }}${{ matrix.suffix }}-${{ matrix.arch }}
+        run: docker build . -t "$TAG" -f ${{ matrix.dockerfile }}
       - name: docker push
         env:
-          TAG: ${{ needs.tag.outputs.tag }}-${{ matrix.arch }}
+          TAG: ${{ needs.tag.outputs.tag }}${{ matrix.suffix }}-${{ matrix.arch }}
         run: docker push "$TAG"
       - name: Get digest
         id: digest
         env:
-          TAG: ${{ needs.tag.outputs.tag }}-${{ matrix.arch }}
+          TAG: ${{ needs.tag.outputs.tag }}${{ matrix.suffix }}-${{ matrix.arch }}
         run: |
           set -euo pipefail
           DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' "$TAG" | cut -d@ -f2)
@@ -141,13 +153,15 @@ jobs:
         if: needs.tag.outputs.registry == 'docker.io'
         uses: grafana/shared-workflows/actions/dockerhub-login@dockerhub-login/v1
 
-      - name: Create and push manifest
+      - name: Create and push manifests
         env:
           TAG: ${{ needs.tag.outputs.tag }}
         run: |
           set -euo pipefail
           docker manifest create "$TAG" "$TAG"-amd64 "$TAG"-arm64
+          docker manifest create "$TAG"-golang "$TAG"-golang-amd64 "$TAG"-golang-arm64
           docker manifest push "$TAG"
+          docker manifest push "$TAG"-golang
       - name: Create and push :latest manifest
         if: github.event_name == 'push' && github.ref_type == 'tag'
         env:
@@ -169,7 +183,10 @@ jobs:
             You can pull it using:
 
             ```bash
+            # For the Node.js server:
             docker pull ${{ needs.tag.outputs.tag }}
+            # For the Go server:
+            docker pull ${{ needs.tag.outputs.tag }}-golang
             ```
 
             > [!WARNING]
