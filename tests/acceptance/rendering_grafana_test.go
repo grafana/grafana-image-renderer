@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"mime"
 	"net/http"
+	"net/url"
 	"strings"
 	"testing"
 
@@ -159,6 +160,116 @@ func TestRenderingGrafana(t *testing.T) {
 				fixtureImg := ReadFixtureRGBA(t, fixture)
 				if !AssertPixelDifference(t, fixtureImg, image, 17_000) {
 					UpdateFixtureIfEnabled(t, fmt.Sprintf("render-prometheus-pdf-%s.pdf", paper), pdfBody)
+					UpdateFixtureIfEnabled(t, fixture, EncodePNG(t, image))
+				}
+			})
+		}
+
+		for _, printBackground := range []bool{true, false} {
+			t.Run(fmt.Sprintf("print with background=%v", printBackground), func(t *testing.T) {
+				t.Parallel()
+
+				req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, svc.HTTPEndpoint+"/render", nil)
+				require.NoError(t, err, "could not construct HTTP request to Grafana")
+				req.Header.Set("Accept", "application/pdf")
+				req.Header.Set("X-Auth-Token", "-")
+				query := req.URL.Query()
+				query.Set("url", fmt.Sprintf("http://grafana:3000/d/provisioned-prom-testing?render=1&from=1699333200000&to=1699344000000&kiosk=true&pdf.printBackground=%v", printBackground))
+				query.Set("encoding", "pdf")
+				query.Set("renderKey", renderKey)
+				query.Set("domain", "grafana")
+				req.URL.RawQuery = query.Encode()
+
+				resp, err := http.DefaultClient.Do(req)
+				require.NoError(t, err, "could not send HTTP request to Grafana")
+				require.Equal(t, http.StatusOK, resp.StatusCode, "unexpected HTTP status code from Grafana")
+
+				pdfBody := ReadBody(t, resp.Body)
+				image := PDFtoImage(t, pdfBody)
+				fixture := fmt.Sprintf("render-prometheus-pdf-printBackground-%v.png", printBackground)
+				fixtureImg := ReadFixtureRGBA(t, fixture)
+				if !AssertPixelDifference(t, fixtureImg, image, 17_000) {
+					UpdateFixtureIfEnabled(t, fmt.Sprintf("render-prometheus-pdf-printBackground-%v.pdf", printBackground), pdfBody)
+					UpdateFixtureIfEnabled(t, fixture, EncodePNG(t, image))
+				}
+			})
+		}
+	})
+
+	t.Run("render very long prometheus dashboard as PDF", func(t *testing.T) {
+		t.Parallel()
+
+		net, err := network.New(t.Context())
+		require.NoError(t, err, "could not create Docker network")
+		testcontainers.CleanupNetwork(t, net)
+
+		StartPrometheus(t, WithNetwork(net, "prometheus"))
+		svc := StartImageRenderer(t, WithNetwork(net, "gir"))
+		_ = StartGrafana(t,
+			WithNetwork(net, "grafana"),
+			WithEnv("GF_RENDERING_SERVER_URL", "http://gir:8081/render"),
+			WithEnv("GF_RENDERING_CALLBACK_URL", "http://grafana:3000/"),
+			WithEnv("GF_RENDERING_RENDERER_TOKEN", rendererAuthToken))
+
+		t.Run("render many pages", func(t *testing.T) {
+			t.Parallel()
+
+			req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, svc.HTTPEndpoint+"/render", nil)
+			require.NoError(t, err, "could not construct HTTP request to Grafana")
+			req.Header.Set("Accept", "application/pdf")
+			req.Header.Set("X-Auth-Token", "-")
+			query := req.URL.Query()
+			query.Set("url", "http://grafana:3000/d/very-long-prometheus-dashboard?render=1&from=1699333200000&to=1699344000000&kiosk=true")
+			query.Set("encoding", "pdf")
+			query.Set("renderKey", renderKey)
+			query.Set("domain", "grafana")
+			req.URL.RawQuery = query.Encode()
+
+			resp, err := http.DefaultClient.Do(req)
+			require.NoError(t, err, "could not send HTTP request to Grafana")
+			require.Equal(t, http.StatusOK, resp.StatusCode, "unexpected HTTP status code from Grafana")
+
+			pdfBody := ReadBody(t, resp.Body)
+			image := PDFtoImage(t, pdfBody)
+			const fixture = "render-very-long-prometheus-dashboard.png"
+			fixtureImg := ReadFixtureRGBA(t, fixture)
+			if !AssertPixelDifference(t, fixtureImg, image, 17_000) {
+				UpdateFixtureIfEnabled(t, fixture+".pdf", pdfBody)
+				UpdateFixtureIfEnabled(t, fixture, EncodePNG(t, image))
+			}
+		})
+
+		for name, pageRange := range map[string]string{
+			"single-page":     "4",
+			"all pages":       "",
+			"range in middle": "2-4",
+			"first 3":         "1-3",
+			"1 and 3":         "1, 3",
+		} {
+			t.Run("print with pageRanges="+name, func(t *testing.T) {
+				t.Parallel()
+
+				req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, svc.HTTPEndpoint+"/render", nil)
+				require.NoError(t, err, "could not construct HTTP request to Grafana")
+				req.Header.Set("Accept", "application/pdf")
+				req.Header.Set("X-Auth-Token", "-")
+				query := req.URL.Query()
+				query.Set("url", "http://grafana:3000/d/very-long-prometheus-dashboard?render=1&from=1699333200000&to=1699344000000&kiosk=true&pdf.pageRanges="+url.QueryEscape(pageRange))
+				query.Set("encoding", "pdf")
+				query.Set("renderKey", renderKey)
+				query.Set("domain", "grafana")
+				req.URL.RawQuery = query.Encode()
+
+				resp, err := http.DefaultClient.Do(req)
+				require.NoError(t, err, "could not send HTTP request to Grafana")
+				require.Equal(t, http.StatusOK, resp.StatusCode, "unexpected HTTP status code from Grafana")
+
+				pdfBody := ReadBody(t, resp.Body)
+				image := PDFtoImage(t, pdfBody)
+				fixture := fmt.Sprintf("render-very-long-prometheus-dashboard-pageranges-%s.png", strings.ReplaceAll(name, " ", "-"))
+				fixtureImg := ReadFixtureRGBA(t, fixture)
+				if !AssertPixelDifference(t, fixtureImg, image, 17_000) {
+					UpdateFixtureIfEnabled(t, fixture+".pdf", pdfBody)
 					UpdateFixtureIfEnabled(t, fixture, EncodePNG(t, image))
 				}
 			})
