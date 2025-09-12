@@ -45,31 +45,35 @@ func TestRenderingGrafana(t *testing.T) {
 			WithEnv("GF_RENDERING_CALLBACK_URL", "http://grafana:3000/"),
 			WithEnv("GF_RENDERING_RENDERER_TOKEN", rendererAuthToken))
 
-		req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, svc.HTTPEndpoint+"/render", nil)
-		require.NoError(t, err, "could not construct HTTP request to Grafana")
-		req.Header.Set("Accept", "image/png")
-		req.Header.Set("X-Auth-Token", "-")
-		query := req.URL.Query()
-		query.Set("url", "http://grafana:3000/d/provisioned-prom-testing?render=1&from=1699333200000&to=1699344000000&kiosk=true")
-		query.Set("encoding", "png")
-		query.Set("width", "1400")
-		query.Set("height", "800")
-		query.Set("renderKey", renderKey)
-		query.Set("domain", "grafana")
-		req.URL.RawQuery = query.Encode()
+		t.Run("with set width and height", func(t *testing.T) {
+			t.Parallel()
 
-		resp, err := http.DefaultClient.Do(req)
-		require.NoError(t, err, "could not send HTTP request to Grafana")
-		require.Equal(t, http.StatusOK, resp.StatusCode, "unexpected HTTP status code from Grafana")
+			req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, svc.HTTPEndpoint+"/render", nil)
+			require.NoError(t, err, "could not construct HTTP request to Grafana")
+			req.Header.Set("Accept", "image/png")
+			req.Header.Set("X-Auth-Token", "-")
+			query := req.URL.Query()
+			query.Set("url", "http://grafana:3000/d/provisioned-prom-testing?render=1&from=1699333200000&to=1699344000000&kiosk=true")
+			query.Set("encoding", "png")
+			query.Set("width", "1400")
+			query.Set("height", "800")
+			query.Set("renderKey", renderKey)
+			query.Set("domain", "grafana")
+			req.URL.RawQuery = query.Encode()
 
-		body := ReadBody(t, resp.Body)
-		bodyImg := ReadRGBA(t, body)
-		AssertRGBASize(t, bodyImg, 1400, 800)
-		const fixture = "render-prometheus.png"
-		fixtureImg := ReadFixtureRGBA(t, fixture)
-		if !AssertPixelDifference(t, fixtureImg, bodyImg, 17_000) {
-			UpdateFixtureIfEnabled(t, fixture, body)
-		}
+			resp, err := http.DefaultClient.Do(req)
+			require.NoError(t, err, "could not send HTTP request to Grafana")
+			require.Equal(t, http.StatusOK, resp.StatusCode, "unexpected HTTP status code from Grafana")
+
+			body := ReadBody(t, resp.Body)
+			bodyImg := ReadRGBA(t, body)
+			AssertRGBASize(t, bodyImg, 1400, 800)
+			const fixture = "render-prometheus-set-width-height.png"
+			fixtureImg := ReadFixtureRGBA(t, fixture)
+			if !AssertPixelDifference(t, fixtureImg, bodyImg, 17_000) {
+				UpdateFixtureIfEnabled(t, fixture, body)
+			}
+		})
 	})
 
 	t.Run("render prometheus dashboard as CSV", func(t *testing.T) {
