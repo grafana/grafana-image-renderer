@@ -324,6 +324,7 @@ func (s *BrowserService) Render(ctx context.Context, url string, optionFuncs ...
 		tracingAction("WaitReady(body)", chromedp.WaitReady("body", chromedp.ByQuery)), // wait for a body to exist; this is when the page has started to actually render
 		tracingAction("scrollForElements", scrollForElements(opts.timeBetweenScrolls)),
 		tracingAction("waitForViz", waitForViz()),
+		tracingAction("waitForStabilisation", waitForStabilisation()),
 		tracingAction("waitForDuration(1s)", waitForDuration(time.Second)),
 		tracingAction("printer.action", opts.printer.action(fileChan, opts)),
 	}
@@ -854,6 +855,47 @@ func waitForViz() chromedp.Action {
 		return !window.__grafanaSceneContext || window.__grafanaRunningQueryCount === 0;
 	})()`
 	return chromedp.Poll(script, nil, chromedp.WithPollingMutation(), chromedp.WithPollingTimeout(0))
+}
+
+func waitForStabilisation() chromedp.Action {
+	return chromedp.ActionFunc(func(ctx context.Context) error {
+		tracer := tracer(ctx)
+		ctx, span := tracer.Start(ctx, "waitForStabilisation")
+		defer span.End()
+
+		giveUp := time.After(time.Second) // TODO: Configurable?
+
+		// We want to wait until the document stops changing.
+		var lastHashCode int
+		initialPass := true
+		for {
+			var hashCode int
+			err := chromedp.Evaluate(`(($)=>{let h=0;for(let i=0;i<$.length;++i){h=((h<<5)-h)+$.charCodeAt(i);h&=h;}return h;})(document.toString())`, &hashCode).Do(ctx)
+			if err != nil {
+				return fmt.Errorf("failed to calculate document hash: %w", err)
+			}
+			if initialPass {
+				initialPass = false
+			} else if hashCode == lastHashCode {
+				span.AddEvent("document stabilized", trace.WithAttributes(attribute.Int("hashCode", hashCode)))
+				return nil
+			}
+			lastHashCode = hashCode
+			span.AddEvent("document changed", trace.WithAttributes(attribute.Int("hashCode", hashCode)))
+
+			select {
+			case <-time.After(100 * time.Millisecond): // TODO: Configurable?
+				// continue
+				span.AddEvent("wait after document change")
+			case <-giveUp:
+				span.AddEvent("gave up waiting for document to stabilize")
+				return nil
+			case <-ctx.Done():
+				span.AddEvent("context completed before document stabilized")
+				return ctx.Err()
+			}
+		}
+	})
 }
 
 func waitForDuration(d time.Duration) chromedp.Action {
