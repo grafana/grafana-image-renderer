@@ -20,7 +20,7 @@ func NewCmd() *cli.Command {
 				Name:    "addr",
 				Usage:   "The address to listen on for HTTP requests.",
 				Value:   ":8081",
-				Sources: config.FromConfig("server.addr"),
+				Sources: config.FromConfig("server.addr", "SERVER_ADDR"),
 			},
 		},
 		Action: run,
