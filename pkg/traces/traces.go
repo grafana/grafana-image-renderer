@@ -44,7 +44,7 @@ func TracerFlags() []cli.Flag {
 		&cli.StringFlag{
 			Name:     "tracing-endpoint",
 			Usage:    "The tracing endpoint to send spans to. Defaults to gRPC; if http:// or https:// is specified, HTTP will be used instead. grpc:// is fine but redundant.",
-			Sources:  config.FromConfig("tracing.endpoint"),
+			Sources:  config.FromConfig("tracing.endpoint", "TRACING_ENDPOINT"),
 			Category: category,
 			Validator: func(s string) error {
 				before, _, found := strings.Cut(s, "://")
@@ -63,13 +63,13 @@ func TracerFlags() []cli.Flag {
 			Name:     "tracing-insecure",
 			Usage:    "Whether to skip TLS verification when connecting. If set, the scheme in the endpoint is overridden to be insecure.",
 			Category: category,
-			Sources:  config.FromConfig("tracing.insecure"),
+			Sources:  config.FromConfig("tracing.insecure", "TRACING_INSECURE"),
 		},
 		&cli.StringSliceFlag{
 			Name:     "tracing-header",
 			Usage:    "A header to add to requests to the tracing endpoint. Syntax is `<key>=<value>`. May be repeated. This is useful for things like authentication.",
 			Category: category,
-			Sources:  config.FromConfig("tracing.headers"),
+			Sources:  config.FromConfig("tracing.headers", "TRACING_HEADERS"),
 			Validator: func(s []string) error {
 				for _, kv := range s {
 					if !strings.Contains(kv, "=") {
@@ -84,7 +84,7 @@ func TracerFlags() []cli.Flag {
 			Usage:    "The compression algorithm to use when sending traces. (enum: none, gzip)",
 			Value:    "none",
 			Category: category,
-			Sources:  config.FromConfig("tracing.compressor"),
+			Sources:  config.FromConfig("tracing.compressor", "TRACING_COMPRESSOR"),
 			Validator: func(s string) error {
 				if s == "" || s == "none" || s == "gzip" {
 					return nil
@@ -97,35 +97,35 @@ func TracerFlags() []cli.Flag {
 			Usage:    "The timeout for requests to the tracing endpoint.",
 			Value:    10 * time.Second,
 			Category: category,
-			Sources:  config.FromConfig("tracing.timeout"),
+			Sources:  config.FromConfig("tracing.timeout", "TRACING_TIMEOUT"),
 		},
 		&cli.StringFlag{
 			Name:      "tracing-trusted-certificate",
 			Usage:     "A path to a PEM-encoded certificate to use as a trusted root when connecting to the tracing endpoint over gRPC or HTTPS.",
 			Category:  category,
 			TakesFile: true,
-			Sources:   config.FromConfig("tracing.trusted_certificate"),
+			Sources:   config.FromConfig("tracing.trusted_certificate", "TRACING_TRUSTED_CERTIFICATE"),
 		},
 		&cli.StringFlag{
 			Name:      "tracing-client-certificate",
 			Usage:     "A path to a PEM-encoded client certificate to use for mTLS when connecting to the tracing endpoint over gRPC or HTTPS.",
 			Category:  category,
 			TakesFile: true,
-			Sources:   config.FromConfig("tracing.client_certificate"),
+			Sources:   config.FromConfig("tracing.client_certificate", "TRACING_CLIENT_CERTIFICATE"),
 		},
 		&cli.StringFlag{
 			Name:      "tracing-client-key",
 			Usage:     "A path to a PEM-encoded client key to use for mTLS when connecting to the tracing endpoint over gRPC or HTTPS.",
 			Category:  category,
 			TakesFile: true,
-			Sources:   config.FromConfig("tracing.client_key"),
+			Sources:   config.FromConfig("tracing.client_key", "TRACING_CLIENT_KEY"),
 		},
 		&cli.StringFlag{
 			Name:     "tracing-service-name",
 			Usage:    "The service name to use in traces.",
 			Category: category,
 			Value:    "grafana-image-renderer",
-			Sources:  config.FromConfig("tracing.service_name"),
+			Sources:  config.FromConfig("tracing.service_name", "TRACING_SERVICE_NAME"),
 		},
 	}
 }

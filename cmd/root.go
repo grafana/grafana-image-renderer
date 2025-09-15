@@ -23,7 +23,7 @@ func NewRootCmd() *cli.Command {
 				Name:    "log-level",
 				Usage:   "The minimum level to log at (enum: debug, info, warn, error)",
 				Value:   "info",
-				Sources: config.FromConfig("log.level"),
+				Sources: config.FromConfig("log.level", "LOG_LEVEL"),
 				Validator: func(s string) error {
 					if s != "debug" && s != "info" && s != "warn" && s != "error" {
 						return fmt.Errorf("invalid log level: %s", s)
