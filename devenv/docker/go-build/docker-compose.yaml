@@ -43,10 +43,9 @@ services:
     build:
       context: ../../../
       dockerfile: go.Dockerfile
-    command:
-      - server
-      - --tracing-endpoint=http://tempo:4318/v1/traces
-      - --log-level=debug
+    environment:
+      TRACING_ENDPOINT: http://tempo:4318/v1/traces
+      LOG_LEVEL: debug
     ports:
       - 8081:8081
     depends_on:
@@ -63,7 +62,7 @@ services:
       GF_TRACING_OPENTELEMETRY_OTLP_ADDRESS: tempo:4317
       GF_INSTALL_PLUGINS: https://storage.googleapis.com/integration-artifacts/grafana-exploretraces-app/grafana-exploretraces-app-latest.zip;grafana-traces-app
       GF_LOG_FILTERS: rendering:debug
-      GF_FEATURE_TOGGLES_ENABLE: sharingDashboardImage
+      GF_FEATURE_TOGGLES_ENABLE: sharingDashboardImage,renderAuthJWT
     volumes:
       - grafana-data:/var/lib/grafana
       - ./datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml:ro
