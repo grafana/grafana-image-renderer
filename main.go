@@ -21,11 +21,14 @@ func run(args []string) int {
 	// Until the command actually does some work to parse log level and whatnot, we will log everything in logfmt format for DEBUG level.
 	slog.SetDefault(slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{AddSource: true, Level: slog.LevelDebug})))
 
-	maxprocs.Set(
+	_, err := maxprocs.Set(
 		// We use maxprocs over automaxprocs because we need a new minimum value.
 		// 2 is the absolute minimum we can handle, because we use multiple goroutines many places for timeouts.
 		maxprocs.Min(2),
 		maxprocs.Logger(maxProcsLog))
+	if err != nil {
+		slog.Info("failed to set GOMAXPROCS", "err", err)
+	}
 
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
