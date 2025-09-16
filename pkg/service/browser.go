@@ -324,7 +324,8 @@ func (s *BrowserService) Render(ctx context.Context, url string, optionFuncs ...
 		tracingAction("WaitReady(body)", chromedp.WaitReady("body", chromedp.ByQuery)), // wait for a body to exist; this is when the page has started to actually render
 		tracingAction("scrollForElements", scrollForElements(opts.timeBetweenScrolls)),
 		tracingAction("waitForViz", waitForViz()),
-		tracingAction("waitForDuration(1s)", waitForDuration(time.Second)),
+		tracingAction("waitForDuration", waitForDuration(time.Second)),
+		tracingAction("waitForStabilisation", waitForStabilisation(time.Second*2)),
 		tracingAction("printer.action", opts.printer.action(fileChan, opts)),
 	}
 	span.AddEvent("actions created")
@@ -858,12 +859,72 @@ func waitForViz() chromedp.Action {
 
 func waitForDuration(d time.Duration) chromedp.Action {
 	return chromedp.ActionFunc(func(ctx context.Context) error {
+		tracer := tracer(ctx)
+		ctx, span := tracer.Start(ctx, "waitForDuration",
+			trace.WithAttributes(attribute.Float64("duration_seconds", d.Seconds())))
+		defer span.End()
+
 		select {
 		case <-time.After(d):
+			span.SetStatus(codes.Ok, "wait complete")
 		case <-ctx.Done():
+			span.SetStatus(codes.Error, "context completed before wait finished")
 			return ctx.Err()
 		}
 		return nil
+	})
+}
+
+func waitForStabilisation(timeout time.Duration) chromedp.Action {
+	return chromedp.ActionFunc(func(ctx context.Context) error {
+		tracer := tracer(ctx)
+		ctx, span := tracer.Start(ctx, "waitForStabilisation",
+			trace.WithAttributes(attribute.Float64("timeout_seconds", timeout.Seconds())))
+		defer span.End()
+
+		timeout := time.After(timeout)
+		tick := time.NewTicker(100 * time.Millisecond)
+		defer tick.Stop()
+
+		var lastHashCode int
+		initialPass := true
+		for {
+			if ctx.Err() != nil {
+				return ctx.Err()
+			}
+
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			case <-timeout:
+				span.AddEvent("timed out waiting for stabilisation")
+				return fmt.Errorf("timed out waiting for stabilisation")
+			case <-tick.C:
+				var hashCode int
+				err := chromedp.Evaluate(`((x) => {
+					let h = 0;
+					for (let i = 0; i < x.length; i++) {
+						h = (Math.imul(31, h) + x.charCodeAt(i)) | 0;
+					}
+					return h;
+				})(document.body.toString())`, &hashCode).Do(ctx)
+				if err != nil {
+					return fmt.Errorf("failed to get hash code of body: %w", err)
+				}
+				if initialPass {
+					lastHashCode = hashCode
+					initialPass = false
+					span.AddEvent("initial hash code recorded", trace.WithAttributes(attribute.Int("hashCode", hashCode)))
+					continue
+				} else if hashCode != lastHashCode {
+					span.AddEvent("hash code changed", trace.WithAttributes(attribute.Int("oldHashCode", lastHashCode), attribute.Int("newHashCode", hashCode)))
+					lastHashCode = hashCode
+					continue
+				}
+				span.AddEvent("hash code stable", trace.WithAttributes(attribute.Int("hashCode", hashCode)))
+				return nil // it's stable; let's end here!
+			}
+		}
 	})
 }
 
