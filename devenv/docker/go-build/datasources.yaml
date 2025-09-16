@@ -30,3 +30,6 @@ datasources:
         datasourceUid: prometheus
       streamingEnabled:
         search: true
+  - name: testdata
+    uid: testdata
+    type: testdata
