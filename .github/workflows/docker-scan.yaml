@@ -20,8 +20,7 @@ jobs:
       fail-fast: false
       matrix:
         file: [Dockerfile, go.Dockerfile]
-        # TODO: Use self-hosted runners when available.
-        runs-on: [github-hosted-ubuntu-arm64-large, github-hosted-ubuntu-x64-large]
+        runs-on: [ubuntu-x64, ubuntu-arm64]
 
     name: grype scanning (${{ matrix.runs-on }}, ${{ matrix.file }})
     runs-on: ${{ matrix.runs-on }}
@@ -61,8 +60,7 @@ jobs:
       fail-fast: false
       matrix:
         file: [Dockerfile, go.Dockerfile]
-        # TODO: Use self-hosted runners when available.
-        runs-on: [github-hosted-ubuntu-arm64-large, github-hosted-ubuntu-x64-large]
+        runs-on: [ubuntu-x64, ubuntu-arm64]
 
     name: trivy scanning (${{ matrix.runs-on }}, ${{ matrix.file }})
     runs-on: ${{ matrix.runs-on }}

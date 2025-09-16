@@ -67,19 +67,19 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - runs-on: ubuntu-24.04
+          - runs-on: ubuntu-x64
             arch: amd64
             dockerfile: Dockerfile
             suffix: ''
-          - runs-on: ubuntu-24.04-arm
+          - runs-on: ubuntu-arm64
             arch: arm64
             dockerfile: Dockerfile
             suffix: ''
-          - runs-on: ubuntu-24.04
+          - runs-on: ubuntu-x64
             arch: amd64
             dockerfile: go.Dockerfile
             suffix: '-golang'
-          - runs-on: ubuntu-24.04-arm
+          - runs-on: ubuntu-arm64
             arch: arm64
             dockerfile: go.Dockerfile
             suffix: '-golang'
