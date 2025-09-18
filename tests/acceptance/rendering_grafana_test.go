@@ -369,4 +369,69 @@ func TestRenderingGrafana(t *testing.T) {
 			})
 		}
 	})
+
+	t.Run("render panel dashboards as PNG", func(t *testing.T) {
+		t.Parallel()
+
+		net, err := network.New(t.Context())
+		require.NoError(t, err, "could not create Docker network")
+		testcontainers.CleanupNetwork(t, net)
+
+		StartPrometheus(t, WithNetwork(net, "prometheus"))
+		svc := StartImageRenderer(t, WithNetwork(net, "gir"))
+		_ = StartGrafana(t,
+			WithNetwork(net, "grafana"),
+			WithEnv("GF_RENDERING_SERVER_URL", "http://gir:8081/render"),
+			WithEnv("GF_RENDERING_CALLBACK_URL", "http://grafana:3000/"),
+			WithEnv("GF_RENDERING_RENDERER_TOKEN", rendererAuthToken))
+
+		requestDashboard := func(tb testing.TB, id string) []byte {
+			req, err := http.NewRequestWithContext(tb.Context(), http.MethodGet, svc.HTTPEndpoint+"/render", nil)
+			require.NoError(t, err, "could not construct HTTP request to Grafana")
+			req.Header.Set("Accept", "image/png")
+			req.Header.Set("X-Auth-Token", "-")
+			query := req.URL.Query()
+			query.Set("url", fmt.Sprintf("http://grafana:3000/d/%s?render=1&from=1699333200000&to=1699344000000&kiosk=true", id))
+			query.Set("encoding", "png")
+			query.Set("width", "1400")
+			query.Set("height", "800")
+			query.Set("renderKey", renderKey)
+			query.Set("domain", "grafana")
+			req.URL.RawQuery = query.Encode()
+
+			resp, err := http.DefaultClient.Do(req)
+			require.NoError(t, err, "could not send HTTP request to Grafana")
+			require.Equal(t, http.StatusOK, resp.StatusCode, "unexpected HTTP status code from Grafana")
+
+			return ReadBody(tb, resp.Body)
+		}
+
+		t.Run("geomap", func(t *testing.T) {
+			t.Parallel()
+
+			t.Run("with default settings", func(t *testing.T) {
+				t.Parallel()
+
+				body := requestDashboard(t, "default-geomap")
+				bodyImg := ReadRGBA(t, body)
+				const fixture = "render-panel-geomap-default-settings.png"
+				fixtureImg := ReadFixtureRGBA(t, fixture)
+				if !AssertPixelDifference(t, fixtureImg, bodyImg, 17_000) {
+					UpdateFixtureIfEnabled(t, fixture, body)
+				}
+			})
+
+			t.Run("with USA states flight info", func(t *testing.T) {
+				t.Parallel()
+
+				body := requestDashboard(t, "geomap-with-usa-flights")
+				bodyImg := ReadRGBA(t, body)
+				const fixture = "render-panel-geomap-with-usa-flights.png"
+				fixtureImg := ReadFixtureRGBA(t, fixture)
+				if !AssertPixelDifference(t, fixtureImg, bodyImg, 17_000) {
+					UpdateFixtureIfEnabled(t, fixture, body)
+				}
+			})
+		})
+	})
 }
