@@ -15,6 +15,7 @@ import (
 	"slices"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/chromedp/cdproto/browser"
@@ -318,14 +319,14 @@ func (s *BrowserService) Render(ctx context.Context, url string, optionFuncs ...
 		tracingAction("network.Enable", network.Enable()),
 		tracingAction("SetPageScaleFactor", emulation.SetPageScaleFactor(opts.pageScaleFactor)),
 		tracingAction("EmulateViewport", chromedp.EmulateViewport(int64(opts.viewportWidth), int64(opts.viewportHeight), orientation)),
-		tracingAction("setHeaders", setHeaders(browserCtx, opts.headers)),
-		tracingAction("setCookies", setCookies(opts.cookies)),
+		setHeaders(browserCtx, opts.headers),
+		setCookies(opts.cookies),
 		tracingAction("Navigate", chromedp.Navigate(url)),
 		tracingAction("WaitReady(body)", chromedp.WaitReady("body", chromedp.ByQuery)), // wait for a body to exist; this is when the page has started to actually render
-		tracingAction("scrollForElements", scrollForElements(opts.timeBetweenScrolls)),
-		tracingAction("waitForViz", waitForViz()),
-		tracingAction("waitForDuration(1s)", waitForDuration(time.Second)),
-		tracingAction("printer.action", opts.printer.action(fileChan, opts)),
+		scrollForElements(opts.timeBetweenScrolls),
+		waitForDuration(time.Second),
+		waitForReady(browserCtx, opts.timeout),
+		opts.printer.action(fileChan, opts),
 	}
 	span.AddEvent("actions created")
 	if err := chromedp.Run(browserCtx, actions...); err != nil {
@@ -391,18 +392,16 @@ func (s *BrowserService) RenderCSV(ctx context.Context, url, renderKey, domain, 
 
 	actions := []chromedp.Action{
 		tracingAction("network.Enable", network.Enable()),
-		tracingAction("setHeaders", setHeaders(browserCtx, headers)),
-		tracingAction("setCookies", setCookies([]*network.SetCookieParams{
+		setHeaders(browserCtx, headers),
+		setCookies([]*network.SetCookieParams{
 			{
 				Name:   "renderKey",
 				Value:  renderKey,
 				Domain: domain,
 			},
-		})),
+		}),
 		tracingAction("SetDownloadBehavior", browser.SetDownloadBehavior(browser.SetDownloadBehaviorBehaviorAllow).WithDownloadPath(tmpDir)),
 		tracingAction("Navigate", chromedp.Navigate(url)),
-		tracingAction("waitForViz", waitForViz()),
-		tracingAction("waitForDuration(1s)", waitForDuration(time.Second)),
 	}
 	if err := chromedp.Run(browserCtx, actions...); err != nil {
 		return nil, fmt.Errorf("failed to run browser: %w", err)
@@ -506,6 +505,7 @@ func (s *BrowserService) handleNetworkEvents(browserCtx context.Context) {
 				span.SetStatus(codes.Ok, e.Response.StatusText)
 			}
 			span.End(trace.WithTimestamp(e.Timestamp.Time()))
+			delete(requests, e.RequestID) // no point keeping it around anymore.
 		}
 	})
 }
@@ -786,6 +786,11 @@ func setHeaders(browserCtx context.Context, headers network.Headers) chromedp.Ac
 	}
 
 	return chromedp.ActionFunc(func(ctx context.Context) error {
+		tracer := tracer(ctx)
+		ctx, span := tracer.Start(ctx, "setHeaders",
+			trace.WithAttributes(attribute.Int("count", len(headers))))
+		defer span.End()
+
 		if len(headers) == 0 {
 			return nil
 		}
@@ -795,10 +800,25 @@ func setHeaders(browserCtx context.Context, headers network.Headers) chromedp.Ac
 
 func setCookies(cookies []*network.SetCookieParams) chromedp.Action {
 	return chromedp.ActionFunc(func(ctx context.Context) error {
+		tracer := tracer(ctx)
+		ctx, span := tracer.Start(ctx, "setCookies",
+			trace.WithAttributes(attribute.Int("count", len(cookies))))
+		defer span.End()
+
 		for _, cookie := range cookies {
+			ctx, span := tracer.Start(ctx, "setCookie",
+				trace.WithAttributes(
+					attribute.String("name", cookie.Name),
+					attribute.String("domain", cookie.Domain),
+					attribute.Bool("httpOnly", cookie.HTTPOnly),
+					attribute.Bool("secure", cookie.Secure)))
 			if err := cookie.Do(ctx); err != nil {
+				span.SetStatus(codes.Error, err.Error())
+				span.End()
 				return fmt.Errorf("failed to set cookie %q: %w", cookie.Name, err)
 			}
+			span.SetStatus(codes.Ok, "cookie set successfully")
+			span.End()
 		}
 		return nil
 	})
@@ -849,18 +869,126 @@ func scrollForElements(timeBetweenScrolls time.Duration) chromedp.Action {
 	})
 }
 
-func waitForViz() chromedp.Action {
-	const script = `(() => {
-		return !window.__grafanaSceneContext || window.__grafanaRunningQueryCount === 0;
-	})()`
-	return chromedp.Poll(script, nil, chromedp.WithPollingMutation(), chromedp.WithPollingTimeout(0))
+func waitForReady(browserCtx context.Context, timeout time.Duration) chromedp.Action {
+	getRunningQueries := func(ctx context.Context) (bool, error) {
+		var running bool
+		err := chromedp.Evaluate(`!!(window.__grafanaSceneContext && window.__grafanaRunningQueryCount > 0)`, &running).Do(ctx)
+		return running, err
+	}
+	getDOMHashCode := func(ctx context.Context) (int, error) {
+		var hashCode int
+		err := chromedp.Evaluate(`((x) => {
+			let h = 0;
+			for (let i = 0; i < x.length; i++) {
+				h = (Math.imul(31, h) + x.charCodeAt(i)) | 0;
+			}
+			return h;
+		})(document.body.toString())`, &hashCode).Do(ctx)
+		return hashCode, err
+	}
+
+	requests := &atomic.Int64{}
+	lastRequest := &atomicTime{} // TODO: use this to wait for network stabilisation.
+	lastRequest.Store(time.Now())
+	chromedp.ListenTarget(browserCtx, func(ev any) {
+		switch ev.(type) {
+		case *network.EventRequestWillBeSent:
+			requests.Add(1)
+			lastRequest.Store(time.Now())
+		case *network.EventLoadingFinished, *network.EventLoadingFailed:
+			requests.Add(-1)
+		}
+	})
+
+	return chromedp.ActionFunc(func(ctx context.Context) error {
+		tracer := tracer(ctx)
+		ctx, span := tracer.Start(ctx, "waitForReady",
+			trace.WithAttributes(attribute.Float64("timeout_seconds", timeout.Seconds())))
+		defer span.End()
+
+		timeout := time.After(timeout)
+
+		hasHadQueries := false
+		giveUpFirstQuery := time.Now().Add(time.Second * 3)
+
+		var domHashCode int
+		initialDOMPass := true
+
+		for {
+			select {
+			case <-ctx.Done():
+				span.SetStatus(codes.Error, "context completed before readiness detected")
+				return ctx.Err()
+			case <-timeout:
+				span.SetStatus(codes.Error, "timed out waiting for readiness")
+				return fmt.Errorf("timed out waiting for readiness")
+			case <-time.After(100 * time.Millisecond):
+			}
+
+			if requests.Load() > 0 {
+				initialDOMPass = true
+				span.AddEvent("network requests still ongoing", trace.WithAttributes(attribute.Int64("inflightRequests", requests.Load())))
+				continue // still waiting on network requests to complete
+			}
+
+			running, err := getRunningQueries(ctx)
+			if err != nil {
+				span.SetStatus(codes.Error, err.Error())
+				return fmt.Errorf("failed to get running queries: %w", err)
+			}
+			span.AddEvent("queried running queries", trace.WithAttributes(attribute.Bool("running", running)))
+			if running {
+				initialDOMPass = true
+				hasHadQueries = true
+				continue // still waiting on queries to complete
+			} else if !hasHadQueries && time.Now().Before(giveUpFirstQuery) {
+				span.AddEvent("no first query detected yet; giving it more time")
+				continue
+			}
+
+			if initialDOMPass {
+				domHashCode, err = getDOMHashCode(ctx)
+				if err != nil {
+					span.SetStatus(codes.Error, err.Error())
+					return fmt.Errorf("failed to get DOM hash code: %w", err)
+				}
+				span.AddEvent("initial DOM hash code recorded", trace.WithAttributes(attribute.Int("hashCode", domHashCode)))
+				initialDOMPass = false
+				continue // not stable yet
+			}
+
+			newHashCode, err := getDOMHashCode(ctx)
+			if err != nil {
+				span.SetStatus(codes.Error, err.Error())
+				return fmt.Errorf("failed to get DOM hash code: %w", err)
+			}
+			span.AddEvent("subsequent DOM hash code recorded", trace.WithAttributes(attribute.Int("hashCode", newHashCode)))
+			if newHashCode != domHashCode {
+				span.AddEvent("DOM hash code changed", trace.WithAttributes(attribute.Int("oldHashCode", domHashCode), attribute.Int("newHashCode", newHashCode)))
+				domHashCode = newHashCode
+				initialDOMPass = true
+				continue // not stable yet
+			}
+			span.AddEvent("DOM hash code stable", trace.WithAttributes(attribute.Int("hashCode", domHashCode)))
+			break // we're done!!
+		}
+
+		return nil
+	})
 }
 
 func waitForDuration(d time.Duration) chromedp.Action {
 	return chromedp.ActionFunc(func(ctx context.Context) error {
+		tracer := tracer(ctx)
+		ctx, span := tracer.Start(ctx, "waitForDuration",
+			trace.WithAttributes(attribute.Float64("duration_seconds", d.Seconds())))
+		defer span.End()
+
 		select {
 		case <-time.After(d):
+			span.SetStatus(codes.Ok, "wait complete")
 		case <-ctx.Done():
+			span.SetStatus(codes.Error, "context completed before wait finished")
 			return ctx.Err()
 		}
 		return nil
@@ -908,4 +1036,20 @@ func (c networkHeadersCarrier) Set(key string, value string) {
 
 func (c networkHeadersCarrier) Keys() []string {
 	return slices.Collect(maps.Keys(c))
+}
+
+type atomicTime struct {
+	atomic.Value
+}
+
+func (at *atomicTime) Load() time.Time {
+	v := at.Value.Load()
+	if v == nil {
+		return time.Time{}
+	}
+	return v.(time.Time)
+}
+
+func (at *atomicTime) Store(t time.Time) {
+	at.Value.Store(t)
 }
