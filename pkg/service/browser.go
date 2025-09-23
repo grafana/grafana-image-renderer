@@ -447,11 +447,13 @@ func (s *BrowserService) createAllocatorOptions(renderingOptions *renderingOptio
 	opts = append(opts, chromedp.WindowSize(renderingOptions.viewportWidth, renderingOptions.viewportHeight))
 	for _, arg := range s.args {
 		arg = strings.TrimPrefix(arg, "--")
-		equals := strings.Index(arg, "=")
-		if equals == -1 {
-			opts = append(opts, chromedp.Flag(arg, ""))
+		key, value, hadEquals := strings.Cut(arg, "=")
+		if !hadEquals || value == "true" {
+			opts = append(opts, chromedp.Flag(key, true))
+		} else if value == "false" {
+			opts = append(opts, chromedp.Flag(key, false))
 		} else {
-			opts = append(opts, chromedp.Flag(arg[:equals], arg[equals+1:]))
+			opts = append(opts, chromedp.Flag(key, value))
 		}
 	}
 
