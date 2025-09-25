@@ -326,6 +326,8 @@ func (s *BrowserService) Render(ctx context.Context, url string, optionFuncs ...
 		scrollForElements(opts.timeBetweenScrolls),
 		waitForDuration(time.Second),
 		waitForReady(browserCtx, opts.timeout),
+		resizeViewportForFullHeight(opts),      // Resize after all content is loaded and ready
+		waitForReady(browserCtx, opts.timeout), // Wait for readiness again after viewport resize
 		opts.printer.action(fileChan, opts),
 	}
 	span.AddEvent("actions created")
@@ -744,39 +746,9 @@ func (p *pngPrinter) action(dst chan []byte, opts *renderingOptions) chromedp.Ac
 			return fmt.Errorf("failed to scroll to top before screenshot: %w", err)
 		}
 
-		// If fullHeight is enabled, resize viewport to match the actual page height
-		if p.fullHeight {
-			var scrollHeight int
-			err := chromedp.Evaluate(`document.body.scrollHeight`, &scrollHeight).Do(ctx)
-			if err != nil {
-				span.SetStatus(codes.Error, "failed to get scroll height: "+err.Error())
-				return fmt.Errorf("failed to get scroll height: %w", err)
-			}
-
-			// Only resize if the page is actually taller than the current viewport
-			if scrollHeight > opts.viewportHeight {
-				span.AddEvent("resizing viewport for full height capture",
-					trace.WithAttributes(
-						attribute.Int("originalHeight", opts.viewportHeight),
-						attribute.Int("newHeight", scrollHeight),
-					))
-
-				orientation := chromedp.EmulatePortrait
-				if opts.landscape {
-					orientation = chromedp.EmulateLandscape
-				}
-
-				err = chromedp.EmulateViewport(int64(opts.viewportWidth), int64(scrollHeight), orientation).Do(ctx)
-				if err != nil {
-					span.SetStatus(codes.Error, "failed to resize viewport: "+err.Error())
-					return fmt.Errorf("failed to resize viewport for full height: %w", err)
-				}
-			}
-		}
-
-		// Wait a bit for viewport change and rendering to stabilize
+		// Wait a bit for scroll to complete and rendering to stabilize
 		select {
-		case <-time.After(300 * time.Millisecond):
+		case <-time.After(200 * time.Millisecond):
 		case <-ctx.Done():
 			return ctx.Err()
 		}
@@ -869,6 +841,54 @@ func setCookies(cookies []*network.SetCookieParams) chromedp.Action {
 			span.SetStatus(codes.Ok, "cookie set successfully")
 			span.End()
 		}
+		return nil
+	})
+}
+
+func resizeViewportForFullHeight(opts *renderingOptions) chromedp.Action {
+	return chromedp.ActionFunc(func(ctx context.Context) error {
+		// Only resize for PNG printers with fullHeight enabled
+		pngPrinter, ok := opts.printer.(*pngPrinter)
+		if !ok || !pngPrinter.fullHeight {
+			return nil // Skip for non-PNG or non-fullHeight screenshots
+		}
+
+		tracer := tracer(ctx)
+		ctx, span := tracer.Start(ctx, "resizeViewportForFullHeight")
+		defer span.End()
+
+		var scrollHeight int
+		err := chromedp.Evaluate(`document.body.scrollHeight`, &scrollHeight).Do(ctx)
+		if err != nil {
+			span.SetStatus(codes.Error, "failed to get scroll height: "+err.Error())
+			return fmt.Errorf("failed to get scroll height: %w", err)
+		}
+
+		// Only resize if the page is actually taller than the current viewport
+		if scrollHeight > opts.viewportHeight {
+			span.AddEvent("resizing viewport for full height capture",
+				trace.WithAttributes(
+					attribute.Int("originalHeight", opts.viewportHeight),
+					attribute.Int("newHeight", scrollHeight),
+				))
+
+			// Determine orientation from options
+			orientation := chromedp.EmulatePortrait
+			if opts.landscape {
+				orientation = chromedp.EmulateLandscape
+			}
+
+			err = chromedp.EmulateViewport(int64(opts.viewportWidth), int64(scrollHeight), orientation).Do(ctx)
+			if err != nil {
+				span.SetStatus(codes.Error, "failed to resize viewport: "+err.Error())
+				return fmt.Errorf("failed to resize viewport for full height: %w", err)
+			}
+
+			span.SetStatus(codes.Ok, "viewport resized successfully")
+		} else {
+			span.AddEvent("no viewport resize needed", trace.WithAttributes(attribute.Int("pageHeight", scrollHeight)))
+		}
+
 		return nil
 	})
 }
