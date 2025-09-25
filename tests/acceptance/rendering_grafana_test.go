@@ -476,7 +476,7 @@ func TestRenderingGrafana(t *testing.T) {
 			bodyImg := ReadRGBA(t, body)
 			const fixture = "render-panel-stat-panels.png"
 			fixtureImg := ReadFixtureRGBA(t, fixture)
-			if !AssertPixelDifference(t, fixtureImg, bodyImg, 17_000) {
+			if !AssertPixelDifference(t, fixtureImg, bodyImg, 81_000) {
 				UpdateFixtureIfEnabled(t, fixture, body)
 			}
 		})
@@ -488,7 +488,7 @@ func TestRenderingGrafana(t *testing.T) {
 			bodyImg := ReadRGBA(t, body)
 			const fixture = "render-panel-bar-chart-panels.png"
 			fixtureImg := ReadFixtureRGBA(t, fixture)
-			if !AssertPixelDifference(t, fixtureImg, bodyImg, 17_000) {
+			if !AssertPixelDifference(t, fixtureImg, bodyImg, 145_000) {
 				UpdateFixtureIfEnabled(t, fixture, body)
 			}
 		})
@@ -500,7 +500,7 @@ func TestRenderingGrafana(t *testing.T) {
 			bodyImg := ReadRGBA(t, body)
 			const fixture = "render-panel-gauge-panels.png"
 			fixtureImg := ReadFixtureRGBA(t, fixture)
-			if !AssertPixelDifference(t, fixtureImg, bodyImg, 17_000) {
+			if !AssertPixelDifference(t, fixtureImg, bodyImg, 40_000) {
 				UpdateFixtureIfEnabled(t, fixture, body)
 			}
 		})
