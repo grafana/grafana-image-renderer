@@ -372,29 +372,35 @@ func TestRenderingGrafana(t *testing.T) {
 		t.Run("render many pages as PNG with full height", func(t *testing.T) {
 			t.Parallel()
 
-			req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, svc.HTTPEndpoint+"/render", nil)
-			require.NoError(t, err, "could not construct HTTP request to Grafana")
-			req.Header.Set("Accept", "image/png")
-			req.Header.Set("X-Auth-Token", "-")
-			query := req.URL.Query()
-			query.Set("url", "http://grafana:3000/d/very-long-prometheus-dashboard?render=1&from=1699333200000&to=1699344000000&kiosk=true")
-			query.Set("encoding", "png")
-			query.Set("renderKey", renderKey)
-			query.Set("domain", "grafana")
-			query.Set("height", "-1")
-			query.Set("width", "1000")
-			req.URL.RawQuery = query.Encode()
+			for _, isLandscape := range []bool{true, false} {
+				t.Run("landscape="+fmt.Sprintf("%v", isLandscape), func(t *testing.T) {
+					t.Parallel()
 
-			resp, err := http.DefaultClient.Do(req)
-			require.NoError(t, err, "could not send HTTP request to Grafana")
-			require.Equal(t, http.StatusOK, resp.StatusCode, "unexpected HTTP status code from Grafana")
+					req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, svc.HTTPEndpoint+"/render", nil)
+					require.NoError(t, err, "could not construct HTTP request to Grafana")
+					req.Header.Set("Accept", "image/png")
+					req.Header.Set("X-Auth-Token", "-")
+					query := req.URL.Query()
+					query.Set("url", "http://grafana:3000/d/very-long-prometheus-dashboard?render=1&from=1699333200000&to=1699344000000&kiosk=true")
+					query.Set("encoding", "png")
+					query.Set("renderKey", renderKey)
+					query.Set("domain", "grafana")
+					query.Set("height", "-1")
+					query.Set("landscape", fmt.Sprintf("%v", isLandscape))
+					req.URL.RawQuery = query.Encode()
 
-			body := ReadBody(t, resp.Body)
-			image := ReadRGBA(t, body)
-			const fixture = "render-very-long-prometheus-dashboard-full-height.png"
-			fixtureImg := ReadFixtureRGBA(t, fixture)
-			if !AssertPixelDifference(t, fixtureImg, image, 125_000) { // this is a very long image, so data may be off by a little bit
-				UpdateFixtureIfEnabled(t, fixture, body)
+					resp, err := http.DefaultClient.Do(req)
+					require.NoError(t, err, "could not send HTTP request to Grafana")
+					require.Equal(t, http.StatusOK, resp.StatusCode, "unexpected HTTP status code from Grafana")
+
+					body := ReadBody(t, resp.Body)
+					image := ReadRGBA(t, body)
+					fixture := fmt.Sprintf("render-very-long-prometheus-dashboard-full-height-landscape-%v.png", isLandscape)
+					fixtureImg := ReadFixtureRGBA(t, fixture)
+					if !AssertPixelDifference(t, fixtureImg, image, 125_000) { // this is a very long image, so data may be off by a little bit
+						UpdateFixtureIfEnabled(t, fixture, body)
+					}
+				})
 			}
 		})
 	})
