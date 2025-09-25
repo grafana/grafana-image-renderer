@@ -8,6 +8,12 @@
         "hide": true,
         "iconColor": "rgba(0, 211, 255, 1)",
         "name": "Annotations & Alerts",
+        "target": {
+          "limit": 100,
+          "matchAny": false,
+          "tags": [],
+          "type": "dashboard"
+        },
         "type": "dashboard"
       }
     ]
@@ -65,7 +71,7 @@
         "alertThreshold": true
       },
       "percentage": false,
-      "pluginVersion": "8.0.2",
+      "pluginVersion": "8.1.2",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -165,7 +171,7 @@
         "alertThreshold": true
       },
       "percentage": false,
-      "pluginVersion": "8.0.2",
+      "pluginVersion": "8.1.2",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -291,7 +297,7 @@
         "alertThreshold": true
       },
       "percentage": false,
-      "pluginVersion": "8.0.2",
+      "pluginVersion": "8.1.2",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -417,6 +423,278 @@
       "yBucketSize": null
     },
     {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 5,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 18
+      },
+      "id": 20,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "targets": [
+        {
+          "exemplar": true,
+          "expr": "grafana_image_renderer_http_request_in_flight{job=\"renderer\"}",
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "{{instance}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Requests in flight (by instance)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 7,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "noValue": "0",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Request latency (avg)"
+            },
+            "properties": [
+              {
+                "id": "custom.stacking",
+                "value": {
+                  "group": "A",
+                  "mode": "normal"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 18
+      },
+      "id": 22,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "exemplar": true,
+          "expr": "sum without(instance) (rate(grafana_image_renderer_step_duration_seconds_sum{job=\"renderer\",step=\"launch\"}[$__interval])) \n/ \nsum without(instance) (rate(grafana_image_renderer_step_duration_seconds_count{job=\"renderer\",step=\"launch\"}[$__interval]))",
+          "interval": "",
+          "intervalFactor": 2,
+          "legendFormat": "launch",
+          "refId": "A"
+        },
+        {
+          "exemplar": true,
+          "expr": "sum without(instance) (rate(grafana_image_renderer_step_duration_seconds_sum{job=\"renderer\",step=\"newPage\"}[$__interval])) \n/ \nsum without(instance) (rate(grafana_image_renderer_step_duration_seconds_count{job=\"renderer\",step=\"newPage\"}[$__interval]))",
+          "hide": false,
+          "interval": "",
+          "intervalFactor": 2,
+          "legendFormat": "newPage",
+          "refId": "B"
+        },
+        {
+          "exemplar": true,
+          "expr": "sum without(instance) (rate(grafana_image_renderer_step_duration_seconds_sum{job=\"renderer\",step=\"prepare\"}[$__interval])) \n/ \nsum without(instance) (rate(grafana_image_renderer_step_duration_seconds_count{job=\"renderer\",step=\"prepare\"}[$__interval]))",
+          "hide": false,
+          "interval": "",
+          "intervalFactor": 2,
+          "legendFormat": "prepare",
+          "refId": "C"
+        },
+        {
+          "exemplar": true,
+          "expr": "sum without(instance) (rate(grafana_image_renderer_step_duration_seconds_sum{job=\"renderer\",step=\"navigate\"}[$__interval])) \n/ \nsum without(instance) (rate(grafana_image_renderer_step_duration_seconds_count{job=\"renderer\",step=\"navigate\"}[$__interval]))",
+          "hide": false,
+          "interval": "",
+          "intervalFactor": 2,
+          "legendFormat": "navigate",
+          "refId": "D"
+        },
+        {
+          "exemplar": true,
+          "expr": "sum without(instance) (rate(grafana_image_renderer_step_duration_seconds_sum{job=\"renderer\",step=\"panelsRendered\"}[$__interval])) \n/ \nsum without(instance) (rate(grafana_image_renderer_step_duration_seconds_count{job=\"renderer\",step=\"panelsRendered\"}[$__interval]))",
+          "hide": false,
+          "interval": "",
+          "intervalFactor": 2,
+          "legendFormat": "panelsRendered",
+          "refId": "E"
+        },
+        {
+          "exemplar": true,
+          "expr": "sum without(instance) (rate(grafana_image_renderer_step_duration_seconds_sum{job=\"renderer\",step=\"screenshot\"}[$__interval])) \n/ \nsum without(instance) (rate(grafana_image_renderer_step_duration_seconds_count{job=\"renderer\",step=\"screenshot\"}[$__interval]))",
+          "hide": false,
+          "interval": "",
+          "intervalFactor": 2,
+          "legendFormat": "screenshot",
+          "refId": "F"
+        },
+        {
+          "exemplar": true,
+          "expr": "sum without(instance,status_code) (rate(grafana_image_renderer_service_http_request_duration_seconds_sum{job=\"renderer\"}[$__interval])) \n/ \nsum without(instance,status_code) (rate(grafana_image_renderer_service_http_request_duration_seconds_count{job=\"renderer\"}[$__interval]))",
+          "hide": false,
+          "interval": "",
+          "intervalFactor": 2,
+          "legendFormat": "Request latency (avg)",
+          "refId": "G"
+        }
+      ],
+      "title": "Request latency compared to steps latency (avg)",
+      "transformations": [
+        {
+          "id": "calculateField",
+          "options": {
+            "alias": "Steps latency (sum of avg)",
+            "mode": "reduceRow",
+            "reduce": {
+              "include": [
+                "launch",
+                "newPage",
+                "prepare",
+                "navigate",
+                "panelsRendered",
+                "screenshot"
+              ],
+              "reducer": "sum"
+            }
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "launch": true,
+              "navigate": true,
+              "newPage": true,
+              "panelsRendered": true,
+              "prepare": true,
+              "screenshot": true
+            },
+            "indexByName": {},
+            "renameByName": {}
+          }
+        }
+      ],
+      "type": "timeseries"
+    },
+    {
       "aliasColors": {},
       "bars": false,
       "dashLength": 10,
@@ -425,7 +703,8 @@
       "description": "",
       "fieldConfig": {
         "defaults": {
-          "links": []
+          "links": [],
+          "unit": "s"
         },
         "overrides": []
       },
@@ -435,7 +714,7 @@
         "h": 9,
         "w": 8,
         "x": 0,
-        "y": 18
+        "y": 26
       },
       "hiddenSeries": false,
       "id": 12,
@@ -456,7 +735,7 @@
         "alertThreshold": true
       },
       "percentage": false,
-      "pluginVersion": "8.0.2",
+      "pluginVersion": "8.1.2",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -553,7 +832,7 @@
         "h": 9,
         "w": 8,
         "x": 8,
-        "y": 18
+        "y": 26
       },
       "hiddenSeries": false,
       "id": 13,
@@ -574,7 +853,7 @@
         "alertThreshold": true
       },
       "percentage": false,
-      "pluginVersion": "8.0.2",
+      "pluginVersion": "8.1.2",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -664,7 +943,7 @@
         "h": 9,
         "w": 8,
         "x": 16,
-        "y": 18
+        "y": 26
       },
       "hiddenSeries": false,
       "id": 18,
@@ -684,7 +963,7 @@
         "alertThreshold": true
       },
       "percentage": false,
-      "pluginVersion": "8.0.2",
+      "pluginVersion": "8.1.2",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -740,7 +1019,6 @@
       },
       "yaxes": [
         {
-          "$$hashKey": "object:111",
           "format": "s",
           "label": null,
           "logBase": 1,
@@ -749,7 +1027,6 @@
           "show": true
         },
         {
-          "$$hashKey": "object:112",
           "format": "short",
           "label": null,
           "logBase": 1,
@@ -782,7 +1059,7 @@
         "h": 9,
         "w": 8,
         "x": 0,
-        "y": 27
+        "y": 35
       },
       "hiddenSeries": false,
       "id": 14,
@@ -803,7 +1080,7 @@
         "alertThreshold": true
       },
       "percentage": false,
-      "pluginVersion": "8.0.2",
+      "pluginVersion": "8.1.2",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -900,7 +1177,7 @@
         "h": 9,
         "w": 8,
         "x": 8,
-        "y": 27
+        "y": 35
       },
       "hiddenSeries": false,
       "id": 15,
@@ -921,7 +1198,7 @@
         "alertThreshold": true
       },
       "percentage": false,
-      "pluginVersion": "8.0.2",
+      "pluginVersion": "8.1.2",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -1018,7 +1295,7 @@
         "h": 9,
         "w": 8,
         "x": 16,
-        "y": 27
+        "y": 35
       },
       "hiddenSeries": false,
       "id": 16,
@@ -1039,7 +1316,7 @@
         "alertThreshold": true
       },
       "percentage": false,
-      "pluginVersion": "8.0.2",
+      "pluginVersion": "8.1.2",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
