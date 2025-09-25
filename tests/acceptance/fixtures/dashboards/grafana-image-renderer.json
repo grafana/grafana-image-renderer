@@ -960,7 +960,11 @@
   ],
   "preload": false,
   "schemaVersion": 42,
-  "tags": [],
+  "tags": [
+    "timeseries",
+    "table",
+    "heatmap"
+  ],
   "templating": {
     "list": [
       {
