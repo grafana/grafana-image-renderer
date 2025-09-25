@@ -728,7 +728,7 @@ type pngPrinter struct {
 	fullHeight bool
 }
 
-func (p *pngPrinter) action(dst chan []byte, _ *renderingOptions) chromedp.Action {
+func (p *pngPrinter) action(dst chan []byte, opts *renderingOptions) chromedp.Action {
 	return chromedp.ActionFunc(func(ctx context.Context) error {
 		tracer := tracer(ctx)
 		ctx, span := tracer.Start(ctx, "pngPrinter.action",
@@ -737,9 +737,56 @@ func (p *pngPrinter) action(dst chan []byte, _ *renderingOptions) chromedp.Actio
 			))
 		defer span.End()
 
+		// Ensure we're at the top of the page before capturing
+		err := chromedp.Evaluate(`window.scrollTo(0, 0, { behavior: 'instant' })`, nil).Do(ctx)
+		if err != nil {
+			span.SetStatus(codes.Error, "failed to scroll to top: "+err.Error())
+			return fmt.Errorf("failed to scroll to top before screenshot: %w", err)
+		}
+
+		// If fullHeight is enabled, resize viewport to match the actual page height
+		if p.fullHeight {
+			var scrollHeight int
+			err := chromedp.Evaluate(`document.body.scrollHeight`, &scrollHeight).Do(ctx)
+			if err != nil {
+				span.SetStatus(codes.Error, "failed to get scroll height: "+err.Error())
+				return fmt.Errorf("failed to get scroll height: %w", err)
+			}
+
+			// Only resize if the page is actually taller than the current viewport
+			if scrollHeight > opts.viewportHeight {
+				span.AddEvent("resizing viewport for full height capture",
+					trace.WithAttributes(
+						attribute.Int("originalHeight", opts.viewportHeight),
+						attribute.Int("newHeight", scrollHeight),
+					))
+
+				orientation := chromedp.EmulatePortrait
+				if opts.landscape {
+					orientation = chromedp.EmulateLandscape
+				}
+
+				err = chromedp.EmulateViewport(int64(opts.viewportWidth), int64(scrollHeight), orientation).Do(ctx)
+				if err != nil {
+					span.SetStatus(codes.Error, "failed to resize viewport: "+err.Error())
+					return fmt.Errorf("failed to resize viewport for full height: %w", err)
+				}
+			}
+		}
+
+		// Wait a bit for viewport change and rendering to stabilize
+		select {
+		case <-time.After(300 * time.Millisecond):
+		case <-ctx.Done():
+			return ctx.Err()
+		}
+
 		output, err := page.CaptureScreenshot().
 			WithFormat(page.CaptureScreenshotFormatPng).
-			WithCaptureBeyondViewport(p.fullHeight).
+			// We don't want to use this option: it doesn't take a full window screenshot,
+			//   rather it takes a screenshot including content that bleeds outside the viewport (e.g. something 110vh tall).
+			// Instead, we change the viewport height to match the content height.
+			WithCaptureBeyondViewport(false).
 			Do(ctx)
 		if err != nil {
 			span.SetStatus(codes.Error, err.Error())
