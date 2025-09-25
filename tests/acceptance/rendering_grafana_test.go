@@ -290,7 +290,7 @@ func TestRenderingGrafana(t *testing.T) {
 		}
 	})
 
-	t.Run("render very long prometheus dashboard as PDF", func(t *testing.T) {
+	t.Run("render very long prometheus dashboard", func(t *testing.T) {
 		t.Parallel()
 
 		net, err := network.New(t.Context())
@@ -305,7 +305,7 @@ func TestRenderingGrafana(t *testing.T) {
 			WithEnv("GF_RENDERING_CALLBACK_URL", "http://grafana:3000/"),
 			WithEnv("GF_RENDERING_RENDERER_TOKEN", rendererAuthToken))
 
-		t.Run("render many pages", func(t *testing.T) {
+		t.Run("render PDF of many pages", func(t *testing.T) {
 			t.Parallel()
 
 			req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, svc.HTTPEndpoint+"/render", nil)
@@ -340,7 +340,7 @@ func TestRenderingGrafana(t *testing.T) {
 			"first 3":         "1-3",
 			"1 and 3":         "1, 3",
 		} {
-			t.Run("print with pageRanges="+name, func(t *testing.T) {
+			t.Run("print PDF with pageRanges="+name, func(t *testing.T) {
 				t.Parallel()
 
 				req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, svc.HTTPEndpoint+"/render", nil)
@@ -368,6 +368,41 @@ func TestRenderingGrafana(t *testing.T) {
 				}
 			})
 		}
+
+		t.Run("render many pages as PNG with full height", func(t *testing.T) {
+			t.Parallel()
+
+			for _, isLandscape := range []bool{true, false} {
+				t.Run("landscape="+fmt.Sprintf("%v", isLandscape), func(t *testing.T) {
+					t.Parallel()
+
+					req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, svc.HTTPEndpoint+"/render", nil)
+					require.NoError(t, err, "could not construct HTTP request to Grafana")
+					req.Header.Set("Accept", "image/png")
+					req.Header.Set("X-Auth-Token", "-")
+					query := req.URL.Query()
+					query.Set("url", "http://grafana:3000/d/very-long-prometheus-dashboard?render=1&from=1699333200000&to=1699344000000&kiosk=true")
+					query.Set("encoding", "png")
+					query.Set("renderKey", renderKey)
+					query.Set("domain", "grafana")
+					query.Set("height", "-1")
+					query.Set("landscape", fmt.Sprintf("%v", isLandscape))
+					req.URL.RawQuery = query.Encode()
+
+					resp, err := http.DefaultClient.Do(req)
+					require.NoError(t, err, "could not send HTTP request to Grafana")
+					require.Equal(t, http.StatusOK, resp.StatusCode, "unexpected HTTP status code from Grafana")
+
+					body := ReadBody(t, resp.Body)
+					image := ReadRGBA(t, body)
+					fixture := fmt.Sprintf("render-very-long-prometheus-dashboard-full-height-landscape-%v.png", isLandscape)
+					fixtureImg := ReadFixtureRGBA(t, fixture)
+					if !AssertPixelDifference(t, fixtureImg, image, 125_000) { // this is a very long image, so data may be off by a little bit
+						UpdateFixtureIfEnabled(t, fixture, body)
+					}
+				})
+			}
+		})
 	})
 
 	t.Run("render panel dashboards as PNG", func(t *testing.T) {
