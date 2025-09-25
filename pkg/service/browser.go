@@ -739,20 +739,6 @@ func (p *pngPrinter) action(dst chan []byte, opts *renderingOptions) chromedp.Ac
 			))
 		defer span.End()
 
-		// Ensure we're at the top of the page before capturing
-		err := chromedp.Evaluate(`window.scrollTo(0, 0, { behavior: 'instant' })`, nil).Do(ctx)
-		if err != nil {
-			span.SetStatus(codes.Error, "failed to scroll to top: "+err.Error())
-			return fmt.Errorf("failed to scroll to top before screenshot: %w", err)
-		}
-
-		// Wait a bit for scroll to complete and rendering to stabilize
-		select {
-		case <-time.After(200 * time.Millisecond):
-		case <-ctx.Done():
-			return ctx.Err()
-		}
-
 		output, err := page.CaptureScreenshot().
 			WithFormat(page.CaptureScreenshotFormatPng).
 			// We don't want to use this option: it doesn't take a full window screenshot,
