@@ -1,7 +1,6 @@
 lib-cov
 *.seed
 *.log
-*.csv
 *.dat
 *.out
 *.pid
@@ -44,3 +43,6 @@ tests/testdata/diff_*
 cache
 
 /devenv/docker/tracing/tempo-data/
+
+# Grafana Enterprise licence keys
+*.jwt

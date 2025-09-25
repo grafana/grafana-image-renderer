@@ -15,6 +15,11 @@ var MetricTrustedURLRequests = prometheus.NewCounterVec(prometheus.CounterOpts{
 // TrustedURL ensures that the `url` query parameter (if it exists) aims at an HTTP or HTTPS website, disallowing e.g. `chrome://` and `file://`.
 func TrustedURL(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		tracer := tracer(r.Context())
+		ctx, span := tracer.Start(r.Context(), "TrustedURL")
+		defer span.End()
+		r = r.WithContext(ctx)
+
 		urlQuery := r.URL.Query().Get("url")
 		if urlQuery == "" {
 			// Nothing to check: let it through.

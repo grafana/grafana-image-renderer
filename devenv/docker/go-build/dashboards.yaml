@@ -1,0 +1,10 @@
+apiVersion: 1
+
+providers:
+  - name: go-build
+    folder: DevEnv go-build dashboards
+    type: file
+    allowUiUpdates: false
+    updateIntervalSeconds: 60
+    options:
+      path: dashboards

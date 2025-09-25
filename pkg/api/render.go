@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"net/url"
 	"regexp"
 	"strconv"
 	"time"
@@ -25,11 +26,21 @@ var (
 	regexpOnlyNumbers = regexp.MustCompile(`^[0-9]+$`)
 )
 
-func HandlePostRender(browser *service.BrowserService) http.Handler {
+func HandleGetRender(browser *service.BrowserService) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		url := r.URL.Query().Get("url")
-		if url == "" {
+		tracer := tracer(r.Context())
+		ctx, span := tracer.Start(r.Context(), "HandleGetRender")
+		defer span.End()
+		r = r.WithContext(ctx)
+
+		rawTargetURL := r.URL.Query().Get("url")
+		if rawTargetURL == "" {
 			http.Error(w, "missing 'url' query parameter", http.StatusBadRequest)
+			return
+		}
+		targetURL, err := url.Parse(rawTargetURL)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("invalid 'url' query parameter: %v", err), http.StatusBadRequest)
 			return
 		}
 		var options []service.RenderingOption
@@ -96,23 +107,65 @@ func HandlePostRender(browser *service.BrowserService) http.Handler {
 		encoding := r.URL.Query().Get("encoding")
 		switch encoding {
 		case "", "pdf":
-			options = append(options, service.WithPDFPrinter())
+			var printerOpts []service.PDFPrinterOption
+
+			paper := r.URL.Query().Get("pdf.format")
+			if paper == "" {
+				// FIXME: legacy support; remove in some future release.
+				paper = targetURL.Query().Get("pdf.format")
+			}
+			if paper != "" {
+				var psz service.PaperSize
+				if err := psz.UnmarshalText([]byte(paper)); err != nil {
+					http.Error(w, fmt.Sprintf("invalid 'pdf.format' query parameter: %v", err), http.StatusBadRequest)
+					return
+				}
+				printerOpts = append(printerOpts, service.WithPaperSize(psz))
+			}
+
+			printBackground := r.URL.Query().Get("pdf.printBackground")
+			if printBackground == "" {
+				// FIXME: legacy support; remove in some future release.
+				printBackground = targetURL.Query().Get("pdf.printBackground")
+			}
+			if printBackground != "" {
+				printerOpts = append(printerOpts, service.WithPrintingBackground(printBackground == "true"))
+			}
+
+			pageRanges := r.URL.Query().Get("pdf.pageRanges")
+			if pageRanges == "" {
+				// FIXME: legacy support; remove in some future release.
+				pageRanges = targetURL.Query().Get("pdf.pageRanges")
+			}
+			if pageRanges != "" {
+				printerOpts = append(printerOpts, service.WithPageRanges(pageRanges))
+			}
+
+			options = append(options, service.WithPDFPrinter(printerOpts...))
+
+			if pdfLandscape := r.URL.Query().Get("pdfLandscape"); pdfLandscape != "" {
+				options = append(options, service.WithLandscape(pdfLandscape == "true"))
+			}
 		case "png":
 			var printerOpts []service.PNGPrinterOption
 			if height == -1 {
 				printerOpts = append(printerOpts, service.WithFullHeight(true))
+				options = append(options, service.WithViewport(width, 1080)) // add some height to make scrolling faster
 			}
 			options = append(options, service.WithPNGPrinter(printerOpts...))
 		default:
 			http.Error(w, fmt.Sprintf("invalid 'encoding' query parameter: %q", encoding), http.StatusBadRequest)
 			return
 		}
+		if acceptLanguage := r.Header.Get("Accept-Language"); acceptLanguage != "" {
+			options = append(options, service.WithHeader("Accept-Language", acceptLanguage))
+		}
 
 		start := time.Now()
-		body, contentType, err := browser.Render(r.Context(), url, options...)
+		body, contentType, err := browser.Render(ctx, rawTargetURL, options...)
 		if err != nil {
 			MetricRenderDuration.WithLabelValues("error").Observe(time.Since(start).Seconds())
-			slog.ErrorContext(r.Context(), "failed to render", "error", err)
+			slog.ErrorContext(ctx, "failed to render", "error", err)
 			http.Error(w, "Failed to render", http.StatusInternalServerError)
 			return
 		}

@@ -1,3 +1,25 @@
+## 4.0.15 (2025-09-23)
+
+- Docker: Update Chromium to 140.0.7339.185 (CVE-2025-10500, CVE-2025-10501, CVE-2025-10502, CVE-2025-10585), [#791](https://github.com/grafana/grafana-image-renderer/pull/791), [Proximyst](https://github.com/Proximyst)
+
+## 4.0.14 (2025-09-11)
+
+The Grafana Image Renderer plugin has been deprecated.
+If you use the plugin, please migrate to the remote server; the plugin will eventually stop receiving updates.
+
+- Docker: Update Chromium to 140.0.7339.127 (CVE-2025-10200, CVE-2025-102201), [#772](https://github.com/grafana/grafana-image-renderer/pull/772), [Proximyst](https://github.com/Proximyst)
+
+## 4.0.13 (2025-09-08)
+
+This is a release that only changes the Docker image.
+The plugin does not benefit from updating this.
+
+- Docker: Install busybox as static from Debian 13, [#763](https://github.com/grafana/grafana-image-renderer/pull/763), [macabu](https://github.com/macabu)
+
+## 4.0.12 (2025-09-08)
+
+- HTTPServer: Dynamically create and clean up XDG dirs on each request if not exists, [#756](https://github.com/grafana/grafana-image-renderer/pull/756), [macabu](https://github.com/macabu)
+
 ## 4.0.11 (2025-09-01)
 
 - CI: Configure Renovate and pin dependencies, [#712](https://github.com/grafana/grafana-image-renderer/pull/712) + [#723](https://github.com/grafana/grafana-image-renderer/pull/723) + [#734](https://github.com/grafana/grafana-image-renderer/pull/734), [lucychen-grafana](https://github.com/lucychen-grafana)

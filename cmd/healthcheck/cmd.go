@@ -3,6 +3,7 @@ package healthcheck
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"strings"
 
@@ -19,7 +20,7 @@ func NewCmd() *cli.Command {
 				Name:    "addr",
 				Usage:   "The address to listen on for HTTP requests.",
 				Value:   ":8081",
-				Sources: config.FromConfig("server.addr"),
+				Sources: config.FromConfig("server.addr", "SERVER_ADDR"),
 			},
 		},
 		Action: run,
@@ -55,5 +56,6 @@ func run(ctx context.Context, c *cli.Command) error {
 		return fmt.Errorf("health check request returned non-2xx status code: %d", resp.StatusCode)
 	}
 
+	slog.InfoContext(ctx, "OK")
 	return nil
 }

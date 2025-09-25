@@ -1,0 +1,76 @@
+services:
+  # Tempo runs as user 10001, and docker compose creates the volume as root.
+  # As such, we need to chown the volume in order for Tempo to start correctly.
+  tempo-chown:
+    image: busybox
+    user: root
+    entrypoint:
+      - "chown"
+      - "10001:10001"
+      - "/var/tempo"
+    volumes:
+      - tempo-data:/var/tempo
+
+  memcached:
+    image: memcached
+    restart: unless-stopped
+
+  tempo:
+    image: grafana/tempo:latest
+    depends_on:
+      - tempo-chown
+      - memcached
+    command: 
+      - "-config.file=/etc/tempo.yaml"
+    volumes:
+      - tempo-data:/var/tempo
+      - ./tempo.yaml:/etc/tempo.yaml:ro
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:latest
+    command:
+      - --config.file=/etc/prometheus.yaml
+      - --web.enable-remote-write-receiver
+      - --enable-feature=exemplar-storage
+      - --enable-feature=native-histograms
+    volumes:
+      - ./prometheus.yaml:/etc/prometheus.yaml:ro
+      - prometheus-data:/prometheus
+    restart: unless-stopped
+
+  renderer:
+    build:
+      context: ../../../
+      dockerfile: go.Dockerfile
+    environment:
+      TRACING_ENDPOINT: http://tempo:4318/v1/traces
+      LOG_LEVEL: debug
+    ports:
+      - 8081:8081
+    depends_on:
+      - tempo
+      - prometheus
+
+  grafana:
+    image: grafana/grafana-enterprise:nightly
+    ports:
+      - 3000:3000
+    environment:
+      GF_RENDERING_SERVER_URL: http://renderer:8081/render
+      GF_RENDERING_CALLBACK_URL: http://grafana:3000/
+      GF_TRACING_OPENTELEMETRY_OTLP_ADDRESS: tempo:4317
+      GF_INSTALL_PLUGINS: https://storage.googleapis.com/integration-artifacts/grafana-exploretraces-app/grafana-exploretraces-app-latest.zip;grafana-traces-app
+      GF_LOG_FILTERS: rendering:debug
+      GF_FEATURE_TOGGLES_ENABLE: sharingDashboardImage,renderAuthJWT
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml:ro
+      - ./dashboards.yaml:/etc/grafana/provisioning/dashboards/dashboards.yaml:ro
+      - ./dashboards:/usr/share/grafana/dashboards:ro
+    restart: unless-stopped
+
+volumes:
+  grafana-data:
+  prometheus-data:
+  tempo-data:
