@@ -52,7 +52,7 @@
     "puppeteer": "^22.8.2",
     "puppeteer-cluster": "^0.24.0",
     "rate-limiter-flexible": "^7.0.0",
-    "tar-fs": "^3.0.9",
+    "tar-fs": "^3.1.1",
     "unique-filename": "^2.0.1",
     "winston": "^3.8.2"
   },
