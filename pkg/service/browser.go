@@ -840,7 +840,12 @@ func resizeViewportForFullHeight(opts *renderingOptions) chromedp.Action {
 		}
 
 		tracer := tracer(ctx)
-		ctx, span := tracer.Start(ctx, "resizeViewportForFullHeight")
+		ctx, span := tracer.Start(ctx, "resizeViewportForFullHeight",
+			trace.WithAttributes(
+				attribute.Int("currentViewportWidth", opts.viewportWidth),
+				attribute.Int("currentViewportHeight", opts.viewportHeight),
+				attribute.Bool("landscape", opts.landscape),
+			))
 		defer span.End()
 
 		var scrollHeight int
@@ -849,6 +854,7 @@ func resizeViewportForFullHeight(opts *renderingOptions) chromedp.Action {
 			span.SetStatus(codes.Error, "failed to get scroll height: "+err.Error())
 			return fmt.Errorf("failed to get scroll height: %w", err)
 		}
+		span.AddEvent("obtained scroll height", trace.WithAttributes(attribute.Int("scrollHeight", scrollHeight)))
 
 		// Only resize if the page is actually taller than the current viewport
 		if scrollHeight > opts.viewportHeight {
@@ -872,7 +878,7 @@ func resizeViewportForFullHeight(opts *renderingOptions) chromedp.Action {
 
 			span.SetStatus(codes.Ok, "viewport resized successfully")
 		} else {
-			span.AddEvent("no viewport resize needed", trace.WithAttributes(attribute.Int("pageHeight", scrollHeight)))
+			span.AddEvent("no viewport resize needed")
 		}
 
 		return nil
