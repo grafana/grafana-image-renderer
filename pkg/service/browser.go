@@ -970,7 +970,7 @@ func waitForReady(browserCtx context.Context, timeout time.Duration) chromedp.Ac
 		timeout := time.After(timeout)
 
 		hasHadQueries := false
-		giveUpFirstQuery := time.Now().Add(time.Second * 3)
+		giveUpFirstQuery := time.Now().Add(time.Second * 1)
 
 		var domHashCode int
 		initialDOMPass := true
