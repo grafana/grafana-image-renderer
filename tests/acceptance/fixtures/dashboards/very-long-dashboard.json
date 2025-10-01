@@ -906,7 +906,9 @@
   ],
   "preload": false,
   "schemaVersion": 42,
-  "tags": [],
+  "tags": [
+    "timeseries"
+  ],
   "templating": {
     "list": [
       {
