@@ -158,9 +158,7 @@ jobs:
           TAG: ${{ needs.tag.outputs.tag }}
         run: |
           set -euo pipefail
-          docker manifest create "$TAG" "$TAG"-amd64 "$TAG"-arm64
           docker manifest create "$TAG"-golang "$TAG"-golang-amd64 "$TAG"-golang-arm64
-          docker manifest push "$TAG"
           docker manifest push "$TAG"-golang
       - name: Create and push :latest manifest
         if: github.event_name == 'push' && github.ref_type == 'tag'
@@ -183,8 +181,6 @@ jobs:
             You can pull it using:
 
             ```bash
-            # For the Node.js server:
-            docker pull ${{ needs.tag.outputs.tag }}
             # For the Go server:
             docker pull ${{ needs.tag.outputs.tag }}-golang
             ```
