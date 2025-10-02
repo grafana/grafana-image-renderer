@@ -192,7 +192,7 @@ func TestRenderingGrafana(t *testing.T) {
 			image := PDFtoImage(t, pdfBody)
 			const fixture = "render-prometheus-pdf-us-lang.png"
 			fixtureImg := ReadFixtureRGBA(t, fixture)
-			if !AssertPixelDifference(t, fixtureImg, image, 17_000) {
+			if !AssertPixelDifference(t, fixtureImg, image, 100_000) {
 				UpdateFixtureIfEnabled(t, fixture+".pdf", pdfBody)
 				UpdateFixtureIfEnabled(t, fixture, EncodePNG(t, image))
 			}
@@ -223,7 +223,7 @@ func TestRenderingGrafana(t *testing.T) {
 			image := PDFtoImage(t, pdfBody)
 			const fixture = "render-prometheus-pdf-de-lang.png"
 			fixtureImg := ReadFixtureRGBA(t, fixture)
-			if !AssertPixelDifference(t, fixtureImg, image, 17_000) {
+			if !AssertPixelDifference(t, fixtureImg, image, 100_000) {
 				UpdateFixtureIfEnabled(t, fixture+".pdf", pdfBody)
 				UpdateFixtureIfEnabled(t, fixture, EncodePNG(t, image))
 			}

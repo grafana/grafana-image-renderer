@@ -1,6 +1,8 @@
 package api
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -64,20 +66,26 @@ func HandleGetRender(browser *service.BrowserService) http.Handler {
 		}
 		options = append(options, service.WithViewport(width, height))
 		if timeout := r.URL.Query().Get("timeout"); timeout != "" {
+			var dur time.Duration
 			if regexpOnlyNumbers.MatchString(timeout) {
 				seconds, err := strconv.Atoi(timeout)
 				if err != nil {
 					http.Error(w, fmt.Sprintf("invalid 'timeout' query parameter: %v", err), http.StatusBadRequest)
 					return
 				}
-				options = append(options, service.WithTimeout(time.Duration(seconds)*time.Second))
+				dur = time.Duration(seconds) * time.Second
 			} else {
-				timeout, err := time.ParseDuration(timeout)
+				var err error
+				dur, err = time.ParseDuration(timeout)
 				if err != nil {
 					http.Error(w, fmt.Sprintf("invalid 'timeout' query parameter: %v", err), http.StatusBadRequest)
 					return
 				}
-				options = append(options, service.WithTimeout(timeout))
+			}
+			if dur > 0 {
+				timeoutCtx, cancelTimeout := context.WithTimeout(ctx, dur)
+				defer cancelTimeout()
+				ctx = timeoutCtx
 			}
 		}
 		if scaleFactor := r.URL.Query().Get("deviceScaleFactor"); scaleFactor != "" {
@@ -105,6 +113,7 @@ func HandleGetRender(browser *service.BrowserService) http.Handler {
 			options = append(options, service.WithCookie("renderKey", renderKey, domain))
 		}
 		encoding := r.URL.Query().Get("encoding")
+		var printer service.Printer
 		switch encoding {
 		case "", "pdf":
 			var printerOpts []service.PDFPrinterOption
@@ -141,7 +150,12 @@ func HandleGetRender(browser *service.BrowserService) http.Handler {
 				printerOpts = append(printerOpts, service.WithPageRanges(pageRanges))
 			}
 
-			options = append(options, service.WithPDFPrinter(printerOpts...))
+			var err error
+			printer, err = service.NewPDFPrinter(printerOpts...)
+			if err != nil {
+				http.Error(w, fmt.Sprintf("invalid request: %v", err), http.StatusBadRequest)
+				return
+			}
 
 			if pdfLandscape := r.URL.Query().Get("pdfLandscape"); pdfLandscape != "" {
 				options = append(options, service.WithLandscape(pdfLandscape == "true"))
@@ -152,7 +166,13 @@ func HandleGetRender(browser *service.BrowserService) http.Handler {
 				printerOpts = append(printerOpts, service.WithFullHeight(true))
 				options = append(options, service.WithViewport(width, 1080)) // add some height to make scrolling faster
 			}
-			options = append(options, service.WithPNGPrinter(printerOpts...))
+
+			var err error
+			printer, err = service.NewPNGPrinter(printerOpts...)
+			if err != nil {
+				http.Error(w, fmt.Sprintf("invalid request: %v", err), http.StatusBadRequest)
+				return
+			}
 		default:
 			http.Error(w, fmt.Sprintf("invalid 'encoding' query parameter: %q", encoding), http.StatusBadRequest)
 			return
@@ -162,9 +182,17 @@ func HandleGetRender(browser *service.BrowserService) http.Handler {
 		}
 
 		start := time.Now()
-		body, contentType, err := browser.Render(ctx, rawTargetURL, options...)
+		body, contentType, err := browser.Render(ctx, rawTargetURL, printer, options...)
 		if err != nil {
 			MetricRenderDuration.WithLabelValues("error").Observe(time.Since(start).Seconds())
+			if errors.Is(err, context.DeadlineExceeded) ||
+				errors.Is(err, context.Canceled) {
+				http.Error(w, "Request timed out", http.StatusRequestTimeout)
+				return
+			} else if errors.Is(err, service.ErrInvalidBrowserOption) {
+				http.Error(w, fmt.Sprintf("invalid request: %v", err), http.StatusBadRequest)
+				return
+			}
 			slog.ErrorContext(ctx, "failed to render", "error", err)
 			http.Error(w, "Failed to render", http.StatusInternalServerError)
 			return
