@@ -1,6 +1,7 @@
 package config
 
 import (
+	"crypto/tls"
 	"fmt"
 	"log/slog"
 	"maps"
@@ -74,7 +75,10 @@ type ServerConfig struct {
 	// This must be a TCP address, e.g. ":8080" or "[::1]:1234".
 	Addr string
 	// AuthTokens are the tokens that must be presented in the X-Auth-Token header to authorize requests.
-	AuthTokens []string
+	AuthTokens      []string
+	CertificateFile string
+	KeyFile         string
+	MinTLSVersion   TLSVersion
 }
 
 func ServerFlags() []cli.Flag {
@@ -93,15 +97,71 @@ func ServerFlags() []cli.Flag {
 				Value:   []string{"-"},
 				Sources: FromConfig("server.auth-token", "AUTH_TOKEN"),
 			},
+			&cli.StringFlag{
+				Name:      "server.certificate-file",
+				Aliases:   []string{"server.certificate", "server.cert-file", "server.cert"},
+				Usage:     "A path to a TLS certificate file to use for HTTPS. If not set, HTTP is used.",
+				TakesFile: true,
+				Sources:   FromConfig("server.certificate-file", "SERVER_CERTIFICATE_FILE"),
+			},
+			&cli.StringFlag{
+				Name:      "server.key-file",
+				Aliases:   []string{"server.key"},
+				Usage:     "A path to a TLS key file to use for HTTPS.",
+				TakesFile: true,
+				Sources:   FromConfig("server.key-file", "SERVER_KEY_FILE"),
+			},
+			&cli.StringFlag{
+				Name:    "server.min-tls-version",
+				Usage:   "The minimum TLS version to accept for HTTPS connections. (enum: 1.0, 1.1, 1.2, 1.3)",
+				Value:   "1.2",
+				Sources: FromConfig("server.min-tls-version", "SERVER_MIN_TLS_VERSION"),
+			},
 		},
 	)
 }
 
 func ServerConfigFromCommand(c *cli.Command) (ServerConfig, error) {
+	minTLSVersion := TLSVersion(c.String("server.min-tls-version"))
+	if _, err := minTLSVersion.ToTLSConstant(); err != nil {
+		return ServerConfig{}, fmt.Errorf("invalid server min-tls-version: %w", err)
+	}
+
 	return ServerConfig{
-		Addr:       c.String("server.addr"),
-		AuthTokens: c.StringSlice("server.auth-token"),
+		Addr:            c.String("server.addr"),
+		AuthTokens:      c.StringSlice("server.auth-token"),
+		CertificateFile: c.String("server.certificate-file"),
+		KeyFile:         c.String("server.key-file"),
+		MinTLSVersion:   minTLSVersion,
 	}, nil
+}
+
+type TLSVersion string
+
+const (
+	TLSVersion1_0 TLSVersion = "1.0"
+	TLSVersion1_1 TLSVersion = "1.1"
+	TLSVersion1_2 TLSVersion = "1.2"
+	TLSVersion1_3 TLSVersion = "1.3"
+)
+
+func (v TLSVersion) String() string {
+	return string(v)
+}
+
+func (v TLSVersion) ToTLSConstant() (uint16, error) {
+	switch v {
+	case TLSVersion1_0:
+		return tls.VersionTLS10, nil
+	case TLSVersion1_1:
+		return tls.VersionTLS11, nil
+	case TLSVersion1_2:
+		return tls.VersionTLS12, nil
+	case TLSVersion1_3:
+		return tls.VersionTLS13, nil
+	default:
+		return 0, fmt.Errorf("unknown TLS version: %s", v)
+	}
 }
 
 type TracingConfig struct {

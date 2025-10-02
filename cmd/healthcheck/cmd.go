@@ -2,40 +2,44 @@ package healthcheck
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"log/slog"
 	"net/http"
 	"strings"
 
-	"github.com/grafana/grafana-image-renderer/cmd/config"
+	"github.com/grafana/grafana-image-renderer/pkg/config"
 	"github.com/urfave/cli/v3"
 )
 
 func NewCmd() *cli.Command {
 	return &cli.Command{
-		Name:  "healthcheck",
-		Usage: "Check the server is running and is healthy.",
-		Flags: []cli.Flag{
-			&cli.StringFlag{
-				Name:    "addr",
-				Usage:   "The address to listen on for HTTP requests.",
-				Value:   ":8081",
-				Sources: config.FromConfig("server.addr", "SERVER_ADDR"),
-			},
-		},
+		Name:   "healthcheck",
+		Usage:  "Check the server is running and is healthy.",
+		Flags:  config.ServerFlags(),
 		Action: run,
 	}
 }
 
 func run(ctx context.Context, c *cli.Command) error {
-	addr := c.String("addr")
-	if strings.HasPrefix(addr, ":") {
-		addr = "http://localhost" + addr
-	} else if !strings.HasPrefix(addr, "http://") && !strings.HasPrefix(addr, "https://") {
-		addr = "http://" + addr
+	serverConfig, err := config.ServerConfigFromCommand(c)
+	if err != nil {
+		return fmt.Errorf("failed to parse server config: %w", err)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "GET", addr+"/healthz", nil)
+	scheme := "http"
+	if serverConfig.CertificateFile != "" {
+		scheme = "https"
+	}
+
+	var host string
+	if strings.HasPrefix(serverConfig.Addr, ":") {
+		host = "localhost" + serverConfig.Addr
+	} else if !strings.HasPrefix(serverConfig.Addr, "http://") && !strings.HasPrefix(serverConfig.Addr, "https://") {
+		host = serverConfig.Addr
+	}
+
+	req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("%s://%s/healthz", scheme, host), nil)
 	if err != nil {
 		return fmt.Errorf("failed to create health check request: %w", err)
 	}
@@ -43,14 +47,20 @@ func run(ctx context.Context, c *cli.Command) error {
 		"User-Agent": []string{"grafana-image-renderer/Grafana Labs"},
 	}
 
-	resp, err := http.DefaultClient.Do(req)
+	client := &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: true,
+			},
+		},
+	}
+
+	resp, err := client.Do(req)
 	if err != nil {
 		return fmt.Errorf("failed to perform health check request: %w", err)
 	}
-	defer func() {
-		// We don't care about the body, so we can ignore closing errors, too.
-		_ = resp.Body.Close()
-	}()
+	// We don't care about the body, so we can ignore closing errors, too.
+	_ = resp.Body.Close()
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		return fmt.Errorf("health check request returned non-2xx status code: %d", resp.StatusCode)

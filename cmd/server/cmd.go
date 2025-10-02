@@ -54,5 +54,5 @@ func run(ctx context.Context, c *cli.Command) error {
 	if err != nil {
 		return fmt.Errorf("failed to create API handler: %w", err)
 	}
-	return api.ListenAndServe(ctx, serverConfig.Addr, handler)
+	return api.ListenAndServe(ctx, serverConfig, handler)
 }
