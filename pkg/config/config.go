@@ -369,7 +369,7 @@ func BrowserFlags() []cli.Flag {
 		&cli.IntFlag{
 			Name:    "browser.max-width",
 			Usage:   "The maximum width of the browser viewport. Requests cannot request a larger width than this. Negative means ignored.",
-			Value:   1920,
+			Value:   3000,
 			Sources: FromConfig("browser.max-width", "BROWSER_MAX_WIDTH"),
 			Validator: func(i int) error {
 				if i >= 0 && i < 100 {
@@ -381,7 +381,7 @@ func BrowserFlags() []cli.Flag {
 		&cli.IntFlag{
 			Name:    "browser.max-height",
 			Usage:   "The maximum height of the browser viewport. Requests cannot request a larger height than this, except for when capturing full-page screenshots. Negative means ignored.",
-			Value:   1080,
+			Value:   3000,
 			Sources: FromConfig("browser.max-height", "BROWSER_MAX_HEIGHT"),
 			Validator: func(i int) error {
 				if i >= 0 && i < 100 {
