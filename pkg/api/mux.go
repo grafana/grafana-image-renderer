@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/grafana/grafana-image-renderer/pkg/api/middleware"
+	"github.com/grafana/grafana-image-renderer/pkg/config"
 	"github.com/grafana/grafana-image-renderer/pkg/service"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -15,8 +16,8 @@ func NewHandler(
 		prometheus.Gatherer
 		prometheus.Registerer
 	},
+	serverConfig config.ServerConfig,
 	browser *service.BrowserService,
-	tokens AuthTokens,
 	versions *service.VersionService,
 ) (http.Handler, error) {
 	mux := http.NewServeMux()
@@ -26,8 +27,8 @@ func NewHandler(
 	mux.Handle("GET /metrics", middleware.TracingFor("promhttp.HandlerFor", promhttp.HandlerFor(metrics, promhttp.HandlerOpts{Registry: metrics})))
 	mux.Handle("GET /healthz", HandleGetHealthz())
 	mux.Handle("GET /version", HandleGetVersion(versions, browser))
-	mux.Handle("GET /render", middleware.RequireAuthToken(middleware.TrustedURL(HandleGetRender(browser)), tokens...))
-	mux.Handle("GET /render/csv", middleware.RequireAuthToken(middleware.TrustedURL(HandlePostRenderCSV(browser)), tokens...))
+	mux.Handle("GET /render", middleware.RequireAuthToken(middleware.TrustedURL(HandleGetRender(browser)), serverConfig.AuthTokens...))
+	mux.Handle("GET /render/csv", middleware.RequireAuthToken(middleware.TrustedURL(HandlePostRenderCSV(browser)), serverConfig.AuthTokens...))
 	mux.Handle("GET /render/version", HandleGetRenderVersion(versions))
 
 	handler := middleware.RequestMetrics(mux)
@@ -36,5 +37,3 @@ func NewHandler(
 	handler = middleware.Tracing(handler)
 	return handler, nil
 }
-
-type AuthTokens []string
