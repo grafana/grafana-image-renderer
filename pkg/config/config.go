@@ -282,7 +282,7 @@ func BrowserFlags() []cli.Flag {
 		&cli.DurationFlag{
 			Name:    "browser.readiness-timeout",
 			Usage:   "The maximum time to wait for a web-page to become ready (i.e. no longer loading anything).",
-			Value:   time.Second * 3,
+			Value:   time.Second * 30,
 			Sources: FromConfig("browser.readiness-timeout", "BROWSER_READINESS_TIMEOUT"),
 		},
 		&cli.IntFlag{
