@@ -240,7 +240,7 @@ func (s *BrowserService) Render(ctx context.Context, url string, printer Printer
 		tracingAction("Navigate", chromedp.Navigate(url)),
 		tracingAction("WaitReady(body)", chromedp.WaitReady("body", chromedp.ByQuery)), // wait for a body to exist; this is when the page has started to actually render
 		scrollForElements(cfg.TimeBetweenScrolls),
-		waitForDuration(time.Second),
+		waitForDuration(cfg.LoadWait),
 		waitForReady(browserCtx, cfg.ReadinessTimeout),
 		printer.prepare(cfg),
 		printer.action(fileChan, cfg),

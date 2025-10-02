@@ -315,6 +315,9 @@ type BrowserConfig struct {
 	TimeBetweenScrolls time.Duration
 	// ReadinessTimeout is the maximum time to wait for the web-page to become ready (i.e. no longer loading anything).
 	ReadinessTimeout time.Duration
+	// LoadWait is the time to wait before checking for how ready the page is.
+	// This lets you force the webpage to take a beat and just do its thing before the service starts looking for whether it's time to render anything.
+	LoadWait time.Duration
 
 	// MinWidth is the minimum width of the browser viewport.
 	// If larger than MaxWidth, MaxWidth is used instead.
@@ -401,6 +404,12 @@ func BrowserFlags() []cli.Flag {
 			Usage:   "The maximum time to wait for a web-page to become ready (i.e. no longer loading anything).",
 			Value:   time.Second * 30,
 			Sources: FromConfig("browser.readiness-timeout", "BROWSER_READINESS_TIMEOUT"),
+		},
+		&cli.DurationFlag{
+			Name:    "browser.load-wait",
+			Usage:   "The time to wait before checking for how ready the page is. This lets you force the webpage to take a beat and just do its thing before the service starts looking for whether it's time to render anything.",
+			Value:   time.Second,
+			Sources: FromConfig("browser.load-wait", "BROWSER_LOAD_WAIT"),
 		},
 		&cli.IntFlag{
 			Name:    "browser.min-width",
@@ -504,6 +513,7 @@ func BrowserConfigFromCommand(c *cli.Command) (BrowserConfig, error) {
 		Headers:            headers,
 		TimeBetweenScrolls: c.Duration("browser.time-between-scrolls"),
 		ReadinessTimeout:   c.Duration("browser.readiness-timeout"),
+		LoadWait:           c.Duration("browser.load-wait"),
 		MinWidth:           minWidth,
 		MinHeight:          minHeight,
 		MaxWidth:           maxWidth,
