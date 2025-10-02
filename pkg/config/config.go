@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"log/slog"
 	"maps"
 	"slices"
 	"strings"
@@ -11,6 +12,62 @@ import (
 	"github.com/chromedp/cdproto/network"
 	"github.com/urfave/cli/v3"
 )
+
+type LoggingConfig struct {
+	// Level is the minimum level to log.
+	Level LogLevel
+}
+
+func LoggingFlags() []cli.Flag {
+	return []cli.Flag{
+		&cli.StringFlag{
+			Name:    "log.level",
+			Usage:   fmt.Sprintf("The minimum level to log at (enum: %s, %s, %s, %s)", LogLevelDebug, LogLevelInfo, LogLevelWarn, LogLevelError),
+			Value:   LogLevelInfo.String(),
+			Sources: FromConfig("log.level", "LOG_LEVEL"),
+			Validator: func(s string) error {
+				if _, err := LogLevel(s).ToSlog(); err != nil {
+					return err
+				}
+				return nil
+			},
+		},
+	}
+}
+
+func LoggingConfigFromCommand(c *cli.Command) (LoggingConfig, error) {
+	return LoggingConfig{
+		Level: LogLevel(c.String("log.level")),
+	}, nil
+}
+
+type LogLevel string
+
+const (
+	LogLevelDebug LogLevel = "debug"
+	LogLevelInfo  LogLevel = "info"
+	LogLevelWarn  LogLevel = "warn"
+	LogLevelError LogLevel = "error"
+)
+
+func (l LogLevel) String() string {
+	return string(l)
+}
+
+func (l LogLevel) ToSlog() (slog.Leveler, error) {
+	switch LogLevel(strings.ToLower(string(l))) {
+	case LogLevelDebug:
+		return slog.LevelDebug, nil
+	case LogLevelInfo:
+		return slog.LevelInfo, nil
+	case LogLevelWarn:
+		return slog.LevelWarn, nil
+	case LogLevelError:
+		return slog.LevelError, nil
+	default:
+		return nil, fmt.Errorf("unknown log level: %s", l)
+	}
+}
 
 type ServerConfig struct {
 	// Addr is the HTTP address to listen on.
