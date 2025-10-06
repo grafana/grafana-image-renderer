@@ -1,3 +1,7 @@
+## 4.0.16 (2025-10-06)
+
+- Docker: Update Chromium to 141.0.7390.54 (CVE-2025-10890, CVE-2025-10891, CVE-2025-10892), [#799](https://github.com/grafana/grafana-image-renderer/pull/799), [Proximyst](https://github.com/Proximyst)
+
 ## 4.0.15 (2025-09-23)
 
 - Docker: Update Chromium to 140.0.7339.185 (CVE-2025-10500, CVE-2025-10501, CVE-2025-10502, CVE-2025-10585), [#791](https://github.com/grafana/grafana-image-renderer/pull/791), [Proximyst](https://github.com/Proximyst)
