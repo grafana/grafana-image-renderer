@@ -1,4 +1,4 @@
-FROM debian:12-slim@sha256:b1a741487078b369e78119849663d7f1a5341ef2768798f7b7406c4240f86aef AS debian-updated
+FROM debian:13-slim@sha256:1caf1c703c8f7e15dcf2e7769b35000c764e6f50e4d7401c355fb0248f3ddfdb AS debian-updated
 
 SHELL ["/bin/bash", "-euo", "pipefail", "-c"]
 
