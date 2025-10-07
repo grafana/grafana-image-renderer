@@ -240,7 +240,7 @@ func (s *BrowserService) Render(ctx context.Context, url string, printer Printer
 		setCookies(cfg.Cookies),
 		tracingAction("Navigate", chromedp.Navigate(url)),
 		tracingAction("WaitReady(body)", chromedp.WaitReady("body", chromedp.ByQuery)), // wait for a body to exist; this is when the page has started to actually render
-		tracingAction("WaitReady(#pageContent)", chromedp.WaitReady("#pageContent", chromedp.ByQuery)),
+		//tracingAction("WaitReady(#pageContent)", chromedp.WaitReady("#pageContent", chromedp.ByQuery)),
 		scrollForElements(cfg.TimeBetweenScrolls),
 		waitForDuration(cfg.LoadWait),
 		waitForReady(browserCtx, cfg.ReadinessTimeout),
