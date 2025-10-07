@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"log/slog"
 	"maps"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -247,8 +248,15 @@ func (s *BrowserService) Render(ctx context.Context, url string, printer Printer
 		printer.action(fileChan, cfg),
 	}
 	span.AddEvent("actions created")
-	if err := chromedp.Run(browserCtx, actions...); err != nil {
-		return nil, "text/plain", fmt.Errorf("failed to run browser: %w", err)
+	{
+		ctx, span := tracer.Start(browserCtx, "chromedp.Run")
+		if err := chromedp.Run(ctx, actions...); err != nil {
+			span.SetStatus(codes.Error, err.Error())
+			span.End()
+			return nil, "text/plain", fmt.Errorf("failed to run browser: %w", err)
+		}
+		span.SetStatus(codes.Ok, "chromedp actions completed successfully")
+		span.End()
 	}
 	span.AddEvent("actions completed")
 
@@ -404,6 +412,8 @@ func (s *BrowserService) handleNetworkEvents(browserCtx context.Context) {
 					attribute.String("url", e.Request.URL),
 					attribute.String("method", e.Request.Method),
 					attribute.String("type", string(e.Type)),
+					attribute.Int("headers", len(e.Request.Headers)),
+					attribute.String("initialPriority", e.Request.InitialPriority.String()),
 				))
 			requests[e.RequestID] = span
 
@@ -415,17 +425,20 @@ func (s *BrowserService) handleNetworkEvents(browserCtx context.Context) {
 			if !ok {
 				return
 			}
+			statusText := e.Response.StatusText
+			if statusText == "" {
+				statusText = http.StatusText(int(e.Response.Status))
+			}
 			span.SetAttributes(
 				attribute.Int("status", int(e.Response.Status)),
-				attribute.String("statusText", e.Response.StatusText),
+				attribute.String("statusText", statusText),
 				attribute.String("mimeType", e.Response.MimeType),
 				attribute.String("protocol", e.Response.Protocol),
-				attribute.String("contentType", fmt.Sprintf("%v", e.Response.Headers["Content-Type"])),
 			)
 			if e.Response.Status >= 400 {
-				span.SetStatus(codes.Error, e.Response.StatusText)
+				span.SetStatus(codes.Error, statusText)
 			} else {
-				span.SetStatus(codes.Ok, e.Response.StatusText)
+				span.SetStatus(codes.Ok, statusText)
 			}
 			span.End(trace.WithTimestamp(e.Timestamp.Time()))
 			delete(requests, e.RequestID) // no point keeping it around anymore.
