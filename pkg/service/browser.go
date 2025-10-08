@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/chromedp/cdproto/browser"
+	"github.com/chromedp/cdproto/cdp"
 	"github.com/chromedp/cdproto/emulation"
 	"github.com/chromedp/cdproto/fetch"
 	"github.com/chromedp/cdproto/network"
@@ -422,6 +423,9 @@ func (s *BrowserService) handleNetworkEvents(browserCtx context.Context) {
 						attribute.Int("headers", len(e.Request.Headers)),
 					))
 				defer span.End()
+				cdpCtx := chromedp.FromContext(browserCtx)
+				ctx = cdp.WithExecutor(ctx, cdpCtx.Target)
+
 				if err := fetch.ContinueRequest(e.RequestID).WithHeaders(hdrs).Do(ctx); err != nil {
 					span.SetStatus(codes.Error, err.Error())
 					slog.DebugContext(ctx, "failed to continue request", "requestID", e.RequestID, "error", err)
