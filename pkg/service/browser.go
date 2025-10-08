@@ -873,6 +873,11 @@ func waitForReady(browserCtx context.Context, timeout time.Duration) chromedp.Ac
 		})(document.body.toString())`, &hashCode).Do(ctx)
 		return hashCode, err
 	}
+	getTitle := func(ctx context.Context) (string, error) {
+		var title string
+		err := chromedp.Title(&title).Do(ctx)
+		return title, err
+	}
 
 	requests := &atomic.Int64{}
 	lastRequest := &atomicTime{} // TODO: use this to wait for network stabilisation.
@@ -911,6 +916,13 @@ func waitForReady(browserCtx context.Context, timeout time.Duration) chromedp.Ac
 				return fmt.Errorf("timed out waiting for readiness")
 			case <-time.After(100 * time.Millisecond):
 			}
+
+			title, err := getTitle(ctx)
+			if err != nil {
+				span.SetStatus(codes.Error, err.Error())
+				return fmt.Errorf("failed to get page title: %w", err)
+			}
+			span.AddEvent("page title checked", trace.WithAttributes(attribute.String("title", title)))
 
 			if requests.Load() > 0 {
 				initialDOMPass = true
