@@ -21,6 +21,7 @@ import (
 
 	"github.com/chromedp/cdproto/browser"
 	"github.com/chromedp/cdproto/emulation"
+	"github.com/chromedp/cdproto/fetch"
 	"github.com/chromedp/cdproto/network"
 	"github.com/chromedp/cdproto/page"
 	"github.com/chromedp/chromedp"
@@ -234,6 +235,7 @@ func (s *BrowserService) Render(ctx context.Context, url string, printer Printer
 	fileChan := make(chan []byte, 1) // buffered: we don't want the browser to stick around while we try to export this value.
 	actions := []chromedp.Action{
 		tracingAction("network.Enable", network.Enable()),
+		tracingAction("fetch.Enable", fetch.Enable()), // required by handleNetworkEvents
 		tracingAction("SetPageScaleFactor", emulation.SetPageScaleFactor(cfg.PageScaleFactor)),
 		tracingAction("EmulateViewport", chromedp.EmulateViewport(int64(cfg.MinWidth), int64(cfg.MinHeight), orientation)),
 		setHeaders(browserCtx, cfg.Headers),
@@ -401,6 +403,31 @@ func (s *BrowserService) handleNetworkEvents(browserCtx context.Context) {
 		// See the docs of ListenTarget for more.
 
 		switch e := ev.(type) {
+		case *fetch.EventRequestPaused:
+			go func() {
+				if sc := trace.SpanFromContext(browserCtx); sc != nil && sc.IsRecording() {
+					otel.GetTextMapPropagator().Inject(browserCtx, networkHeadersCarrier(e.Request.Headers))
+				}
+
+				hdrs := make([]*fetch.HeaderEntry, 0, len(e.Request.Headers))
+				for k, v := range e.Request.Headers {
+					hdrs = append(hdrs, &fetch.HeaderEntry{Name: k, Value: fmt.Sprintf("%v", v)})
+				}
+
+				ctx, span := tracer.Start(browserCtx, "fetch.ContinueRequest",
+					trace.WithAttributes(
+						attribute.String("requestID", string(e.RequestID)),
+						attribute.String("url", e.Request.URL),
+						attribute.String("method", e.Request.Method),
+						attribute.Int("headers", len(e.Request.Headers)),
+					))
+				defer span.End()
+				if err := fetch.ContinueRequest(e.RequestID).WithHeaders(hdrs).Do(ctx); err != nil {
+					span.SetStatus(codes.Error, err.Error())
+					slog.DebugContext(ctx, "failed to continue request", "requestID", e.RequestID, "error", err)
+				}
+			}()
+
 		case *network.EventRequestWillBeSent:
 			mu.Lock()
 			defer mu.Unlock()
@@ -765,13 +792,6 @@ func NewPNGPrinter(opts ...PNGPrinterOption) (*pngPrinter, error) {
 }
 
 func setHeaders(browserCtx context.Context, headers network.Headers) chromedp.Action {
-	if sc := trace.SpanFromContext(browserCtx); sc != nil && sc.IsRecording() {
-		if headers == nil {
-			headers = make(network.Headers)
-		}
-		otel.GetTextMapPropagator().Inject(browserCtx, networkHeadersCarrier(headers))
-	}
-
 	return chromedp.ActionFunc(func(ctx context.Context) error {
 		tracer := tracer(ctx)
 		ctx, span := tracer.Start(ctx, "setHeaders",
@@ -873,11 +893,6 @@ func waitForReady(browserCtx context.Context, timeout time.Duration) chromedp.Ac
 		})(document.body.toString())`, &hashCode).Do(ctx)
 		return hashCode, err
 	}
-	getTitle := func(ctx context.Context) (string, error) {
-		var title string
-		err := chromedp.Title(&title).Do(ctx)
-		return title, err
-	}
 
 	requests := &atomic.Int64{}
 	lastRequest := &atomicTime{} // TODO: use this to wait for network stabilisation.
@@ -916,13 +931,6 @@ func waitForReady(browserCtx context.Context, timeout time.Duration) chromedp.Ac
 				return fmt.Errorf("timed out waiting for readiness")
 			case <-time.After(100 * time.Millisecond):
 			}
-
-			title, err := getTitle(ctx)
-			if err != nil {
-				span.SetStatus(codes.Error, err.Error())
-				return fmt.Errorf("failed to get page title: %w", err)
-			}
-			span.AddEvent("page title checked", trace.WithAttributes(attribute.String("title", title)))
 
 			if requests.Load() > 0 {
 				initialDOMPass = true
