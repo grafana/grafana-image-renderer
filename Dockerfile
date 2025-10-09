@@ -1,4 +1,4 @@
-FROM debian:12-slim@sha256:b1a741487078b369e78119849663d7f1a5341ef2768798f7b7406c4240f86aef AS debian-updated
+FROM debian:12-slim@sha256:7e490910eea2861b9664577a96b54ce68ea3e02ce7f51d89cb0103a6f9c386e0 AS debian-updated
 
 SHELL ["/bin/bash", "-euo", "pipefail", "-c"]
 
@@ -15,7 +15,7 @@ RUN apt-cache depends chromium=${CHROMIUM_VERSION} chromium-driver chromium-shel
 RUN mkdir /dpkg && \
     find . -type f -name '*.deb' -exec sh -c 'dpkg --extract "$1" /dpkg || exit 5' sh '{}' \;
 
-FROM debian:testing-slim@sha256:12ce5b90ca703a11ebaae907649af9b000e616f49199a2115340e0cdf007e42a AS ca-certs
+FROM debian:testing-slim@sha256:21c02c216f921ccd2cd1a95cd64499c52e5699c6b04029b5ad4ca68f0b6f1121 AS ca-certs
 
 RUN apt-get update
 RUN apt-cache depends ca-certificates \
@@ -24,7 +24,7 @@ RUN mkdir /dpkg && \
     find . -type f -name '*.deb' -exec sh -c 'dpkg --extract "$1" /dpkg || exit 5' sh '{}' \;
 
 # While we can't move to Debian 13 yet for the final image, use its new build of busybox with security fixes.
-FROM debian:13-slim@sha256:c85a2732e97694ea77237c61304b3bb410e0e961dd6ee945997a06c788c545bb AS busybox
+FROM debian:13-slim@sha256:1caf1c703c8f7e15dcf2e7769b35000c764e6f50e4d7401c355fb0248f3ddfdb AS busybox
 
 RUN apt-get update
 RUN apt-cache depends busybox-static \
@@ -32,7 +32,7 @@ RUN apt-cache depends busybox-static \
 RUN mkdir /dpkg && \
     find . -type f -name '*.deb' -exec sh -c 'dpkg --extract "$1" /dpkg || exit 5' sh '{}' \;
 
-FROM node:22-alpine@sha256:1b2479dd35a99687d6638f5976fd235e26c5b37e8122f786fcd5fe231d63de5b AS build
+FROM node:22-alpine@sha256:dbcedd8aeab47fbc0f4dd4bffa55b7c3c729a707875968d467aaaea42d6225af AS build
 
 WORKDIR /src
 COPY . ./
@@ -41,7 +41,7 @@ RUN yarn install --pure-lockfile
 RUN yarn run build
 RUN rm -rf node_modules/ && yarn install --pure-lockfile --production
 
-FROM gcr.io/distroless/nodejs22-debian12:nonroot@sha256:8929dbab735ee399ff886ba7d81419dbe7df002993a7d69715e1c16b7d41c531
+FROM gcr.io/distroless/nodejs22-debian12:nonroot@sha256:1c481261b3b1c6ec601cc11d3cea0c7d02e551e5041f8dcd47e077029e57a6bc
 
 LABEL maintainer="Grafana team <hello@grafana.com>"
 LABEL org.opencontainers.image.source="https://github.com/grafana/grafana-image-renderer/tree/master/Dockerfile"
