@@ -764,7 +764,7 @@ function assertNoPathTraversal(path?: string | null) {
     return;
   }
 
-  if (path.includes('/') || path.includes('\\') || path === '..') {
+  if (path.indexOf('/') !== -1 || path.indexOf('\\') !== -1 || path === '..') {
     throw boom.badRequest('File path should not include directories');
   }
 }
