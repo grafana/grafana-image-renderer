@@ -1,0 +1,18 @@
+services:
+  grafana:
+    image: grafana/grafana-enterprise:nightly
+    ports:
+      - 3000:3000
+    environment:
+      GF_RENDERING_SERVER_URL: http://renderer:8081/render
+      GF_RENDERING_CALLBACK_URL: http://grafana:3000/
+      GF_LOG_FILTERS: rendering:debug
+
+  renderer:
+    build:
+      context: ../../../
+      dockerfile: Dockerfile
+    ports:
+      - 8081:8081
+    environment:
+      ENABLE_METRICS: 'true'

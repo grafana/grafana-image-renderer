@@ -1,5 +1,6 @@
 import os from 'os';
 import uniqueFilename from 'unique-filename';
+import * as boom from '@hapi/boom';
 import * as puppeteer from 'puppeteer';
 import chokidar from 'chokidar';
 import path from 'path';
@@ -306,6 +307,8 @@ export class Browser {
   };
 
   async takeScreenshot(page: puppeteer.Page, options: ImageRenderOptions, signal: AbortSignal): Promise<RenderResponse> {
+    assertNoPathTraversal(options.filePath);
+
     await this.performStep('prepare', options.url, signal, async () => {
       if (this.config.verboseLogging) {
         this.log.debug(
@@ -451,6 +454,8 @@ export class Browser {
   }
 
   async exportCSV(page: any, options: RenderOptions, signal: AbortSignal): Promise<RenderCSVResponse> {
+    assertNoPathTraversal(options.filePath);
+
     let downloadFilePath = '';
     let downloadPath = '';
     await this.performStep('prepare', options.url, signal, async () => {
@@ -752,4 +757,14 @@ async function waitForQueriesAndVisualizations(page: puppeteer.Page, options: Im
 
   // Give some more time for rendering to complete
   await new Promise((resolve) => setTimeout(resolve, 50));
+}
+
+function assertNoPathTraversal(path?: string | null) {
+  if (!path) {
+    return;
+  }
+
+  if (path.indexOf('/') !== -1 || path.indexOf('\\') !== -1 || path === '..') {
+    throw boom.badRequest('File path should not include directories');
+  }
 }
