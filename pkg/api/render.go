@@ -78,7 +78,7 @@ func HandleGetRender(browser *service.BrowserService) http.Handler {
 			span.SetAttributes(attribute.Int("height", height))
 		}
 		options = append(options, service.WithViewport(width, height))
-		if timeout := r.URL.Query().Get("timeout"); timeout != "" {
+		if timeout := r.URL.Query().Get("timeout"); timeout != "" && false { // let the client decide when to give up, if the browser doesn't
 			var dur time.Duration
 			if regexpOnlyNumbers.MatchString(timeout) {
 				seconds, err := strconv.Atoi(timeout)
