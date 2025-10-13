@@ -5,32 +5,32 @@ SHELL ["/bin/bash", "-euo", "pipefail", "-c"]
 # If we ever need to bust the cache, just change the date here.
 # While we don't cache anything in Drone, that might not be true when we migrate to GitHub Actions where some action might automatically enable layer caching.
 # This is fine, but is terrible in situations where we want to _force_ an update of a package.
-RUN echo 'cachebuster 2025-10-06' && apt-get update
+RUN echo 'cachebuster 2025-10-13' && apt-get update
 
 FROM debian-updated AS debs
 
-ARG CHROMIUM_VERSION=141.0.7390.54
+ARG CHROMIUM_VERSION=141.0.7390.65
 RUN apt-cache depends chromium=${CHROMIUM_VERSION} chromium-driver chromium-shell chromium-sandbox font-gothic fonts-wqy-zenhei fonts-thai-tlwg fonts-khmeros fonts-kacst fonts-freefont-ttf libxss1 unifont fonts-open-sans fonts-roboto fonts-inter bash util-linux openssl tini ca-certificates locales libnss3-tools \
-    --recurse --no-recommends --no-suggests --no-conflicts --no-breaks --no-replaces --no-enhances --no-pre-depends | grep '^\w' | xargs apt-get download
+  --recurse --no-recommends --no-suggests --no-conflicts --no-breaks --no-replaces --no-enhances --no-pre-depends | grep '^\w' | xargs apt-get download
 RUN mkdir /dpkg && \
-    find . -type f -name '*.deb' -exec sh -c 'dpkg --extract "$1" /dpkg || exit 5' sh '{}' \;
+  find . -type f -name '*.deb' -exec sh -c 'dpkg --extract "$1" /dpkg || exit 5' sh '{}' \;
 
 FROM debian:testing-slim@sha256:12ce5b90ca703a11ebaae907649af9b000e616f49199a2115340e0cdf007e42a AS ca-certs
 
 RUN apt-get update
 RUN apt-cache depends ca-certificates \
-    --recurse --no-recommends --no-suggests --no-conflicts --no-breaks --no-replaces --no-enhances --no-pre-depends | grep '^\w' | xargs apt-get download
+  --recurse --no-recommends --no-suggests --no-conflicts --no-breaks --no-replaces --no-enhances --no-pre-depends | grep '^\w' | xargs apt-get download
 RUN mkdir /dpkg && \
-    find . -type f -name '*.deb' -exec sh -c 'dpkg --extract "$1" /dpkg || exit 5' sh '{}' \;
+  find . -type f -name '*.deb' -exec sh -c 'dpkg --extract "$1" /dpkg || exit 5' sh '{}' \;
 
 # While we can't move to Debian 13 yet for the final image, use its new build of busybox with security fixes.
 FROM debian:13-slim@sha256:c85a2732e97694ea77237c61304b3bb410e0e961dd6ee945997a06c788c545bb AS busybox
 
 RUN apt-get update
 RUN apt-cache depends busybox-static \
-    --recurse --no-recommends --no-suggests --no-conflicts --no-breaks --no-replaces --no-enhances --no-pre-depends | grep '^\w' | xargs apt-get download
+  --recurse --no-recommends --no-suggests --no-conflicts --no-breaks --no-replaces --no-enhances --no-pre-depends | grep '^\w' | xargs apt-get download
 RUN mkdir /dpkg && \
-    find . -type f -name '*.deb' -exec sh -c 'dpkg --extract "$1" /dpkg || exit 5' sh '{}' \;
+  find . -type f -name '*.deb' -exec sh -c 'dpkg --extract "$1" /dpkg || exit 5' sh '{}' \;
 
 FROM node:22-alpine@sha256:1b2479dd35a99687d6638f5976fd235e26c5b37e8122f786fcd5fe231d63de5b AS build
 
@@ -85,4 +85,4 @@ EXPOSE 8081
 ENTRYPOINT ["tini", "--", "/nodejs/bin/node"]
 CMD ["build/app.js", "server", "--config=config.json"]
 HEALTHCHECK --interval=10s --retries=3 --timeout=3s \
-    CMD ["wget", "-O-", "-q", "http://localhost:8081/"]
+  CMD ["wget", "-O-", "-q", "http://localhost:8081/"]

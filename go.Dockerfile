@@ -11,10 +11,10 @@ WORKDIR /src
 COPY . ./
 
 RUN --mount=type=cache,target=/go/pkg/mod CGO_ENABLED=0 go build \
-    -o grafana-image-renderer \
-    -buildvcs \
-    -ldflags '-s -w -extldflags "-static"' \
-    .
+  -o grafana-image-renderer \
+  -buildvcs \
+  -ldflags '-s -w -extldflags "-static"' \
+  .
 
 FROM debian:12-slim@sha256:b1a741487078b369e78119849663d7f1a5341ef2768798f7b7406c4240f86aef AS debs
 
@@ -25,19 +25,19 @@ SHELL ["/bin/bash", "-euo", "pipefail", "-c"]
 # This is fine, but is terrible in situations where we want to _force_ an update of a package.
 RUN echo 'cachebuster 2025-10-06' && apt-get update
 
-ARG CHROMIUM_VERSION=141.0.7390.54
+ARG CHROMIUM_VERSION=141.0.7390.65
 RUN apt-cache depends chromium=${CHROMIUM_VERSION} chromium-driver chromium-shell chromium-sandbox font-gothic fonts-wqy-zenhei fonts-thai-tlwg fonts-khmeros fonts-kacst fonts-freefont-ttf libxss1 unifont fonts-open-sans fonts-roboto fonts-inter bash busybox util-linux openssl tini ca-certificates locales libnss3-tools \
-    --recurse --no-recommends --no-suggests --no-conflicts --no-breaks --no-replaces --no-enhances --no-pre-depends | grep '^\w' | xargs apt-get download
+  --recurse --no-recommends --no-suggests --no-conflicts --no-breaks --no-replaces --no-enhances --no-pre-depends | grep '^\w' | xargs apt-get download
 RUN mkdir /dpkg && \
-    find . -type f -name '*.deb' -exec sh -c 'dpkg --extract "$1" /dpkg || exit 5' sh '{}' \;
+  find . -type f -name '*.deb' -exec sh -c 'dpkg --extract "$1" /dpkg || exit 5' sh '{}' \;
 
 FROM debian:testing-slim@sha256:12ce5b90ca703a11ebaae907649af9b000e616f49199a2115340e0cdf007e42a AS ca-certs
 
 RUN apt-get update
 RUN apt-cache depends ca-certificates \
-    --recurse --no-recommends --no-suggests --no-conflicts --no-breaks --no-replaces --no-enhances --no-pre-depends | grep '^\w' | xargs apt-get download
+  --recurse --no-recommends --no-suggests --no-conflicts --no-breaks --no-replaces --no-enhances --no-pre-depends | grep '^\w' | xargs apt-get download
 RUN mkdir /dpkg && \
-    find . -type f -name '*.deb' -exec sh -c 'dpkg --extract "$1" /dpkg || exit 5' sh '{}' \;
+  find . -type f -name '*.deb' -exec sh -c 'dpkg --extract "$1" /dpkg || exit 5' sh '{}' \;
 
 FROM gcr.io/distroless/base-debian12:nonroot AS output_image
 
@@ -71,4 +71,4 @@ EXPOSE 8081
 ENTRYPOINT ["tini", "--", "/usr/bin/grafana-image-renderer"]
 CMD ["server"]
 HEALTHCHECK --interval=10s --retries=3 --timeout=3s --start-interval=250ms --start-period=30s \
-    CMD ["/usr/bin/grafana-image-renderer", "healthcheck"]
+  CMD ["/usr/bin/grafana-image-renderer", "healthcheck"]
