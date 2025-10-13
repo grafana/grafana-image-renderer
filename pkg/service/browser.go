@@ -907,6 +907,7 @@ func waitForReady(browserCtx context.Context, timeout time.Duration) chromedp.Ac
 			trace.WithAttributes(attribute.Float64("timeout_seconds", timeout.Seconds())))
 		defer span.End()
 
+		giveUpNetworkRequests := time.Now().Add(timeout / 10)
 		timeout := time.After(timeout)
 
 		hasHadQueries := false
@@ -926,7 +927,7 @@ func waitForReady(browserCtx context.Context, timeout time.Duration) chromedp.Ac
 			case <-time.After(100 * time.Millisecond):
 			}
 
-			if requests.Load() > 0 {
+			if requests.Load() > 0 && time.Now().Before(giveUpNetworkRequests) {
 				initialDOMPass = true
 				span.AddEvent("network requests still ongoing", trace.WithAttributes(attribute.Int64("inflightRequests", requests.Load())))
 				continue // still waiting on network requests to complete
