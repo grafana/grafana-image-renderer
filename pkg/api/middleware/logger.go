@@ -4,18 +4,22 @@ import (
 	"log/slog"
 	"net/http"
 	"sync"
+	"time"
 )
 
 func RequestLogger(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
 		lw := &loggingResponseWriter{w: w}
 		defer func() {
+			duration := time.Since(start)
 			slog.InfoContext(r.Context(), "request complete",
 				"method", r.Method,
 				"mux_pattern", r.Pattern,
 				"uri", r.URL,
 				"status", lw.statusCode,
-				"status_text", http.StatusText(lw.statusCode))
+				"status_text", http.StatusText(lw.statusCode),
+				"duration", duration)
 		}()
 		h.ServeHTTP(lw, r)
 	})
