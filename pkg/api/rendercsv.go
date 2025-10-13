@@ -27,7 +27,7 @@ var (
 	}, []string{"result"})
 )
 
-func HandlePostRenderCSV(browser *service.BrowserService) http.Handler {
+func HandleGetRenderCSV(browser *service.BrowserService) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		tracer := tracer(r.Context())
 		ctx, span := tracer.Start(r.Context(), "HandleGetRenderCSV")
