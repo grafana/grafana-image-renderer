@@ -245,7 +245,7 @@ func (s *BrowserService) Render(ctx context.Context, url string, printer Printer
 		tracingAction("WaitReady(body)", chromedp.WaitReady("body", chromedp.ByQuery)), // wait for a body to exist; this is when the page has started to actually render
 		scrollForElements(cfg.TimeBetweenScrolls),
 		waitForDuration(cfg.ReadinessPriorWait),
-		waitForReady(browserCtx, cfg.ReadinessTimeout),
+		waitForReady(browserCtx, cfg),
 		printer.prepare(cfg),
 		printer.action(fileChan, cfg),
 	}
@@ -725,7 +725,7 @@ func (p *pngPrinter) prepare(cfg config.BrowserConfig) chromedp.Action {
 			}
 
 			span.SetStatus(codes.Ok, "viewport resized successfully")
-			if err := waitForReady(ctx, cfg.ReadinessTimeout).Do(ctx); err != nil {
+			if err := waitForReady(ctx, cfg).Do(ctx); err != nil {
 				return fmt.Errorf("failed to wait for readiness after resizing viewport: %w", err)
 			}
 		} else {
