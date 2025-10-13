@@ -1,3 +1,7 @@
+## 4.0.18 (2025-10-13)
+
+- Docker: Update Chromium to 141.0.7390.65 (CVE-2025-11458, CVE-2025-11460, CVE-2025-11211), [#809](https://github.com/grafana/grafana-image-renderer/pull/809), [Proximyst](https://github.com/Proximyst)
+
 ## 4.0.17 (2025-10-09)
 
 - fix: assert no path traversal in renders (CVE-2025-11539), [#801](https://github.com/grafana/grafana-image-renderer/pull/801), [Proximyst](https://github.com/Proximyst), [KristianGrafana](https://github.com/KristianGrafana)
