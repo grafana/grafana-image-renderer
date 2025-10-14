@@ -314,10 +314,18 @@ type BrowserConfig struct {
 	// That means for a viewport that is 500px high, and a webpage that is 2500px high, we will scroll 5 times, meaning a total wait duration of 6 * duration (as we have to wait on the first & last scrolls as well).
 	TimeBetweenScrolls time.Duration
 	// ReadinessTimeout is the maximum time to wait for the web-page to become ready (i.e. no longer loading anything).
-	ReadinessTimeout time.Duration
-	// LoadWait is the time to wait before checking for how ready the page is.
+	ReadinessTimeout           time.Duration
+	ReadinessIterationInterval time.Duration
+	// ReadinessPriorWait is the time to wait before checking for how ready the page is.
 	// This lets you force the webpage to take a beat and just do its thing before the service starts looking for whether it's time to render anything.
-	LoadWait time.Duration
+	ReadinessPriorWait              time.Duration
+	ReadinessDisableQueryWait       bool
+	ReadinessFirstQueryTimeout      time.Duration
+	ReadinessQueriesTimeout         time.Duration
+	ReadinessDisableNetworkWait     bool
+	ReadinessNetworkIdleTimeout     time.Duration
+	ReadinessDisableDOMHashCodeWait bool
+	ReadinessDOMHashCodeTimeout     time.Duration
 
 	// MinWidth is the minimum width of the browser viewport.
 	// If larger than MaxWidth, MaxWidth is used instead.
@@ -400,16 +408,66 @@ func BrowserFlags() []cli.Flag {
 			Sources: FromConfig("browser.time-between-scrolls", "BROWSER_TIME_BETWEEN_SCROLLS"),
 		},
 		&cli.DurationFlag{
-			Name:    "browser.readiness-timeout",
-			Usage:   "The maximum time to wait for a web-page to become ready (i.e. no longer loading anything).",
+			Name:    "browser.readiness.timeout",
+			Usage:   "The maximum time to wait for a web-page to become ready (i.e. no longer loading anything). If <= 0, the timeout is disabled.",
 			Value:   time.Second * 30,
-			Sources: FromConfig("browser.readiness-timeout", "BROWSER_READINESS_TIMEOUT"),
+			Sources: FromConfig("browser.readiness.timeout", "BROWSER_READINESS_TIMEOUT"),
 		},
 		&cli.DurationFlag{
-			Name:    "browser.load-wait",
-			Usage:   "The time to wait before checking for how ready the page is. This lets you force the webpage to take a beat and just do its thing before the service starts looking for whether it's time to render anything.",
+			Name:  "browser.readiness.iteration-interval",
+			Usage: "How long to wait between each iteration of checking whether the page is ready. Must be positive.",
+			Value: time.Millisecond * 100,
+			Validator: func(d time.Duration) error {
+				if d <= 0 {
+					return fmt.Errorf("browser readiness iteration-interval must be positive (got %v)", d)
+				}
+				return nil
+			},
+		},
+		&cli.DurationFlag{
+			Name:    "browser.readiness.prior-wait",
+			Usage:   "The time to wait before checking for how ready the page is. This lets you force the webpage to take a beat and just do its thing before the service starts looking for whether it's time to render anything. If <= 0, this is disabled.",
 			Value:   time.Second,
-			Sources: FromConfig("browser.load-wait", "BROWSER_LOAD_WAIT"),
+			Sources: FromConfig("browser.readiness.prior-wait", "BROWSER_READINESS_PRIOR_WAIT"),
+		},
+		&cli.BoolFlag{
+			Name:    "browser.readiness.disable-query-wait",
+			Usage:   "Disable waiting for queries to finish before capturing.",
+			Sources: FromConfig("browser.readiness.disable-query-wait", "BROWSER_READINESS_DISABLE_QUERY_WAIT"),
+		},
+		&cli.DurationFlag{
+			Name:    "browser.readiness.give-up-on-first-query",
+			Usage:   "How long to wait before giving up on a first query being registered. If <= 0, the give-up is disabled.",
+			Value:   time.Second * 3,
+			Sources: FromConfig("browser.readiness.give-up-on-first-query", "BROWSER_READINESS_GIVE_UP_ON_FIRST_QUERY"),
+		},
+		&cli.DurationFlag{
+			Name:    "browser.readiness.give-up-on-all-queries",
+			Usage:   "How long to wait before giving up on all running queries. If <= 0, the give-up is disabled.",
+			Value:   0,
+			Sources: FromConfig("browser.readiness.give-up-on-all-queries", "BROWSER_READINESS_GIVE_UP_ON_ALL_QUERIES"),
+		},
+		&cli.BoolFlag{
+			Name:    "browser.readiness.disable-network-wait",
+			Usage:   "Disable waiting for network requests to finish before capturing.",
+			Sources: FromConfig("browser.readiness.disable-network-wait", "BROWSER_READINESS_DISABLE_NETWORK_WAIT"),
+		},
+		&cli.DurationFlag{
+			Name:    "browser.readiness.network-idle-timeout",
+			Usage:   "How long to wait before giving up on the network being idle. If <= 0, the timeout is disabled.",
+			Value:   0,
+			Sources: FromConfig("browser.readiness.network-idle-timeout", "BROWSER_READINESS_NETWORK_IDLE_TIMEOUT"),
+		},
+		&cli.BoolFlag{
+			Name:    "browser.readiness.disable-dom-hashcode-wait",
+			Usage:   "Disable waiting for the DOM to stabilize (i.e. not change) before capturing.",
+			Sources: FromConfig("browser.readiness.disable-dom-hashcode-wait", "BROWSER_READINESS_DISABLE_DOM_HASHCODE_WAIT"),
+		},
+		&cli.DurationFlag{
+			Name:    "browser.readiness.dom-hashcode-timeout",
+			Usage:   "How long to wait before giving up on the DOM stabilizing (i.e. not changing). If <= 0, the timeout is disabled.",
+			Value:   0,
+			Sources: FromConfig("browser.readiness.dom-hashcode-timeout", "BROWSER_READINESS_DOM_HASHCODE_TIMEOUT"),
 		},
 		&cli.IntFlag{
 			Name:    "browser.min-width",
@@ -504,21 +562,29 @@ func BrowserConfigFromCommand(c *cli.Command) (BrowserConfig, error) {
 	}
 
 	return BrowserConfig{
-		Path:               c.String("browser.path"),
-		Flags:              c.StringSlice("browser.flag"),
-		GPU:                c.Bool("browser.gpu"),
-		Sandbox:            c.Bool("browser.sandbox"),
-		TimeZone:           timeZone,
-		Cookies:            nil,
-		Headers:            headers,
-		TimeBetweenScrolls: c.Duration("browser.time-between-scrolls"),
-		ReadinessTimeout:   c.Duration("browser.readiness-timeout"),
-		LoadWait:           c.Duration("browser.load-wait"),
-		MinWidth:           minWidth,
-		MinHeight:          minHeight,
-		MaxWidth:           maxWidth,
-		MaxHeight:          maxHeight,
-		PageScaleFactor:    c.Float64("browser.page-scale-factor"),
-		Landscape:          !c.Bool("browser.portrait"),
+		Path:                            c.String("browser.path"),
+		Flags:                           c.StringSlice("browser.flag"),
+		GPU:                             c.Bool("browser.gpu"),
+		Sandbox:                         c.Bool("browser.sandbox"),
+		TimeZone:                        timeZone,
+		Cookies:                         nil,
+		Headers:                         headers,
+		TimeBetweenScrolls:              c.Duration("browser.time-between-scrolls"),
+		ReadinessTimeout:                c.Duration("browser.readiness.timeout"),
+		ReadinessIterationInterval:      c.Duration("browser.readiness.iteration-interval"),
+		ReadinessPriorWait:              c.Duration("browser.readiness.prior-wait"),
+		ReadinessDisableQueryWait:       c.Bool("browser.readiness.disable-query-wait"),
+		ReadinessFirstQueryTimeout:      c.Duration("browser.readiness.give-up-on-first-query"),
+		ReadinessQueriesTimeout:         c.Duration("browser.readiness.give-up-on-all-queries"),
+		ReadinessDisableNetworkWait:     c.Bool("browser.readiness.disable-network-wait"),
+		ReadinessNetworkIdleTimeout:     c.Duration("browser.readiness.network-idle-timeout"),
+		ReadinessDisableDOMHashCodeWait: c.Bool("browser.readiness.disable-dom-hashcode-wait"),
+		ReadinessDOMHashCodeTimeout:     c.Duration("browser.readiness.dom-hashcode-timeout"),
+		MinWidth:                        minWidth,
+		MinHeight:                       minHeight,
+		MaxWidth:                        maxWidth,
+		MaxHeight:                       maxHeight,
+		PageScaleFactor:                 c.Float64("browser.page-scale-factor"),
+		Landscape:                       !c.Bool("browser.portrait"),
 	}, nil
 }
