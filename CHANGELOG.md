@@ -1,3 +1,7 @@
+## 4.1.0 (2025-10-15)
+
+- Docker: Update to Debian 13
+
 ## 4.0.19 (2025-10-14)
 
 This release does not change the current Grafana Image Renderer, it is only issued to release new tags of the `-golang` variants for further testing.
