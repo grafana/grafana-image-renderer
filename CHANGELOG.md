@@ -1,6 +1,6 @@
 ## 4.1.0 (2025-10-15)
 
-- Docker: Update to Debian 13
+- Docker: Update to Debian 13, [#812](https://github.com/grafana/grafana-image-renderer/pull/812), [Proximyst](https://github.com/Proximyst)
 
 ## 4.0.19 (2025-10-14)
 
