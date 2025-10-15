@@ -196,7 +196,8 @@ jobs:
 # Workflow: https://argo-workflows.grafana.net/workflow-templates/render-service-cd/auto-deploy-dev
   cd-auto-deploy-dev:
     name: Deploy to dev
-    if: startsWith(github.ref, 'refs/tags/v')
+    # disabled while we test the golang image
+    if: false && startsWith(github.ref, 'refs/tags/v')
     needs: [tag, build]
     runs-on: ubuntu-latest
     permissions:
