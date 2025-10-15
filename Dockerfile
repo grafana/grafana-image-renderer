@@ -1,4 +1,4 @@
-FROM node:22-alpine AS build
+FROM node:22-trixie AS build
 
 WORKDIR /src
 COPY . ./
@@ -16,8 +16,6 @@ LABEL org.opencontainers.image.source="https://github.com/grafana/grafana-image-
 RUN echo 'cachebuster 2025-10-15' && apt-get update
 
 RUN apt-get install -y --no-install-recommends --no-install-suggests \
-  fonts-ipaexfont-gothic fonts-wqy-zenhei fonts-thai-tlwg fonts-khmeros fonts-kacst-one fonts-freefont-ttf \
-  libxss1 unifont fonts-open-sans fonts-roboto fonts-inter fonts-recommended \
   bash util-linux openssl tini ca-certificates locales libnss3-tools ca-certificates
 
 ARG CHROMIUM_VERSION=141.0.7390.65
