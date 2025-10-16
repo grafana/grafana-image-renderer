@@ -235,19 +235,19 @@ func (s *BrowserService) Render(ctx context.Context, url string, printer Printer
 
 	fileChan := make(chan []byte, 1) // buffered: we don't want the browser to stick around while we try to export this value.
 	actions := []chromedp.Action{
-		tracingAction("network.Enable", network.Enable()), // required by waitForReady
-		tracingAction("fetch.Enable", fetch.Enable()),     // required by handleNetworkEvents
-		tracingAction("SetPageScaleFactor", emulation.SetPageScaleFactor(cfg.PageScaleFactor)),
-		tracingAction("EmulateViewport", chromedp.EmulateViewport(int64(cfg.MinWidth), int64(cfg.MinHeight), orientation)),
-		setHeaders(browserCtx, cfg.Headers),
-		setCookies(cfg.Cookies),
-		tracingAction("Navigate", chromedp.Navigate(url)),
-		tracingAction("WaitReady(body)", chromedp.WaitReady("body", chromedp.ByQuery)), // wait for a body to exist; this is when the page has started to actually render
-		scrollForElements(cfg.TimeBetweenScrolls),
-		waitForDuration(cfg.ReadinessPriorWait),
-		waitForReady(browserCtx, cfg),
-		printer.prepare(cfg),
-		printer.action(fileChan, cfg),
+		observingAction("network.Enable", network.Enable()), // required by waitForReady
+		observingAction("fetch.Enable", fetch.Enable()),     // required by handleNetworkEvents
+		observingAction("SetPageScaleFactor", emulation.SetPageScaleFactor(cfg.PageScaleFactor)),
+		observingAction("EmulateViewport", chromedp.EmulateViewport(int64(cfg.MinWidth), int64(cfg.MinHeight), orientation)),
+		observingAction("setHeaders", setHeaders(browserCtx, cfg.Headers)),
+		observingAction("setCookies", setCookies(cfg.Cookies)),
+		observingAction("Navigate", chromedp.Navigate(url)),
+		observingAction("WaitReady(body)", chromedp.WaitReady("body", chromedp.ByQuery)), // wait for a body to exist; this is when the page has started to actually render
+		observingAction("scrollForElements", scrollForElements(cfg.TimeBetweenScrolls)),
+		observingAction("waitForDuration", waitForDuration(cfg.ReadinessPriorWait)),
+		observingAction("waitForReady", waitForReady(browserCtx, cfg)),
+		observingAction("printer.prepare", printer.prepare(cfg)),
+		observingAction("printer.action", printer.action(fileChan, cfg)),
 	}
 	span.AddEvent("actions created")
 	if err := chromedp.Run(browserCtx, actions...); err != nil {
@@ -312,17 +312,17 @@ func (s *BrowserService) RenderCSV(ctx context.Context, url, renderKey, domain, 
 	s.handleNetworkEvents(browserCtx)
 
 	actions := []chromedp.Action{
-		tracingAction("network.Enable", network.Enable()),
-		setHeaders(browserCtx, headers),
-		setCookies([]*network.SetCookieParams{
+		observingAction("network.Enable", network.Enable()),
+		observingAction("setHeaders", setHeaders(browserCtx, headers)),
+		observingAction("setCookies", setCookies([]*network.SetCookieParams{
 			{
 				Name:   "renderKey",
 				Value:  renderKey,
 				Domain: domain,
 			},
-		}),
-		tracingAction("SetDownloadBehavior", browser.SetDownloadBehavior(browser.SetDownloadBehaviorBehaviorAllow).WithDownloadPath(tmpDir)),
-		tracingAction("Navigate", chromedp.Navigate(url)),
+		})),
+		observingAction("SetDownloadBehavior", browser.SetDownloadBehavior(browser.SetDownloadBehaviorBehaviorAllow).WithDownloadPath(tmpDir)),
+		observingAction("Navigate", chromedp.Navigate(url)),
 	}
 	if err := chromedp.Run(browserCtx, actions...); err != nil {
 		return nil, fmt.Errorf("failed to run browser: %w", err)
@@ -1018,7 +1018,12 @@ func waitForDuration(d time.Duration) chromedp.Action {
 	})
 }
 
-func tracingAction(name string, action chromedp.Action) chromedp.Action {
+// observingAction returns an augmented chromedp.Action which applies observability around the action:
+//   - The action has a trace span around it, which will mark and record errors if any is returned.
+//   - The action duration is recorded in the MetricBrowserActionDuration histogram, labelled by the action name.
+//
+// This is intended for use on both our own and external actions.
+func observingAction(name string, action chromedp.Action) chromedp.Action {
 	return chromedp.ActionFunc(func(ctx context.Context) error {
 		tracer := tracer(ctx)
 		ctx, span := tracer.Start(ctx, name)
