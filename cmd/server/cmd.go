@@ -3,9 +3,13 @@ package server
 import (
 	"context"
 	"fmt"
+	"log/slog"
+	"os"
+	"path"
 	"slices"
 
 	"github.com/grafana/grafana-image-renderer/pkg/api"
+	"github.com/grafana/grafana-image-renderer/pkg/browser"
 	"github.com/grafana/grafana-image-renderer/pkg/config"
 	"github.com/grafana/grafana-image-renderer/pkg/metrics"
 	"github.com/grafana/grafana-image-renderer/pkg/service"
@@ -46,6 +50,18 @@ func run(ctx context.Context, c *cli.Command) error {
 		ctx = traces.WithTracerProvider(ctx, tracerProvider)
 		otel.SetTracerProvider(tracerProvider)
 		otel.SetTextMapPropagator(propagation.TraceContext{})
+	}
+	if browserConfig.UseEmbedded {
+		tmpDir, err := browser.Extract(ctx)
+		if err != nil {
+			if tmpDir != "" {
+				if err := os.RemoveAll(tmpDir); err != nil {
+					slog.WarnContext(ctx, "could not clean up temporary directory", "dir", tmpDir, "error", "err")
+				}
+			}
+			return fmt.Errorf("failed to extract embedded browser: %w", err)
+		}
+		browserConfig.Path = path.Join(tmpDir, "browser", "usr", "lib", "chromium", "chromium")
 	}
 	browser := service.NewBrowserService(browserConfig)
 	versions := service.NewVersionService()

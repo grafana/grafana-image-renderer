@@ -7,6 +7,7 @@ import (
 
 	"github.com/grafana/grafana-image-renderer/cmd/healthcheck"
 	"github.com/grafana/grafana-image-renderer/cmd/server"
+	"github.com/grafana/grafana-image-renderer/cmd/test"
 	"github.com/grafana/grafana-image-renderer/pkg/config"
 	"github.com/grafana/grafana-image-renderer/pkg/service"
 	"github.com/urfave/cli/v3"
@@ -39,6 +40,7 @@ func NewRootCmd() *cli.Command {
 		Commands: []*cli.Command{
 			healthcheck.NewCmd(),
 			server.NewCmd(),
+			test.NewCmd(),
 		},
 	}
 }

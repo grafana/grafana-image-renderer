@@ -291,7 +291,8 @@ func TracingConfigFromCommand(c *cli.Command) (TracingConfig, error) {
 type BrowserConfig struct {
 	// Path is the path to the browser binary.
 	// This is resolved against PATH.
-	Path string
+	Path        string
+	UseEmbedded bool
 	// Flags are the parameters to pass to the browser.
 	// A leading `--` is implied, but still valid to pass in.
 	Flags []string
@@ -363,6 +364,11 @@ func BrowserFlags() []cli.Flag {
 			TakesFile: true,
 			Value:     "chromium",
 			Sources:   FromConfig("browser.path", "BROWSER_PATH"),
+		},
+		&cli.BoolFlag{
+			Name:    "browser.use-embedded",
+			Usage:   "Whether to use the embedded Chromium binary. This is mutually exclusive with --browser.path.",
+			Sources: FromConfig("browser.use-embedded", "BROWSER_USE_EMBEDDED"),
 		},
 		&cli.StringSliceFlag{
 			Name:    "browser.flag",
@@ -563,6 +569,7 @@ func BrowserConfigFromCommand(c *cli.Command) (BrowserConfig, error) {
 
 	return BrowserConfig{
 		Path:                            c.String("browser.path"),
+		UseEmbedded:                     c.Bool("browser.use-embedded"),
 		Flags:                           c.StringSlice("browser.flag"),
 		GPU:                             c.Bool("browser.gpu"),
 		Sandbox:                         c.Bool("browser.sandbox"),
