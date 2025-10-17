@@ -29,8 +29,8 @@ RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 RUN echo "en_US.UTF-8 UTF-8" > /etc/locale.gen && locale-gen en_US.UTF-8
 RUN fc-cache -fr
 RUN update-ca-certificates --fresh
-RUN useradd --create-home --system --uid 65532 --user-group nonroot
-USER 65532
+#RUN useradd --create-home --system --uid 65532 --user-group nonroot
+#USER 65532
 
 ENV CHROME_BIN="/usr/bin/chromium"
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD="true"
@@ -44,11 +44,9 @@ COPY --from=build /src/proto proto
 COPY --from=build /src/default.json config.json
 COPY --from=build /src/plugin.json plugin.json
 
-USER root
-
-RUN chgrp -R 0 /home/nonroot && chmod -R g=u /home/nonroot
-
-USER 65532
+#USER root
+#RUN chgrp -R 0 /home/nonroot && chmod -R g=u /home/nonroot
+#USER 65532
 
 EXPOSE 8081
 
