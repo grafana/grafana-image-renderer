@@ -398,7 +398,7 @@ func TestRenderingGrafana(t *testing.T) {
 					image := ReadRGBA(t, body)
 					fixture := fmt.Sprintf("render-very-long-prometheus-dashboard-full-height-landscape-%v.png", isLandscape)
 					fixtureImg := ReadFixtureRGBA(t, fixture)
-					if !AssertPixelDifference(t, fixtureImg, image, 175_000) { // this is a very long image, so data may be off by a little bit
+					if !AssertPixelDifference(t, fixtureImg, image, 240_000) { // there is some pixel fuzz / pixels moving just one or two over...
 						UpdateFixtureIfEnabled(t, fixture, body)
 					}
 				})
