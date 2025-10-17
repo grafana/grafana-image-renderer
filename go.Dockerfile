@@ -23,7 +23,7 @@ SHELL ["/bin/bash", "-euo", "pipefail", "-c"]
 # If we ever need to bust the cache, just change the date here.
 # While we don't cache anything in Drone, that might not be true when we migrate to GitHub Actions where some action might automatically enable layer caching.
 # This is fine, but is terrible in situations where we want to _force_ an update of a package.
-RUN echo 'cachebuster 2025-10-06' && apt-get update
+RUN echo 'cachebuster 2025-10-17' && apt-get update
 
 ARG CHROMIUM_VERSION=141.0.7390.107
 RUN apt-cache depends chromium=${CHROMIUM_VERSION} chromium-driver chromium-shell chromium-sandbox font-gothic fonts-wqy-zenhei fonts-thai-tlwg fonts-khmeros fonts-kacst fonts-freefont-ttf libxss1 unifont fonts-open-sans fonts-roboto fonts-inter bash busybox util-linux openssl tini ca-certificates locales libnss3-tools \
