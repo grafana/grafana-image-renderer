@@ -38,19 +38,19 @@ RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 RUN echo "en_US.UTF-8 UTF-8" > /etc/locale.gen && locale-gen en_US.UTF-8
 RUN fc-cache -fr
 RUN update-ca-certificates --fresh
-#RUN useradd --create-home --system --uid 65532 --user-group nonroot
-#USER 65532
+
+RUN useradd --create-home --system --uid 65532 --user-group nonroot
+RUN chgrp -R 0 /home/nonroot && chmod -R g=u /home/nonroot
+WORKDIR /home/nonroot
+USER 65532
+
+COPY --from=app /src/grafana-image-renderer /usr/bin/grafana-image-renderer
+
+EXPOSE 8081
 
 ENV CHROME_BIN="/usr/bin/chromium"
 ENV LANG=en_US.UTF-8
 ENV LC_ALL=en_US.UTF-8
-
-#USER root
-#RUN chgrp -R 0 /home/nonroot && chmod -R g=u /home/nonroot
-COPY --from=app /src/grafana-image-renderer /usr/bin/grafana-image-renderer
-#USER 65532
-EXPOSE 8081
-
 ENTRYPOINT ["tini", "--", "/usr/bin/grafana-image-renderer"]
 CMD ["server"]
 HEALTHCHECK --interval=10s --retries=3 --timeout=3s --start-interval=250ms --start-period=30s \
