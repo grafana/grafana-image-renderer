@@ -1,3 +1,7 @@
+## 4.0.20 (2025-10-17)
+
+- Docker: Update Chromium to 141.0.7390.107 (CVE-2025-11756), [#X](https://github.com/grafana/grafana-image-renderer/pull/X), [Proximyst](https://github.com/Proximyst)
+
 ## 4.0.19 (2025-10-14)
 
 This release does not change the current Grafana Image Renderer, it is only issued to release new tags of the `-golang` variants for further testing.
