@@ -29,7 +29,6 @@ RUN apt-get install -y --no-install-recommends --no-install-suggests \
   libxss1 unifont fonts-open-sans fonts-roboto fonts-inter fonts-recommended \
   bash util-linux openssl tini ca-certificates locales libnss3-tools ca-certificates
 
-
 ARG CHROMIUM_VERSION=141.0.7390.107
 RUN apt-get satisfy -y --no-install-recommends --no-install-suggests \
   "chromium (>=${CHROMIUM_VERSION}), chromium-driver (>=${CHROMIUM_VERSION}), chromium-shell (>=${CHROMIUM_VERSION}), chromium-sandbox (>=${CHROMIUM_VERSION})"
