@@ -1,4 +1,22 @@
-FROM debian:12-slim@sha256:b1a741487078b369e78119849663d7f1a5341ef2768798f7b7406c4240f86aef AS debian-updated
+# This Dockerfile does two things in parallel:
+#   1. It builds a statically linked Go binary. This is fine to use in Debian, Alpine, RHEL, etc. base-images.
+#        -> Why static linking? We want to ensure we can switch base-image with little to no effort.
+#   2. It builds a running environment. This is the environment that exists for the Go binary, and should have all necessary pieces to run the application.
+
+FROM golang:1.24.6-alpine AS app
+
+RUN apk add --no-cache git
+
+WORKDIR /src
+COPY . ./
+
+RUN --mount=type=cache,target=/go/pkg/mod CGO_ENABLED=0 go build \
+  -o grafana-image-renderer \
+  -buildvcs \
+  -ldflags '-s -w -extldflags "-static"' \
+  .
+
+FROM debian:12-slim@sha256:b1a741487078b369e78119849663d7f1a5341ef2768798f7b7406c4240f86aef AS debs
 
 SHELL ["/bin/bash", "-euo", "pipefail", "-c"]
 
@@ -7,10 +25,8 @@ SHELL ["/bin/bash", "-euo", "pipefail", "-c"]
 # This is fine, but is terrible in situations where we want to _force_ an update of a package.
 RUN echo 'cachebuster 2025-10-17' && apt-get update
 
-FROM debian-updated AS debs
-
 ARG CHROMIUM_VERSION=141.0.7390.107
-RUN apt-cache depends chromium=${CHROMIUM_VERSION} chromium-driver chromium-shell chromium-sandbox font-gothic fonts-wqy-zenhei fonts-thai-tlwg fonts-khmeros fonts-kacst fonts-freefont-ttf libxss1 unifont fonts-open-sans fonts-roboto fonts-inter bash util-linux openssl tini ca-certificates locales libnss3-tools \
+RUN apt-cache depends chromium=${CHROMIUM_VERSION} chromium-driver chromium-shell chromium-sandbox font-gothic fonts-wqy-zenhei fonts-thai-tlwg fonts-khmeros fonts-kacst fonts-freefont-ttf libxss1 unifont fonts-open-sans fonts-roboto fonts-inter bash busybox util-linux openssl tini ca-certificates locales libnss3-tools \
   --recurse --no-recommends --no-suggests --no-conflicts --no-breaks --no-replaces --no-enhances --no-pre-depends | grep '^\w' | xargs apt-get download
 RUN mkdir /dpkg && \
   find . -type f -name '*.deb' -exec sh -c 'dpkg --extract "$1" /dpkg || exit 5' sh '{}' \;
@@ -23,32 +39,12 @@ RUN apt-cache depends ca-certificates \
 RUN mkdir /dpkg && \
   find . -type f -name '*.deb' -exec sh -c 'dpkg --extract "$1" /dpkg || exit 5' sh '{}' \;
 
-# While we can't move to Debian 13 yet for the final image, use its new build of busybox with security fixes.
-FROM debian:13-slim@sha256:c85a2732e97694ea77237c61304b3bb410e0e961dd6ee945997a06c788c545bb AS busybox
-
-RUN apt-get update
-RUN apt-cache depends busybox-static \
-  --recurse --no-recommends --no-suggests --no-conflicts --no-breaks --no-replaces --no-enhances --no-pre-depends | grep '^\w' | xargs apt-get download
-RUN mkdir /dpkg && \
-  find . -type f -name '*.deb' -exec sh -c 'dpkg --extract "$1" /dpkg || exit 5' sh '{}' \;
-
-FROM node:22-alpine@sha256:1b2479dd35a99687d6638f5976fd235e26c5b37e8122f786fcd5fe231d63de5b AS build
-
-WORKDIR /src
-COPY . ./
-
-RUN yarn install --pure-lockfile
-RUN yarn run build
-RUN rm -rf node_modules/ && yarn install --pure-lockfile --production
-
-FROM gcr.io/distroless/nodejs22-debian12:nonroot@sha256:8929dbab735ee399ff886ba7d81419dbe7df002993a7d69715e1c16b7d41c531
+FROM gcr.io/distroless/base-debian12:nonroot AS output_image
 
 LABEL maintainer="Grafana team <hello@grafana.com>"
-LABEL org.opencontainers.image.source="https://github.com/grafana/grafana-image-renderer/tree/master/Dockerfile"
+LABEL org.opencontainers.image.source="https://github.com/grafana/grafana-image-renderer/tree/master/go.Dockerfile"
 
 COPY --from=debs /dpkg /
-COPY --from=busybox /dpkg/usr/bin/busybox /bin/busybox
-COPY --from=busybox /dpkg/usr/bin/busybox /usr/bin/busybox
 COPY --from=ca-certs /dpkg/usr/share/ca-certificates /usr/share/ca-certificates
 
 USER root
@@ -63,26 +59,16 @@ RUN update-ca-certificates --fresh
 USER nonroot
 
 ENV CHROME_BIN="/usr/bin/chromium"
-ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD="true"
-ENV NODE_ENV=production
 ENV LANG=en_US.UTF-8
 ENV LC_ALL=en_US.UTF-8
 
-COPY --from=build /src/node_modules node_modules
-COPY --from=build /src/build build
-COPY --from=build /src/proto proto
-COPY --from=build /src/default.json config.json
-COPY --from=build /src/plugin.json plugin.json
-
 USER root
-
 RUN chgrp -R 0 /home/nonroot && chmod -R g=u /home/nonroot
-
+COPY --from=app /src/grafana-image-renderer /usr/bin/grafana-image-renderer
 USER 65532
-
 EXPOSE 8081
 
-ENTRYPOINT ["tini", "--", "/nodejs/bin/node"]
-CMD ["build/app.js", "server", "--config=config.json"]
-HEALTHCHECK --interval=10s --retries=3 --timeout=3s \
-  CMD ["wget", "-O-", "-q", "http://localhost:8081/"]
+ENTRYPOINT ["tini", "--", "/usr/bin/grafana-image-renderer"]
+CMD ["server"]
+HEALTHCHECK --interval=10s --retries=3 --timeout=3s --start-interval=250ms --start-period=30s \
+  CMD ["/usr/bin/grafana-image-renderer", "healthcheck"]

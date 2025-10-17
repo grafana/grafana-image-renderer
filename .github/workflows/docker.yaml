@@ -69,23 +69,11 @@ jobs:
         include:
           - runs-on: ubuntu-x64
             arch: amd64
-            dockerfile: Dockerfile
-            suffix: ''
           - runs-on: ubuntu-arm64
             arch: arm64
-            dockerfile: Dockerfile
-            suffix: ''
-          - runs-on: ubuntu-x64
-            arch: amd64
-            dockerfile: go.Dockerfile
-            suffix: '-golang'
-          - runs-on: ubuntu-arm64
-            arch: arm64
-            dockerfile: go.Dockerfile
-            suffix: '-golang'
 
     needs: tag
-    name: Build ${{ matrix.dockerfile }} image for ${{ matrix.arch }}
+    name: Build image for ${{ matrix.arch }}
     runs-on: ${{ matrix.runs-on }}
     permissions:
       contents: read # required to read the repository contents
@@ -113,16 +101,16 @@ jobs:
           DOCKER_BUILDKIT: 1
           BUILDKIT_STEP_LOG_MAX_SIZE: -1
           BUILDKIT_STEP_LOG_MAX_SPEED: -1
-          TAG: ${{ needs.tag.outputs.tag }}${{ matrix.suffix }}-${{ matrix.arch }}
-        run: docker build . -t "$TAG" -f ${{ matrix.dockerfile }}
+          TAG: ${{ needs.tag.outputs.tag }}-${{ matrix.arch }}
+        run: docker build . -t "$TAG"
       - name: docker push
         env:
-          TAG: ${{ needs.tag.outputs.tag }}${{ matrix.suffix }}-${{ matrix.arch }}
+          TAG: ${{ needs.tag.outputs.tag }}-${{ matrix.arch }}
         run: docker push "$TAG"
       - name: Get digest
         id: digest
         env:
-          TAG: ${{ needs.tag.outputs.tag }}${{ matrix.suffix }}-${{ matrix.arch }}
+          TAG: ${{ needs.tag.outputs.tag }}-${{ matrix.arch }}
         run: |
           set -euo pipefail
           DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' "$TAG" | cut -d@ -f2)
@@ -159,9 +147,7 @@ jobs:
         run: |
           set -euo pipefail
           docker manifest create "$TAG" "$TAG"-amd64 "$TAG"-arm64
-          docker manifest create "$TAG"-golang "$TAG"-golang-amd64 "$TAG"-golang-arm64
           docker manifest push "$TAG"
-          docker manifest push "$TAG"-golang
       - name: Create and push :latest manifest
         if: github.event_name == 'push' && github.ref_type == 'tag'
         env:
@@ -183,10 +169,7 @@ jobs:
             You can pull it using:
 
             ```bash
-            # For the Node.js server:
             docker pull ${{ needs.tag.outputs.tag }}
-            # For the Go server:
-            docker pull ${{ needs.tag.outputs.tag }}-golang
             ```
 
             > [!WARNING]
@@ -196,8 +179,7 @@ jobs:
 # Workflow: https://argo-workflows.grafana.net/workflow-templates/render-service-cd/auto-deploy-dev
   cd-auto-deploy-dev:
     name: Deploy to dev
-    # disabled while we test the golang image
-    if: false && startsWith(github.ref, 'refs/tags/v')
+    if: startsWith(github.ref, 'refs/tags/v')
     needs: [tag, build]
     runs-on: ubuntu-latest
     permissions:
