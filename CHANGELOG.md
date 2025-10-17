@@ -1,3 +1,9 @@
+## 5.0.0 (2025-X-Y)
+
+- Rewrite: Migrate to Go
+  - This also means the entire Node.js service and plugin are both gone.
+    You must use the remote service in Grafana from now.
+
 ## 4.0.20 (2025-10-17)
 
 - Docker: Update Chromium to 141.0.7390.107 (CVE-2025-11756), [#816](https://github.com/grafana/grafana-image-renderer/pull/816), [Proximyst](https://github.com/Proximyst)
