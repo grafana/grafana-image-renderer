@@ -11,6 +11,7 @@ require (
 	github.com/gen2brain/go-fitz v1.24.15
 	github.com/go-jose/go-jose/v4 v4.1.2
 	github.com/prometheus/client_golang v1.23.0
+	github.com/shirou/gopsutil/v4 v4.25.7
 	github.com/stretchr/testify v1.11.1
 	github.com/testcontainers/testcontainers-go v0.38.0
 	github.com/unidoc/unipdf/v4 v4.2.0
@@ -78,7 +79,6 @@ require (
 	github.com/prometheus/client_model v0.6.2 // indirect
 	github.com/prometheus/common v0.65.0 // indirect
 	github.com/prometheus/procfs v0.17.0 // indirect
-	github.com/shirou/gopsutil/v4 v4.25.7 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/tklauser/go-sysconf v0.3.15 // indirect
 	github.com/tklauser/numcpus v0.10.0 // indirect
