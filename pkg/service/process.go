@@ -32,7 +32,31 @@ var (
 			"unit": "bytes",
 		},
 		Help: "Peak memory used by any Chromium process in bytes. This is marked for every process.",
+		Buckets: []float64{
+			kibibyte,
+			mibibyte,
+			16 * mibibyte,
+			32 * mibibyte,
+			64 * mibibyte,
+			128 * mibibyte,
+			256 * mibibyte,
+			368 * mibibyte,
+			512 * mibibyte,
+			768 * mibibyte,
+			gibibyte,
+			gibibyte + 512*mibibyte,
+			2 * gibibyte,
+			4 * gibibyte,
+			6 * gibibyte,
+			8 * gibibyte,
+		},
 	})
+)
+
+const (
+	kibibyte = 1024
+	mibibyte = 1024 * kibibyte
+	gibibyte = 1024 * mibibyte
 )
 
 type ProcessStatService struct {
