@@ -28,6 +28,9 @@ func NewRegistry() *prometheus.Registry {
 		service.MetricBrowserGetVersionDuration,
 		service.MetricBrowserRenderCSVDuration,
 		service.MetricBrowserRenderDuration,
+		service.MetricProcessMaxMemory,
+		service.MetricProcessPeakMemoryAverage,
+		service.MetricProcessPeakMemoryInstant,
 	)
 	return registry
 }
