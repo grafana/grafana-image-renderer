@@ -96,9 +96,14 @@ func (p *ProcessStatService) TrackProcess(ctx context.Context, pid int32) {
 			p.mu.Lock()
 			defer p.mu.Unlock()
 
-			const decay = 5
-			p.PeakMemory = (p.PeakMemory*(decay-1) + int64(peakMemory)) / decay
+			if p.PeakMemory == 0 {
+				p.PeakMemory = int64(peakMemory)
+			} else {
+				const decay = 5
+				p.PeakMemory = (p.PeakMemory*(decay-1) + int64(peakMemory)) / decay
+			}
 			p.MaxMemory = max(p.MaxMemory, int64(peakMemory))
+
 			MetricProcessMaxMemory.Set(float64(p.MaxMemory))
 			MetricProcessPeakMemoryAverage.Set(float64(p.PeakMemory))
 			MetricProcessPeakMemoryInstant.Observe(float64(peakMemory))
