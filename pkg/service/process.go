@@ -60,7 +60,7 @@ const (
 )
 
 type ProcessStatService struct {
-	mu *sync.Mutex
+	mu sync.Mutex
 	// MaxMemory is the number of bytes a Chromium process uses at absolute max.
 	// This is the max of all processes.
 	MaxMemory int64
