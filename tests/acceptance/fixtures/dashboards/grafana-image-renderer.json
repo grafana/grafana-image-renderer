@@ -18,7 +18,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 0,
+  "id": 26,
   "links": [],
   "panels": [
     {
@@ -88,9 +88,7 @@
               "operator": "=",
               "scope": "resource",
               "tag": "service.name",
-              "value": [
-                "grafana-image-renderer"
-              ],
+              "value": ["grafana-image-renderer"],
               "valueType": "string"
             },
             {
@@ -714,7 +712,7 @@
         "x": 12,
         "y": 26
       },
-      "id": 8,
+      "id": 10,
       "options": {
         "calculate": false,
         "cellGap": 1,
@@ -760,13 +758,13 @@
             "uid": "${prom}"
           },
           "editorMode": "code",
-          "expr": "max(histogram_quantile(0.95, browser_get_version_duration_bucket{job=\"image-renderer\", unit=\"seconds\"}))",
-          "legendFormat": "BrowserService.GetVersion",
+          "expr": "max by(action) (histogram_quantile(0.95, browser_action_duration_bucket{job=\"image-renderer\", unit=\"seconds\"}))",
+          "legendFormat": "__auto",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Browser GetVersion durations (p95)",
+      "title": "Browser Render action durations (p95)",
       "type": "heatmap"
     },
     {
@@ -880,19 +878,61 @@
         "type": "prometheus",
         "uid": "${prom}"
       },
-      "description": "",
+      "description": "How many active browsers are there?",
       "fieldConfig": {
         "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
           "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
             "hideFrom": {
               "legend": false,
               "tooltip": false,
               "viz": false
             },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
+            },
+            "showPoints": "auto",
+            "showValues": false,
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
             }
-          }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
         },
         "overrides": []
       },
@@ -902,42 +942,18 @@
         "x": 12,
         "y": 36
       },
-      "id": 10,
+      "id": 13,
       "options": {
-        "calculate": false,
-        "cellGap": 1,
-        "cellValues": {
-          "unit": "s"
-        },
-        "color": {
-          "exponent": 0.5,
-          "fill": "dark-orange",
-          "mode": "scheme",
-          "reverse": false,
-          "scale": "exponential",
-          "scheme": "RdYlGn",
-          "steps": 64
-        },
-        "exemplars": {
-          "color": "rgba(255,0,255,0.7)"
-        },
-        "filterValues": {
-          "le": 1e-9
-        },
         "legend": {
-          "show": true
-        },
-        "rowsFrame": {
-          "layout": "auto"
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
         },
         "tooltip": {
+          "hideZeros": false,
           "mode": "single",
-          "showColorScale": false,
-          "yHistogram": false
-        },
-        "yAxis": {
-          "axisPlacement": "left",
-          "reverse": false
+          "sort": "none"
         }
       },
       "pluginVersion": "12.2.0-17567790421",
@@ -948,14 +964,264 @@
             "uid": "${prom}"
           },
           "editorMode": "code",
-          "expr": "max by(action) (histogram_quantile(0.95, browser_action_duration_bucket{job=\"image-renderer\", unit=\"seconds\"}))",
-          "legendFormat": "__auto",
+          "expr": "sum(browser_instances_active{job=\"image-renderer\"})",
+          "legendFormat": "{{browsers}}",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Browser Render action durations (p95)",
-      "type": "heatmap"
+      "title": "Active browsers over time",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${prom}"
+      },
+      "description": "The max of any process is the maximum memory any Chromium process has used.\n\nThe peak memory usage over time is how much memory the average process uses. It uses a slow-moving average with decay, thus it takes many requests to move the needle significantly.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "showValues": false,
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "bytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 46
+      },
+      "id": 11,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "12.2.0-17567790421",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${prom}"
+          },
+          "editorMode": "code",
+          "expr": "max(process_peak_memory_avg{unit=\"bytes\"})",
+          "legendFormat": "peak over time",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${prom}"
+          },
+          "editorMode": "code",
+          "expr": "max(process_max_memory{unit=\"bytes\"})",
+          "hide": false,
+          "instant": false,
+          "legendFormat": "max of any process",
+          "range": true,
+          "refId": "B"
+        }
+      ],
+      "title": "Chromium memory usage over time",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${prom}"
+      },
+      "description": "This is the peak memory usage reported by each process on every request.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "log": 2,
+              "type": "log"
+            },
+            "showPoints": "auto",
+            "showValues": false,
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "bytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 46
+      },
+      "id": 12,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "12.2.0-17567790421",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${prom}"
+          },
+          "editorMode": "code",
+          "expr": "max(histogram_quantile(0.99, process_peak_memory_bucket{unit=\"bytes\", job=\"image-renderer\"}))",
+          "legendFormat": "p99",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${prom}"
+          },
+          "editorMode": "code",
+          "expr": "max(histogram_quantile(0.95, process_peak_memory_bucket{unit=\"bytes\", job=\"image-renderer\"}))",
+          "hide": false,
+          "legendFormat": "p95",
+          "range": true,
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${prom}"
+          },
+          "editorMode": "code",
+          "expr": "max(histogram_quantile(0.90, process_peak_memory_bucket{unit=\"bytes\", job=\"image-renderer\"}))",
+          "hide": false,
+          "legendFormat": "p90",
+          "range": true,
+          "refId": "C"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${prom}"
+          },
+          "editorMode": "code",
+          "expr": "max(histogram_quantile(0.50, process_peak_memory_bucket{unit=\"bytes\", job=\"image-renderer\"}))",
+          "hide": false,
+          "legendFormat": "p50",
+          "range": true,
+          "refId": "D"
+        }
+      ],
+      "title": "Chromium memory usage over time",
+      "type": "timeseries"
     }
   ],
   "preload": false,
@@ -1001,5 +1267,5 @@
   "timezone": "browser",
   "title": "grafana-image-renderer",
   "uid": "grafana-image-renderer",
-  "version": 13
+  "version": 5
 }

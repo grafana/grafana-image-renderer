@@ -72,7 +72,8 @@ var (
 var ErrInvalidBrowserOption = errors.New("invalid browser option")
 
 type BrowserService struct {
-	cfg config.BrowserConfig
+	cfg       config.BrowserConfig
+	processes *ProcessStatService
 
 	// log is the base logger for the service.
 	log *slog.Logger
@@ -83,8 +84,9 @@ type BrowserService struct {
 // The options are not validated on creation, rather on request.
 func NewBrowserService(cfg config.BrowserConfig) *BrowserService {
 	return &BrowserService{
-		cfg: cfg,
-		log: slog.With("service", "browser"),
+		cfg:       cfg,
+		processes: NewProcessStatService(),
+		log:       slog.With("service", "browser"),
 	}
 }
 
@@ -239,6 +241,7 @@ func (s *BrowserService) Render(ctx context.Context, url string, printer Printer
 
 	fileChan := make(chan []byte, 1) // buffered: we don't want the browser to stick around while we try to export this value.
 	actions := []chromedp.Action{
+		observingAction("trackProcess", trackProcess(browserCtx, s.processes)),
 		observingAction("network.Enable", network.Enable()), // required by waitForReady
 		observingAction("fetch.Enable", fetch.Enable()),     // required by handleNetworkEvents
 		observingAction("SetPageScaleFactor", emulation.SetPageScaleFactor(cfg.PageScaleFactor)),
@@ -318,6 +321,7 @@ func (s *BrowserService) RenderCSV(ctx context.Context, url, renderKey, domain, 
 	s.handleNetworkEvents(browserCtx)
 
 	actions := []chromedp.Action{
+		observingAction("trackProcess", trackProcess(browserCtx, s.processes)),
 		observingAction("network.Enable", network.Enable()),
 		observingAction("setHeaders", setHeaders(browserCtx, headers)),
 		observingAction("setCookies", setCookies([]*network.SetCookieParams{
@@ -1089,4 +1093,18 @@ func (at *atomicTime) Load() time.Time {
 
 func (at *atomicTime) Store(t time.Time) {
 	at.Value.Store(t)
+}
+
+func trackProcess(browserCtx context.Context, processes *ProcessStatService) chromedp.Action {
+	return chromedp.ActionFunc(func(ctx context.Context) error {
+		cdpCtx := chromedp.FromContext(ctx)
+		proc := cdpCtx.Browser.Process()
+		if proc == nil {
+			// no process to track.
+			return nil
+		}
+
+		processes.TrackProcess(browserCtx, int32(proc.Pid))
+		return nil
+	})
 }
