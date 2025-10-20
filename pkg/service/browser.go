@@ -42,6 +42,10 @@ var (
 		},
 	})
 
+	MetricBrowserInstancesActive = prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "browser_instances_active",
+		Help: "How many browser instances are currently launched at any given time?",
+	})
 	MetricBrowserRenderDuration = prometheus.NewHistogram(prometheus.HistogramOpts{
 		Name: "browser_render_duration",
 		ConstLabels: prometheus.Labels{
@@ -253,6 +257,8 @@ func (s *BrowserService) Render(ctx context.Context, url string, printer Printer
 		observingAction("printer.action", printer.action(fileChan, cfg)),
 	}
 	span.AddEvent("actions created")
+	MetricBrowserInstancesActive.Inc()
+	defer MetricBrowserInstancesActive.Dec()
 	if err := chromedp.Run(browserCtx, actions...); err != nil {
 		return nil, "text/plain", fmt.Errorf("failed to run browser: %w", err)
 	}
@@ -328,6 +334,8 @@ func (s *BrowserService) RenderCSV(ctx context.Context, url, renderKey, domain, 
 		observingAction("SetDownloadBehavior", browser.SetDownloadBehavior(browser.SetDownloadBehaviorBehaviorAllow).WithDownloadPath(tmpDir)),
 		observingAction("Navigate", chromedp.Navigate(url)),
 	}
+	MetricBrowserInstancesActive.Inc()
+	defer MetricBrowserInstancesActive.Dec()
 	if err := chromedp.Run(browserCtx, actions...); err != nil {
 		return nil, fmt.Errorf("failed to run browser: %w", err)
 	}
