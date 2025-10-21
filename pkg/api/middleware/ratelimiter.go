@@ -60,7 +60,7 @@ func (p processBasedLimiter) Limit(next http.Handler) http.Handler {
 
 			w.Header().Set("Retry-After", "5")
 			w.WriteHeader(http.StatusTooManyRequests)
-			w.Write([]byte("server is too busy, try again later"))
+			_, _ = w.Write([]byte("server is too busy, try again later"))
 			return
 		} else {
 			p.running.Add(1)
@@ -79,7 +79,7 @@ func (p processBasedLimiter) Limit(next http.Handler) http.Handler {
 
 func (p processBasedLimiter) canFitRequest(ctx context.Context) (bool, string) {
 	tracer := tracer(ctx)
-	ctx, span := tracer.Start(ctx, "processBasedLimiter.canFitRequest", trace.WithAttributes(
+	_, span := tracer.Start(ctx, "processBasedLimiter.canFitRequest", trace.WithAttributes(
 		attribute.Int64("headroom", int64(p.cfg.Headroom)),
 		attribute.Int64("min_memory_per_browser", int64(p.cfg.MinMemoryPerBrowser)),
 		attribute.Int64("min_limit", int64(p.cfg.MinLimit)),
