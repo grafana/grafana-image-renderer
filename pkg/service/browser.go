@@ -82,10 +82,10 @@ type BrowserService struct {
 // NewBrowserService creates a new browser service. It is used to launch browsers and control them.
 //
 // The options are not validated on creation, rather on request.
-func NewBrowserService(cfg config.BrowserConfig) *BrowserService {
+func NewBrowserService(cfg config.BrowserConfig, processStatService *ProcessStatService) *BrowserService {
 	return &BrowserService{
 		cfg:       cfg,
-		processes: NewProcessStatService(),
+		processes: processStatService,
 		log:       slog.With("service", "browser"),
 	}
 }

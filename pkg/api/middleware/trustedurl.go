@@ -8,7 +8,7 @@ import (
 )
 
 var MetricTrustedURLRequests = prometheus.NewCounterVec(prometheus.CounterOpts{
-	Name: "http_trusted_url_requests",
+	Name: "http_trusted_url_requests_total",
 	Help: "Counts the requests with URL queries",
 }, []string{"result"})
 

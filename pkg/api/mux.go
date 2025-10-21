@@ -1,6 +1,7 @@
 package api
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/grafana/grafana-image-renderer/pkg/api/middleware"
@@ -17,9 +18,16 @@ func NewHandler(
 		prometheus.Registerer
 	},
 	serverConfig config.ServerConfig,
+	rateLimitConfig config.RateLimitConfig,
+	processStatService *service.ProcessStatService,
 	browser *service.BrowserService,
 	versions *service.VersionService,
 ) (http.Handler, error) {
+	limiter, err := middleware.NewRateLimiter(processStatService, rateLimitConfig)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create rate limiter: %w", err)
+	}
+
 	mux := http.NewServeMux()
 	mux.Handle("GET /", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		_, _ = w.Write([]byte("Grafana Image Renderer (Go)"))
@@ -27,8 +35,8 @@ func NewHandler(
 	mux.Handle("GET /metrics", middleware.TracingFor("promhttp.HandlerFor", promhttp.HandlerFor(metrics, promhttp.HandlerOpts{Registry: metrics})))
 	mux.Handle("GET /healthz", HandleGetHealthz())
 	mux.Handle("GET /version", HandleGetVersion(versions, browser))
-	mux.Handle("GET /render", middleware.RequireAuthToken(middleware.TrustedURL(HandleGetRender(browser)), serverConfig.AuthTokens...))
-	mux.Handle("GET /render/csv", middleware.RequireAuthToken(middleware.TrustedURL(HandleGetRenderCSV(browser)), serverConfig.AuthTokens...))
+	mux.Handle("GET /render", middleware.RequireAuthToken(middleware.TrustedURL(limiter.Limit(HandleGetRender(browser))), serverConfig.AuthTokens...))
+	mux.Handle("GET /render/csv", middleware.RequireAuthToken(middleware.TrustedURL(limiter.Limit(HandleGetRenderCSV(browser))), serverConfig.AuthTokens...))
 	mux.Handle("GET /render/version", HandleGetRenderVersion(versions))
 
 	handler := middleware.RequestMetrics(mux)

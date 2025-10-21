@@ -46,6 +46,9 @@ services:
     environment:
       TRACING_ENDPOINT: http://tempo:4318/v1/traces
       LOG_LEVEL: debug
+    command:
+      - server
+      - --rate-limit.max-available=209715200
     ports:
       - 8081:8081
     depends_on:

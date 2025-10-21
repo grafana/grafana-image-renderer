@@ -10,6 +10,7 @@ require (
 	github.com/docker/go-connections v0.6.0
 	github.com/gen2brain/go-fitz v1.24.15
 	github.com/go-jose/go-jose/v4 v4.1.2
+	github.com/pbnjay/memory v0.0.0-20210728143218-7b4eea64cf58
 	github.com/prometheus/client_golang v1.23.0
 	github.com/shirou/gopsutil/v4 v4.25.7
 	github.com/stretchr/testify v1.11.1

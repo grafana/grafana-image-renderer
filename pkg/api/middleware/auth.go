@@ -8,7 +8,7 @@ import (
 )
 
 var MetricAuthenticatedRequestAttempt = prometheus.NewCounterVec(prometheus.CounterOpts{
-	Name: "http_authenticated_request_attempt",
+	Name: "http_authenticated_request_attempts_total",
 	Help: "Counts the attempts of authenticated requests",
 }, []string{"result"})
 

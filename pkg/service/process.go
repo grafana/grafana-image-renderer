@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/grafana/grafana-image-renderer/pkg/config"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/shirou/gopsutil/v4/process"
 )
@@ -60,6 +61,8 @@ const (
 )
 
 type ProcessStatService struct {
+	cfg config.RateLimitConfig
+
 	mu sync.Mutex
 	// MaxMemory is the number of bytes a Chromium process uses at absolute max.
 	// This is the max of all processes.
@@ -71,8 +74,9 @@ type ProcessStatService struct {
 	log *slog.Logger
 }
 
-func NewProcessStatService() *ProcessStatService {
+func NewProcessStatService(cfg config.RateLimitConfig) *ProcessStatService {
 	return &ProcessStatService{
+		cfg: cfg,
 		log: slog.With("service", "process_stat"),
 	}
 }
@@ -99,8 +103,7 @@ func (p *ProcessStatService) TrackProcess(ctx context.Context, pid int32) {
 			if p.PeakMemory == 0 {
 				p.PeakMemory = int64(peakMemory)
 			} else {
-				const decay = 5
-				p.PeakMemory = (p.PeakMemory*(decay-1) + int64(peakMemory)) / decay
+				p.PeakMemory = (p.PeakMemory*(p.cfg.TrackerDecay-1) + int64(peakMemory)) / p.cfg.TrackerDecay
 			}
 			p.MaxMemory = max(p.MaxMemory, int64(peakMemory))
 
@@ -113,7 +116,7 @@ func (p *ProcessStatService) TrackProcess(ctx context.Context, pid int32) {
 			select {
 			case <-ctx.Done():
 				return
-			case <-time.After(500 * time.Millisecond):
+			case <-time.After(p.cfg.TrackerInterval):
 			}
 
 			mem, err := proc.MemoryInfoWithContext(ctx)
