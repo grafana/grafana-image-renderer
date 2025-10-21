@@ -52,6 +52,30 @@ services:
       - tempo
       - prometheus
 
+  alloy:
+    image: grafana/alloy:latest
+    privileged: true
+    command:
+      - run
+      - --storage.path=/var/lib/alloy/data
+      - /etc/alloy/config.alloy
+    volumes:
+      - ./config.alloy:/etc/alloy/config.alloy:ro
+      - alloy-data:/var/lib/alloy/data
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/lib/docker/:/var/lib/docker/:ro
+    depends_on:
+      - loki
+    restart: unless-stopped
+
+  loki:
+    image: grafana/loki:latest
+    command:
+      - -config.file=/etc/loki/local-config.yaml
+    volumes:
+      - ./loki.yaml:/etc/loki/local-config.yaml:ro
+    restart: unless-stopped
+
   grafana:
     image: grafana/grafana-enterprise:nightly
     ports:
@@ -74,3 +98,4 @@ volumes:
   grafana-data:
   prometheus-data:
   tempo-data:
+  alloy-data:
