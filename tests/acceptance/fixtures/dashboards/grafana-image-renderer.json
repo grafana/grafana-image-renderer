@@ -1303,7 +1303,7 @@
           },
           "direction": "backward",
           "editorMode": "code",
-          "expr": "{container_name=~\"go-build-renderer-.*\"} != `uri=/healthz` != `uri=/metrics` != `uri=/ ` | logfmt",
+          "expr": "{container_name=~\"go-build-renderer-.*\"} != `level=DEBUG` != `uri=/healthz` != `uri=/metrics` != `uri=/ ` | logfmt",
           "queryType": "range",
           "refId": "A"
         }
@@ -1369,5 +1369,5 @@
   "timezone": "browser",
   "title": "grafana-image-renderer",
   "uid": "grafana-image-renderer",
-  "version": 8
+  "version": 9
 }
