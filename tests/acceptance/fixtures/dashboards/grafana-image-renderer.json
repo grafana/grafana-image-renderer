@@ -477,7 +477,7 @@
           "layout": "auto"
         },
         "tooltip": {
-          "mode": "single",
+          "mode": "multi",
           "showColorScale": false,
           "yHistogram": false
         },
@@ -559,7 +559,7 @@
           "layout": "auto"
         },
         "tooltip": {
-          "mode": "single",
+          "mode": "multi",
           "showColorScale": false,
           "yHistogram": false
         },
@@ -741,7 +741,7 @@
           "layout": "auto"
         },
         "tooltip": {
-          "mode": "single",
+          "mode": "multi",
           "showColorScale": false,
           "yHistogram": false
         },
@@ -823,7 +823,7 @@
           "layout": "auto"
         },
         "tooltip": {
-          "mode": "single",
+          "mode": "multi",
           "showColorScale": false,
           "yHistogram": false
         },
@@ -952,7 +952,7 @@
         },
         "tooltip": {
           "hideZeros": false,
-          "mode": "single",
+          "mode": "multi",
           "sort": "none"
         }
       },
@@ -1052,7 +1052,7 @@
         },
         "tooltip": {
           "hideZeros": false,
-          "mode": "single",
+          "mode": "multi",
           "sort": "none"
         }
       },
@@ -1166,7 +1166,7 @@
         },
         "tooltip": {
           "hideZeros": false,
-          "mode": "single",
+          "mode": "multi",
           "sort": "none"
         }
       },
@@ -1222,6 +1222,94 @@
       ],
       "title": "Chromium memory usage over time",
       "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "${loki}"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 16,
+        "w": 24,
+        "x": 0,
+        "y": 54
+      },
+      "id": 14,
+      "options": {
+        "dedupStrategy": "none",
+        "enableInfiniteScrolling": true,
+        "enableLogDetails": true,
+        "prettifyLogMessage": false,
+        "showCommonLabels": false,
+        "showLabels": false,
+        "showTime": false,
+        "sortOrder": "Descending",
+        "wrapLogMessage": false
+      },
+      "pluginVersion": "12.2.0-17567790421",
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "${loki}"
+          },
+          "direction": "backward",
+          "editorMode": "builder",
+          "expr": "{container_name=~\"go-build-renderer-.*\"} | logfmt",
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "title": "grafana-image-renderer logs",
+      "type": "logs"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "${loki}"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 16,
+        "w": 24,
+        "x": 0,
+        "y": 70
+      },
+      "id": 15,
+      "options": {
+        "dedupStrategy": "none",
+        "enableInfiniteScrolling": true,
+        "enableLogDetails": true,
+        "prettifyLogMessage": false,
+        "showCommonLabels": false,
+        "showLabels": false,
+        "showTime": false,
+        "sortOrder": "Descending",
+        "wrapLogMessage": false
+      },
+      "pluginVersion": "12.2.0-17567790421",
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "${loki}"
+          },
+          "direction": "backward",
+          "editorMode": "code",
+          "expr": "{container_name=~\"go-build-renderer-.*\"} != `uri=/healthz` != `uri=/metrics` != `uri=/ ` | logfmt",
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "title": "grafana-image-renderer interesting logs",
+      "type": "logs"
     }
   ],
   "preload": false,
@@ -1256,6 +1344,20 @@
         "refresh": 1,
         "regex": "",
         "type": "datasource"
+      },
+      {
+        "current": {
+          "text": "Loki",
+          "value": "loki"
+        },
+        "description": "",
+        "label": "Loki",
+        "name": "loki",
+        "options": [],
+        "query": "loki",
+        "refresh": 1,
+        "regex": "",
+        "type": "datasource"
       }
     ]
   },
@@ -1267,5 +1369,5 @@
   "timezone": "browser",
   "title": "grafana-image-renderer",
   "uid": "grafana-image-renderer",
-  "version": 5
+  "version": 8
 }
