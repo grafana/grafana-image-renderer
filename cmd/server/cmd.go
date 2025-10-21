@@ -19,7 +19,7 @@ func NewCmd() *cli.Command {
 	return &cli.Command{
 		Name:   "server",
 		Usage:  "Run the server part of the service.",
-		Flags:  slices.Concat(config.ServerFlags(), config.TracingFlags(), config.BrowserFlags()),
+		Flags:  slices.Concat(config.ServerFlags(), config.TracingFlags(), config.BrowserFlags(), config.RateLimitFlags()),
 		Action: run,
 	}
 }
@@ -37,6 +37,10 @@ func run(ctx context.Context, c *cli.Command) error {
 	if err != nil {
 		return fmt.Errorf("failed to parse tracing config: %w", err)
 	}
+	rateLimitConfig, err := config.RateLimitConfigFromCommand(c)
+	if err != nil {
+		return fmt.Errorf("failed to parse process tracker config: %w", err)
+	}
 	tracerProvider, err := traces.NewTracerProvider(ctx, tracingConfig)
 	if err != nil {
 		return fmt.Errorf("failed to set up tracer: %w", err)
@@ -47,10 +51,11 @@ func run(ctx context.Context, c *cli.Command) error {
 		otel.SetTracerProvider(tracerProvider)
 		otel.SetTextMapPropagator(propagation.TraceContext{})
 	}
-	browser := service.NewBrowserService(browserConfig)
+	processStatService := service.NewProcessStatService(rateLimitConfig)
+	browser := service.NewBrowserService(browserConfig, processStatService)
 	versions := service.NewVersionService()
 	metrics := metrics.NewRegistry()
-	handler, err := api.NewHandler(metrics, serverConfig, browser, versions)
+	handler, err := api.NewHandler(metrics, serverConfig, rateLimitConfig, processStatService, browser, versions)
 	if err != nil {
 		return fmt.Errorf("failed to create API handler: %w", err)
 	}
