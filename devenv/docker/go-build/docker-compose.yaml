@@ -48,7 +48,8 @@ services:
       LOG_LEVEL: debug
     command:
       - server
-      - --rate-limit.max-available=209715200
+      # 1 GiB
+      - --rate-limit.max-available=1073741824
     ports:
       - 8081:8081
     depends_on:
