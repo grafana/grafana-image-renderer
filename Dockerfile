@@ -1,4 +1,4 @@
-FROM node:22-trixie AS build
+FROM node:22-trixie@sha256:093113ea41201970b0581e6d16da633a35bca5c71d7f9c2ef2883f56f8c7483b AS build
 
 WORKDIR /src
 COPY . ./
@@ -7,7 +7,7 @@ RUN yarn install --pure-lockfile
 RUN yarn run build
 RUN rm -rf node_modules/ && yarn install --pure-lockfile --production
 
-FROM node:22-trixie AS output_image
+FROM node:22-trixie@sha256:093113ea41201970b0581e6d16da633a35bca5c71d7f9c2ef2883f56f8c7483b AS output_image
 
 LABEL maintainer="Grafana team <hello@grafana.com>"
 LABEL org.opencontainers.image.source="https://github.com/grafana/grafana-image-renderer/tree/master/Dockerfile"
