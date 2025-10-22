@@ -1,3 +1,7 @@
+## 4.1.1 (2025-10-22)
+
+This release does not change the current Grafana Image Renderer, it is only issued to release new tags of the `-golang` variants for further testing.
+
 ## 4.1.0 (2025-10-15)
 
 - Docker: Update to Debian 13, [#812](https://github.com/grafana/grafana-image-renderer/pull/812), [Proximyst](https://github.com/Proximyst)
