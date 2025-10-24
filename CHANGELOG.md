@@ -1,3 +1,7 @@
+## 4.1.2 (2025-10-24)
+
+This release does not change the current Grafana Image Renderer, it is only issued to release new tags of the `-golang` variants for further testing.
+
 ## 4.1.1 (2025-10-22)
 
 This release does not change the current Grafana Image Renderer, it is only issued to release new tags of the `-golang` variants for further testing.
