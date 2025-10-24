@@ -114,7 +114,7 @@ func TestRenderingGrafana(t *testing.T) {
 			contentDisposition := resp.Header.Get("Content-Disposition")
 			_, params, err := mime.ParseMediaType(contentDisposition)
 			require.NoError(t, err, "could not parse Content-Disposition header")
-			require.NotEmpty(t, params["filename"], "no filename in Content-Disposition header")
+			require.Regexp(t, `^Prometheus_ 1-data-.*\.csv$`, params["filename"])
 
 			body := ReadBody(t, resp.Body)
 			const fixture = "render-prometheus-defaults.csv"

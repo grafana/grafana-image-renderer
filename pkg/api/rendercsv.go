@@ -5,7 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"mime"
 	"net/http"
+	"path"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -79,7 +82,7 @@ func HandleGetRenderCSV(browser *service.BrowserService) http.Handler {
 			attribute.String("renderKeyDomain", domain))
 
 		start := time.Now()
-		contents, err := browser.RenderCSV(ctx, url, renderKey, domain, acceptLanguage)
+		contents, fileName, err := browser.RenderCSV(ctx, url, renderKey, domain, acceptLanguage)
 		if err != nil {
 			MetricRenderCSVDuration.WithLabelValues("error").Observe(time.Since(start).Seconds())
 			span.SetStatus(codes.Error, "csv rendering failed")
@@ -97,8 +100,24 @@ func HandleGetRenderCSV(browser *service.BrowserService) http.Handler {
 		MetricRenderCSVDuration.WithLabelValues("success").Observe(time.Since(start).Seconds())
 		span.SetStatus(codes.Ok, "csv rendered successfully")
 
+		requestedFilePath := r.URL.Query().Get("filePath")
+		requestedFilePath = filepath.ToSlash(requestedFilePath)
+		requestedFilePath = strings.TrimPrefix(requestedFilePath, "/")
+		requestedFilePath = path.Base(requestedFilePath)
+		if requestedFilePath == "." || requestedFilePath == "/" || requestedFilePath == "" {
+			requestedFilePath = fileName
+		}
+		if requestedFilePath == "" {
+			requestedFilePath = "data.csv"
+		}
+		if !strings.HasSuffix(strings.ToLower(requestedFilePath), ".csv") {
+			requestedFilePath += ".csv"
+		}
+
 		w.Header().Set("Content-Type", "text/csv")
-		w.Header().Set("Content-Disposition", `attachment; filename="data.csv"`)
+		w.Header().Set("Content-Disposition", mime.FormatMediaType("attachment", map[string]string{
+			"filename": requestedFilePath,
+		}))
 		_, _ = w.Write(contents)
 	})
 }
