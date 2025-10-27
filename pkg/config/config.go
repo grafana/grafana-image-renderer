@@ -10,7 +10,6 @@ import (
 	"time"
 	_ "time/tzdata" // include fallback tzdata if none exist on the file system
 
-	"github.com/chromedp/cdproto/network"
 	"github.com/urfave/cli/v3"
 )
 
@@ -288,6 +287,14 @@ func TracingConfigFromCommand(c *cli.Command) (TracingConfig, error) {
 	}, nil
 }
 
+type Cookie struct {
+	Name     string
+	Value    string
+	Domain   string
+	HTTPOnly bool
+	Secure   bool
+}
+
 type BrowserConfig struct {
 	// Path is the path to the browser binary.
 	// This is resolved against PATH.
@@ -304,10 +311,10 @@ type BrowserConfig struct {
 	TimeZone *time.Location // DeepClone: can be copied, because the value should be immutable
 	// Cookies are injected into the browser for every request.
 	// The browser will only send cookies to the domains they are valid for, in the situations they are valid to share.
-	Cookies []*network.SetCookieParams // DeepClone: values can't just be copied
+	Cookies []Cookie
 	// Headers are set on every request the browser makes, not only to a specific domain.
 	// This is useful to pass around trace IDs and similar, but should be avoided for sensitive data (e.g. authentication).
-	Headers network.Headers // DeepClone: can't just be copied (is a map)
+	Headers map[string]string // DeepClone: can't just be copied (is a map)
 	// TimeBetweenScrolls changes how long we wait for a scroll event to complete before starting a new one.
 	//
 	// We will scroll the entire web-page by the entire viewport over and over until we have seen everything.
@@ -347,11 +354,7 @@ type BrowserConfig struct {
 
 func (c BrowserConfig) DeepClone() BrowserConfig {
 	cpy := c
-	for i, cookie := range c.Cookies {
-		cloned := *cookie
-		cpy.Cookies[i] = &cloned
-	}
-	cpy.Headers = network.Headers(maps.Clone(c.Headers))
+	cpy.Headers = maps.Clone(c.Headers)
 	return cpy
 }
 
@@ -541,9 +544,9 @@ func BrowserConfigFromCommand(c *cli.Command) (BrowserConfig, error) {
 		}
 	}
 
-	var headers network.Headers
+	var headers map[string]string
 	if hdrs := c.StringSlice("browser.header"); len(hdrs) > 0 {
-		headers = make(network.Headers, len(hdrs))
+		headers = make(map[string]string, len(hdrs))
 		for _, kv := range hdrs {
 			h, v, _ := strings.Cut(kv, "=")
 			headers[h] = v
