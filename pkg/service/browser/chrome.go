@@ -69,8 +69,7 @@ func WithChromium(ctx context.Context, cfg config.BrowserConfig, do ...Action) e
 						attribute.String("requestID", string(e.RequestID)),
 						attribute.String("url", e.Request.URL),
 						attribute.String("method", e.Request.Method),
-						attribute.Int("headers", len(e.Request.Headers)),
-					))
+						attribute.Int("headers", len(e.Request.Headers))))
 				defer span.End()
 				cdpCtx := chromedp.FromContext(requestsCtx)
 				ctx = cdp.WithExecutor(ctx, cdpCtx.Target)
@@ -87,12 +86,32 @@ func WithChromium(ctx context.Context, cfg config.BrowserConfig, do ...Action) e
 					attribute.String("requestID", string(e.RequestID)),
 					attribute.String("url", e.Request.URL),
 					attribute.String("method", e.Request.Method),
-					attribute.String("type", string(e.Type)),
-				))
+					attribute.String("type", string(e.Type))))
 
 			currentRequestsLock.Lock() // lock at the end, so that we minimise how long we hold it
 			currentRequests[e.RequestID] = span
 			currentRequestsLock.Unlock()
+
+		case *network.EventLoadingFailed:
+			currentRequestsLock.Lock()
+			span, ok := currentRequests[e.RequestID]
+			delete(currentRequests, e.RequestID) // no point keeping it around anymore.
+			currentRequestsLock.Unlock()         // we want to minimise lock time
+			if !ok {
+				return
+			}
+			span.SetAttributes(
+				attribute.String("errorText", e.ErrorText),
+				attribute.Bool("canceled", e.Canceled),
+				attribute.String("type", e.Type.String()),
+				attribute.String("blockedReason", e.BlockedReason.String()))
+			if e.CorsErrorStatus != nil {
+				span.SetAttributes(
+					attribute.String("corsError", e.CorsErrorStatus.CorsError.String()),
+					attribute.String("corsParameter", e.CorsErrorStatus.FailedParameter))
+			}
+			span.SetStatus(codes.Error, fmt.Sprintf("loading failed: %s", e.ErrorText))
+			span.End(trace.WithTimestamp(e.Timestamp.Time()))
 
 		case *network.EventResponseReceived:
 			currentRequestsLock.Lock()
@@ -110,8 +129,7 @@ func WithChromium(ctx context.Context, cfg config.BrowserConfig, do ...Action) e
 				attribute.Int("status", int(e.Response.Status)),
 				attribute.String("statusText", statusText),
 				attribute.String("mimeType", e.Response.MimeType),
-				attribute.String("protocol", e.Response.Protocol),
-			)
+				attribute.String("protocol", e.Response.Protocol))
 			if e.Response.Status >= 400 {
 				span.SetStatus(codes.Error, fmt.Sprintf("%d %s", e.Response.Status, statusText))
 			} else {
@@ -141,9 +159,21 @@ func WithChromium(ctx context.Context, cfg config.BrowserConfig, do ...Action) e
 			span.SetStatus(codes.Ok, "browser functions executed successfully")
 			return nil
 		})); err != nil {
+		currentRequestsLock.Lock()
+		defer currentRequestsLock.Unlock()
+		for _, span := range currentRequests {
+			span.SetStatus(codes.Error, "request aborted due to browser failure")
+			span.End()
+		}
 		return fmt.Errorf("chromedp run failed: %w", err)
 	}
 
+	currentRequestsLock.Lock()
+	defer currentRequestsLock.Unlock()
+	for _, span := range currentRequests {
+		span.SetStatus(codes.Error, "request aborted due to browser close")
+		span.End()
+	}
 	return nil
 }
 
