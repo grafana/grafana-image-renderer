@@ -8,27 +8,15 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"maps"
-	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"slices"
 	"strings"
-	"sync"
-	"sync/atomic"
 	"time"
 
-	"github.com/chromedp/cdproto/browser"
-	"github.com/chromedp/cdproto/cdp"
-	"github.com/chromedp/cdproto/emulation"
-	"github.com/chromedp/cdproto/fetch"
-	"github.com/chromedp/cdproto/network"
-	"github.com/chromedp/cdproto/page"
-	"github.com/chromedp/chromedp"
 	"github.com/grafana/grafana-image-renderer/pkg/config"
+	"github.com/grafana/grafana-image-renderer/pkg/service/browser"
 	"github.com/prometheus/client_golang/prometheus"
-	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
@@ -125,7 +113,7 @@ func WithTimeZone(loc *time.Location) RenderingOption {
 // WithCookie adds a new cookie to the browser's context.
 func WithCookie(name, value, domain string) RenderingOption {
 	return func(cfg config.BrowserConfig) (config.BrowserConfig, error) {
-		cfg.Cookies = append(cfg.Cookies, &network.SetCookieParams{
+		cfg.Cookies = append(cfg.Cookies, config.Cookie{
 			Name:   name,
 			Value:  value,
 			Domain: domain,
@@ -144,7 +132,7 @@ func WithHeader(name, value string) RenderingOption {
 			return config.BrowserConfig{}, fmt.Errorf("%w: header name was empty", ErrInvalidBrowserOption)
 		}
 		if cfg.Headers == nil {
-			cfg.Headers = make(network.Headers)
+			cfg.Headers = make(map[string]string)
 		}
 		cfg.Headers[name] = value
 		return cfg, nil
@@ -222,45 +210,25 @@ func (s *BrowserService) Render(ctx context.Context, url string, printer Printer
 	}
 	span.AddEvent("options applied")
 
-	allocatorOptions, err := s.createAllocatorOptions(cfg)
-	if err != nil {
-		return nil, "text/plain", fmt.Errorf("failed to create allocator options: %w", err)
-	}
-	allocatorCtx, cancelAllocator := chromedp.NewExecAllocator(ctx, allocatorOptions...)
-	defer cancelAllocator()
-	browserCtx, cancelBrowser := chromedp.NewContext(allocatorCtx, browserLoggers(ctx, s.log))
-	defer cancelBrowser()
-	span.AddEvent("browser allocated")
-
-	s.handleNetworkEvents(browserCtx)
-
-	orientation := chromedp.EmulatePortrait
-	if cfg.Landscape {
-		orientation = chromedp.EmulateLandscape
-	}
-
 	fileChan := make(chan []byte, 1) // buffered: we don't want the browser to stick around while we try to export this value.
-	actions := []chromedp.Action{
-		observingAction("trackProcess", trackProcess(browserCtx, s.processes)),
-		observingAction("network.Enable", network.Enable()), // required by waitForReady
-		observingAction("fetch.Enable", fetch.Enable()),     // required by handleNetworkEvents
-		observingAction("SetPageScaleFactor", emulation.SetPageScaleFactor(cfg.PageScaleFactor)),
-		observingAction("EmulateViewport", chromedp.EmulateViewport(int64(cfg.MinWidth), int64(cfg.MinHeight), orientation)),
-		observingAction("setHeaders", setHeaders(browserCtx, cfg.Headers)),
-		observingAction("setCookies", setCookies(cfg.Cookies)),
-		observingAction("Navigate", chromedp.Navigate(url)),
-		observingAction("WaitReady(body)", chromedp.WaitReady("body", chromedp.ByQuery)), // wait for a body to exist; this is when the page has started to actually render
-		observingAction("scrollForElements", scrollForElements(cfg.TimeBetweenScrolls)),
-		observingAction("waitForDuration", waitForDuration(cfg.ReadinessPriorWait)),
-		observingAction("waitForReady", waitForReady(browserCtx, cfg)),
-		observingAction("printer.prepare", printer.prepare(cfg)),
-		observingAction("printer.action", printer.action(fileChan, cfg)),
-	}
-	span.AddEvent("actions created")
+	defer close(fileChan)
 	MetricBrowserInstancesActive.Inc()
 	defer MetricBrowserInstancesActive.Dec()
-	if err := chromedp.Run(browserCtx, actions...); err != nil {
-		return nil, "text/plain", fmt.Errorf("failed to run browser: %w", err)
+	err := browser.WithChromium(ctx, cfg,
+		observingAction("trackProcess", trackProcess(s.processes)),
+		observingAction("setPageScaleFactor", setPageScaleFactor(cfg.PageScaleFactor)),
+		observingAction("setViewPort", setViewPort(cfg.MinWidth, cfg.MinHeight, cfg.Landscape)),
+		observingAction("setHeaders", setHeaders(cfg.Headers)),
+		observingAction("setCookies", setCookies(cfg.Cookies)),
+		observingAction("navigate", navigate(url)),
+		observingAction("scrollForElements", scrollForElements(cfg.TimeBetweenScrolls)),
+		observingAction("waitForDuration", waitForDuration(cfg.ReadinessPriorWait)),
+		observingAction("waitForReady", waitForReady(cfg)),
+		observingAction("printer.prepare", printer.prepare(cfg)),
+		observingAction("printer.print", printer.action(fileChan, cfg)),
+	)
+	if err != nil {
+		return nil, "text/plain", fmt.Errorf("browser failure: %w", err)
 	}
 	span.AddEvent("actions completed")
 
@@ -289,16 +257,6 @@ func (s *BrowserService) RenderCSV(ctx context.Context, url, renderKey, domain, 
 		return nil, "", fmt.Errorf("url must not be empty")
 	}
 
-	allocatorOptions, err := s.createAllocatorOptions(s.cfg)
-	if err != nil {
-		return nil, "", fmt.Errorf("failed to create allocator options: %w", err)
-	}
-	allocatorCtx, cancelAllocator := chromedp.NewExecAllocator(ctx, allocatorOptions...)
-	defer cancelAllocator()
-	browserCtx, cancelBrowser := chromedp.NewContext(allocatorCtx, browserLoggers(ctx, s.log))
-	defer cancelBrowser()
-	span.AddEvent("browser allocated")
-
 	tmpDir, err := os.MkdirTemp("", "gir-csv-*")
 	if err != nil {
 		return nil, "", fmt.Errorf("failed to create temporary directory: %w", err)
@@ -311,191 +269,47 @@ func (s *BrowserService) RenderCSV(ctx context.Context, url, renderKey, domain, 
 	}()
 	span.AddEvent("temporary directory created", trace.WithAttributes(attribute.String("path", tmpDir)))
 
-	var headers network.Headers
+	var headers map[string]string
 	if acceptLanguage != "" {
-		headers = network.Headers{
+		headers = map[string]string{
 			"Accept-Language": acceptLanguage,
 		}
 	}
 
-	s.handleNetworkEvents(browserCtx)
-
-	actions := []chromedp.Action{
-		observingAction("trackProcess", trackProcess(browserCtx, s.processes)),
-		observingAction("network.Enable", network.Enable()),
-		observingAction("setHeaders", setHeaders(browserCtx, headers)),
-		observingAction("setCookies", setCookies([]*network.SetCookieParams{
+	csvPath := make(chan string, 1)
+	defer close(csvPath)
+	err = browser.WithChromium(ctx, s.cfg,
+		observingAction("trackProcess", trackProcess(s.processes)),
+		observingAction("setHeaders", setHeaders(headers)),
+		observingAction("setCookies", setCookies([]config.Cookie{
 			{
 				Name:   "renderKey",
 				Value:  renderKey,
 				Domain: domain,
 			},
 		})),
-		observingAction("SetDownloadBehavior", browser.SetDownloadBehavior(browser.SetDownloadBehaviorBehaviorAllow).WithDownloadPath(tmpDir)),
-		observingAction("Navigate", chromedp.Navigate(url)),
-	}
-	MetricBrowserInstancesActive.Inc()
-	defer MetricBrowserInstancesActive.Dec()
-	if err := chromedp.Run(browserCtx, actions...); err != nil {
-		return nil, "", fmt.Errorf("failed to run browser: %w", err)
+		observingAction("setDownloadsDir", setDownloadsDir(tmpDir)),
+		observingAction("navigate", navigate(url)),
+		observingAction("awaitDownloadedCSV", awaitDownloadedCSV(tmpDir, csvPath)))
+	if err != nil {
+		return nil, "", fmt.Errorf("browser failure: %w", err)
 	}
 	span.AddEvent("actions completed")
 
-	// Wait for the file to be downloaded.
-	var entries []os.DirEntry
-	for {
-		if err := ctx.Err(); err != nil {
-			return nil, "", err
+	select {
+	case fp := <-csvPath:
+		fileContents, err := os.ReadFile(fp)
+		if err != nil {
+			return nil, "", fmt.Errorf("failed to read temporary file %q: %w", fp, err)
 		}
 
-		entries, err = os.ReadDir(tmpDir)
-		if err == nil && len(entries) > 0 {
-			break // file exists now
-		}
+		MetricBrowserRenderCSVDuration.Observe(time.Since(start).Seconds())
+		return fileContents, filepath.Base(fp), nil
 
-		select {
-		case <-ctx.Done():
-			return nil, "", ctx.Err()
-		case <-time.After(100 * time.Millisecond):
-			// try again
-		}
+	default:
+		// invariant violated: we should have gotten a value from the awaitDownloadedCSV action, OR returned an error from WithChromium.
+		return nil, "", fmt.Errorf("no CSV file was downloaded")
 	}
-	span.AddEvent("downloaded file located", trace.WithAttributes(attribute.String("path", filepath.Join(tmpDir, entries[0].Name()))))
-
-	fileContents, err := os.ReadFile(filepath.Join(tmpDir, entries[0].Name()))
-	if err != nil {
-		return nil, "", fmt.Errorf("failed to read temporary file: %w", err)
-	}
-
-	MetricBrowserRenderCSVDuration.Observe(time.Since(start).Seconds())
-	return fileContents, filepath.Base(entries[0].Name()), nil
-}
-
-func (s *BrowserService) createAllocatorOptions(cfg config.BrowserConfig) ([]chromedp.ExecAllocatorOption, error) {
-	opts := chromedp.DefaultExecAllocatorOptions[:]
-	opts = append(opts, chromedp.NoFirstRun, chromedp.NoDefaultBrowserCheck)
-	if !cfg.GPU {
-		opts = append(opts, chromedp.DisableGPU)
-	}
-	if !cfg.Sandbox {
-		opts = append(opts, chromedp.NoSandbox)
-	}
-	opts = append(opts, chromedp.ExecPath(cfg.Path))
-	opts = append(opts, chromedp.WindowSize(cfg.MinWidth, cfg.MinHeight))
-	opts = append(opts, chromedp.Env("TZ="+cfg.TimeZone.String()))
-	for _, arg := range cfg.Flags {
-		arg = strings.TrimPrefix(arg, "--")
-		key, value, hadEquals := strings.Cut(arg, "=")
-		if !hadEquals || value == "true" {
-			opts = append(opts, chromedp.Flag(key, true))
-		} else if value == "false" {
-			opts = append(opts, chromedp.Flag(key, false))
-		} else {
-			opts = append(opts, chromedp.Flag(key, value))
-		}
-	}
-
-	return opts, nil
-}
-
-func (s *BrowserService) handleNetworkEvents(browserCtx context.Context) {
-	requests := make(map[network.RequestID]trace.Span)
-	mu := &sync.Mutex{}
-	tracer := tracer(browserCtx)
-
-	chromedp.ListenTarget(browserCtx, func(ev any) {
-		// We MUST NOT issue new actions within this goroutine. Spawn a new one, ALWAYS.
-		// See the docs of ListenTarget for more.
-
-		switch e := ev.(type) {
-		case *fetch.EventRequestPaused:
-			go func() {
-				if sc := trace.SpanFromContext(browserCtx); sc != nil && sc.IsRecording() {
-					otel.GetTextMapPropagator().Inject(browserCtx, networkHeadersCarrier(e.Request.Headers))
-				}
-
-				hdrs := make([]*fetch.HeaderEntry, 0, len(e.Request.Headers))
-				for k, v := range e.Request.Headers {
-					hdrs = append(hdrs, &fetch.HeaderEntry{Name: k, Value: fmt.Sprintf("%v", v)})
-				}
-
-				ctx, span := tracer.Start(browserCtx, "fetch.ContinueRequest",
-					trace.WithAttributes(
-						attribute.String("requestID", string(e.RequestID)),
-						attribute.String("url", e.Request.URL),
-						attribute.String("method", e.Request.Method),
-						attribute.Int("headers", len(e.Request.Headers)),
-					))
-				defer span.End()
-				cdpCtx := chromedp.FromContext(browserCtx)
-				ctx = cdp.WithExecutor(ctx, cdpCtx.Target)
-
-				if err := fetch.ContinueRequest(e.RequestID).WithHeaders(hdrs).Do(ctx); err != nil {
-					span.SetStatus(codes.Error, err.Error())
-					slog.DebugContext(ctx, "failed to continue request", "requestID", e.RequestID, "error", err)
-				}
-			}()
-
-		case *network.EventRequestWillBeSent:
-			mu.Lock()
-			defer mu.Unlock()
-
-			_, span := tracer.Start(browserCtx, "Browser HTTP request",
-				trace.WithTimestamp(e.Timestamp.Time()),
-				trace.WithAttributes(
-					attribute.String("requestID", string(e.RequestID)),
-					attribute.String("url", e.Request.URL),
-					attribute.String("method", e.Request.Method),
-					attribute.String("type", string(e.Type)),
-				))
-			requests[e.RequestID] = span
-
-		case *network.EventResponseReceived:
-			mu.Lock()
-			defer mu.Unlock()
-
-			span, ok := requests[e.RequestID]
-			if !ok {
-				return
-			}
-			statusText := e.Response.StatusText
-			if statusText == "" {
-				statusText = http.StatusText(int(e.Response.Status))
-			}
-			span.SetAttributes(
-				attribute.Int("status", int(e.Response.Status)),
-				attribute.String("statusText", statusText),
-				attribute.String("mimeType", e.Response.MimeType),
-				attribute.String("protocol", e.Response.Protocol),
-			)
-			if e.Response.Status >= 400 {
-				span.SetStatus(codes.Error, fmt.Sprintf("%d %s", e.Response.Status, statusText))
-			} else {
-				span.SetStatus(codes.Ok, fmt.Sprintf("%d %s", e.Response.Status, statusText))
-			}
-			span.End(trace.WithTimestamp(e.Timestamp.Time()))
-			delete(requests, e.RequestID) // no point keeping it around anymore.
-		}
-	})
-}
-
-func browserLoggers(ctx context.Context, log *slog.Logger) chromedp.ContextOption {
-	return chromedp.WithBrowserOption(
-		chromedp.WithBrowserLogf(func(s string, a ...any) {
-			if log.Enabled(ctx, slog.LevelInfo) { // defer the Sprintf if possible
-				log.InfoContext(ctx, "browser called logf", "message", fmt.Sprintf(s, a...))
-			}
-		}),
-		chromedp.WithBrowserDebugf(func(s string, a ...any) {
-			if log.Enabled(ctx, slog.LevelDebug) { // defer the Sprintf if possible
-				log.DebugContext(ctx, "browser called debugf", "message", fmt.Sprintf(s, a...))
-			}
-		}),
-		chromedp.WithBrowserErrorf(func(s string, a ...any) {
-			// Assume that errors are always logged; this is fair in a production env.
-			log.ErrorContext(ctx, "browser called errorf", "message", fmt.Sprintf(s, a...))
-		}),
-	)
 }
 
 var (
@@ -584,8 +398,8 @@ func (p PaperSize) FormatInches() (width float64, height float64, err error) {
 }
 
 type Printer interface {
-	prepare(cfg config.BrowserConfig) chromedp.Action
-	action(output chan []byte, cfg config.BrowserConfig) chromedp.Action
+	prepare(cfg config.BrowserConfig) browser.Action
+	action(output chan<- []byte, cfg config.BrowserConfig) browser.Action
 	contentType() string
 }
 
@@ -595,27 +409,16 @@ type pdfPrinter struct {
 	pageRanges      string // empty string is all pages
 }
 
-func (p *pdfPrinter) prepare(_ config.BrowserConfig) chromedp.Action {
-	return chromedp.ActionFunc(func(context.Context) error {
+func (p *pdfPrinter) prepare(_ config.BrowserConfig) browser.Action {
+	return func(context.Context, browser.Browser) error {
 		return nil
-	})
+	}
 }
 
-func (p *pdfPrinter) action(dst chan []byte, cfg config.BrowserConfig) chromedp.Action {
-	return chromedp.ActionFunc(func(ctx context.Context) error {
-		tracer := tracer(ctx)
-		ctx, span := tracer.Start(ctx, "pdfPrinter.action",
-			trace.WithAttributes(
-				attribute.String("paperSize", string(p.paperSize)),
-				attribute.Bool("printBackground", p.printBackground),
-				attribute.Bool("landscape", cfg.Landscape),
-				attribute.Float64("pageScaleFactor", cfg.PageScaleFactor),
-			))
-		defer span.End()
-
+func (p *pdfPrinter) action(dst chan<- []byte, cfg config.BrowserConfig) browser.Action {
+	return func(ctx context.Context, b browser.Browser) error {
 		width, height, err := p.paperSize.FormatInches()
 		if err != nil {
-			span.SetStatus(codes.Error, err.Error())
 			return fmt.Errorf("failed to get paper size dimensions: %w", err)
 		}
 
@@ -624,27 +427,20 @@ func (p *pdfPrinter) action(dst chan []byte, cfg config.BrowserConfig) chromedp.
 			scale = 1.0 / cfg.PageScaleFactor
 		}
 
-		// We don't need the stream return value; we don't ask for a stream.
-		output, _, err := page.PrintToPDF().
-			WithPrintBackground(p.printBackground).
-			WithMarginBottom(0).
-			WithMarginLeft(0).
-			WithMarginRight(0).
-			WithMarginTop(0).
-			WithLandscape(cfg.Landscape).
-			WithPaperWidth(width).
-			WithPaperHeight(height).
-			WithScale(scale).
-			WithPageRanges(p.pageRanges).
-			Do(ctx)
+		data, err := b.PrintPDF(ctx, browser.PDFOptions{
+			IncludeBackground: p.printBackground,
+			Landscape:         cfg.Landscape,
+			PaperWidth:        width,
+			PaperHeight:       height,
+			Scale:             scale,
+			PageRanges:        p.pageRanges,
+		})
 		if err != nil {
-			span.SetStatus(codes.Error, err.Error())
-			return fmt.Errorf("failed to print to PDF: %w", err)
+			return fmt.Errorf("failed to print page to PDF: %w", err)
 		}
-		dst <- output
-		span.SetStatus(codes.Ok, "PDF printed successfully")
+		dst <- data
 		return nil
-	})
+	}
 }
 
 func (p *pdfPrinter) contentType() string {
@@ -695,8 +491,8 @@ type pngPrinter struct {
 	fullHeight bool
 }
 
-func (p *pngPrinter) prepare(cfg config.BrowserConfig) chromedp.Action {
-	return chromedp.ActionFunc(func(ctx context.Context) error {
+func (p *pngPrinter) prepare(cfg config.BrowserConfig) browser.Action {
+	return func(ctx context.Context, b browser.Browser) error {
 		if !p.fullHeight {
 			return nil
 		}
@@ -710,8 +506,7 @@ func (p *pngPrinter) prepare(cfg config.BrowserConfig) chromedp.Action {
 			))
 		defer span.End()
 
-		var scrollHeight int
-		err := chromedp.Evaluate("document.body.scrollHeight", &scrollHeight).Do(ctx)
+		scrollHeight, err := b.EvaluateToInt(ctx, "document.body.scrollHeight")
 		if err != nil {
 			span.SetStatus(codes.Error, "failed to get scroll height: "+err.Error())
 			return fmt.Errorf("failed to get scroll height: %w", err)
@@ -725,53 +520,37 @@ func (p *pngPrinter) prepare(cfg config.BrowserConfig) chromedp.Action {
 					attribute.Int("newHeight", scrollHeight),
 				))
 
-			orientation := chromedp.EmulatePortrait
+			orientation := browser.OrientationPortrait
 			if cfg.Landscape {
-				orientation = chromedp.EmulateLandscape
+				orientation = browser.OrientationLandscape
 			}
 
-			err = chromedp.EmulateViewport(int64(cfg.MinWidth), int64(scrollHeight), orientation).Do(ctx)
+			err := b.SetViewPort(ctx, cfg.MinWidth, scrollHeight, orientation)
 			if err != nil {
-				span.SetStatus(codes.Error, "failed to resize viewport: "+err.Error())
 				return fmt.Errorf("failed to resize viewport for full height: %w", err)
 			}
 
-			span.SetStatus(codes.Ok, "viewport resized successfully")
-			if err := waitForReady(ctx, cfg).Do(ctx); err != nil {
-				return fmt.Errorf("failed to wait for readiness after resizing viewport: %w", err)
+			start := time.Now()
+			if err := waitForStableDOM(cfg, start, ctx, b); err != nil {
+				return fmt.Errorf("failed to wait for stable DOM after resizing viewport: %w", err)
 			}
 		} else {
 			span.AddEvent("no viewport resize needed")
 		}
 
 		return nil
-	})
+	}
 }
 
-func (p *pngPrinter) action(dst chan []byte, cfg config.BrowserConfig) chromedp.Action {
-	return chromedp.ActionFunc(func(ctx context.Context) error {
-		tracer := tracer(ctx)
-		ctx, span := tracer.Start(ctx, "pngPrinter.action",
-			trace.WithAttributes(
-				attribute.Bool("fullHeight", p.fullHeight),
-			))
-		defer span.End()
-
-		output, err := page.CaptureScreenshot().
-			WithFormat(page.CaptureScreenshotFormatPng).
-			// We don't want to use this option: it doesn't take a full window screenshot,
-			//   rather it takes a screenshot including content that bleeds outside the viewport (e.g. something 110vh tall).
-			// Instead, we change the viewport height to match the content height.
-			WithCaptureBeyondViewport(false).
-			Do(ctx)
+func (p *pngPrinter) action(dst chan<- []byte, cfg config.BrowserConfig) browser.Action {
+	return func(ctx context.Context, b browser.Browser) error {
+		data, err := b.PrintPNG(ctx)
 		if err != nil {
-			span.SetStatus(codes.Error, err.Error())
-			return fmt.Errorf("failed to capture screenshot: %w", err)
+			return fmt.Errorf("failed to print page to PNG: %w", err)
 		}
-		dst <- output
-		span.SetStatus(codes.Ok, "screenshot captured")
+		dst <- data
 		return nil
-	})
+	}
 }
 
 func (p *pngPrinter) contentType() string {
@@ -797,54 +576,84 @@ func NewPNGPrinter(opts ...PNGPrinterOption) (*pngPrinter, error) {
 	return printer, nil
 }
 
-func setHeaders(browserCtx context.Context, headers network.Headers) chromedp.Action {
-	return chromedp.ActionFunc(func(ctx context.Context) error {
+func observingAction(name string, action browser.Action) browser.Action {
+	return func(ctx context.Context, browser browser.Browser) error {
 		tracer := tracer(ctx)
-		ctx, span := tracer.Start(ctx, "setHeaders",
-			trace.WithAttributes(attribute.Int("count", len(headers))))
+		ctx, span := tracer.Start(ctx, name)
 		defer span.End()
+		start := time.Now()
 
-		if len(headers) == 0 {
-			return nil
+		err := action(ctx, browser)
+		if err != nil {
+			span.SetStatus(codes.Error, err.Error())
+			span.RecordError(err)
+			return err
 		}
-		return network.SetExtraHTTPHeaders(headers).Do(ctx)
-	})
+		span.SetStatus(codes.Ok, "action completed successfully")
+
+		MetricBrowserActionDuration.WithLabelValues(name).Observe(time.Since(start).Seconds())
+		return nil
+	}
 }
 
-func setCookies(cookies []*network.SetCookieParams) chromedp.Action {
-	return chromedp.ActionFunc(func(ctx context.Context) error {
-		tracer := tracer(ctx)
-		ctx, span := tracer.Start(ctx, "setCookies",
-			trace.WithAttributes(attribute.Int("count", len(cookies))))
-		defer span.End()
+func trackProcess(processes *ProcessStatService) browser.Action {
+	return func(ctx context.Context, browser browser.Browser) error {
+		pid, err := browser.GetPID(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to get browser process PID: %w", err)
+		}
 
+		processes.TrackProcess(ctx, pid)
+		return nil
+	}
+}
+
+func setPageScaleFactor(factor float64) browser.Action {
+	return func(ctx context.Context, b browser.Browser) error {
+		return b.SetPageScale(ctx, factor)
+	}
+}
+
+func setViewPort(width, height int, landscape bool) browser.Action {
+	return func(ctx context.Context, b browser.Browser) error {
+		orientation := browser.OrientationPortrait
+		if landscape {
+			orientation = browser.OrientationLandscape
+		}
+		return b.SetViewPort(ctx, width, height, orientation)
+	}
+}
+
+func setHeaders(headers map[string]string) browser.Action {
+	return func(ctx context.Context, b browser.Browser) error {
+		return b.SetExtraHeaders(ctx, headers)
+	}
+}
+
+func setCookies(cookies []config.Cookie) browser.Action {
+	return func(ctx context.Context, b browser.Browser) error {
 		for _, cookie := range cookies {
-			ctx, span := tracer.Start(ctx, "setCookie",
-				trace.WithAttributes(
-					attribute.String("name", cookie.Name),
-					attribute.String("domain", cookie.Domain),
-					attribute.Bool("httpOnly", cookie.HTTPOnly),
-					attribute.Bool("secure", cookie.Secure)))
-			if err := cookie.Do(ctx); err != nil {
-				span.SetStatus(codes.Error, err.Error())
-				span.End()
+			if err := b.SetCookie(ctx, cookie); err != nil {
 				return fmt.Errorf("failed to set cookie %q: %w", cookie.Name, err)
 			}
-			span.SetStatus(codes.Ok, "cookie set successfully")
-			span.End()
 		}
 		return nil
-	})
+	}
 }
 
-func scrollForElements(timeBetweenScrolls time.Duration) chromedp.Action {
-	return chromedp.ActionFunc(func(ctx context.Context) error {
+func navigate(url string) browser.Action {
+	return func(ctx context.Context, b browser.Browser) error {
+		return b.NavigateAndWait(ctx, url)
+	}
+}
+
+func scrollForElements(timeBetweenScrolls time.Duration) browser.Action {
+	return func(ctx context.Context, b browser.Browser) error {
 		tracer := tracer(ctx)
 		ctx, span := tracer.Start(ctx, "scrollForElements")
 		defer span.End()
 
-		var scrolls int
-		err := chromedp.Evaluate(`Math.floor(document.body.scrollHeight / window.innerHeight)`, &scrolls).Do(ctx)
+		scrolls, err := b.EvaluateToInt(ctx, `Math.floor(document.body.scrollHeight / window.innerHeight)`)
 		if err != nil {
 			return fmt.Errorf("failed to calculate scrolls required: %w", err)
 		}
@@ -858,7 +667,7 @@ func scrollForElements(timeBetweenScrolls time.Duration) chromedp.Action {
 			return ctx.Err()
 		}
 		for range scrolls {
-			err := chromedp.Evaluate(`window.scrollBy(0, window.innerHeight, { behavior: 'instant' })`, nil).Do(ctx)
+			err := b.Evaluate(ctx, `window.scrollBy(0, window.innerHeight, { behavior: 'instant' })`)
 			span.AddEvent("scrolled one viewport")
 			if err != nil {
 				return fmt.Errorf("failed to scroll: %w", err)
@@ -872,69 +681,210 @@ func scrollForElements(timeBetweenScrolls time.Duration) chromedp.Action {
 			}
 		}
 
-		err = chromedp.Evaluate(`window.scrollTo(0, 0, { behavior: 'instant' })`, nil).Do(ctx)
+		err = b.Evaluate(ctx, `window.scrollTo(0, 0, { behavior: 'instant' })`)
 		if err != nil {
 			return fmt.Errorf("failed to scroll to top: %w", err)
 		}
 		span.AddEvent("scrolled to top")
-
 		return nil
-	})
+	}
 }
 
-func waitForReady(browserCtx context.Context, cfg config.BrowserConfig) chromedp.Action {
-	getRunningQueries := func(ctx context.Context) (bool, error) {
-		var running bool
-		err := chromedp.Evaluate(`!!(window.__grafanaSceneContext && window.__grafanaRunningQueryCount > 0)`, &running).Do(ctx)
-		return running, err
+func waitForDuration(d time.Duration) browser.Action {
+	return func(ctx context.Context, b browser.Browser) error {
+		tracer := tracer(ctx)
+		ctx, span := tracer.Start(ctx, "waitForDuration",
+			trace.WithAttributes(attribute.Float64("duration_seconds", d.Seconds())))
+		defer span.End()
+
+		select {
+		case <-time.After(d):
+			span.SetStatus(codes.Ok, "wait complete")
+		case <-ctx.Done():
+			span.SetStatus(codes.Error, "context completed before wait finished")
+			return ctx.Err()
+		}
+		return nil
 	}
-	getDOMHashCode := func(ctx context.Context) (int, error) {
-		var hashCode int
-		err := chromedp.Evaluate(`((x) => {
+}
+
+func waitForNetworkIdle(cfg config.BrowserConfig, start time.Time, ctx context.Context, b browser.Browser) (sawRequests bool, err error) {
+	tracer := tracer(ctx)
+	ctx, span := tracer.Start(ctx, "waitForNetworkIdle",
+		trace.WithAttributes(
+			attribute.String("interval", cfg.ReadinessIterationInterval.String()),
+			attribute.String("start_time", start.String()),
+			attribute.Bool("disabled", cfg.ReadinessDisableNetworkWait),
+			attribute.String("timeout", cfg.ReadinessNetworkIdleTimeout.String())))
+	defer span.End()
+
+	if cfg.ReadinessDisableNetworkWait {
+		span.AddEvent("network wait disabled; skipping")
+		return false, nil
+	}
+
+	sawRequests = false
+	for {
+		if cfg.ReadinessNetworkIdleTimeout > 0 && time.Since(start) >= cfg.ReadinessNetworkIdleTimeout {
+			span.AddEvent("network idle wait timed out")
+			break
+		}
+		select {
+		case <-ctx.Done():
+			return sawRequests, ctx.Err()
+		case <-time.After(cfg.ReadinessIterationInterval):
+		}
+
+		currentRequests, err := b.GetCurrentNetworkRequests(ctx)
+		if err != nil {
+			return sawRequests, fmt.Errorf("failed to get current network requests: %w", err)
+		}
+
+		if currentRequests > 0 {
+			span.AddEvent("network requests still ongoing", trace.WithAttributes(attribute.Int("inflight_requests", currentRequests)))
+			sawRequests = true
+			continue // still waiting on network requests to complete
+		}
+
+		break
+	}
+
+	return sawRequests, nil
+}
+
+func waitForQueries(cfg config.BrowserConfig, start time.Time, ctx context.Context, b browser.Browser) (sawQueries bool, err error) {
+	tracer := tracer(ctx)
+	ctx, span := tracer.Start(ctx, "waitForQueries",
+		trace.WithAttributes(
+			attribute.String("interval", cfg.ReadinessIterationInterval.String()),
+			attribute.String("start_time", start.String()),
+			attribute.Bool("disabled", cfg.ReadinessDisableQueryWait),
+			attribute.String("timeout", cfg.ReadinessQueriesTimeout.String()),
+			attribute.String("first_query_timeout", cfg.ReadinessFirstQueryTimeout.String())))
+	defer span.End()
+
+	if cfg.ReadinessDisableQueryWait {
+		span.AddEvent("query wait disabled; skipping")
+		return false, nil
+	}
+
+	sawQueries = false
+	for {
+		if cfg.ReadinessQueriesTimeout > 0 && time.Since(start) >= cfg.ReadinessQueriesTimeout {
+			span.AddEvent("query wait timed out")
+			break
+		}
+		if !sawQueries && cfg.ReadinessFirstQueryTimeout > 0 && time.Since(start) >= cfg.ReadinessFirstQueryTimeout {
+			span.AddEvent("first query wait timed out")
+			break
+		}
+		select {
+		case <-ctx.Done():
+			return sawQueries, ctx.Err()
+		case <-time.After(cfg.ReadinessIterationInterval):
+		}
+
+		isRunningQueries := false
+		{
+			// hide the ugly int in a new scope
+			running, err := b.EvaluateToInt(ctx, `(!!(window.__grafanaSceneContext && window.__grafanaRunningQueryCount > 0)) ? 1 : 0`)
+			if err != nil {
+				return sawQueries, fmt.Errorf("failed to get running queries: %w", err)
+			}
+			isRunningQueries = running != 0
+		}
+
+		if !isRunningQueries {
+			span.AddEvent("no running queries detected")
+			if sawQueries {
+				break
+			}
+		} else {
+			sawQueries = true
+		}
+	}
+
+	return sawQueries, nil
+}
+
+func waitForStableDOM(cfg config.BrowserConfig, start time.Time, ctx context.Context, b browser.Browser) error {
+	tracer := tracer(ctx)
+	ctx, span := tracer.Start(ctx, "waitForStableDOM",
+		trace.WithAttributes(
+			attribute.String("interval", cfg.ReadinessIterationInterval.String()),
+			attribute.String("start_time", start.String()),
+			attribute.Bool("disabled", cfg.ReadinessDisableDOMHashCodeWait),
+			attribute.String("timeout", cfg.ReadinessDOMHashCodeTimeout.String())))
+	defer span.End()
+
+	if cfg.ReadinessDisableDOMHashCodeWait {
+		span.AddEvent("DOM hash code wait disabled; skipping")
+		return nil
+	}
+
+	initialDOMPass := true
+	previousHashCode := 0
+	for {
+		if cfg.ReadinessDOMHashCodeTimeout > 0 && time.Since(start) >= cfg.ReadinessDOMHashCodeTimeout {
+			span.AddEvent("DOM hash code wait timed out")
+			return nil
+		}
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(cfg.ReadinessIterationInterval):
+		}
+
+		newHashCode, err := b.EvaluateToInt(ctx, `((x) => {
 			let h = 0;
 			for (let i = 0; i < x.length; i++) {
 				h = (Math.imul(31, h) + x.charCodeAt(i)) | 0;
 			}
 			return h;
-		})(document.body.toString())`, &hashCode).Do(ctx)
-		return hashCode, err
-	}
+		})(document.body.toString())`)
+		if err != nil {
+			span.SetStatus(codes.Error, err.Error())
+			span.RecordError(err)
+			return fmt.Errorf("failed to get DOM hash code: %w", err)
+		}
 
-	requests := &atomic.Int64{}
-	lastRequest := &atomicTime{} // TODO: use this to wait for network stabilisation.
-	lastRequest.Store(time.Now())
-	networkListenerCtx, cancelNetworkListener := context.WithCancel(browserCtx)
-	if !cfg.ReadinessDisableNetworkWait {
-		chromedp.ListenTarget(networkListenerCtx, func(ev any) {
-			switch ev.(type) {
-			case *network.EventRequestWillBeSent:
-				requests.Add(1)
-				lastRequest.Store(time.Now())
-			case *network.EventLoadingFinished, *network.EventLoadingFailed:
-				requests.Add(-1)
-			}
-		})
-	}
+		if initialDOMPass {
+			span.AddEvent("initial DOM hash code recorded", trace.WithAttributes(attribute.Int("hashCode", newHashCode)))
+			initialDOMPass = false
+			previousHashCode = newHashCode
+			continue
+		}
 
-	return chromedp.ActionFunc(func(ctx context.Context) error {
-		defer cancelNetworkListener()
+		span.AddEvent("subsequent DOM hash code recorded", trace.WithAttributes(attribute.Int("hashCode", newHashCode)))
+		if newHashCode != previousHashCode {
+			span.AddEvent("DOM hash code changed", trace.WithAttributes(
+				attribute.Int("oldHashCode", previousHashCode),
+				attribute.Int("newHashCode", newHashCode)))
+			previousHashCode = newHashCode
+			initialDOMPass = true
+			continue // not stable yet
+		}
+
+		span.SetStatus(codes.Ok, "DOM hash code stable")
+		span.AddEvent("DOM hash code stable", trace.WithAttributes(attribute.Int("hashCode", newHashCode)))
+		return nil
+	}
+}
+
+func waitForReady(cfg config.BrowserConfig) browser.Action {
+	return func(ctx context.Context, b browser.Browser) error {
+		start := time.Now()
 
 		tracer := tracer(ctx)
 		ctx, span := tracer.Start(ctx, "waitForReady",
-			trace.WithAttributes(attribute.String("timeout", cfg.ReadinessTimeout.String())))
+			trace.WithAttributes(attribute.String("timeout", cfg.ReadinessTimeout.String())),
+			trace.WithTimestamp(start))
 		defer span.End()
-
-		start := time.Now()
 
 		var readinessTimeout <-chan time.Time
 		if cfg.ReadinessTimeout > 0 {
 			readinessTimeout = time.After(cfg.ReadinessTimeout)
 		}
-
-		hasSeenAnyQuery := false
-
-		var domHashCode int
-		initialDOMPass := true
 
 		for {
 			select {
@@ -949,162 +899,65 @@ func waitForReady(browserCtx context.Context, cfg config.BrowserConfig) chromedp
 				// Continue with the rest of the code; this is waiting for the next time we can do work.
 			}
 
-			if !cfg.ReadinessDisableNetworkWait &&
-				(cfg.ReadinessNetworkIdleTimeout <= 0 || time.Since(start) < cfg.ReadinessNetworkIdleTimeout) &&
-				requests.Load() > 0 {
-				initialDOMPass = true
-				span.AddEvent("network requests still ongoing", trace.WithAttributes(attribute.Int64("inflight_requests", requests.Load())))
-				continue // still waiting on network requests to complete
+			sawRequests, err := waitForNetworkIdle(cfg, start, ctx, b)
+			if err != nil {
+				return fmt.Errorf("failed to wait for network idle: %w", err)
+			}
+			if sawRequests && (cfg.ReadinessNetworkIdleTimeout <= 0 || time.Since(start) < cfg.ReadinessNetworkIdleTimeout) {
+				span.AddEvent("continuing wait after network activity detected")
+				continue
 			}
 
-			if !cfg.ReadinessDisableQueryWait && (cfg.ReadinessQueriesTimeout <= 0 || time.Since(start) < cfg.ReadinessQueriesTimeout) {
-				running, err := getRunningQueries(ctx)
-				if err != nil {
-					span.SetStatus(codes.Error, err.Error())
-					span.RecordError(err)
-					return fmt.Errorf("failed to get running queries: %w", err)
-				}
-				span.AddEvent("queried running queries", trace.WithAttributes(attribute.Bool("running", running)))
-				if running {
-					initialDOMPass = true
-					hasSeenAnyQuery = true
-					continue // still waiting on queries to complete
-				} else if !hasSeenAnyQuery && (cfg.ReadinessFirstQueryTimeout <= 0 || time.Since(start) < cfg.ReadinessFirstQueryTimeout) {
-					span.AddEvent("no first query detected yet; giving it more time")
-					continue
-				}
+			sawQueries, err := waitForQueries(cfg, start, ctx, b)
+			if err != nil {
+				return fmt.Errorf("failed to wait for queries: %w", err)
+			}
+			if sawQueries && (cfg.ReadinessQueriesTimeout <= 0 || time.Since(start) < cfg.ReadinessQueriesTimeout) {
+				span.AddEvent("continuing wait after queries detected")
+				continue
 			}
 
-			if !cfg.ReadinessDisableDOMHashCodeWait && (cfg.ReadinessDOMHashCodeTimeout <= 0 || time.Since(start) < cfg.ReadinessDOMHashCodeTimeout) {
-				if initialDOMPass {
-					var err error
-					domHashCode, err = getDOMHashCode(ctx)
-					if err != nil {
-						span.SetStatus(codes.Error, err.Error())
-						span.RecordError(err)
-						return fmt.Errorf("failed to get DOM hash code: %w", err)
-					}
-					span.AddEvent("initial DOM hash code recorded", trace.WithAttributes(attribute.Int("hashCode", domHashCode)))
-					initialDOMPass = false
-					continue // not stable yet
-				}
-
-				newHashCode, err := getDOMHashCode(ctx)
-				if err != nil {
-					span.SetStatus(codes.Error, err.Error())
-					span.RecordError(err)
-					return fmt.Errorf("failed to get DOM hash code: %w", err)
-				}
-				span.AddEvent("subsequent DOM hash code recorded", trace.WithAttributes(attribute.Int("hashCode", newHashCode)))
-				if newHashCode != domHashCode {
-					span.AddEvent("DOM hash code changed", trace.WithAttributes(attribute.Int("oldHashCode", domHashCode), attribute.Int("newHashCode", newHashCode)))
-					domHashCode = newHashCode
-					initialDOMPass = true
-					continue // not stable yet
-				}
-				span.AddEvent("DOM hash code stable", trace.WithAttributes(attribute.Int("hashCode", domHashCode)))
+			if err := waitForStableDOM(cfg, start, ctx, b); err != nil {
+				return fmt.Errorf("failed to wait for stable DOM: %w", err)
 			}
 
-			break // we're done!!
-		}
-
-		return nil
-	})
-}
-
-func waitForDuration(d time.Duration) chromedp.Action {
-	return chromedp.ActionFunc(func(ctx context.Context) error {
-		tracer := tracer(ctx)
-		ctx, span := tracer.Start(ctx, "waitForDuration",
-			trace.WithAttributes(attribute.Float64("duration_seconds", d.Seconds())))
-		defer span.End()
-
-		select {
-		case <-time.After(d):
-			span.SetStatus(codes.Ok, "wait complete")
-		case <-ctx.Done():
-			span.SetStatus(codes.Error, "context completed before wait finished")
-			return ctx.Err()
-		}
-		return nil
-	})
-}
-
-// observingAction returns an augmented chromedp.Action which applies observability around the action:
-//   - The action has a trace span around it, which will mark and record errors if any is returned.
-//   - The action duration is recorded in the MetricBrowserActionDuration histogram, labelled by the action name.
-//
-// This is intended for use on both our own and external actions.
-func observingAction(name string, action chromedp.Action) chromedp.Action {
-	return chromedp.ActionFunc(func(ctx context.Context) error {
-		tracer := tracer(ctx)
-		ctx, span := tracer.Start(ctx, name)
-		defer span.End()
-		start := time.Now()
-
-		err := action.Do(ctx)
-		if err != nil {
-			span.SetStatus(codes.Error, err.Error())
-			span.RecordError(err)
-			return err
-		}
-		span.SetStatus(codes.Ok, "action completed successfully")
-
-		MetricBrowserActionDuration.WithLabelValues(name).Observe(time.Since(start).Seconds())
-		return nil
-	})
-}
-
-type networkHeadersCarrier network.Headers
-
-func (c networkHeadersCarrier) Get(key string) string {
-	if len(c) == 0 { // nil-check
-		return ""
-	}
-	v, ok := c[key]
-	if !ok {
-		return ""
-	}
-	if vs, ok := v.(string); ok {
-		return vs
-	}
-	return fmt.Sprintf("%v", v)
-}
-
-func (c networkHeadersCarrier) Set(key string, value string) {
-	c[key] = value
-}
-
-func (c networkHeadersCarrier) Keys() []string {
-	return slices.Collect(maps.Keys(c))
-}
-
-type atomicTime struct {
-	atomic.Value
-}
-
-func (at *atomicTime) Load() time.Time {
-	v := at.Value.Load()
-	if v == nil {
-		return time.Time{}
-	}
-	return v.(time.Time)
-}
-
-func (at *atomicTime) Store(t time.Time) {
-	at.Value.Store(t)
-}
-
-func trackProcess(browserCtx context.Context, processes *ProcessStatService) chromedp.Action {
-	return chromedp.ActionFunc(func(ctx context.Context) error {
-		cdpCtx := chromedp.FromContext(ctx)
-		proc := cdpCtx.Browser.Process()
-		if proc == nil {
-			// no process to track.
 			return nil
 		}
+	}
+}
 
-		processes.TrackProcess(browserCtx, int32(proc.Pid))
-		return nil
-	})
+func setDownloadsDir(path string) browser.Action {
+	return func(ctx context.Context, b browser.Browser) error {
+		return b.PutDownloadsIn(ctx, path)
+	}
+}
+
+func awaitDownloadedCSV(downloadsDir string, foundFilePath chan<- string) browser.Action {
+	return func(ctx context.Context, b browser.Browser) error {
+		for {
+			if ctx.Err() != nil {
+				return ctx.Err()
+			}
+
+			entries, err := os.ReadDir(downloadsDir)
+			if err != nil {
+				return fmt.Errorf("failed to read downloads directory: %w", err)
+			}
+
+			for _, entry := range entries {
+				if entry.IsDir() || !strings.HasSuffix(strings.ToLower(entry.Name()), ".csv") {
+					continue // uninteresting to us
+				}
+
+				foundFilePath <- filepath.Join(downloadsDir, entry.Name())
+				return nil
+			}
+
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			case <-time.After(100 * time.Millisecond): // TODO: Make this configurable?
+			}
+		}
+	}
 }

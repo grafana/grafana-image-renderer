@@ -113,11 +113,7 @@ func (p *ProcessStatService) TrackProcess(ctx context.Context, pid int32) {
 		}()
 
 		for {
-			select {
-			case <-ctx.Done():
-				return
-			case <-time.After(p.cfg.TrackerInterval):
-			}
+			time.Sleep(p.cfg.TrackerInterval)
 
 			mem, err := proc.MemoryInfoWithContext(ctx)
 			if errors.Is(err, context.Canceled) || errors.Is(err, process.ErrorProcessNotRunning) {
