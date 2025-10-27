@@ -458,7 +458,7 @@ func BrowserFlags() []cli.Flag {
 		&cli.DurationFlag{
 			Name:    "browser.readiness.network-idle-timeout",
 			Usage:   "How long to wait before giving up on the network being idle. If <= 0, the timeout is disabled.",
-			Value:   0,
+			Value:   time.Second * 3,
 			Sources: FromConfig("browser.readiness.network-idle-timeout", "BROWSER_READINESS_NETWORK_IDLE_TIMEOUT"),
 		},
 		&cli.BoolFlag{
