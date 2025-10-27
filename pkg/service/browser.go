@@ -279,19 +279,19 @@ func (s *BrowserService) Render(ctx context.Context, url string, printer Printer
 // You may be thinking: what the hell are we doing? Why are we using a browser for this?
 // The CSV endpoint just returns HTML. The actual query is done by the browser, and then a script _in the webpage_ downloads it as a CSV file.
 // This SHOULD be replaced at some point, such that the Grafana server does all the work; this is just not acceptable behaviour...
-func (s *BrowserService) RenderCSV(ctx context.Context, url, renderKey, domain, acceptLanguage string) ([]byte, error) {
+func (s *BrowserService) RenderCSV(ctx context.Context, url, renderKey, domain, acceptLanguage string) ([]byte, string, error) {
 	tracer := tracer(ctx)
 	ctx, span := tracer.Start(ctx, "BrowserService.RenderCSV")
 	defer span.End()
 	start := time.Now()
 
 	if url == "" {
-		return nil, fmt.Errorf("url must not be empty")
+		return nil, "", fmt.Errorf("url must not be empty")
 	}
 
 	allocatorOptions, err := s.createAllocatorOptions(s.cfg)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create allocator options: %w", err)
+		return nil, "", fmt.Errorf("failed to create allocator options: %w", err)
 	}
 	allocatorCtx, cancelAllocator := chromedp.NewExecAllocator(ctx, allocatorOptions...)
 	defer cancelAllocator()
@@ -301,7 +301,7 @@ func (s *BrowserService) RenderCSV(ctx context.Context, url, renderKey, domain, 
 
 	tmpDir, err := os.MkdirTemp("", "gir-csv-*")
 	if err != nil {
-		return nil, fmt.Errorf("failed to create temporary directory: %w", err)
+		return nil, "", fmt.Errorf("failed to create temporary directory: %w", err)
 	}
 	defer func() {
 		if err := os.RemoveAll(tmpDir); err != nil {
@@ -337,7 +337,7 @@ func (s *BrowserService) RenderCSV(ctx context.Context, url, renderKey, domain, 
 	MetricBrowserInstancesActive.Inc()
 	defer MetricBrowserInstancesActive.Dec()
 	if err := chromedp.Run(browserCtx, actions...); err != nil {
-		return nil, fmt.Errorf("failed to run browser: %w", err)
+		return nil, "", fmt.Errorf("failed to run browser: %w", err)
 	}
 	span.AddEvent("actions completed")
 
@@ -345,7 +345,7 @@ func (s *BrowserService) RenderCSV(ctx context.Context, url, renderKey, domain, 
 	var entries []os.DirEntry
 	for {
 		if err := ctx.Err(); err != nil {
-			return nil, err
+			return nil, "", err
 		}
 
 		entries, err = os.ReadDir(tmpDir)
@@ -355,7 +355,7 @@ func (s *BrowserService) RenderCSV(ctx context.Context, url, renderKey, domain, 
 
 		select {
 		case <-ctx.Done():
-			return nil, ctx.Err()
+			return nil, "", ctx.Err()
 		case <-time.After(100 * time.Millisecond):
 			// try again
 		}
@@ -364,11 +364,11 @@ func (s *BrowserService) RenderCSV(ctx context.Context, url, renderKey, domain, 
 
 	fileContents, err := os.ReadFile(filepath.Join(tmpDir, entries[0].Name()))
 	if err != nil {
-		return nil, fmt.Errorf("failed to read temporary file: %w", err)
+		return nil, "", fmt.Errorf("failed to read temporary file: %w", err)
 	}
 
 	MetricBrowserRenderCSVDuration.Observe(time.Since(start).Seconds())
-	return fileContents, nil
+	return fileContents, filepath.Base(entries[0].Name()), nil
 }
 
 func (s *BrowserService) createAllocatorOptions(cfg config.BrowserConfig) ([]chromedp.ExecAllocatorOption, error) {
