@@ -1,6 +1,6 @@
 ## 4.1.3 (2025-10-29)
 
-- fix: remove image scaling feature (CVE-2023-34152), [#x](https://github.com/grafana/grafana-image-renderer/pull/x), [Proximyst](https://github.com/proximyst)
+- fix: remove image scaling feature (CVE-2023-34152), [#834](https://github.com/grafana/grafana-image-renderer/pull/834), [Proximyst](https://github.com/proximyst)
 
 ## 4.1.2 (2025-10-24)
 
