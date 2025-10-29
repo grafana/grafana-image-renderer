@@ -1,0 +1,84 @@
+name: Sandbox tests
+
+on:
+  push:
+    branches:
+      - master
+    tags:
+      - 'v*'
+  pull_request:
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  host-sandbox:
+    name: On host
+    runs-on: ubuntu-x64
+    permissions:
+      contents: read # clone the repository
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: false
+      - name: Enable unprivileged user namespaces
+        run: sudo sysctl kernel.unprivileged_userns_clone=1
+
+      - run: go run -buildvcs . _internal_sandbox bootstrap -- -- true
+
+  privileged:
+    name: In privileged container
+    runs-on: ubuntu-x64
+    permissions:
+      contents: read # clone the repository
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: false
+      - name: Enable unprivileged user namespaces
+        run: sudo sysctl kernel.unprivileged_userns_clone=1
+
+      - name: docker build
+        env:
+          DOCKER_BUILDKIT: 1
+          BUILDKIT_STEP_LOG_MAX_SIZE: -1
+          BUILDKIT_STEP_LOG_MAX_SPEED: -1
+        run: docker build . -t image-renderer -f go.Dockerfile
+
+      - run: docker run --privileged image-renderer _internal_sandbox bootstrap -- -- true
+
+  cap_add:
+    name: In cap-add-ed container
+    runs-on: ubuntu-x64
+    permissions:
+      contents: read # clone the repository
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: false
+      - name: Enable unprivileged user namespaces
+        run: sudo sysctl kernel.unprivileged_userns_clone=1
+
+      - name: docker build
+        env:
+          DOCKER_BUILDKIT: 1
+          BUILDKIT_STEP_LOG_MAX_SIZE: -1
+          BUILDKIT_STEP_LOG_MAX_SPEED: -1
+        run: docker build . -t image-renderer -f go.Dockerfile
+
+      - run: docker run --cap-add=CAP_SYS_ADMIN --cap-add=CAP_SYS_CHROOT image-renderer _internal_sandbox bootstrap -- -- true
