@@ -25,7 +25,7 @@ import (
 	"github.com/chromedp/cdproto/fetch"
 	"github.com/chromedp/cdproto/network"
 	"github.com/chromedp/cdproto/page"
-	"github.com/chromedp/chromedp"
+	"github.com/grafana/chromedp"
 	"github.com/grafana/grafana-image-renderer/pkg/config"
 	"github.com/prometheus/client_golang/prometheus"
 	"go.opentelemetry.io/otel"
@@ -380,7 +380,13 @@ func (s *BrowserService) createAllocatorOptions(cfg config.BrowserConfig) ([]chr
 	if !cfg.Sandbox {
 		opts = append(opts, chromedp.NoSandbox)
 	}
-	opts = append(opts, chromedp.ExecPath(cfg.Path))
+	if cfg.Namespaced {
+		opts = append(opts, chromedp.ExecPath("/proc/self/exe"))
+		// TODO: Add additional flags for necessary mounts for the browser if it is not Chromium?
+		opts = append(opts, chromedp.InitialArgs("_internal_sandbox", "bootstrap", "--", cfg.Path))
+	} else {
+		opts = append(opts, chromedp.ExecPath(cfg.Path))
+	}
 	opts = append(opts, chromedp.WindowSize(cfg.MinWidth, cfg.MinHeight))
 	opts = append(opts, chromedp.Env("TZ="+cfg.TimeZone.String()))
 	for _, arg := range cfg.Flags {

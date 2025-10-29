@@ -151,6 +151,12 @@ func StartImageRenderer(tb testing.TB, options ...ContainerOption) *ImageRendere
 				c.Healthcheck.StartInterval = time.Millisecond * 50
 				c.Healthcheck.StartPeriod = time.Second * 5
 			},
+			HostConfigModifier: func(hc *container.HostConfig) {
+				hc.CapAdd = append(hc.CapAdd, "CAP_SYS_ADMIN", "CAP_SYS_CHROOT")
+			},
+			Env: map[string]string{
+				"BROWSER_NAMESPACED": "true",
+			},
 			LogConsumerCfg: containerLogs(tb, "image-renderer"),
 		},
 	}
