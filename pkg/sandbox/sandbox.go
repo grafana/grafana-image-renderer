@@ -45,10 +45,28 @@ type BindMount struct {
 // SetupFS sets the file system up for the sandbox, such that we cannot escape the jail.
 // This should be called from a process inside a mount namespace, ideally also with a PID namespace.
 func SetupFS(ctx context.Context, newRoot string, bindMounts []BindMount) error {
-	if err := mountTmpfs(filepath.Join(newRoot, "tmp")); err != nil {
-		return fmt.Errorf("failed to mount tmpfs: %w", err)
+	if !anyMount(bindMounts, "/tmp") {
+		if err := mountTmpfs(filepath.Join(newRoot, "tmp")); err != nil {
+			return fmt.Errorf("failed to mount tmpfs: %w", err)
+		}
 	}
-	for _, mnt := range []string{"dev", "bin", "usr", "lib", "lib64", "var", "home", "opt", "etc", "proc"} {
+	mountedProc := false
+	if !anyMount(bindMounts, "/proc") {
+		if err := mountProcfs(filepath.Join(newRoot, "proc")); err != nil {
+			if errors.Is(err, syscall.EPERM) {
+				slog.WarnContext(ctx, "mounting new procfs not permitted, will attempt to bind-mount existing /proc")
+			} else {
+				return fmt.Errorf("failed to mount procfs: %w", err)
+			}
+		} else {
+			mountedProc = true
+		}
+	}
+	defaultMounts := []string{"dev", "bin", "usr", "lib", "lib64", "var", "home", "opt", "etc"}
+	if !mountedProc {
+		defaultMounts = append(defaultMounts, "proc")
+	}
+	for _, mnt := range defaultMounts {
 		_, err := os.Stat(filepath.Join("/", mnt))
 		if errors.Is(err, fs.ErrNotExist) {
 			slog.DebugContext(ctx, "bind mount skipped, path does not exist", "path", mnt)
@@ -153,6 +171,15 @@ func (b BindMount) mount(oldRoot, newRoot string) error {
 	}
 
 	return nil
+}
+
+func anyMount(bindMounts []BindMount, path string) bool {
+	for _, bm := range bindMounts {
+		if filepath.Clean(bm.Destination) == filepath.Clean(path) {
+			return true
+		}
+	}
+	return false
 }
 
 func replicateBaseBindMount(oldRoot, newRoot, path string, readOnly bool) error {

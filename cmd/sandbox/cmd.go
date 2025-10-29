@@ -30,6 +30,11 @@ func NewCmd() *cli.Command {
 					return nil
 				},
 			},
+			&cli.StringFlag{
+				Name:  "cwd",
+				Usage: "The working directory inside the sandbox.",
+				Value: "/tmp",
+			},
 		},
 		Hidden: true,
 		Action: run,
@@ -114,6 +119,7 @@ func run(ctx context.Context, c *cli.Command) error {
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
+	cmd.Dir = c.String("cwd")
 	if cmd.SysProcAttr == nil {
 		cmd.SysProcAttr = &syscall.SysProcAttr{}
 	}

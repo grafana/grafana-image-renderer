@@ -222,7 +222,13 @@ func (s *BrowserService) Render(ctx context.Context, url string, printer Printer
 	}
 	span.AddEvent("options applied")
 
-	allocatorOptions, err := s.createAllocatorOptions(cfg)
+	chromiumCwd, err := os.MkdirTemp("", "")
+	if err != nil {
+		return nil, "text/plain", fmt.Errorf("failed to create temporary directory for browser CWD: %w", err)
+	}
+	defer func() { _ = os.RemoveAll(chromiumCwd) }()
+
+	allocatorOptions, err := s.createAllocatorOptions(cfg, chromiumCwd)
 	if err != nil {
 		return nil, "text/plain", fmt.Errorf("failed to create allocator options: %w", err)
 	}
@@ -289,7 +295,22 @@ func (s *BrowserService) RenderCSV(ctx context.Context, url, renderKey, domain, 
 		return nil, "", fmt.Errorf("url must not be empty")
 	}
 
-	allocatorOptions, err := s.createAllocatorOptions(s.cfg)
+	chromiumCwd, err := os.MkdirTemp("", "")
+	if err != nil {
+		return nil, "text/plain", fmt.Errorf("failed to create temporary directory for browser CWD: %w", err)
+	}
+	defer func() { _ = os.RemoveAll(chromiumCwd) }()
+
+	chromiumDownloadDir := filepath.Join(chromiumCwd, "_gir_downloads")
+	realDownloadDir := filepath.Join(chromiumCwd, "_gir_downloads")
+	if s.cfg.Namespaced {
+		chromiumDownloadDir = "/tmp/_gir_downloads"
+	}
+	if err := os.MkdirAll(realDownloadDir, 0o755); err != nil {
+		return nil, "", fmt.Errorf("failed to create download directory at %q: %w", realDownloadDir, err)
+	}
+
+	allocatorOptions, err := s.createAllocatorOptions(s.cfg, chromiumCwd)
 	if err != nil {
 		return nil, "", fmt.Errorf("failed to create allocator options: %w", err)
 	}
@@ -298,18 +319,6 @@ func (s *BrowserService) RenderCSV(ctx context.Context, url, renderKey, domain, 
 	browserCtx, cancelBrowser := chromedp.NewContext(allocatorCtx, browserLoggers(ctx, s.log))
 	defer cancelBrowser()
 	span.AddEvent("browser allocated")
-
-	tmpDir, err := os.MkdirTemp("", "gir-csv-*")
-	if err != nil {
-		return nil, "", fmt.Errorf("failed to create temporary directory: %w", err)
-	}
-	defer func() {
-		if err := os.RemoveAll(tmpDir); err != nil {
-			s.log.WarnContext(ctx, "failed to remove temporary directory", "path", tmpDir, "error", err)
-			span.AddEvent("temporary directory removed", trace.WithAttributes(attribute.String("path", tmpDir)))
-		}
-	}()
-	span.AddEvent("temporary directory created", trace.WithAttributes(attribute.String("path", tmpDir)))
 
 	var headers network.Headers
 	if acceptLanguage != "" {
@@ -331,7 +340,7 @@ func (s *BrowserService) RenderCSV(ctx context.Context, url, renderKey, domain, 
 				Domain: domain,
 			},
 		})),
-		observingAction("SetDownloadBehavior", browser.SetDownloadBehavior(browser.SetDownloadBehaviorBehaviorAllow).WithDownloadPath(tmpDir)),
+		observingAction("SetDownloadBehavior", browser.SetDownloadBehavior(browser.SetDownloadBehaviorBehaviorAllow).WithDownloadPath(chromiumDownloadDir)),
 		observingAction("Navigate", chromedp.Navigate(url)),
 	}
 	MetricBrowserInstancesActive.Inc()
@@ -342,15 +351,25 @@ func (s *BrowserService) RenderCSV(ctx context.Context, url, renderKey, domain, 
 	span.AddEvent("actions completed")
 
 	// Wait for the file to be downloaded.
-	var entries []os.DirEntry
+	filename := ""
 	for {
 		if err := ctx.Err(); err != nil {
 			return nil, "", err
 		}
 
-		entries, err = os.ReadDir(tmpDir)
-		if err == nil && len(entries) > 0 {
-			break // file exists now
+		entries, err := os.ReadDir(realDownloadDir)
+		if err != nil {
+			return nil, "", fmt.Errorf("failed to read files in chromium's working directory: %w", err)
+		}
+
+		for _, entry := range entries {
+			if strings.HasSuffix(strings.ToLower(entry.Name()), ".csv") {
+				filename = filepath.Join(realDownloadDir, entry.Name())
+				break
+			}
+		}
+		if filename != "" {
+			break
 		}
 
 		select {
@@ -360,18 +379,18 @@ func (s *BrowserService) RenderCSV(ctx context.Context, url, renderKey, domain, 
 			// try again
 		}
 	}
-	span.AddEvent("downloaded file located", trace.WithAttributes(attribute.String("path", filepath.Join(tmpDir, entries[0].Name()))))
+	span.AddEvent("downloaded file located", trace.WithAttributes(attribute.String("path", filename)))
 
-	fileContents, err := os.ReadFile(filepath.Join(tmpDir, entries[0].Name()))
+	fileContents, err := os.ReadFile(filename)
 	if err != nil {
-		return nil, "", fmt.Errorf("failed to read temporary file: %w", err)
+		return nil, "", fmt.Errorf("failed to read temporary file %q: %w", filename, err)
 	}
 
 	MetricBrowserRenderCSVDuration.Observe(time.Since(start).Seconds())
-	return fileContents, filepath.Base(entries[0].Name()), nil
+	return fileContents, filepath.Base(filename), nil
 }
 
-func (s *BrowserService) createAllocatorOptions(cfg config.BrowserConfig) ([]chromedp.ExecAllocatorOption, error) {
+func (s *BrowserService) createAllocatorOptions(cfg config.BrowserConfig, cwd string) ([]chromedp.ExecAllocatorOption, error) {
 	opts := chromedp.DefaultExecAllocatorOptions[:]
 	opts = append(opts, chromedp.NoFirstRun, chromedp.NoDefaultBrowserCheck)
 	if !cfg.GPU {
@@ -383,9 +402,11 @@ func (s *BrowserService) createAllocatorOptions(cfg config.BrowserConfig) ([]chr
 	if cfg.Namespaced {
 		opts = append(opts, chromedp.ExecPath("/proc/self/exe"))
 		// TODO: Add additional flags for necessary mounts for the browser if it is not Chromium?
-		opts = append(opts, chromedp.InitialArgs("_internal_sandbox", "bootstrap", "--", cfg.Path))
+		opts = append(opts, chromedp.InitialArgs("_internal_sandbox", "bootstrap", "--", "--mount="+cwd+":/tmp:rw", "--cwd=/tmp", "--", cfg.Path))
+		opts = append(opts, chromedp.UserDataDir("/tmp"))
 	} else {
 		opts = append(opts, chromedp.ExecPath(cfg.Path))
+		opts = append(opts, chromedp.UserDataDir(cwd))
 	}
 	opts = append(opts, chromedp.WindowSize(cfg.MinWidth, cfg.MinHeight))
 	opts = append(opts, chromedp.Env("TZ="+cfg.TimeZone.String()))
