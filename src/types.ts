@@ -24,5 +24,4 @@ export interface ImageRenderOptions extends RenderOptions {
 
   // Runtime options derived from the input
   fullPageImage?: boolean;
-  scaleImage?: number;
 }

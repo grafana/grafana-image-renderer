@@ -6,7 +6,6 @@ import chokidar from 'chokidar';
 import path from 'path';
 import fs from 'fs';
 import promClient from 'prom-client';
-import Jimp from 'jimp';
 import { Logger } from '../logger';
 import { RenderingConfig } from '../config/rendering';
 import { HTTPHeaders, ImageRenderOptions, RenderOptions } from '../types';
@@ -106,19 +105,7 @@ export class Browser {
     }
 
     options.deviceScaleFactor = parseFloat(((options.deviceScaleFactor as string) || '1') as string) || 1;
-
-    // Scaled thumbnails
-    if (options.deviceScaleFactor <= 0) {
-      options.scaleImage = options.deviceScaleFactor * -1;
-      options.deviceScaleFactor = 1;
-
-      if (options.scaleImage > 1) {
-        options.width *= options.scaleImage;
-        options.height *= options.scaleImage;
-      } else {
-        options.scaleImage = undefined;
-      }
-    } else if (options.deviceScaleFactor > this.config.maxDeviceScaleFactor) {
+    if (options.deviceScaleFactor > this.config.maxDeviceScaleFactor) {
       options.deviceScaleFactor = this.config.deviceScaleFactor;
     }
   }
@@ -407,24 +394,6 @@ export class Browser {
 
       return page.screenshot({ path: options.filePath, fullPage: options.fullPageImage, captureBeyondViewport: false });
     });
-
-    if (options.scaleImage && !isPDF) {
-      await this.performStep('imageResize', options.url, signal, async () => {
-        const scaled = `${options.filePath}_${Date.now()}_scaled.png`;
-        const w = +options.width / options.scaleImage!;
-        const h = +options.height / options.scaleImage!;
-
-        const file = await Jimp.read(options.filePath);
-        await file
-          .resize(w, h)
-          // .toFormat('webp', {
-          //   quality: 70, // 80 is default
-          // })
-          .writeAsync(scaled);
-
-        fs.renameSync(scaled, options.filePath);
-      });
-    }
 
     return { filePath: options.filePath };
   }
