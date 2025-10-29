@@ -40,7 +40,6 @@
     "express": "^4.21.1",
     "express-prom-bundle": "^6.5.0",
     "ioredis": "^5.6.1",
-    "jimp": "^0.22.12",
     "jsdom": "20.0.0",
     "lodash": "^4.17.21",
     "minimist": "^1.2.6",

@@ -1,3 +1,7 @@
+## 4.1.3 (2025-10-29)
+
+- fix: remove image scaling feature (CVE-2023-34152), [#x](https://github.com/grafana/grafana-image-renderer/pull/x), [Proximyst](https://github.com/proximyst)
+
 ## 4.1.2 (2025-10-24)
 
 This release does not change the current Grafana Image Renderer, it is only issued to release new tags of the `-golang` variants for further testing.
