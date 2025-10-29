@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
+	"strings"
 	"syscall"
 
 	"github.com/grafana/grafana-image-renderer/pkg/sandbox"
@@ -13,8 +15,22 @@ import (
 
 func NewCmd() *cli.Command {
 	return &cli.Command{
-		Name:   "_internal_sandbox",
-		Usage:  "Starts the browser in a best-effort sandbox.",
+		Name:  "_internal_sandbox",
+		Usage: "Starts the browser in a best-effort sandbox.",
+		Flags: []cli.Flag{
+			&cli.StringSliceFlag{
+				Name:  "mount",
+				Usage: "Additional mount points to bind into the sandbox in the form of host_path:container_path(:rw)",
+				Validator: func(s []string) error {
+					for _, s := range s {
+						if _, err := parseBindMount(s); err != nil {
+							return fmt.Errorf("invalid --mount value %q: %w", s, err)
+						}
+					}
+					return nil
+				},
+			},
+		},
 		Hidden: true,
 		Action: run,
 		Commands: []*cli.Command{
@@ -31,12 +47,6 @@ func NewCmd() *cli.Command {
 			{
 				Name:  "bootstrap",
 				Usage: "Bootstrap the sandbox environment.",
-				Flags: []cli.Flag{
-					&cli.StringSliceFlag{
-						Name:  "mount",
-						Usage: "Additional mount points to bind into the sandbox in the form of host_path:container_path(:ro)",
-					},
-				},
 				Action: func(ctx context.Context, c *cli.Command) error {
 					newRoot, err := os.MkdirTemp("", "")
 					if err != nil {
@@ -76,6 +86,16 @@ func NewCmd() *cli.Command {
 }
 
 func run(ctx context.Context, c *cli.Command) error {
+	var bindMounts []sandbox.BindMount
+	for _, s := range c.StringSlice("mount") {
+		bm, err := parseBindMount(s)
+		if err != nil {
+			// should be unreachable, but easy to just return the error :P
+			return fmt.Errorf("invalid --mount value %q: %w", s, err)
+		}
+		bindMounts = append(bindMounts, bm)
+	}
+
 	command := c.Args().Slice()
 	if len(command) == 0 {
 		return fmt.Errorf("no command specified to run in sandbox")
@@ -86,7 +106,7 @@ func run(ctx context.Context, c *cli.Command) error {
 		return fmt.Errorf("failed to get current working directory: %w", err)
 	}
 
-	if err := sandbox.SetupFS(ctx, cwd); err != nil {
+	if err := sandbox.SetupFS(ctx, cwd, bindMounts); err != nil {
 		return fmt.Errorf("failed to setup sandbox filesystem: %w", err)
 	}
 
@@ -101,4 +121,26 @@ func run(ctx context.Context, c *cli.Command) error {
 
 	// TODO: Ensure this respects signals properly?
 	return cmd.Run()
+}
+
+func parseBindMount(s string) (sandbox.BindMount, error) {
+	host, container, found := strings.Cut(s, ":")
+	if !found {
+		return sandbox.BindMount{}, fmt.Errorf("invalid mount format, expected host_path:container_path(:rw)")
+	}
+	container, rw, found := strings.Cut(container, ":")
+
+	if !filepath.IsAbs(host) {
+		return sandbox.BindMount{}, fmt.Errorf("host path must be absolute: %s", host)
+	} else if !filepath.IsAbs(container) {
+		return sandbox.BindMount{}, fmt.Errorf("container path must be absolute: %s", container)
+	} else if rw != "" && rw != "rw" {
+		return sandbox.BindMount{}, fmt.Errorf("invalid mount option (must be rw or absent): %s", rw)
+	}
+
+	return sandbox.BindMount{
+		Source:      host,
+		Destination: container,
+		ReadWrite:   rw == "rw",
+	}, nil
 }

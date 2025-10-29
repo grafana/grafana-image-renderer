@@ -31,9 +31,20 @@ func Supported(ctx context.Context) bool {
 	return cmd.Run() == nil
 }
 
+// BindMount defines a mount that should exist in the sandbox.
+type BindMount struct {
+	// Source is the absolute path on the host to bind-mount into the sandbox.
+	Source string
+	// Destination is the absolute path in the sandbox where the source is mounted.
+	// This should _not_ include the new root prefix; if you want `/a` to be mounted at `/a` (inside the sandbox), just assign this to `/a`, not `/new-root/a`.
+	Destination string
+	// ReadWrite determines whether the mount is read-write or read-only (default).
+	ReadWrite bool
+}
+
 // SetupFS sets the file system up for the sandbox, such that we cannot escape the jail.
 // This should be called from a process inside a mount namespace, ideally also with a PID namespace.
-func SetupFS(ctx context.Context, newRoot string) error {
+func SetupFS(ctx context.Context, newRoot string, bindMounts []BindMount) error {
 	if err := mountTmpfs(filepath.Join(newRoot, "tmp")); err != nil {
 		return fmt.Errorf("failed to mount tmpfs: %w", err)
 	}
@@ -49,7 +60,7 @@ func SetupFS(ctx context.Context, newRoot string) error {
 			return fmt.Errorf("failed to stat %q: %w", mnt, err)
 		}
 
-		if err := bindMount("/", newRoot, mnt, true); err != nil {
+		if err := replicateBaseBindMount("/", newRoot, mnt, true); err != nil {
 			return fmt.Errorf("failed to bind mount /%s: %w", mnt, err)
 		}
 	}
@@ -57,6 +68,11 @@ func SetupFS(ctx context.Context, newRoot string) error {
 	//  if err := mountProcfs(filepath.Join(newRoot, "proc")); err != nil {
 	//  	return fmt.Errorf("failed to mount procfs: %w", err)
 	//  }
+	for _, bm := range bindMounts {
+		if err := bm.mount("/", newRoot); err != nil {
+			return fmt.Errorf("failed to apply bind mount %q -> %q: %w", bm.Source, bm.Destination, err)
+		}
+	}
 	if err := chroot(newRoot); err != nil {
 		return fmt.Errorf("failed to chroot to %q: %w", newRoot, err)
 	}
@@ -90,7 +106,56 @@ func mountTmpfs(into string) error {
 	return nil
 }
 
-func bindMount(oldRoot, newRoot, path string, readOnly bool) error {
+func (b BindMount) mount(oldRoot, newRoot string) error {
+	oldPath := filepath.Join(oldRoot, b.Source)
+	newPath := filepath.Join(newRoot, b.Destination)
+
+	// There is no symlink recreation in these cases. Here, we expect the input to have all the symlink work done for us.
+	// We can revisit this later if we have to.
+
+	realOldPath, err := resolveSymlink(oldPath)
+	if err != nil {
+		return fmt.Errorf("failed to resolve symlink for %q: %w", oldPath, err)
+	}
+
+	oldStat, err := os.Stat(realOldPath)
+	if err != nil {
+		return fmt.Errorf("failed to stat %q: %w", realOldPath, err)
+	}
+
+	// We want to be sure the right type of file descriptor exists.
+	if oldStat.IsDir() {
+		if err := os.MkdirAll(newPath, 0o755); err != nil {
+			return fmt.Errorf("failed to create dir %q: %w", newPath, err)
+		}
+	} else {
+		if err := os.MkdirAll(filepath.Dir(newPath), 0o755); err != nil {
+			return fmt.Errorf("failed to create parent dir for %q: %w", newPath, err)
+		}
+		if _, err := os.Stat(newPath); os.IsNotExist(err) {
+			f, cerr := os.OpenFile(newPath, os.O_CREATE|os.O_RDONLY, oldStat.Mode()&0o777)
+			if cerr != nil {
+				return fmt.Errorf("failed to create file %q: %w", newPath, cerr)
+			}
+			_ = f.Close()
+		}
+	}
+
+	flags := uintptr(syscall.MS_BIND)
+	if oldStat.IsDir() {
+		flags |= syscall.MS_REC
+	}
+	if !b.ReadWrite {
+		flags |= syscall.MS_RDONLY
+	}
+	if err := syscall.Mount(realOldPath, newPath, "", flags, ""); err != nil {
+		return fmt.Errorf("bind mount %q -> %q failed: %w", realOldPath, newPath, err)
+	}
+
+	return nil
+}
+
+func replicateBaseBindMount(oldRoot, newRoot, path string, readOnly bool) error {
 	oldPath := filepath.Join(oldRoot, path)
 	newPath := filepath.Join(newRoot, path)
 
