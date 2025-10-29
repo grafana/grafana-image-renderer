@@ -67,6 +67,14 @@ var (
 		},
 		Buckets: []float64{0.01, 0.03, 0.05, 0.1, 0.3, 0.5, 1, 3, 5, 7, 10, 15, 20, 30, 50, 70, 100, 150, 300},
 	}, []string{"action"})
+	MetricBrowserRequestSize = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Name: "browser_request_size",
+		Help: "How large is the average response from a browser request? This is a best-effort measure, and may not be entirely accurate.",
+		ConstLabels: prometheus.Labels{
+			"unit": "bytes",
+		},
+		Buckets: []float64{1, 1024, 4 * 1024, 16 * 1024, 1024 * 1024, 4 * 1024 * 1024, 16 * 1024 * 1024, 64 * 1024 * 1024, 256 * 1024 * 1024},
+	}, []string{"mime_type"})
 )
 
 var ErrInvalidBrowserOption = errors.New("invalid browser option")
@@ -400,7 +408,11 @@ func (s *BrowserService) createAllocatorOptions(cfg config.BrowserConfig) ([]chr
 
 func (s *BrowserService) handleNetworkEvents(browserCtx context.Context) {
 	requests := make(map[network.RequestID]trace.Span)
-	mu := &sync.Mutex{}
+	requestsMutex := &sync.Mutex{}
+
+	requestMimes := make(map[network.RequestID]string)
+	requestMimesMutex := &sync.Mutex{}
+
 	tracer := tracer(browserCtx)
 
 	chromedp.ListenTarget(browserCtx, func(ev any) {
@@ -437,9 +449,6 @@ func (s *BrowserService) handleNetworkEvents(browserCtx context.Context) {
 			}()
 
 		case *network.EventRequestWillBeSent:
-			mu.Lock()
-			defer mu.Unlock()
-
 			_, span := tracer.Start(browserCtx, "Browser HTTP request",
 				trace.WithTimestamp(e.Timestamp.Time()),
 				trace.WithAttributes(
@@ -448,13 +457,20 @@ func (s *BrowserService) handleNetworkEvents(browserCtx context.Context) {
 					attribute.String("method", e.Request.Method),
 					attribute.String("type", string(e.Type)),
 				))
+
+			requestsMutex.Lock()
 			requests[e.RequestID] = span
+			requestsMutex.Unlock()
 
 		case *network.EventResponseReceived:
-			mu.Lock()
-			defer mu.Unlock()
+			requestMimesMutex.Lock()
+			requestMimes[e.RequestID] = e.Response.MimeType
+			requestMimesMutex.Unlock()
 
+			requestsMutex.Lock()
 			span, ok := requests[e.RequestID]
+			delete(requests, e.RequestID) // no point keeping it around anymore.
+			requestsMutex.Unlock()
 			if !ok {
 				return
 			}
@@ -474,7 +490,16 @@ func (s *BrowserService) handleNetworkEvents(browserCtx context.Context) {
 				span.SetStatus(codes.Ok, fmt.Sprintf("%d %s", e.Response.Status, statusText))
 			}
 			span.End(trace.WithTimestamp(e.Timestamp.Time()))
-			delete(requests, e.RequestID) // no point keeping it around anymore.
+
+		case *network.EventLoadingFinished:
+			requestMimesMutex.Lock()
+			mime, ok := requestMimes[e.RequestID]
+			delete(requestMimes, e.RequestID)
+			requestMimesMutex.Unlock()
+			if !ok {
+				return
+			}
+			MetricBrowserRequestSize.WithLabelValues(mime).Observe(float64(e.EncodedDataLength))
 		}
 	})
 }

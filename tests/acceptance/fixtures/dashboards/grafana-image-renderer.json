@@ -117,7 +117,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "12.3.0-18638286877",
+      "pluginVersion": "12.3.0-18893060694",
       "targets": [
         {
           "datasource": {
@@ -217,7 +217,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "12.3.0-18638286877",
+      "pluginVersion": "12.3.0-18893060694",
       "targets": [
         {
           "datasource": {
@@ -340,7 +340,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "12.3.0-18638286877",
+      "pluginVersion": "12.3.0-18893060694",
       "targets": [
         {
           "datasource": {
@@ -422,7 +422,7 @@
           "reverse": false
         }
       },
-      "pluginVersion": "12.3.0-18638286877",
+      "pluginVersion": "12.3.0-18893060694",
       "targets": [
         {
           "datasource": {
@@ -504,7 +504,7 @@
           "reverse": false
         }
       },
-      "pluginVersion": "12.3.0-18638286877",
+      "pluginVersion": "12.3.0-18893060694",
       "targets": [
         {
           "datasource": {
@@ -604,7 +604,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "12.3.0-18638286877",
+      "pluginVersion": "12.3.0-18893060694",
       "targets": [
         {
           "datasource": {
@@ -704,7 +704,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "12.3.0-18638286877",
+      "pluginVersion": "12.3.0-18893060694",
       "targets": [
         {
           "datasource": {
@@ -804,7 +804,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "12.3.0-18638286877",
+      "pluginVersion": "12.3.0-18893060694",
       "targets": [
         {
           "datasource": {
@@ -899,7 +899,7 @@
           "reverse": false
         }
       },
-      "pluginVersion": "12.3.0-18638286877",
+      "pluginVersion": "12.3.0-18893060694",
       "targets": [
         {
           "datasource": {
@@ -1005,7 +1005,7 @@
           "reverse": false
         }
       },
-      "pluginVersion": "12.3.0-18638286877",
+      "pluginVersion": "12.3.0-18893060694",
       "targets": [
         {
           "datasource": {
@@ -1105,7 +1105,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "12.3.0-18638286877",
+      "pluginVersion": "12.3.0-18893060694",
       "targets": [
         {
           "datasource": {
@@ -1206,7 +1206,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "12.3.0-18638286877",
+      "pluginVersion": "12.3.0-18893060694",
       "targets": [
         {
           "datasource": {
@@ -1342,7 +1342,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "12.3.0-18638286877",
+      "pluginVersion": "12.3.0-18893060694",
       "targets": [
         {
           "datasource": {
@@ -1373,12 +1373,112 @@
       "type": "timeseries"
     },
     {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${prom}"
+      },
+      "description": "How large is a response from each MIME type?",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "showValues": false,
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "bytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 58
+      },
+      "id": 22,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "12.3.0-18893060694",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${prom}"
+          },
+          "editorMode": "code",
+          "expr": "avg by(mime_type) (histogram_quantile(0.99, sum by(le, mime_type) (browser_request_size_bucket{unit=\"bytes\", job=\"image-renderer\"})))",
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Browser response sizes (p99)",
+      "type": "timeseries"
+    },
+    {
       "collapsed": false,
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 58
+        "y": 66
       },
       "id": 19,
       "panels": [],
@@ -1426,14 +1526,14 @@
         "h": 13,
         "w": 12,
         "x": 0,
-        "y": 59
+        "y": 67
       },
       "id": 1,
       "options": {
         "cellHeight": "sm",
         "showHeader": true
       },
-      "pluginVersion": "12.3.0-18638286877",
+      "pluginVersion": "12.3.0-18893060694",
       "targets": [
         {
           "datasource": {
@@ -1527,14 +1627,14 @@
         "h": 13,
         "w": 12,
         "x": 12,
-        "y": 59
+        "y": 67
       },
       "id": 21,
       "options": {
         "cellHeight": "sm",
         "showHeader": true
       },
-      "pluginVersion": "12.3.0-18638286877",
+      "pluginVersion": "12.3.0-18893060694",
       "targets": [
         {
           "datasource": {
@@ -1610,7 +1710,7 @@
         "h": 16,
         "w": 24,
         "x": 0,
-        "y": 72
+        "y": 80
       },
       "id": 14,
       "options": {
@@ -1624,7 +1724,7 @@
         "sortOrder": "Descending",
         "wrapLogMessage": false
       },
-      "pluginVersion": "12.3.0-18638286877",
+      "pluginVersion": "12.3.0-18893060694",
       "targets": [
         {
           "datasource": {
@@ -1654,7 +1754,7 @@
         "h": 16,
         "w": 24,
         "x": 0,
-        "y": 88
+        "y": 96
       },
       "id": 15,
       "options": {
@@ -1668,7 +1768,7 @@
         "sortOrder": "Descending",
         "wrapLogMessage": false
       },
-      "pluginVersion": "12.3.0-18638286877",
+      "pluginVersion": "12.3.0-18893060694",
       "targets": [
         {
           "datasource": {
@@ -1744,5 +1844,5 @@
   "timezone": "browser",
   "title": "grafana-image-renderer",
   "uid": "grafana-image-renderer",
-  "version": 11
+  "version": 12
 }
