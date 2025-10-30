@@ -48,7 +48,7 @@ func SetupFS(ctx context.Context, newRoot string, bindMounts []BindMount) error 
 	mountedProc := false
 	if !anyMount(bindMounts, "/proc") {
 		if err := mountProcfs(filepath.Join(newRoot, "proc")); err != nil {
-			if errors.Is(err, syscall.EPERM) {
+			if errors.Is(err, syscall.EPERM) || errors.Is(err, os.ErrPermission) {
 				slog.WarnContext(ctx, "mounting new procfs not permitted, will attempt to bind-mount existing /proc")
 			} else {
 				return fmt.Errorf("failed to mount procfs: %w", err)
