@@ -4,6 +4,7 @@
   - This only removes the headers. The CVEs are not actually exploitable in the image.
   - This work is done to clean up CVE results in tools like Trivy and Grype, that scan vulnerabilities in images.
 - fix: remove all unnecessary headers and unnecessary packages (CVE-2017-13716, CVE-2018-20673, CVE-2018-20712, CVE-2018-9996, CVE-2020-36325, CVE-2021-32256, CVE-2025-11081, CVE-2025-11082, CVE-2025-11083, CVE-2025-11411, CVE-2025-11412, CVE-2025-11413, CVE-2025-11414, CVE-2025-1147, CVE-2025-1148, CVE-2025-1149, CVE-2025-11494, CVE-2025-11495, CVE-2025-1150, CVE-2025-1151, CVE-2025-1152, CVE-2025-1153, CVE-2025-1176, CVE-2025-1178, CVE-2025-1180, CVE-2025-1181, CVE-2025-1182, CVE-2025-11839, CVE-2025-11840, CVE-2025-3198, CVE-2025-5244, CVE-2025-5245, CVE-2025-7545, CVE-2025-7546, CVE-2025-8225), [#837](https://github.com/grafana/grafana-image-renderer/pull/837), [Proximyst](https://github.com/Proximyst)
+- fix: upgrade in Dockerfile (CVE-2024-13978, CVE-2025-8961, CVE-2025-9165, CVE-2025-9900), [#838](https://github.com/grafana/grafana-image-renderer/pull/838), [Proximyst](https://github.com/Proximyst)
 - fix: update node.js to aab5ffa (CVE-2024-13978, CVE-2025-8961, CVE-2025-9165, CVE-2025-9230, CVE-2025-9231, CVE-2025-9232, CVE-2025-9900), [#824](https://github.com/grafana/grafana-image-renderer/pull/824), [renovate-sh-app (bot)](https://github.com/apps/renovate-sh-app), [Proximyst](https://github.com/Proximyst)
 
 ## 4.1.3 (2025-10-29)
