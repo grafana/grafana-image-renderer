@@ -3,6 +3,7 @@ package sandbox
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -11,33 +12,14 @@ import (
 
 	"github.com/grafana/grafana-image-renderer/pkg/sandbox"
 	"github.com/urfave/cli/v3"
+	"go.opentelemetry.io/otel/trace"
 )
 
 func NewCmd() *cli.Command {
 	return &cli.Command{
-		Name:  "_internal_sandbox",
-		Usage: "Starts the browser in a best-effort sandbox.",
-		Flags: []cli.Flag{
-			&cli.StringSliceFlag{
-				Name:  "mount",
-				Usage: "Additional mount points to bind into the sandbox in the form of host_path:container_path(:rw)",
-				Validator: func(s []string) error {
-					for _, s := range s {
-						if _, err := parseBindMount(s); err != nil {
-							return fmt.Errorf("invalid --mount value %q: %w", s, err)
-						}
-					}
-					return nil
-				},
-			},
-			&cli.StringFlag{
-				Name:  "cwd",
-				Usage: "The working directory inside the sandbox.",
-				Value: "/tmp",
-			},
-		},
+		Name:   "_internal_sandbox",
+		Usage:  "Starts the browser in a best-effort sandbox.",
 		Hidden: true,
-		Action: run,
 		Commands: []*cli.Command{
 			{
 				Name:  "supported",
@@ -50,8 +32,42 @@ func NewCmd() *cli.Command {
 				},
 			},
 			{
-				Name:  "bootstrap",
-				Usage: "Bootstrap the sandbox environment.",
+				Name:  "run",
+				Usage: "Run a command inside the sandbox.",
+				Flags: []cli.Flag{
+					&cli.StringSliceFlag{
+						Name:  "mount",
+						Usage: "Additional mount points to bind into the sandbox in the form of host_path:container_path(:rw)",
+						Validator: func(s []string) error {
+							for _, s := range s {
+								if _, err := parseBindMount(s); err != nil {
+									return fmt.Errorf("invalid --mount value %q: %w", s, err)
+								}
+							}
+							return nil
+						},
+					},
+					&cli.StringFlag{
+						Name:  "cwd",
+						Usage: "The working directory inside the sandbox.",
+						Value: "/tmp",
+					},
+					&cli.StringFlag{
+						Name:  "trace",
+						Usage: "The OpenTelemetry trace ID to use in logs. This does not change anything about the browser, only the sandbox's log output.",
+					},
+					&cli.StringFlag{
+						Name:     "tmp",
+						Usage:    "The directory to mount as /tmp insidee the sandbox. This is intended to be a read-write bind mount.",
+						Required: true,
+					},
+				},
+				Action: run,
+			},
+			{
+				Name:            "bootstrap",
+				Usage:           "Bootstrap the sandbox environment.",
+				SkipFlagParsing: true,
 				Action: func(ctx context.Context, c *cli.Command) error {
 					newRoot, err := os.MkdirTemp("", "")
 					if err != nil {
@@ -59,7 +75,7 @@ func NewCmd() *cli.Command {
 					}
 					defer os.RemoveAll(newRoot)
 
-					cmd := exec.CommandContext(ctx, "/proc/self/exe", append([]string{"_internal_sandbox"}, c.Args().Slice()...)...)
+					cmd := exec.CommandContext(ctx, "/proc/self/exe", append([]string{"_internal_sandbox", "run"}, c.Args().Slice()...)...)
 					cmd.Dir = newRoot
 					cmd.Stdin = os.Stdin
 					cmd.Stdout = os.Stdout
@@ -91,6 +107,11 @@ func NewCmd() *cli.Command {
 }
 
 func run(ctx context.Context, c *cli.Command) error {
+	ctx, err := adoptTrace(ctx, c.String("trace"))
+	if err != nil {
+		slog.WarnContext(ctx, "failed to adopt trace", "error", err)
+	}
+
 	var bindMounts []sandbox.BindMount
 	for _, s := range c.StringSlice("mount") {
 		bm, err := parseBindMount(s)
@@ -100,6 +121,11 @@ func run(ctx context.Context, c *cli.Command) error {
 		}
 		bindMounts = append(bindMounts, bm)
 	}
+	bindMounts = append(bindMounts, sandbox.BindMount{
+		Source:      c.String("tmp"),
+		Destination: "/tmp",
+		ReadWrite:   true,
+	})
 
 	command := c.Args().Slice()
 	if len(command) == 0 {
@@ -149,4 +175,18 @@ func parseBindMount(s string) (sandbox.BindMount, error) {
 		Destination: container,
 		ReadWrite:   rw == "rw",
 	}, nil
+}
+
+func adoptTrace(ctx context.Context, traceID string) (context.Context, error) {
+	if traceID == "" {
+		return ctx, nil
+	}
+	tid, err := trace.TraceIDFromHex(traceID)
+	if err != nil {
+		return ctx, fmt.Errorf("invalid trace ID: %w", err)
+	}
+	return trace.ContextWithRemoteSpanContext(ctx, trace.NewSpanContext(trace.SpanContextConfig{
+		TraceID: tid,
+		Remote:  true,
+	})), nil
 }

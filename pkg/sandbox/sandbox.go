@@ -24,9 +24,9 @@ func Supported(ctx context.Context) bool {
 
 	// If we can get a sandboxed `true` to return with exit code 0, we're generally pretty good.
 	// If we can't, well, we can't.
-	cmd := exec.CommandContext(ctx, "/proc/self/exe", "_internal_sandbox", "bootstrap", "--", "true")
-	cmd.Stdout = nil
-	cmd.Stderr = nil
+	cmd := exec.CommandContext(ctx, "/proc/self/exe", "_internal_sandbox", "bootstrap", "--tmp", "/tmp", "--", "true")
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
 	cmd.Stdin = nil
 	return cmd.Run() == nil
 }
@@ -45,11 +45,6 @@ type BindMount struct {
 // SetupFS sets the file system up for the sandbox, such that we cannot escape the jail.
 // This should be called from a process inside a mount namespace, ideally also with a PID namespace.
 func SetupFS(ctx context.Context, newRoot string, bindMounts []BindMount) error {
-	if !anyMount(bindMounts, "/tmp") {
-		if err := mountTmpfs(filepath.Join(newRoot, "tmp")); err != nil {
-			return fmt.Errorf("failed to mount tmpfs: %w", err)
-		}
-	}
 	mountedProc := false
 	if !anyMount(bindMounts, "/proc") {
 		if err := mountProcfs(filepath.Join(newRoot, "proc")); err != nil {
@@ -82,10 +77,6 @@ func SetupFS(ctx context.Context, newRoot string, bindMounts []BindMount) error 
 			return fmt.Errorf("failed to bind mount /%s: %w", mnt, err)
 		}
 	}
-	// FIXME: Why can't we mount procfs here? Linux gives us an EPERM. We can, however, bind-mount it.
-	//  if err := mountProcfs(filepath.Join(newRoot, "proc")); err != nil {
-	//  	return fmt.Errorf("failed to mount procfs: %w", err)
-	//  }
 	for _, bm := range bindMounts {
 		if err := bm.mount("/", newRoot); err != nil {
 			return fmt.Errorf("failed to apply bind mount %q -> %q: %w", bm.Source, bm.Destination, err)
@@ -107,19 +98,6 @@ func mountProcfs(into string) error {
 
 	if err := syscall.Mount("proc", into, "proc", 0, ""); err != nil {
 		return fmt.Errorf("failed to mount procfs at %q: %w", into, err)
-	}
-	return nil
-}
-
-// mountTmpfs mounts a new tmpfs filesystem into the given directory.
-// If the directory does not exist, it is created.
-func mountTmpfs(into string) error {
-	if err := os.MkdirAll(into, 0o755); err != nil {
-		return fmt.Errorf("failed to create %q: %w", into, err)
-	}
-
-	if err := syscall.Mount("tmpfs", into, "tmpfs", 0, ""); err != nil {
-		return fmt.Errorf("failed to mount tmpfs at %q: %w", into, err)
 	}
 	return nil
 }

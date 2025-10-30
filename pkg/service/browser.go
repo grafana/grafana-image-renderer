@@ -410,7 +410,7 @@ func (s *BrowserService) createAllocatorOptions(cfg config.BrowserConfig, cwd st
 	if cfg.Namespaced {
 		opts = append(opts, chromedp.ExecPath("/proc/self/exe"))
 		// TODO: Add additional flags for necessary mounts for the browser if it is not Chromium?
-		opts = append(opts, chromedp.InitialArgs("_internal_sandbox", "bootstrap", "--", "--mount="+cwd+":/tmp:rw", "--cwd=/tmp", "--", cfg.Path))
+		opts = append(opts, chromedp.InitialArgs("_internal_sandbox", "bootstrap", "--tmp", cwd, "--cwd", "/tmp", "--", cfg.Path))
 		opts = append(opts, chromedp.UserDataDir("/tmp"))
 	} else {
 		opts = append(opts, chromedp.ExecPath(cfg.Path))
