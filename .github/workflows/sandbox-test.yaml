@@ -29,7 +29,9 @@ jobs:
           go-version-file: go.mod
           cache: false
       - name: Enable unprivileged user namespaces
-        run: sudo sysctl kernel.unprivileged_userns_clone=1
+        run: |
+          sudo sysctl kernel.unprivileged_userns_clone=1
+          sudo sysctl kernel.apparmor_restrict_unprivileged_userns=0
 
       - run: go run -buildvcs . _internal_sandbox bootstrap -- -- true
 
@@ -47,7 +49,9 @@ jobs:
           go-version-file: go.mod
           cache: false
       - name: Enable unprivileged user namespaces
-        run: sudo sysctl kernel.unprivileged_userns_clone=1
+        run: |
+          sudo sysctl kernel.unprivileged_userns_clone=1
+          sudo sysctl kernel.apparmor_restrict_unprivileged_userns=0
 
       - name: docker build
         env:
@@ -72,7 +76,9 @@ jobs:
           go-version-file: go.mod
           cache: false
       - name: Enable unprivileged user namespaces
-        run: sudo sysctl kernel.unprivileged_userns_clone=1
+        run: |
+          sudo sysctl kernel.unprivileged_userns_clone=1
+          sudo sysctl kernel.apparmor_restrict_unprivileged_userns=0
 
       - name: docker build
         env:
