@@ -22,7 +22,7 @@ LABEL maintainer="Grafana team <hello@grafana.com>"
 LABEL org.opencontainers.image.source="https://github.com/grafana/grafana-image-renderer/tree/master/go.Dockerfile"
 
 # If we ever need to bust the cache, just change the date here.
-RUN echo 'cachebuster 2025-10-17' && apt-get update
+RUN echo 'cachebuster 2025-10-30' && apt-get update && apt-get upgrade -y --no-install-recommends --no-install-suggests
 
 RUN apt-get install -y --no-install-recommends --no-install-suggests \
   fonts-ipaexfont-gothic fonts-wqy-zenhei fonts-thai-tlwg fonts-khmeros fonts-kacst-one fonts-freefont-ttf \
@@ -32,6 +32,12 @@ RUN apt-get install -y --no-install-recommends --no-install-suggests \
 ARG CHROMIUM_VERSION=141.0.7390.107
 RUN apt-get satisfy -y --no-install-recommends --no-install-suggests \
   "chromium (>=${CHROMIUM_VERSION}), chromium-driver (>=${CHROMIUM_VERSION}), chromium-shell (>=${CHROMIUM_VERSION}), chromium-sandbox (>=${CHROMIUM_VERSION})"
+
+# There is no point to us shipping headers.
+RUN dpkg -l | grep -E -- '-dev|-headers' | awk '{ print $2; }' | xargs apt-get remove -y
+# Do a final automatic clean-up.
+RUN apt-get autoremove -y
+
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # This is so the browser can write file names that contain non-ASCII characters.

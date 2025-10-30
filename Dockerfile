@@ -1,4 +1,4 @@
-FROM node:22-trixie@sha256:093113ea41201970b0581e6d16da633a35bca5c71d7f9c2ef2883f56f8c7483b AS build
+FROM node:22-trixie@sha256:aab5ffa3c0aaf9fba09d51bdda99caf4815217ed48d64c0fd8518e141b5c16f8 AS build
 
 WORKDIR /src
 COPY . ./
@@ -7,13 +7,13 @@ RUN yarn install --pure-lockfile
 RUN yarn run build
 RUN rm -rf node_modules/ && yarn install --pure-lockfile --production
 
-FROM node:22-trixie@sha256:093113ea41201970b0581e6d16da633a35bca5c71d7f9c2ef2883f56f8c7483b AS output_image
+FROM node:22-trixie@sha256:aab5ffa3c0aaf9fba09d51bdda99caf4815217ed48d64c0fd8518e141b5c16f8 AS output_image
 
 LABEL maintainer="Grafana team <hello@grafana.com>"
 LABEL org.opencontainers.image.source="https://github.com/grafana/grafana-image-renderer/tree/master/Dockerfile"
 
 # If we ever need to bust the cache, just change the date here.
-RUN echo 'cachebuster 2025-10-17' && apt-get update
+RUN echo 'cachebuster 2025-10-30' && apt-get update && apt-get upgrade -y --no-install-recommends --no-install-suggests
 
 RUN apt-get install -y --no-install-recommends --no-install-suggests \
   fonts-ipaexfont-gothic fonts-wqy-zenhei fonts-thai-tlwg fonts-khmeros fonts-kacst-one fonts-freefont-ttf \
@@ -23,6 +23,12 @@ RUN apt-get install -y --no-install-recommends --no-install-suggests \
 ARG CHROMIUM_VERSION=141.0.7390.107
 RUN apt-get satisfy -y --no-install-recommends --no-install-suggests \
   "chromium (>=${CHROMIUM_VERSION}), chromium-driver (>=${CHROMIUM_VERSION}), chromium-shell (>=${CHROMIUM_VERSION}), chromium-sandbox (>=${CHROMIUM_VERSION})"
+
+# There is no point to us shipping headers.
+RUN dpkg -l | grep -E -- '-dev|-headers' | awk '{ print $2; }' | xargs apt-get remove -y
+# Do a final automatic clean-up.
+RUN apt-get autoremove -y
+
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # This is so the browser can write file names that contain non-ASCII characters.
