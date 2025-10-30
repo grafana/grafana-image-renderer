@@ -152,10 +152,9 @@ func StartImageRenderer(tb testing.TB, options ...ContainerOption) *ImageRendere
 				c.Healthcheck.StartPeriod = time.Second * 5
 			},
 			// TODO: We need a good way to support both non-namespaced and namespaced tests.
-			// FIXME: We shouldn't be using Privileged.
 			HostConfigModifier: func(hc *container.HostConfig) {
 				hc.CapAdd = append(hc.CapAdd, "CAP_SYS_ADMIN", "CAP_SYS_CHROOT")
-				hc.Privileged = true
+				hc.SecurityOpt = append(hc.SecurityOpt, "apparmor=unconfined")
 			},
 			Env: map[string]string{
 				"BROWSER_NAMESPACED": "true",
