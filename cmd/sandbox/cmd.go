@@ -73,7 +73,7 @@ func NewCmd() *cli.Command {
 					if err != nil {
 						return fmt.Errorf("failed to create temp dir: %w", err)
 					}
-					defer os.RemoveAll(newRoot)
+					defer func() { _ = os.RemoveAll(newRoot) }()
 
 					cmd := exec.CommandContext(ctx, "/proc/self/exe", append([]string{"_internal_sandbox", "run"}, c.Args().Slice()...)...)
 					cmd.Dir = newRoot
@@ -160,7 +160,7 @@ func parseBindMount(s string) (sandbox.BindMount, error) {
 	if !found {
 		return sandbox.BindMount{}, fmt.Errorf("invalid mount format, expected host_path:container_path(:rw)")
 	}
-	container, rw, found := strings.Cut(container, ":")
+	container, rw, _ := strings.Cut(container, ":")
 
 	if !filepath.IsAbs(host) {
 		return sandbox.BindMount{}, fmt.Errorf("host path must be absolute: %s", host)
