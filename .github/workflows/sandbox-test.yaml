@@ -15,6 +15,12 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  list-sysctl:
+    name: List all sysctls
+    runs-on: ubuntu-x64
+    steps:
+      - run: sudo sysctl -a
+
   host-sandbox:
     name: On host
     runs-on: ubuntu-x64
