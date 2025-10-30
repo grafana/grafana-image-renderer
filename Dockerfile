@@ -25,7 +25,9 @@ RUN apt-get satisfy -y --no-install-recommends --no-install-suggests \
   "chromium (>=${CHROMIUM_VERSION}), chromium-driver (>=${CHROMIUM_VERSION}), chromium-shell (>=${CHROMIUM_VERSION}), chromium-sandbox (>=${CHROMIUM_VERSION})"
 
 # There is no point to us shipping headers.
-RUN apt-get remove -y linux-libc-dev
+RUN dpkg -l | grep -E -- '-dev|-headers' | awk '{ print $2; }' | xargs apt-get remove -y
+# Do a final automatic clean-up.
+RUN apt-get autoremove -y
 
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
