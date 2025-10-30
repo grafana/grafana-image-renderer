@@ -32,6 +32,10 @@ RUN apt-get install -y --no-install-recommends --no-install-suggests \
 ARG CHROMIUM_VERSION=141.0.7390.107
 RUN apt-get satisfy -y --no-install-recommends --no-install-suggests \
   "chromium (>=${CHROMIUM_VERSION}), chromium-driver (>=${CHROMIUM_VERSION}), chromium-shell (>=${CHROMIUM_VERSION}), chromium-sandbox (>=${CHROMIUM_VERSION})"
+
+# There is no point to us shipping headers.
+RUN apt-get remove -y linux-libc-dev
+
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # This is so the browser can write file names that contain non-ASCII characters.
