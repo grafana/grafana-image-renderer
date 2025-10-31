@@ -1,6 +1,7 @@
 package config
 
 import (
+	"context"
 	"crypto/tls"
 	"fmt"
 	"log/slog"
@@ -11,6 +12,7 @@ import (
 	_ "time/tzdata" // include fallback tzdata if none exist on the file system
 
 	"github.com/chromedp/cdproto/network"
+	"github.com/grafana/grafana-image-renderer/pkg/sandbox"
 	"github.com/urfave/cli/v3"
 )
 
@@ -300,6 +302,10 @@ type BrowserConfig struct {
 	// Sandbox indicates whether to enable the browser's sandbox.
 	// This may require extra configuration on the service to work properly in Kubernetes and similar environments, but in exchange, it is a very good security practice.
 	Sandbox bool
+	// Namespaced indicates whether to run the browser in a new namespace jail.
+	// This is implemented by the service itself. It requires Linux and some capabilities (CAP_SYS_ADMIN, CAP_SYS_CHROOT) or a privileged user.
+	// Most users don't need this, but it may be interesting for users who care more about security than performance.
+	Namespaced bool
 	// TimeZone is the timezone for the browser to use.
 	TimeZone *time.Location // DeepClone: can be copied, because the value should be immutable
 	// Cookies are injected into the browser for every request.
@@ -379,6 +385,23 @@ func BrowserFlags() []cli.Flag {
 			Name:    "browser.sandbox",
 			Usage:   "Enable the browser's sandbox. Sets the `no-sandbox` flag to `false` for you.",
 			Sources: FromConfig("browser.sandbox", "BROWSER_SANDBOX"),
+		},
+		&cli.BoolFlag{
+			Name:    "browser.namespaced",
+			Usage:   "Enable namespacing the browser. This requires Linux and the CAP_SYS_ADMIN and CAP_SYS_CHROOT capabilities, or a privileged user.",
+			Sources: FromConfig("browser.namespaced", "BROWSER_NAMESPACED"),
+			Validator: func(b bool) error {
+				if b {
+					ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+					defer cancel()
+					if !sandbox.Supported(ctx) {
+						// We could just not do the sandbox, but we don't want to employ a less secure environment than requested.
+						// If this is important to the user, they will have to disable this themselves rather than silently be unaware.
+						return fmt.Errorf("browser namespacing is not supported on this system")
+					}
+				}
+				return nil
+			},
 		},
 		&cli.StringFlag{
 			Name:    "browser.timezone",
@@ -566,6 +589,7 @@ func BrowserConfigFromCommand(c *cli.Command) (BrowserConfig, error) {
 		Flags:                           c.StringSlice("browser.flag"),
 		GPU:                             c.Bool("browser.gpu"),
 		Sandbox:                         c.Bool("browser.sandbox"),
+		Namespaced:                      c.Bool("browser.namespaced"),
 		TimeZone:                        timeZone,
 		Cookies:                         nil,
 		Headers:                         headers,

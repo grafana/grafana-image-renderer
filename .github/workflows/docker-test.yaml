@@ -62,6 +62,10 @@ jobs:
           echo "$SECRET" > "$LPATH"
           echo "LICENSE_JWT=$LPATH" >> "$GITHUB_ENV"
 
+      - name: Enable unprivileged user namespaces
+        run: |
+          sudo sysctl kernel.unprivileged_userns_clone=1
+          sudo sysctl kernel.apparmor_restrict_unprivileged_userns=0
       - name: go test ./tests/acceptance/...
         run: go test ./tests/acceptance/... -count=1
         env:

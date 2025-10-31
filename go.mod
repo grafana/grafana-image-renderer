@@ -5,11 +5,11 @@ go 1.25.3
 require (
 	github.com/Masterminds/semver/v3 v3.4.0
 	github.com/chromedp/cdproto v0.0.0-20250803210736-d308e07a266d
-	github.com/chromedp/chromedp v0.14.2
 	github.com/docker/docker v28.3.3+incompatible
 	github.com/docker/go-connections v0.6.0
 	github.com/gen2brain/go-fitz v1.24.15
 	github.com/go-jose/go-jose/v4 v4.1.2
+	github.com/grafana/chromedp v0.1.0
 	github.com/pbnjay/memory v0.0.0-20210728143218-7b4eea64cf58
 	github.com/prometheus/client_golang v1.23.2
 	github.com/shirou/gopsutil/v4 v4.25.9
@@ -28,6 +28,7 @@ require (
 	go.uber.org/automaxprocs v1.6.0
 	golang.org/x/sync v0.17.0
 	google.golang.org/grpc v1.76.0
+	kernel.org/pub/linux/libs/security/libcap/cap v1.2.77
 )
 
 require (
@@ -101,6 +102,7 @@ require (
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20251029180050-ab9386a59fda // indirect
 	google.golang.org/protobuf v1.36.10 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
+	kernel.org/pub/linux/libs/security/libcap/psx v1.2.77 // indirect
 )
 
 tool golang.org/x/tools/cmd/goimports

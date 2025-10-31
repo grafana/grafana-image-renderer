@@ -6,6 +6,7 @@ import (
 	"log/slog"
 
 	"github.com/grafana/grafana-image-renderer/cmd/healthcheck"
+	"github.com/grafana/grafana-image-renderer/cmd/sandbox"
 	"github.com/grafana/grafana-image-renderer/cmd/server"
 	"github.com/grafana/grafana-image-renderer/pkg/config"
 	"github.com/grafana/grafana-image-renderer/pkg/service"
@@ -39,6 +40,7 @@ func NewRootCmd() *cli.Command {
 		Commands: []*cli.Command{
 			healthcheck.NewCmd(),
 			server.NewCmd(),
+			sandbox.NewCmd(),
 		},
 	}
 }
