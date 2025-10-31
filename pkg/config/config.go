@@ -694,7 +694,7 @@ func RateLimitFlags() []cli.Flag {
 			Name:    "rate-limit.max-available",
 			Usage:   "The maximum amount of memory (in bytes) available to processes. If more memory exists, only this amount is used. 0 disables the maximum.",
 			Value:   0,
-			Sources: FromConfig("rate-limit.max-available", "RATE_LIMIT_MAX_AVAILABLE", "GOMEMLIMIT"),
+			Sources: FromConfig("rate-limit.max-available", "RATE_LIMIT_MAX_AVAILABLE"),
 		},
 		&cli.Uint64Flag{
 			Name:    "rate-limit.min-memory-per-browser",
