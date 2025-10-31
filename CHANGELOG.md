@@ -1,4 +1,9 @@
-## 5.0.0 (2025-X-Y)
+## 5.0.1+
+
+Please use the GitHub Releases page for future changelogs.
+They are automatically generated, meaning there is less work for us to do, and thus less error-prone.
+
+## 5.0.0 (2025-10-31)
 
 - Rewrite: Migrate to Go
   - This also means the entire Node.js service and plugin are both gone.
