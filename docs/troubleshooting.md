@@ -127,3 +127,8 @@ We recommend 1 GiB of `GOMEMLIMIT` per 8 GiB of container memory limit.
 
 Sorry about that. Open an issue, or compile it yourself.
 See the [README.md](./README.md) for instructions.
+
+## I'm airgapped. How do I use this?
+
+You need to import the Docker image via a USB stick or similar.
+If you are a Grafana Enterprise customer, consider contacting Grafana Support.
