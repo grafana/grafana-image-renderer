@@ -8,7 +8,7 @@ A Grafana backend plugin that handles rendering panels and dashboards to PNGs us
 - Windows (x64)
 - Mac OS X (x64)
 
-For Mac ARM64, you need to [build the plugin from source](https://github.com/grafana/grafana-image-renderer/blob/master/docs/building_from_source.md) or use the [remote rendering installation](https://github.com/grafana/grafana-image-renderer?tab=readme-ov-file#remote-rendering-service-installation).
+For Mac ARM64, you need to [build the plugin from source](https://github.com/grafana/grafana-image-renderer/blob/master/docs/building_from_source.md) or use the [remote rendering installation](https://github.com/grafana/grafana-image-renderer/blob/master/README.md#docker-image-recommended).
 
 ### Dependencies
 
@@ -34,7 +34,7 @@ We offer two installation methods: as a Docker image, and as a standalone servic
 
 **I deploy Grafana as a user/in systemd/...:**
 
-  * Prefer the Docker image with `--networking=host` passed to the Docker container.
+  * Prefer the Docker image with `--network=host` passed to the Docker container.
   * If that is not fitting, prefer the standalone server.
 
 ### Docker image (recommended)
