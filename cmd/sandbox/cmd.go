@@ -13,6 +13,7 @@ import (
 	"github.com/grafana/grafana-image-renderer/pkg/sandbox"
 	"github.com/urfave/cli/v3"
 	"go.opentelemetry.io/otel/trace"
+	libcap "kernel.org/pub/linux/libs/security/libcap/cap"
 )
 
 func NewCmd() *cli.Command {
@@ -141,6 +142,10 @@ func run(ctx context.Context, c *cli.Command) error {
 		return fmt.Errorf("failed to setup sandbox filesystem: %w", err)
 	}
 
+	if err := shedCapabilities(); err != nil {
+		slog.WarnContext(ctx, "failed to shed capabilities", "error", err)
+	}
+
 	cmd := exec.CommandContext(ctx, command[0], command[1:]...)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
@@ -189,4 +194,11 @@ func adoptTrace(ctx context.Context, traceID string) (context.Context, error) {
 		TraceID: tid,
 		Remote:  true,
 	})), nil
+}
+
+func shedCapabilities() error {
+	if err := libcap.DropBound(libcap.SYS_CHROOT, libcap.SYS_ADMIN, libcap.SETPCAP); err != nil {
+		return fmt.Errorf("failed to drop capabilities: %w", err)
+	}
+	return nil
 }
