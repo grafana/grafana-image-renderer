@@ -220,7 +220,7 @@ jobs:
   release:
     name: Create GitHub Release
     if: github.event_name == 'push' && github.ref_type == 'tag'
-    needs: [tag, build, manifest]
+    needs: [tag, build, manifest, go-build]
     runs-on: ubuntu-latest
     permissions:
       contents: write # to create the release
