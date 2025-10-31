@@ -136,3 +136,15 @@ If you are a Grafana Enterprise customer, consider contacting Grafana Support.
 ## My Grafana isn't in Docker
 
 You can use [host networking](https://docs.docker.com/engine/network/tutorials/host/) instead.
+
+## I use Windows and do not want Docker
+
+You can download the Windows binaries from the GitHub Release.
+As an example, this is how you run it with Brave on an ARM64 Windows host:
+
+```powershell
+PS > .\grafana-image-renderer-windows-arm64.exe server --browser.path "C:\Program Files\BraveSoftware\Brave-Browser\Application\brave.exe"
+```
+
+The browser must be installed separately.
+The browser must be a Chromium-based browser.
