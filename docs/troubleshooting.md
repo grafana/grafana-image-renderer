@@ -132,3 +132,7 @@ See the [README.md](./README.md) for instructions.
 
 You need to import the Docker image via a USB stick or similar.
 If you are a Grafana Enterprise customer, consider contacting Grafana Support.
+
+## My Grafana isn't in Docker
+
+You can use [host networking](https://docs.docker.com/engine/network/tutorials/host/) instead.
