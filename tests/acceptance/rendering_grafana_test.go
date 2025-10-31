@@ -55,7 +55,7 @@ func TestRenderingGrafana(t *testing.T) {
 			query := req.URL.Query()
 			query.Set("url", "http://grafana:3000/d/provisioned-prom-testing?render=1&from=1699333200000&to=1699344000000&kiosk=true")
 			query.Set("encoding", "png")
-			query.Set("width", "1400")
+			query.Set("width", "2000")
 			query.Set("height", "800")
 			query.Set("renderKey", renderKey)
 			query.Set("domain", "grafana")
@@ -67,7 +67,7 @@ func TestRenderingGrafana(t *testing.T) {
 
 			body := ReadBody(t, resp.Body)
 			bodyImg := ReadRGBA(t, body)
-			AssertRGBASize(t, bodyImg, 1400, 800)
+			AssertRGBASize(t, bodyImg, 2000, 800)
 			const fixture = "render-prometheus-set-width-height.png"
 			fixtureImg := ReadFixtureRGBA(t, fixture)
 			if !AssertPixelDifference(t, fixtureImg, bodyImg, 17_000) {
@@ -114,7 +114,7 @@ func TestRenderingGrafana(t *testing.T) {
 			contentDisposition := resp.Header.Get("Content-Disposition")
 			_, params, err := mime.ParseMediaType(contentDisposition)
 			require.NoError(t, err, "could not parse Content-Disposition header")
-			require.NotEmpty(t, params["filename"], "no filename in Content-Disposition header")
+			require.Regexp(t, `^Prometheus_ 1-data-.*\.csv$`, params["filename"])
 
 			body := ReadBody(t, resp.Body)
 			const fixture = "render-prometheus-defaults.csv"
@@ -386,6 +386,7 @@ func TestRenderingGrafana(t *testing.T) {
 					query.Set("renderKey", renderKey)
 					query.Set("domain", "grafana")
 					query.Set("height", "-1")
+					query.Set("width", "2000")
 					query.Set("landscape", fmt.Sprintf("%v", isLandscape))
 					req.URL.RawQuery = query.Encode()
 
@@ -397,7 +398,7 @@ func TestRenderingGrafana(t *testing.T) {
 					image := ReadRGBA(t, body)
 					fixture := fmt.Sprintf("render-very-long-prometheus-dashboard-full-height-landscape-%v.png", isLandscape)
 					fixtureImg := ReadFixtureRGBA(t, fixture)
-					if !AssertPixelDifference(t, fixtureImg, image, 125_000) { // this is a very long image, so data may be off by a little bit
+					if !AssertPixelDifference(t, fixtureImg, image, 240_000) { // there is some pixel fuzz / pixels moving just one or two over...
 						UpdateFixtureIfEnabled(t, fixture, body)
 					}
 				})

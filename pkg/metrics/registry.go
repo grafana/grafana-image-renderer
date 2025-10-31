@@ -16,6 +16,8 @@ func NewRegistry() *prometheus.Registry {
 		collectors.NewBuildInfoCollector(),
 
 		middleware.MetricAuthenticatedRequestAttempt,
+		middleware.MetricRateLimiterSlots,
+		middleware.MetricRateLimiterRequests,
 		middleware.MetricRequestsInFlight,
 		middleware.MetricRequestDurations,
 		middleware.MetricRecoveredRequests,
@@ -28,6 +30,11 @@ func NewRegistry() *prometheus.Registry {
 		service.MetricBrowserGetVersionDuration,
 		service.MetricBrowserRenderCSVDuration,
 		service.MetricBrowserRenderDuration,
+		service.MetricBrowserRequestSize,
+		service.MetricBrowserInstancesActive,
+		service.MetricProcessMaxMemory,
+		service.MetricProcessPeakMemoryAverage,
+		service.MetricProcessPeakMemoryInstant,
 	)
 	return registry
 }

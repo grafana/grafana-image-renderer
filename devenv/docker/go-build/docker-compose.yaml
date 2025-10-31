@@ -43,14 +43,46 @@ services:
     build:
       context: ../../../
       dockerfile: go.Dockerfile
+    cap_add:
+      - CAP_SYS_ADMIN # for clone, mount, unmount, unshare,
+      - CAP_SYS_CHROOT # for chroot
     environment:
       TRACING_ENDPOINT: http://tempo:4318/v1/traces
       LOG_LEVEL: debug
+    command:
+      - server
+      # 1 GiB
+      - --rate-limit.max-available=1073741824
+      - --browser.namespaced
     ports:
       - 8081:8081
     depends_on:
       - tempo
       - prometheus
+
+  alloy:
+    image: grafana/alloy:latest
+    privileged: true
+    command:
+      - run
+      - --storage.path=/var/lib/alloy/data
+      - /etc/alloy/config.alloy
+    volumes:
+      - ./config.alloy:/etc/alloy/config.alloy:ro
+      - alloy-data:/var/lib/alloy/data
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/lib/docker/:/var/lib/docker/:ro
+    depends_on:
+      - loki
+    restart: unless-stopped
+
+  loki:
+    image: grafana/loki:latest
+    command:
+      - -config.file=/etc/loki/local-config.yaml
+    volumes:
+      - ./loki.yaml:/etc/loki/local-config.yaml:ro
+    restart: unless-stopped
 
   grafana:
     image: grafana/grafana-enterprise:nightly
@@ -74,3 +106,4 @@ volumes:
   grafana-data:
   prometheus-data:
   tempo-data:
+  alloy-data:

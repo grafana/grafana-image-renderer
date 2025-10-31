@@ -25,7 +25,7 @@ import (
 	"github.com/chromedp/cdproto/fetch"
 	"github.com/chromedp/cdproto/network"
 	"github.com/chromedp/cdproto/page"
-	"github.com/chromedp/chromedp"
+	"github.com/grafana/chromedp"
 	"github.com/grafana/grafana-image-renderer/pkg/config"
 	"github.com/prometheus/client_golang/prometheus"
 	"go.opentelemetry.io/otel"
@@ -42,6 +42,10 @@ var (
 		},
 	})
 
+	MetricBrowserInstancesActive = prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "browser_instances_active",
+		Help: "How many browser instances are currently launched at any given time?",
+	})
 	MetricBrowserRenderDuration = prometheus.NewHistogram(prometheus.HistogramOpts{
 		Name: "browser_render_duration",
 		ConstLabels: prometheus.Labels{
@@ -63,12 +67,21 @@ var (
 		},
 		Buckets: []float64{0.01, 0.03, 0.05, 0.1, 0.3, 0.5, 1, 3, 5, 7, 10, 15, 20, 30, 50, 70, 100, 150, 300},
 	}, []string{"action"})
+	MetricBrowserRequestSize = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Name: "browser_request_size",
+		Help: "How large is the average response from a browser request? This is a best-effort measure, and may not be entirely accurate.",
+		ConstLabels: prometheus.Labels{
+			"unit": "bytes",
+		},
+		Buckets: []float64{1, 1024, 4 * 1024, 16 * 1024, 1024 * 1024, 4 * 1024 * 1024, 16 * 1024 * 1024, 64 * 1024 * 1024, 256 * 1024 * 1024},
+	}, []string{"mime_type"})
 )
 
 var ErrInvalidBrowserOption = errors.New("invalid browser option")
 
 type BrowserService struct {
-	cfg config.BrowserConfig
+	cfg       config.BrowserConfig
+	processes *ProcessStatService
 
 	// log is the base logger for the service.
 	log *slog.Logger
@@ -77,10 +90,11 @@ type BrowserService struct {
 // NewBrowserService creates a new browser service. It is used to launch browsers and control them.
 //
 // The options are not validated on creation, rather on request.
-func NewBrowserService(cfg config.BrowserConfig) *BrowserService {
+func NewBrowserService(cfg config.BrowserConfig, processStatService *ProcessStatService) *BrowserService {
 	return &BrowserService{
-		cfg: cfg,
-		log: slog.With("service", "browser"),
+		cfg:       cfg,
+		processes: processStatService,
+		log:       slog.With("service", "browser"),
 	}
 }
 
@@ -216,7 +230,13 @@ func (s *BrowserService) Render(ctx context.Context, url string, printer Printer
 	}
 	span.AddEvent("options applied")
 
-	allocatorOptions, err := s.createAllocatorOptions(cfg)
+	chromiumCwd, err := os.MkdirTemp("", "")
+	if err != nil {
+		return nil, "text/plain", fmt.Errorf("failed to create temporary directory for browser CWD: %w", err)
+	}
+	defer func() { _ = os.RemoveAll(chromiumCwd) }()
+
+	allocatorOptions, err := s.createAllocatorOptions(ctx, cfg, chromiumCwd)
 	if err != nil {
 		return nil, "text/plain", fmt.Errorf("failed to create allocator options: %w", err)
 	}
@@ -235,6 +255,7 @@ func (s *BrowserService) Render(ctx context.Context, url string, printer Printer
 
 	fileChan := make(chan []byte, 1) // buffered: we don't want the browser to stick around while we try to export this value.
 	actions := []chromedp.Action{
+		observingAction("trackProcess", trackProcess(browserCtx, s.processes)),
 		observingAction("network.Enable", network.Enable()), // required by waitForReady
 		observingAction("fetch.Enable", fetch.Enable()),     // required by handleNetworkEvents
 		observingAction("SetPageScaleFactor", emulation.SetPageScaleFactor(cfg.PageScaleFactor)),
@@ -250,6 +271,8 @@ func (s *BrowserService) Render(ctx context.Context, url string, printer Printer
 		observingAction("printer.action", printer.action(fileChan, cfg)),
 	}
 	span.AddEvent("actions created")
+	MetricBrowserInstancesActive.Inc()
+	defer MetricBrowserInstancesActive.Dec()
 	if err := chromedp.Run(browserCtx, actions...); err != nil {
 		return nil, "text/plain", fmt.Errorf("failed to run browser: %w", err)
 	}
@@ -270,37 +293,40 @@ func (s *BrowserService) Render(ctx context.Context, url string, printer Printer
 // You may be thinking: what the hell are we doing? Why are we using a browser for this?
 // The CSV endpoint just returns HTML. The actual query is done by the browser, and then a script _in the webpage_ downloads it as a CSV file.
 // This SHOULD be replaced at some point, such that the Grafana server does all the work; this is just not acceptable behaviour...
-func (s *BrowserService) RenderCSV(ctx context.Context, url, renderKey, domain, acceptLanguage string) ([]byte, error) {
+func (s *BrowserService) RenderCSV(ctx context.Context, url, renderKey, domain, acceptLanguage string) ([]byte, string, error) {
 	tracer := tracer(ctx)
 	ctx, span := tracer.Start(ctx, "BrowserService.RenderCSV")
 	defer span.End()
 	start := time.Now()
 
 	if url == "" {
-		return nil, fmt.Errorf("url must not be empty")
+		return nil, "", fmt.Errorf("url must not be empty")
 	}
 
-	allocatorOptions, err := s.createAllocatorOptions(s.cfg)
+	chromiumCwd, err := os.MkdirTemp("", "")
 	if err != nil {
-		return nil, fmt.Errorf("failed to create allocator options: %w", err)
+		return nil, "text/plain", fmt.Errorf("failed to create temporary directory for browser CWD: %w", err)
+	}
+	defer func() { _ = os.RemoveAll(chromiumCwd) }()
+
+	chromiumDownloadDir := filepath.Join(chromiumCwd, "_gir_downloads")
+	realDownloadDir := filepath.Join(chromiumCwd, "_gir_downloads")
+	if s.cfg.Namespaced {
+		chromiumDownloadDir = "/tmp/_gir_downloads"
+	}
+	if err := os.MkdirAll(realDownloadDir, 0o755); err != nil {
+		return nil, "", fmt.Errorf("failed to create download directory at %q: %w", realDownloadDir, err)
+	}
+
+	allocatorOptions, err := s.createAllocatorOptions(ctx, s.cfg, chromiumCwd)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to create allocator options: %w", err)
 	}
 	allocatorCtx, cancelAllocator := chromedp.NewExecAllocator(ctx, allocatorOptions...)
 	defer cancelAllocator()
 	browserCtx, cancelBrowser := chromedp.NewContext(allocatorCtx, browserLoggers(ctx, s.log))
 	defer cancelBrowser()
 	span.AddEvent("browser allocated")
-
-	tmpDir, err := os.MkdirTemp("", "gir-csv-*")
-	if err != nil {
-		return nil, fmt.Errorf("failed to create temporary directory: %w", err)
-	}
-	defer func() {
-		if err := os.RemoveAll(tmpDir); err != nil {
-			s.log.WarnContext(ctx, "failed to remove temporary directory", "path", tmpDir, "error", err)
-			span.AddEvent("temporary directory removed", trace.WithAttributes(attribute.String("path", tmpDir)))
-		}
-	}()
-	span.AddEvent("temporary directory created", trace.WithAttributes(attribute.String("path", tmpDir)))
 
 	var headers network.Headers
 	if acceptLanguage != "" {
@@ -312,6 +338,7 @@ func (s *BrowserService) RenderCSV(ctx context.Context, url, renderKey, domain, 
 	s.handleNetworkEvents(browserCtx)
 
 	actions := []chromedp.Action{
+		observingAction("trackProcess", trackProcess(browserCtx, s.processes)),
 		observingAction("network.Enable", network.Enable()),
 		observingAction("setHeaders", setHeaders(browserCtx, headers)),
 		observingAction("setCookies", setCookies([]*network.SetCookieParams{
@@ -321,45 +348,57 @@ func (s *BrowserService) RenderCSV(ctx context.Context, url, renderKey, domain, 
 				Domain: domain,
 			},
 		})),
-		observingAction("SetDownloadBehavior", browser.SetDownloadBehavior(browser.SetDownloadBehaviorBehaviorAllow).WithDownloadPath(tmpDir)),
+		observingAction("SetDownloadBehavior", browser.SetDownloadBehavior(browser.SetDownloadBehaviorBehaviorAllow).WithDownloadPath(chromiumDownloadDir)),
 		observingAction("Navigate", chromedp.Navigate(url)),
 	}
+	MetricBrowserInstancesActive.Inc()
+	defer MetricBrowserInstancesActive.Dec()
 	if err := chromedp.Run(browserCtx, actions...); err != nil {
-		return nil, fmt.Errorf("failed to run browser: %w", err)
+		return nil, "", fmt.Errorf("failed to run browser: %w", err)
 	}
 	span.AddEvent("actions completed")
 
 	// Wait for the file to be downloaded.
-	var entries []os.DirEntry
+	filename := ""
 	for {
 		if err := ctx.Err(); err != nil {
-			return nil, err
+			return nil, "", err
 		}
 
-		entries, err = os.ReadDir(tmpDir)
-		if err == nil && len(entries) > 0 {
-			break // file exists now
+		entries, err := os.ReadDir(realDownloadDir)
+		if err != nil {
+			return nil, "", fmt.Errorf("failed to read files in chromium's working directory: %w", err)
+		}
+
+		for _, entry := range entries {
+			if strings.HasSuffix(strings.ToLower(entry.Name()), ".csv") {
+				filename = filepath.Join(realDownloadDir, entry.Name())
+				break
+			}
+		}
+		if filename != "" {
+			break
 		}
 
 		select {
 		case <-ctx.Done():
-			return nil, ctx.Err()
+			return nil, "", ctx.Err()
 		case <-time.After(100 * time.Millisecond):
 			// try again
 		}
 	}
-	span.AddEvent("downloaded file located", trace.WithAttributes(attribute.String("path", filepath.Join(tmpDir, entries[0].Name()))))
+	span.AddEvent("downloaded file located", trace.WithAttributes(attribute.String("path", filename)))
 
-	fileContents, err := os.ReadFile(filepath.Join(tmpDir, entries[0].Name()))
+	fileContents, err := os.ReadFile(filename)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read temporary file: %w", err)
+		return nil, "", fmt.Errorf("failed to read temporary file %q: %w", filename, err)
 	}
 
 	MetricBrowserRenderCSVDuration.Observe(time.Since(start).Seconds())
-	return fileContents, nil
+	return fileContents, filepath.Base(filename), nil
 }
 
-func (s *BrowserService) createAllocatorOptions(cfg config.BrowserConfig) ([]chromedp.ExecAllocatorOption, error) {
+func (s *BrowserService) createAllocatorOptions(ctx context.Context, cfg config.BrowserConfig, cwd string) ([]chromedp.ExecAllocatorOption, error) {
 	opts := chromedp.DefaultExecAllocatorOptions[:]
 	opts = append(opts, chromedp.NoFirstRun, chromedp.NoDefaultBrowserCheck)
 	if !cfg.GPU {
@@ -368,7 +407,20 @@ func (s *BrowserService) createAllocatorOptions(cfg config.BrowserConfig) ([]chr
 	if !cfg.Sandbox {
 		opts = append(opts, chromedp.NoSandbox)
 	}
-	opts = append(opts, chromedp.ExecPath(cfg.Path))
+	if cfg.Namespaced {
+		var traceID string
+		if sc := trace.SpanContextFromContext(ctx); sc.IsValid() && sc.HasTraceID() {
+			traceID = sc.TraceID().String()
+		}
+
+		opts = append(opts, chromedp.ExecPath("/proc/self/exe"))
+		// TODO: Add additional flags for necessary mounts for the browser if it is not Chromium?
+		opts = append(opts, chromedp.InitialArgs("_internal_sandbox", "bootstrap", "--tmp", cwd, "--cwd", "/tmp", "--trace", traceID, "--", cfg.Path))
+		opts = append(opts, chromedp.UserDataDir("/tmp"))
+	} else {
+		opts = append(opts, chromedp.ExecPath(cfg.Path))
+		opts = append(opts, chromedp.UserDataDir(cwd))
+	}
 	opts = append(opts, chromedp.WindowSize(cfg.MinWidth, cfg.MinHeight))
 	opts = append(opts, chromedp.Env("TZ="+cfg.TimeZone.String()))
 	for _, arg := range cfg.Flags {
@@ -388,7 +440,11 @@ func (s *BrowserService) createAllocatorOptions(cfg config.BrowserConfig) ([]chr
 
 func (s *BrowserService) handleNetworkEvents(browserCtx context.Context) {
 	requests := make(map[network.RequestID]trace.Span)
-	mu := &sync.Mutex{}
+	requestsMutex := &sync.Mutex{}
+
+	requestMimes := make(map[network.RequestID]string)
+	requestMimesMutex := &sync.Mutex{}
+
 	tracer := tracer(browserCtx)
 
 	chromedp.ListenTarget(browserCtx, func(ev any) {
@@ -425,9 +481,6 @@ func (s *BrowserService) handleNetworkEvents(browserCtx context.Context) {
 			}()
 
 		case *network.EventRequestWillBeSent:
-			mu.Lock()
-			defer mu.Unlock()
-
 			_, span := tracer.Start(browserCtx, "Browser HTTP request",
 				trace.WithTimestamp(e.Timestamp.Time()),
 				trace.WithAttributes(
@@ -436,13 +489,20 @@ func (s *BrowserService) handleNetworkEvents(browserCtx context.Context) {
 					attribute.String("method", e.Request.Method),
 					attribute.String("type", string(e.Type)),
 				))
+
+			requestsMutex.Lock()
 			requests[e.RequestID] = span
+			requestsMutex.Unlock()
 
 		case *network.EventResponseReceived:
-			mu.Lock()
-			defer mu.Unlock()
+			requestMimesMutex.Lock()
+			requestMimes[e.RequestID] = e.Response.MimeType
+			requestMimesMutex.Unlock()
 
+			requestsMutex.Lock()
 			span, ok := requests[e.RequestID]
+			delete(requests, e.RequestID) // no point keeping it around anymore.
+			requestsMutex.Unlock()
 			if !ok {
 				return
 			}
@@ -462,7 +522,16 @@ func (s *BrowserService) handleNetworkEvents(browserCtx context.Context) {
 				span.SetStatus(codes.Ok, fmt.Sprintf("%d %s", e.Response.Status, statusText))
 			}
 			span.End(trace.WithTimestamp(e.Timestamp.Time()))
-			delete(requests, e.RequestID) // no point keeping it around anymore.
+
+		case *network.EventLoadingFinished:
+			requestMimesMutex.Lock()
+			mime, ok := requestMimes[e.RequestID]
+			delete(requestMimes, e.RequestID)
+			requestMimesMutex.Unlock()
+			if !ok {
+				return
+			}
+			MetricBrowserRequestSize.WithLabelValues(mime).Observe(float64(e.EncodedDataLength))
 		}
 	})
 }
@@ -1081,4 +1150,18 @@ func (at *atomicTime) Load() time.Time {
 
 func (at *atomicTime) Store(t time.Time) {
 	at.Value.Store(t)
+}
+
+func trackProcess(browserCtx context.Context, processes *ProcessStatService) chromedp.Action {
+	return chromedp.ActionFunc(func(ctx context.Context) error {
+		cdpCtx := chromedp.FromContext(ctx)
+		proc := cdpCtx.Browser.Process()
+		if proc == nil {
+			// no process to track.
+			return nil
+		}
+
+		processes.TrackProcess(browserCtx, int32(proc.Pid))
+		return nil
+	})
 }

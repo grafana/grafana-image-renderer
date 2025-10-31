@@ -25,6 +25,7 @@ jobs:
     runs-on: ${{ matrix.runs-on }}
     permissions:
       contents: read # clone the repository
+      security-events: write # upload SARIF results
     steps:
       - uses: actions/checkout@v4
         with:
@@ -63,6 +64,7 @@ jobs:
     runs-on: ${{ matrix.runs-on }}
     permissions:
       contents: read # clone the repository
+      security-events: write # upload SARIF results
     steps:
       - uses: actions/checkout@v4
         with:

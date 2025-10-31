@@ -1,6 +1,7 @@
 package config
 
 import (
+	"context"
 	"crypto/tls"
 	"fmt"
 	"log/slog"
@@ -11,6 +12,7 @@ import (
 	_ "time/tzdata" // include fallback tzdata if none exist on the file system
 
 	"github.com/chromedp/cdproto/network"
+	"github.com/grafana/grafana-image-renderer/pkg/sandbox"
 	"github.com/urfave/cli/v3"
 )
 
@@ -300,6 +302,10 @@ type BrowserConfig struct {
 	// Sandbox indicates whether to enable the browser's sandbox.
 	// This may require extra configuration on the service to work properly in Kubernetes and similar environments, but in exchange, it is a very good security practice.
 	Sandbox bool
+	// Namespaced indicates whether to run the browser in a new namespace jail.
+	// This is implemented by the service itself. It requires Linux and some capabilities (CAP_SYS_ADMIN, CAP_SYS_CHROOT) or a privileged user.
+	// Most users don't need this, but it may be interesting for users who care more about security than performance.
+	Namespaced bool
 	// TimeZone is the timezone for the browser to use.
 	TimeZone *time.Location // DeepClone: can be copied, because the value should be immutable
 	// Cookies are injected into the browser for every request.
@@ -379,6 +385,23 @@ func BrowserFlags() []cli.Flag {
 			Name:    "browser.sandbox",
 			Usage:   "Enable the browser's sandbox. Sets the `no-sandbox` flag to `false` for you.",
 			Sources: FromConfig("browser.sandbox", "BROWSER_SANDBOX"),
+		},
+		&cli.BoolFlag{
+			Name:    "browser.namespaced",
+			Usage:   "Enable namespacing the browser. This requires Linux and the CAP_SYS_ADMIN and CAP_SYS_CHROOT capabilities, or a privileged user.",
+			Sources: FromConfig("browser.namespaced", "BROWSER_NAMESPACED"),
+			Validator: func(b bool) error {
+				if b {
+					ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+					defer cancel()
+					if !sandbox.Supported(ctx) {
+						// We could just not do the sandbox, but we don't want to employ a less secure environment than requested.
+						// If this is important to the user, they will have to disable this themselves rather than silently be unaware.
+						return fmt.Errorf("browser namespacing is not supported on this system")
+					}
+				}
+				return nil
+			},
 		},
 		&cli.StringFlag{
 			Name:    "browser.timezone",
@@ -566,6 +589,7 @@ func BrowserConfigFromCommand(c *cli.Command) (BrowserConfig, error) {
 		Flags:                           c.StringSlice("browser.flag"),
 		GPU:                             c.Bool("browser.gpu"),
 		Sandbox:                         c.Bool("browser.sandbox"),
+		Namespaced:                      c.Bool("browser.namespaced"),
 		TimeZone:                        timeZone,
 		Cookies:                         nil,
 		Headers:                         headers,
@@ -586,5 +610,116 @@ func BrowserConfigFromCommand(c *cli.Command) (BrowserConfig, error) {
 		MaxHeight:                       maxHeight,
 		PageScaleFactor:                 c.Float64("browser.page-scale-factor"),
 		Landscape:                       !c.Bool("browser.portrait"),
+	}, nil
+}
+
+type RateLimitConfig struct {
+	// Disabled indicates whether rate limiting is disabled.
+	Disabled bool
+
+	// TrackerDecay is the number N in decaying averages, `avg = ((N-1)*avg + new) / N`.
+	// This must be a minimum of 1, which will not use a slow-moving average at all.
+	TrackerDecay int64
+	// TrackerInterval is how often to sample process statistics on the browser processes.
+	// This must be a minimum of 1ms.
+	TrackerInterval time.Duration
+
+	// MinLimit is the minimum number of requests to permit.
+	// Even if we don't have slots for it, we will permit at least this many requests.
+	// Set to 0 to disable minimum; this is generally not recommended, especially in containerised environments like Kubernetes.
+	MinLimit uint32
+	// MaxLimit is the maximum number of requests to permit.
+	// Even if we have memory slots for more, we won't exceed this.
+	// Set to 0 to disable maximum; this is generally the way to go in horizontally scaled deployments.
+	MaxLimit uint32
+
+	// MaxAvailable is the maximum amount of memory (in bytes) available to processes.
+	// If there is more memory than this, we will only consider this amount.
+	// Set to 0 to use all available memory.
+	MaxAvailable uint64
+	// MinMemoryPerBrowser is the minimum amount of memory (in bytes) each browser process is expected to use.
+	// If the process tracker reports less, this is the value used. Otherwise, we use the process tracker's value.
+	// Set to 0 to disable the minimum.
+	MinMemoryPerBrowser uint64
+	// Headroom is how much memory (in bytes) should be left after the request's browser takes its share.
+	// If this cannot be accommodated, we will reject the request.
+	// Set to 0 to disable headroom.
+	Headroom uint64
+}
+
+func RateLimitFlags() []cli.Flag {
+	return []cli.Flag{
+		&cli.BoolFlag{
+			Name:    "rate-limit.disabled",
+			Usage:   "Disable rate limiting entirely.",
+			Sources: FromConfig("rate-limit.disabled", "RATE_LIMIT_DISABLED"),
+		},
+		&cli.Int64Flag{
+			Name:    "rate-limit.process-tracker.decay",
+			Usage:   "The decay factor N to use in slow-moving averages of process statistics, where `avg = ((N-1)*avg + new) / N`. Must be at least 1.",
+			Value:   5,
+			Sources: FromConfig("rate-limit.process-tracker.decay", "RATE_LIMIT_PROCESS_TRACKER_DECAY"),
+			Validator: func(i int64) error {
+				if i < 1 {
+					return fmt.Errorf("rate-limit.process-tracker.decay must be at least 1")
+				}
+				return nil
+			},
+		},
+		&cli.DurationFlag{
+			Name:    "rate-limit.process-tracker.interval",
+			Usage:   "How often to sample process statistics on the browser processes. Must be >= 1ms.",
+			Value:   50 * time.Millisecond,
+			Sources: FromConfig("rate-limit.process-tracker.interval", "RATE_LIMIT_PROCESS_TRACKER_INTERVAL"),
+			Validator: func(d time.Duration) error {
+				if d < time.Millisecond {
+					return fmt.Errorf("rate-limit.process-tracker.interval must be at least 1ms")
+				}
+				return nil
+			},
+		},
+		&cli.Uint32Flag{
+			Name:    "rate-limit.min-limit",
+			Usage:   "The minimum number of requests to permit. Ratelimiting will not reject requests if the number of currently running requests is below this value. Set to 0 to disable minimum (not recommended).",
+			Value:   3,
+			Sources: FromConfig("rate-limit.min-limit", "RATE_LIMIT_MIN_LIMIT"),
+		},
+		&cli.Uint32Flag{
+			Name:    "rate-limit.max-limit",
+			Usage:   "The maximum number of requests to permit. Ratelimiting will reject requests if the number of currently running requests is at or above this value. Set to 0 to disable maximum. The v4 service used 5 by default.",
+			Value:   0,
+			Sources: FromConfig("rate-limit.max-limit", "RATE_LIMIT_MAX_LIMIT"),
+		},
+		&cli.Uint64Flag{
+			Name:    "rate-limit.max-available",
+			Usage:   "The maximum amount of memory (in bytes) available to processes. If more memory exists, only this amount is used. 0 disables the maximum.",
+			Value:   0,
+			Sources: FromConfig("rate-limit.max-available", "RATE_LIMIT_MAX_AVAILABLE"),
+		},
+		&cli.Uint64Flag{
+			Name:    "rate-limit.min-memory-per-browser",
+			Usage:   "The minimum amount of memory (in bytes) each browser process is expected to use. Set to 0 to disable the minimum.",
+			Value:   64 * 1024 * 1024, // 64 MiB
+			Sources: FromConfig("rate-limit.min-memory-per-browser", "RATE_LIMIT_MIN_MEMORY_PER_BROWSER"),
+		},
+		&cli.Uint64Flag{
+			Name:    "rate-limit.headroom",
+			Usage:   "The amount of memory (in bytes) to leave as headroom after allocating memory for browser processes. Set to 0 to disable headroom.",
+			Value:   32 * 1024 * 1024, // 32 MiB
+			Sources: FromConfig("rate-limit.headroom", "RATE_LIMIT_HEADROOM"),
+		},
+	}
+}
+
+func RateLimitConfigFromCommand(c *cli.Command) (RateLimitConfig, error) {
+	return RateLimitConfig{
+		Disabled:            c.Bool("rate-limit.disabled"),
+		TrackerDecay:        c.Int64("rate-limit.process-tracker.decay"),
+		TrackerInterval:     c.Duration("rate-limit.process-tracker.interval"),
+		MinLimit:            c.Uint32("rate-limit.min-limit"),
+		MaxLimit:            c.Uint32("rate-limit.max-limit"),
+		MaxAvailable:        c.Uint64("rate-limit.max-available"),
+		MinMemoryPerBrowser: c.Uint64("rate-limit.min-memory-per-browser"),
+		Headroom:            c.Uint64("rate-limit.headroom"),
 	}, nil
 }
