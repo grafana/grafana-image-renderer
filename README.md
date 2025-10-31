@@ -41,6 +41,10 @@ services:
       GF_RENDERING_CALLBACK_URL: http://grafana:3000/
 ```
 
+If you are running with memory limits, you may want to set `GOMEMLIMIT` to a lower value than the limit, such as `1GiB`.
+You should not aim for the `GOMEMLIMIT` to match the container's limit: Chromium needs free memory on top.
+We recommend 1 GiB of `GOMEMLIMIT` per 8 GiB of container memory limit.
+
 [image]: https://hub.docker.com/r/grafana/grafana-image-renderer
 
 ### Configuration
