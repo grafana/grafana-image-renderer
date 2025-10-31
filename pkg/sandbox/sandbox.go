@@ -229,38 +229,64 @@ func replicateBaseBindMount(oldRoot, newRoot, path string, readOnly bool) error 
 }
 
 func chroot(newRoot string) error {
-	// FIXME: Attempt to use pivot_root first instead of chroot.
-	//   We don't always have access to pivot_root, so we need the fallback, but it is generally regarded as safer.
+	useChroot := func() error {
+		if err := syscall.Chroot(newRoot); err != nil {
+			return fmt.Errorf("chroot(%q) failed: %w", newRoot, err)
+		}
 
-	// if err := syscall.Mount(newRoot, newRoot, "", syscall.MS_BIND|syscall.MS_REC, ""); err != nil {
-	// 	return fmt.Errorf("failed to bind mount new root %q onto itself: %w", newRoot, err)
-	// }
+		// We want to be sure we're not remaining in some directory outside the new root.
+		if err := os.Chdir("/"); err != nil {
+			return fmt.Errorf("failed to chdir to new root: %w", err)
+		}
 
-	// oldRoot := filepath.Join(newRoot, ".old_root")
-	// if err := os.MkdirAll(oldRoot, 0o755); err != nil {
-	// 	return fmt.Errorf("failed to create old root dir %q: %w", oldRoot, err)
-	// }
-	// if err := syscall.PivotRoot(newRoot, oldRoot); err != nil {
-	// 	return fmt.Errorf("pivot_root(%q, %q) failed: %w", newRoot, oldRoot, err)
-	// }
-	// if err := os.Chdir("/"); err != nil {
-	// 	return fmt.Errorf("failed to chdir to new root: %w", err)
-	// }
-
-	// if err := syscall.Unmount("/.old_root", syscall.MNT_DETACH); err != nil {
-	// 	return fmt.Errorf("failed to unmount old root: %w", err)
-	// }
-	// if err := os.Remove("/.old_root"); err != nil {
-	// 	return fmt.Errorf("failed to remove /.old_root: %w", err)
-	// }
-
-	if err := syscall.Chroot(newRoot); err != nil {
-		return fmt.Errorf("chroot(%q) failed: %w", newRoot, err)
+		return nil
 	}
 
-	// We want to be sure we're not remaining in some directory outside the new root.
+	// We will first try to pivot_root. If we succeed with the pivot_root call, we're past the point of no return.
+	// Until then, we can still undo our work and try a chroot instead.
+	// pivot_root is significantly safer than chroot, so we prefer it when available.
+	// That said, we should still be relatively fine with chroot...
+
+	if err := syscall.Mount(newRoot, newRoot, "", syscall.MS_BIND|syscall.MS_REC, ""); err != nil {
+		if cherr := useChroot(); cherr != nil {
+			return fmt.Errorf("failed to bind mount new root %q onto itself: %v; additionally, chroot fallback failed: %w", newRoot, err, cherr)
+		} else {
+			return nil // we chrooted successfully instead
+		}
+	}
+
+	oldRoot := filepath.Join(newRoot, ".old_root")
+	if err := os.MkdirAll(oldRoot, 0o755); err != nil {
+		if umntErr := syscall.Unmount(newRoot, syscall.MNT_DETACH); umntErr != nil {
+			return fmt.Errorf("failed to unmount new root after mkdir failure: %v; original mkdir error: %w", umntErr, err)
+		}
+		if cherr := useChroot(); cherr != nil {
+			return fmt.Errorf("failed to bind mount new root %q onto itself: %v; additionally, chroot fallback failed: %w", newRoot, err, cherr)
+		} else {
+			return nil // we chrooted successfully instead
+		}
+	}
+	if err := syscall.PivotRoot(newRoot, oldRoot); err != nil {
+		// We can leave the directory be. It is empty, so we don't particularly care.
+		if umntErr := syscall.Unmount(newRoot, syscall.MNT_DETACH); umntErr != nil {
+			return fmt.Errorf("failed to unmount new root after pivot_root failure: %v; original pivot_root error: %w", umntErr, err)
+		}
+		if cherr := useChroot(); cherr != nil {
+			return fmt.Errorf("failed to pivot_root to %q: %v; additionally, chroot fallback failed: %w", newRoot, err, cherr)
+		} else {
+			return nil // we chrooted successfully instead
+		}
+	}
+	// We're past the point of no return now.
 	if err := os.Chdir("/"); err != nil {
 		return fmt.Errorf("failed to chdir to new root: %w", err)
+	}
+
+	if err := syscall.Unmount("/.old_root", syscall.MNT_DETACH); err != nil {
+		return fmt.Errorf("failed to unmount old root: %w", err)
+	}
+	if err := os.Remove("/.old_root"); err != nil {
+		return fmt.Errorf("failed to remove /.old_root: %w", err)
 	}
 
 	return nil
