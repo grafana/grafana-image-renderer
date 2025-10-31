@@ -236,7 +236,7 @@ func (s *BrowserService) Render(ctx context.Context, url string, printer Printer
 	}
 	defer func() { _ = os.RemoveAll(chromiumCwd) }()
 
-	allocatorOptions, err := s.createAllocatorOptions(cfg, chromiumCwd)
+	allocatorOptions, err := s.createAllocatorOptions(ctx, cfg, chromiumCwd)
 	if err != nil {
 		return nil, "text/plain", fmt.Errorf("failed to create allocator options: %w", err)
 	}
@@ -318,7 +318,7 @@ func (s *BrowserService) RenderCSV(ctx context.Context, url, renderKey, domain, 
 		return nil, "", fmt.Errorf("failed to create download directory at %q: %w", realDownloadDir, err)
 	}
 
-	allocatorOptions, err := s.createAllocatorOptions(s.cfg, chromiumCwd)
+	allocatorOptions, err := s.createAllocatorOptions(ctx, s.cfg, chromiumCwd)
 	if err != nil {
 		return nil, "", fmt.Errorf("failed to create allocator options: %w", err)
 	}
@@ -398,7 +398,7 @@ func (s *BrowserService) RenderCSV(ctx context.Context, url, renderKey, domain, 
 	return fileContents, filepath.Base(filename), nil
 }
 
-func (s *BrowserService) createAllocatorOptions(cfg config.BrowserConfig, cwd string) ([]chromedp.ExecAllocatorOption, error) {
+func (s *BrowserService) createAllocatorOptions(ctx context.Context, cfg config.BrowserConfig, cwd string) ([]chromedp.ExecAllocatorOption, error) {
 	opts := chromedp.DefaultExecAllocatorOptions[:]
 	opts = append(opts, chromedp.NoFirstRun, chromedp.NoDefaultBrowserCheck)
 	if !cfg.GPU {
@@ -408,9 +408,14 @@ func (s *BrowserService) createAllocatorOptions(cfg config.BrowserConfig, cwd st
 		opts = append(opts, chromedp.NoSandbox)
 	}
 	if cfg.Namespaced {
+		var traceID string
+		if sc := trace.SpanContextFromContext(ctx); sc.IsValid() && sc.HasTraceID() {
+			traceID = sc.TraceID().String()
+		}
+
 		opts = append(opts, chromedp.ExecPath("/proc/self/exe"))
 		// TODO: Add additional flags for necessary mounts for the browser if it is not Chromium?
-		opts = append(opts, chromedp.InitialArgs("_internal_sandbox", "bootstrap", "--tmp", cwd, "--cwd", "/tmp", "--", cfg.Path))
+		opts = append(opts, chromedp.InitialArgs("_internal_sandbox", "bootstrap", "--tmp", cwd, "--cwd", "/tmp", "--trace", traceID, "--", cfg.Path))
 		opts = append(opts, chromedp.UserDataDir("/tmp"))
 	} else {
 		opts = append(opts, chromedp.ExecPath(cfg.Path))
