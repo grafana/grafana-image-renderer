@@ -60,12 +60,19 @@ The service can be configured via several paths:
 
 The current configuration options can all be accessed by checking `--help`.
 
+As an example, see: `docker run --rm grafana/grafana-image-renderer:latest server --help`.
+
 ### Security
 
 The service requires a secret token to be present in all render requests.
 This token is set by `--server.auth-token` (`AUTH_TOKEN`); you can specify multiple and have a unique key per Grafana instance.
 By default, the token used is `-`.
 In Grafana, you must set this to match one of the tokens with the `[rendering] renderer_token` (`GF_RENDERING_RENDERER_TOKEN`) setting.
+
+### Monitoring
+
+You can monitor the service via Prometheus/[Mimir](https://grafana.com/oss/mimir) and any OpenTelemetry-compatible Tracing backend (like [Grafana Tempo](https://grafana.com/oss/tempo)).
+Metrics are exposed on `/metrics` and traces are sent as configured in the configuration options (see `--help`).
 
 ## Compile
 
