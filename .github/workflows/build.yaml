@@ -29,8 +29,10 @@ jobs:
             GOARCH: arm64
           - GOOS: windows
             GOARCH: amd64
+            SUFFIX: .exe
           - GOOS: windows
             GOARCH: arm64
+            SUFFIX: .exe
       fail-fast: false
 
     name: Go build (for ${{ matrix.GOOS }}/${{ matrix.GOARCH }})
@@ -38,6 +40,7 @@ jobs:
     env:
       GOOS: ${{ matrix.GOOS }}
       GOARCH: ${{ matrix.GOARCH }}
+      SUFFIX: ${{ matrix.SUFFIX || '' }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -47,7 +50,7 @@ jobs:
           go-version-file: go.mod
           cache: false
       - name: go build
-        run: go build -o grafana-image-renderer-"$GOOS"-"$GOARCH" -buildvcs -ldflags '-s -w' .
+        run: go build -o grafana-image-renderer-"$GOOS"-"$GOARCH""$SUFFIX" -buildvcs -ldflags '-s -w' .
       - uses: actions/upload-artifact@v4
         with:
           name: grafana-image-renderer-${{ matrix.GOOS }}-${{ matrix.GOARCH }}
