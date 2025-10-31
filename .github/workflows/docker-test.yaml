@@ -19,10 +19,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        file: [Dockerfile, go.Dockerfile]
         runs-on: [ubuntu-x64, ubuntu-arm64]
 
-    name: acceptance tests (${{ matrix.runs-on }}, ${{ matrix.file }})
+    name: acceptance tests (${{ matrix.runs-on }})
     runs-on: ${{ matrix.runs-on }}
     permissions:
       contents: read # clone the repository
@@ -41,8 +40,7 @@ jobs:
           DOCKER_BUILDKIT: 1
           BUILDKIT_STEP_LOG_MAX_SIZE: -1
           BUILDKIT_STEP_LOG_MAX_SPEED: -1
-          FILE: ${{ matrix.file }}
-        run: docker build . -t image-renderer -f "$FILE"
+        run: docker build . -t image-renderer
 
       - name: Read license
         if: ${{ github.event.repository.fork == false }}
@@ -91,7 +89,7 @@ jobs:
         if: ${{ steps.tar.outputs.upload == 'true' && (success() || failure()) }}
         uses: actions/upload-artifact@v4
         with:
-          name: changed-files-${{ matrix.file }}-${{ matrix.runs-on }}
+          name: changed-files-${{ matrix.runs-on }}
           path: changed-files.tar.xz
 
   # This is the job that is actually required by rulesets.

@@ -1,3 +1,9 @@
+## 5.0.0 (2025-X-Y)
+
+- Rewrite: Migrate to Go
+  - This also means the entire Node.js service and plugin are both gone.
+    You must use the remote service in Grafana from now.
+
 ## 4.1.5 (2025-10-31)
 
 This release does not change the current Grafana Image Renderer, it is only issued to release new tags of the `-golang` variants for further testing.
