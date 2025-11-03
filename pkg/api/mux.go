@@ -35,8 +35,20 @@ func NewHandler(
 	mux.Handle("GET /metrics", middleware.TracingFor("promhttp.HandlerFor", promhttp.HandlerFor(metrics, promhttp.HandlerOpts{Registry: metrics})))
 	mux.Handle("GET /healthz", HandleGetHealthz())
 	mux.Handle("GET /version", HandleGetVersion(versions, browser))
-	mux.Handle("GET /render", middleware.RequireAuthToken(middleware.TrustedURL(limiter.Limit(HandleGetRender(browser))), serverConfig.AuthTokens...))
-	mux.Handle("GET /render/csv", middleware.RequireAuthToken(middleware.TrustedURL(limiter.Limit(HandleGetRenderCSV(browser))), serverConfig.AuthTokens...))
+	mux.Handle("GET /render",
+		middleware.RequireAuthToken(
+			middleware.TrustedURL(
+				limiter.Limit(
+					middleware.InFlightMetrics(
+						HandleGetRender(browser)))),
+			serverConfig.AuthTokens...))
+	mux.Handle("GET /render/csv",
+		middleware.RequireAuthToken(
+			middleware.TrustedURL(
+				limiter.Limit(
+					middleware.InFlightMetrics(
+						HandleGetRenderCSV(browser)))),
+			serverConfig.AuthTokens...))
 	mux.Handle("GET /render/version", HandleGetRenderVersion(versions))
 
 	handler := middleware.RequestMetrics(mux)
