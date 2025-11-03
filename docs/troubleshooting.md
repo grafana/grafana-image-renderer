@@ -148,3 +148,52 @@ PS > .\grafana-image-renderer-windows-arm64.exe server --browser.path "C:\Progra
 
 The browser must be installed separately.
 The browser must be a Chromium-based browser.
+
+## I use my own CA certificates, how do I make Chromium accept them?
+
+This is often identified by seeing `net::ERR_CERT_AUTHORITY_INVALID` errors from Chromium in the logs (may require debug logging).
+
+### Linux (non-containerised)
+
+For Linux (i.e. non-containerised), you will need nss tools (`libnss3-tools` on Debian), and knowing the `$HOME` directory of the user that runs the service (often `grafana`):
+
+```shell
+$ certutil -d sql:"$HOME"/.pki/nssdb -A -n internal-root-ca -t C -i /path/to/internal-root-ca-here.crt.pem
+```
+
+You may also require other tooling.
+
+### Windows (non-containerised)
+
+For Windows (i.e. non-containerised), you will need to do the same as on Linux, but to your global store:
+
+```powershell
+PS > certutil –addstore "Root" <path>/internal-root-ca-here.crt.pem
+```
+
+## Container
+
+Perhaps the easiest way is to bake the CA certificate into your own Docker image, based on the official one:
+
+```dockerfile
+# Consider using a pinned version.
+FROM grafana/grafana-image-renderer:latest
+
+# Elevate our permissions to access system resources.
+USER root
+
+RUN mkdir -p /usr/local/share/ca-certificates/
+# Convert from .pem to .crt
+RUN openssl x509 -inform PEM -in rootCA.pem -out /usr/local/share/ca-certificates/rootCA.crt
+
+# Regenerate the CA certificates in the container.
+RUN update-ca-certificates --fresh
+
+# Reassume the nonroot user for the service execution.
+USER nonroot
+# Note: for Kubernetes, OpenShift, and other setups, this may need a numeric ID. See the upstream Dockerfile for which UID to use.
+
+# Some CA certificates also need to explicitly be included in the user's network security services database.
+RUN mkdir -p /home/nonroot/.pki/nssdb
+RUN certutil -d sql:/home/nonroot/.pki/nssdb -A -n internal-root-ca -t C -i /usr/local/share/ca-certificates/rootCA.crt
+```
