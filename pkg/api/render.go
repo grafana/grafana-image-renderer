@@ -193,9 +193,9 @@ func HandleGetRender(browser *service.BrowserService) http.Handler {
 			}
 			span.SetAttributes(attribute.String("encoding", "pdf"))
 
-			if pdfLandscape := r.URL.Query().Get("pdfLandscape"); pdfLandscape != "" {
+			if pdfLandscape := r.URL.Query().Get("pdf.landscape"); pdfLandscape != "" {
 				options = append(options, service.WithLandscape(pdfLandscape == "true"))
-				span.SetAttributes(attribute.Bool("pdfLandscape", pdfLandscape == "true"))
+				span.SetAttributes(attribute.Bool("pdf.landscape", pdfLandscape == "true"))
 			}
 		case "png":
 			var printerOpts []service.PNGPrinterOption
