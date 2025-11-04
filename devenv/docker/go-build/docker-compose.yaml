@@ -20,7 +20,7 @@ services:
     depends_on:
       - tempo-chown
       - memcached
-    command: 
+    command:
       - "-config.file=/etc/tempo.yaml"
     volumes:
       - tempo-data:/var/tempo
@@ -42,7 +42,7 @@ services:
   renderer:
     build:
       context: ../../../
-      dockerfile: go.Dockerfile
+      dockerfile: Dockerfile
     cap_add:
       - CAP_SYS_ADMIN # for clone, mount, unmount, unshare,
       - CAP_SYS_CHROOT # for chroot
