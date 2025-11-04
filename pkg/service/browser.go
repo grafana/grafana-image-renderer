@@ -164,6 +164,7 @@ func WithHeader(name, value string) RenderingOption {
 // A value of -1 is ignored.
 // The width and height must be larger than 10 px each; usual values are 1000x500 and 1920x1080, although bigger & smaller work as well.
 // You effectively set the aspect ratio with this as well: for 16:9, use a width that is 16px for every 9px it is high, or for 4:3, use a width that is 4px for every 3px it is high.
+// For values below the Min values (from the config), we clamp it to these.
 func WithViewport(width, height int) RenderingOption {
 	clamped := func(v, minimum, maximum int) int {
 		if v < minimum {
@@ -177,15 +178,9 @@ func WithViewport(width, height int) RenderingOption {
 
 	return func(cfg config.BrowserConfig) (config.BrowserConfig, error) {
 		if width != -1 {
-			if width < 100 {
-				return cfg, fmt.Errorf("%w: viewport width must be at least 100px", ErrInvalidBrowserOption)
-			}
 			cfg.MinWidth = clamped(width, cfg.MinWidth, cfg.MaxWidth)
 		}
 		if height != -1 {
-			if height < 100 {
-				return cfg, fmt.Errorf("%w: viewport height must be at least 100px", ErrInvalidBrowserOption)
-			}
 			cfg.MinHeight = clamped(height, cfg.MinHeight, cfg.MaxHeight)
 		}
 		return cfg, nil
