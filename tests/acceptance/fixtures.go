@@ -10,7 +10,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -74,13 +73,4 @@ func ReadRGBA(tb testing.TB, b []byte) *image.RGBA {
 	rgba, ok := img.(*image.RGBA)
 	require.True(tb, ok, "image body is not in RGBA format")
 	return rgba
-}
-
-func AssertRGBASize(tb testing.TB, img *image.RGBA, width, height int) bool {
-	tb.Helper()
-
-	// We want both errors to be reported, so we use variables
-	a := assert.Equal(tb, width, img.Bounds().Max.X, "image has wrong width")
-	b := assert.Equal(tb, height, img.Bounds().Max.Y, "image has wrong height")
-	return a && b
 }

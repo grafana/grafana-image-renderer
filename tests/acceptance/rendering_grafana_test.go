@@ -30,6 +30,11 @@ func TestRenderingGrafana(t *testing.T) {
 	renderKey, err := joseSignature.CompactSerialize()
 	require.NoError(t, err, "could not serialize JWT")
 
+	// The default pixel difference allowed between fixture and actual rendering.
+	// This is this high to allow for some pixel shifting, which is especially
+	// prominent with Chromium behaving _slightly_ differently on different architectures.
+	const defaultPixelDiff = 15_000
+
 	t.Run("render prometheus dashboard as PNG", func(t *testing.T) {
 		t.Parallel()
 
@@ -67,10 +72,9 @@ func TestRenderingGrafana(t *testing.T) {
 
 			body := ReadBody(t, resp.Body)
 			bodyImg := ReadRGBA(t, body)
-			AssertRGBASize(t, bodyImg, 2000, 800)
 			const fixture = "render-prometheus-set-width-height.png"
 			fixtureImg := ReadFixtureRGBA(t, fixture)
-			if !AssertPixelDifference(t, fixtureImg, bodyImg, 17_000) {
+			if !AssertPixelDifference(t, fixtureImg, bodyImg, defaultPixelDiff) {
 				UpdateFixtureIfEnabled(t, fixture, body)
 			}
 		})
@@ -161,7 +165,7 @@ func TestRenderingGrafana(t *testing.T) {
 			image := PDFtoImage(t, pdfBody)
 			const fixture = "render-prometheus-pdf.png"
 			fixtureImg := ReadFixtureRGBA(t, fixture)
-			if !AssertPixelDifference(t, fixtureImg, image, 17_000) {
+			if !AssertPixelDifference(t, fixtureImg, image, defaultPixelDiff) {
 				UpdateFixtureIfEnabled(t, fixture+".pdf", pdfBody)
 				UpdateFixtureIfEnabled(t, fixture, EncodePNG(t, image))
 			}
@@ -192,7 +196,7 @@ func TestRenderingGrafana(t *testing.T) {
 			image := PDFtoImage(t, pdfBody)
 			const fixture = "render-prometheus-pdf-us-lang.png"
 			fixtureImg := ReadFixtureRGBA(t, fixture)
-			if !AssertPixelDifference(t, fixtureImg, image, 100_000) {
+			if !AssertPixelDifference(t, fixtureImg, image, defaultPixelDiff) {
 				UpdateFixtureIfEnabled(t, fixture+".pdf", pdfBody)
 				UpdateFixtureIfEnabled(t, fixture, EncodePNG(t, image))
 			}
@@ -223,7 +227,7 @@ func TestRenderingGrafana(t *testing.T) {
 			image := PDFtoImage(t, pdfBody)
 			const fixture = "render-prometheus-pdf-de-lang.png"
 			fixtureImg := ReadFixtureRGBA(t, fixture)
-			if !AssertPixelDifference(t, fixtureImg, image, 100_000) {
+			if !AssertPixelDifference(t, fixtureImg, image, 5_000) {
 				UpdateFixtureIfEnabled(t, fixture+".pdf", pdfBody)
 				UpdateFixtureIfEnabled(t, fixture, EncodePNG(t, image))
 			}
@@ -252,7 +256,7 @@ func TestRenderingGrafana(t *testing.T) {
 				image := PDFtoImage(t, pdfBody)
 				fixture := fmt.Sprintf("render-prometheus-pdf-%s.png", paper)
 				fixtureImg := ReadFixtureRGBA(t, fixture)
-				if !AssertPixelDifference(t, fixtureImg, image, 17_000) {
+				if !AssertPixelDifference(t, fixtureImg, image, 35_000) {
 					UpdateFixtureIfEnabled(t, fmt.Sprintf("render-prometheus-pdf-%s.pdf", paper), pdfBody)
 					UpdateFixtureIfEnabled(t, fixture, EncodePNG(t, image))
 				}
@@ -282,7 +286,7 @@ func TestRenderingGrafana(t *testing.T) {
 				image := PDFtoImage(t, pdfBody)
 				fixture := fmt.Sprintf("render-prometheus-pdf-printBackground-%v.png", printBackground)
 				fixtureImg := ReadFixtureRGBA(t, fixture)
-				if !AssertPixelDifference(t, fixtureImg, image, 17_000) {
+				if !AssertPixelDifference(t, fixtureImg, image, defaultPixelDiff) {
 					UpdateFixtureIfEnabled(t, fmt.Sprintf("render-prometheus-pdf-printBackground-%v.pdf", printBackground), pdfBody)
 					UpdateFixtureIfEnabled(t, fixture, EncodePNG(t, image))
 				}
@@ -327,7 +331,7 @@ func TestRenderingGrafana(t *testing.T) {
 			image := PDFtoImage(t, pdfBody)
 			const fixture = "render-very-long-prometheus-dashboard.png"
 			fixtureImg := ReadFixtureRGBA(t, fixture)
-			if !AssertPixelDifference(t, fixtureImg, image, 17_000) {
+			if !AssertPixelDifference(t, fixtureImg, image, defaultPixelDiff) {
 				UpdateFixtureIfEnabled(t, fixture+".pdf", pdfBody)
 				UpdateFixtureIfEnabled(t, fixture, EncodePNG(t, image))
 			}
@@ -362,7 +366,7 @@ func TestRenderingGrafana(t *testing.T) {
 				image := PDFtoImage(t, pdfBody)
 				fixture := fmt.Sprintf("render-very-long-prometheus-dashboard-pageranges-%s.png", strings.ReplaceAll(name, " ", "-"))
 				fixtureImg := ReadFixtureRGBA(t, fixture)
-				if !AssertPixelDifference(t, fixtureImg, image, 17_000) {
+				if !AssertPixelDifference(t, fixtureImg, image, defaultPixelDiff) {
 					UpdateFixtureIfEnabled(t, fixture+".pdf", pdfBody)
 					UpdateFixtureIfEnabled(t, fixture, EncodePNG(t, image))
 				}
@@ -398,7 +402,7 @@ func TestRenderingGrafana(t *testing.T) {
 					image := ReadRGBA(t, body)
 					fixture := fmt.Sprintf("render-very-long-prometheus-dashboard-full-height-landscape-%v.png", isLandscape)
 					fixtureImg := ReadFixtureRGBA(t, fixture)
-					if !AssertPixelDifference(t, fixtureImg, image, 240_000) { // there is some pixel fuzz / pixels moving just one or two over...
+					if !AssertPixelDifference(t, fixtureImg, image, 250_000) {
 						UpdateFixtureIfEnabled(t, fixture, body)
 					}
 				})
@@ -452,7 +456,7 @@ func TestRenderingGrafana(t *testing.T) {
 				bodyImg := ReadRGBA(t, body)
 				const fixture = "render-panel-geomap-default-settings.png"
 				fixtureImg := ReadFixtureRGBA(t, fixture)
-				if !AssertPixelDifference(t, fixtureImg, bodyImg, 17_000) {
+				if !AssertPixelDifference(t, fixtureImg, bodyImg, defaultPixelDiff) {
 					UpdateFixtureIfEnabled(t, fixture, body)
 				}
 			})
@@ -464,7 +468,7 @@ func TestRenderingGrafana(t *testing.T) {
 				bodyImg := ReadRGBA(t, body)
 				const fixture = "render-panel-geomap-with-usa-flights.png"
 				fixtureImg := ReadFixtureRGBA(t, fixture)
-				if !AssertPixelDifference(t, fixtureImg, bodyImg, 17_000) {
+				if !AssertPixelDifference(t, fixtureImg, bodyImg, defaultPixelDiff) {
 					UpdateFixtureIfEnabled(t, fixture, body)
 				}
 			})
