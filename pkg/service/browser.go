@@ -782,7 +782,14 @@ func (p *pngPrinter) prepare(cfg config.BrowserConfig) chromedp.Action {
 				orientation = chromedp.EmulateLandscape
 			}
 
-			err = chromedp.EmulateViewport(int64(cfg.MinWidth), int64(scrollHeight), orientation).Do(ctx)
+			var width, height int64
+			if cfg.Landscape {
+				width, height = int64(cfg.MinHeight), int64(scrollHeight)
+			} else {
+				width, height = int64(cfg.MinWidth), int64(scrollHeight)
+			}
+
+			err = chromedp.EmulateViewport(width, height, orientation).Do(ctx)
 			if err != nil {
 				span.SetStatus(codes.Error, "failed to resize viewport: "+err.Error())
 				return fmt.Errorf("failed to resize viewport for full height: %w", err)

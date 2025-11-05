@@ -30,6 +30,7 @@ func Recovery(h http.Handler) http.Handler {
 				span.SetStatus(codes.Error, "panic in HTTP handler")
 			}
 		}()
+
 		h.ServeHTTP(w, r)
 		span.SetStatus(codes.Ok, "no panic")
 	})

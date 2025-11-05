@@ -424,6 +424,38 @@ func TestRenderingGrafana(t *testing.T) {
 			}
 		})
 
+		for _, isLandscape := range []bool{true, false} {
+			t.Run("pdf.landscape="+fmt.Sprintf("%v", isLandscape), func(t *testing.T) {
+				t.Parallel()
+
+				req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, svc.HTTPEndpoint+"/render", nil)
+				require.NoError(t, err, "could not construct HTTP request to Grafana")
+				req.Header.Set("Accept", "application/pdf")
+				req.Header.Set("X-Auth-Token", "-")
+				query := req.URL.Query()
+				query.Set("url", fmt.Sprintf("http://grafana:3000/d/very-long-prometheus-dashboard?render=1&from=1699333200000&to=1699344000000&kiosk=true&pdf.landscape=%v", isLandscape))
+				query.Set("encoding", "pdf")
+				query.Set("renderKey", renderKey)
+				query.Set("domain", "grafana")
+				req.URL.RawQuery = query.Encode()
+
+				resp, err := http.DefaultClient.Do(req)
+				require.NoError(t, err, "could not send HTTP request to Grafana")
+				require.Equal(t, http.StatusOK, resp.StatusCode, "unexpected HTTP status code from Grafana")
+
+				pdfBody := ReadBody(t, resp.Body)
+				image := PDFtoImage(t, pdfBody)
+				fixture := fmt.Sprintf("render-very-long-prometheus-dashboard-pdf_landscape-%v.png", isLandscape)
+				UpdateFixtureIfEnabled(t, fixture+".pdf", pdfBody)
+				UpdateFixtureIfEnabled(t, fixture, EncodePNG(t, image))
+				fixtureImg := ReadFixtureRGBA(t, fixture)
+				if !AssertPixelDifference(t, fixtureImg, image, 35_000) {
+					UpdateFixtureIfEnabled(t, fixture+".pdf", pdfBody)
+					UpdateFixtureIfEnabled(t, fixture, EncodePNG(t, image))
+				}
+			})
+		}
+
 		for name, pageRange := range map[string]string{
 			"single-page":     "4",
 			"all pages":       "",
@@ -477,7 +509,6 @@ func TestRenderingGrafana(t *testing.T) {
 					query.Set("renderKey", renderKey)
 					query.Set("domain", "grafana")
 					query.Set("height", "-1")
-					query.Set("width", "2000")
 					query.Set("landscape", fmt.Sprintf("%v", isLandscape))
 					req.URL.RawQuery = query.Encode()
 
