@@ -82,6 +82,8 @@ func NewProcessStatService(cfg config.RateLimitConfig) *ProcessStatService {
 }
 
 // TrackProcess starts a new goroutine to keep track of the process.
+//
+// We need to track all child-processes alongside the main PID we're given.
 func (p *ProcessStatService) TrackProcess(ctx context.Context, pid int32) {
 	go func() {
 		logger := p.log.With("pid", pid)
@@ -94,18 +96,18 @@ func (p *ProcessStatService) TrackProcess(ctx context.Context, pid int32) {
 			return
 		}
 
-		peakMemory := 0
+		var peakMemory int64
 		defer func() {
 			// We only do the lock once per process. This reduces contention significantly.
 			p.mu.Lock()
 			defer p.mu.Unlock()
 
 			if p.PeakMemory == 0 {
-				p.PeakMemory = int64(peakMemory)
+				p.PeakMemory = peakMemory
 			} else {
-				p.PeakMemory = (p.PeakMemory*(p.cfg.TrackerDecay-1) + int64(peakMemory)) / p.cfg.TrackerDecay
+				p.PeakMemory = (p.PeakMemory*(p.cfg.TrackerDecay-1) + peakMemory) / p.cfg.TrackerDecay
 			}
-			p.MaxMemory = max(p.MaxMemory, int64(peakMemory))
+			p.MaxMemory = max(p.MaxMemory, peakMemory)
 
 			MetricProcessMaxMemory.Set(float64(p.MaxMemory))
 			MetricProcessPeakMemoryAverage.Set(float64(p.PeakMemory))
@@ -119,15 +121,29 @@ func (p *ProcessStatService) TrackProcess(ctx context.Context, pid int32) {
 			case <-time.After(p.cfg.TrackerInterval):
 			}
 
-			mem, err := proc.MemoryInfoWithContext(ctx)
-			if errors.Is(err, context.Canceled) || errors.Is(err, process.ErrorProcessNotRunning) {
-				return
-			} else if err != nil {
-				logger.Warn("failed to find memory info about process", "err", err)
+			if running, _ := proc.IsRunningWithContext(ctx); !running {
 				return
 			}
 
-			peakMemory = max(peakMemory, int(mem.RSS))
+			peakMemory = max(peakMemory, recursiveMemory(ctx, proc))
 		}
 	}()
+}
+
+// recursiveMemory calculates the total memory used by a process and all its children.
+// This is a best-effort function and may return partial results if processes exit while being queried, or are inaccessible to the current process.
+// We don't return any errors, and silently will just return a bad value if this is the case. This is good _enough_ for our use case.
+func recursiveMemory(ctx context.Context, proc *process.Process) int64 {
+	mem, err := proc.MemoryInfoWithContext(ctx)
+	if err != nil {
+		return 0
+	}
+
+	sum := int64(mem.RSS)
+	// We don't care about errors here. If we get no children, we'll just move on.
+	children, _ := proc.ChildrenWithContext(ctx)
+	for _, child := range children {
+		sum += recursiveMemory(ctx, child)
+	}
+	return sum
 }
