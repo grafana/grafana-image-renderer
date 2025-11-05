@@ -1,37 +1,33 @@
 {
-    "ignorePresets": [
-        "github>grafana/grafana-renovate-config//presets/automerge",
-        "github>grafana/grafana-renovate-config//presets/docker",
-        "github>grafana/grafana-renovate-config//presets/labels",
-        "github>grafana/grafana-renovate-config//presets/security",
-        "github>grafana/grafana-renovate-config//presets/github-actions",
-        "github>grafana/grafana-renovate-config//presets/helm",
-        "github>grafana/grafana-renovate-config//presets/shared-workflows"
-    ],
-    "enabledManagers": ["dockerfile", "custom.regex"],
-    "ignorePaths": ["**/devenv/**"],
-    "packageRules": [
-        {
-            "matchCategories": ["node"],
-            "enabled": false
-        },
-        {
-            "matchFileNames": ["Dockerfile"],
-            "groupName": "Dockerfile",
-            "matchManagers": ["dockerfile", "custom.regex"],
-            "pinDigests": true,
-            "labels": ["docker"]
-        }
-    ],
-    "customManagers": [
-        {
-            "customType": "regex",
-            "managerFilePatterns": ["Dockerfile"],
-            "matchStrings": ["CHROMIUM_VERSION=(?<currentValue>[\\w:~.+-]+)"],
-            "depNameTemplate": "chromium",
-            "datasourceTemplate": "deb",
-            "packageNameTemplate": "chromium",
-            "versioningTemplate": "deb"
-        }
-    ]
+  "ignorePresets": [
+    "github>grafana/grafana-renovate-config//presets/automerge",
+    "github>grafana/grafana-renovate-config//presets/docker",
+    "github>grafana/grafana-renovate-config//presets/labels",
+    "github>grafana/grafana-renovate-config//presets/security",
+    "github>grafana/grafana-renovate-config//presets/github-actions",
+    "github>grafana/grafana-renovate-config//presets/helm",
+    "github>grafana/grafana-renovate-config//presets/shared-workflows"
+  ],
+  "enabledManagers": ["dockerfile", "custom.regex"],
+  "ignorePaths": ["**/devenv/**"],
+  "packageRules": [
+    {
+      "matchFileNames": ["Dockerfile"],
+      "groupName": "Dockerfile",
+      "matchManagers": ["dockerfile", "custom.regex"],
+      "pinDigests": true,
+      "labels": ["docker"]
+    }
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["Dockerfile"],
+      "matchStrings": [
+        "#\\s*renovate:\\s*?(suite=(?<suite>.*?))?\\s*depName=(?<depName>.*?)?\\sARG .*?_VERSION=\"(?<currentValue>.*)\""
+      ],
+      "registryUrlTemplate": "https://deb.debian.org/debian?suite={{#if suite }}{{suite}}{{else}}stable{{/if}}&components=main,contrib,non-free&binaryArch=amd64",
+      "datasourceTemplate": "deb"
+    }
+  ]
 }
