@@ -16,9 +16,8 @@ var MetricAuthenticatedRequestAttempt = prometheus.NewCounterVec(prometheus.Coun
 func RequireAuthToken(h http.Handler, expectedTokens ...string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		tracer := tracer(r.Context())
-		ctx, span := tracer.Start(r.Context(), "RequireAuthToken")
+		_, span := tracer.Start(r.Context(), "RequireAuthToken")
 		defer span.End()
-		r = r.WithContext(ctx)
 
 		token := r.Header.Get("X-Auth-Token")
 		if token == "" {
@@ -28,6 +27,7 @@ func RequireAuthToken(h http.Handler, expectedTokens ...string) http.Handler {
 		}
 		if slices.Contains(expectedTokens, token) {
 			MetricAuthenticatedRequestAttempt.WithLabelValues("valid-token").Inc()
+			span.End() // we don't want to track the next middleware in this span
 			h.ServeHTTP(w, r)
 			return
 		}

@@ -72,6 +72,7 @@ func (p processBasedLimiter) Limit(next http.Handler) http.Handler {
 			// > Consider using the more ergonomic and less error-prone [Uint32.Add] instead.
 			defer p.running.Add(^uint32(0)) // decrement
 
+			span.End() // we don't want to track the next middleware in this span
 			next.ServeHTTP(w, r)
 		}
 	})
