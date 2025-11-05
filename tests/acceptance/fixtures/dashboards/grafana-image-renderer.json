@@ -29,9 +29,9 @@
         "x": 0,
         "y": 0
       },
-      "id": 18,
+      "id": 23,
       "panels": [],
-      "title": "HTTP server",
+      "title": "HTTP",
       "type": "row"
     },
     {
@@ -39,107 +39,7 @@
         "type": "prometheus",
         "uid": "${prom}"
       },
-      "description": "How many requests are currently waiting on a response?",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "barWidthFactor": 0.6,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "showValues": false,
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": 0
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
-          "unit": "reqps"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 9,
-        "w": 6,
-        "x": 0,
-        "y": 1
-      },
-      "id": 4,
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": false
-        },
-        "tooltip": {
-          "hideZeros": false,
-          "mode": "multi",
-          "sort": "none"
-        }
-      },
-      "pluginVersion": "12.3.0-18893060694",
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${prom}"
-          },
-          "editorMode": "code",
-          "expr": "sum(http_requests_in_flight{job=\"image-renderer\"})",
-          "legendFormat": "In flight",
-          "range": true,
-          "refId": "A"
-        }
-      ],
-      "title": "Service HTTP requests in flight",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${prom}"
-      },
-      "description": "How many requests do we get to each Mux path per second?",
+      "description": "How many responses do we return with errors?\n\nThere will always be some latent errors, but a rising statistic may be worrisome. This is particularly useful in incidents.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -200,10 +100,10 @@
       "gridPos": {
         "h": 9,
         "w": 8,
-        "x": 6,
+        "x": 0,
         "y": 1
       },
-      "id": 2,
+      "id": 24,
       "options": {
         "legend": {
           "calcs": [],
@@ -217,7 +117,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "12.3.0-18893060694",
+      "pluginVersion": "12.3.0-18925857539",
       "targets": [
         {
           "datasource": {
@@ -225,13 +125,13 @@
             "uid": "${prom}"
           },
           "editorMode": "code",
-          "expr": "sum by(path) (increase(http_request_duration_count{job=\"image-renderer\"}[$__rate_interval]))",
+          "expr": "sum by(path) (rate(http_request_duration_count{job=~\"$promjob\", status_code!~\"^2.*\"}[$__rate_interval]))",
           "legendFormat": "{{path}}",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Service HTTP request rate",
+      "title": "HTTP Error response rate",
       "type": "timeseries"
     },
     {
@@ -239,7 +139,7 @@
         "type": "prometheus",
         "uid": "${prom}"
       },
-      "description": "How many requests do we get to each Mux path per second?",
+      "description": "How many responses do we return with errors?\n\nThere will always be some latent errors, but a rising statistic may be worrisome. This is particularly interesting in incidents.\n\nBy default, this panel is limited to 15 minute intervals. This is because most deployments have low traffic volume, so anything lower makes little sense.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -293,40 +193,18 @@
               }
             ]
           },
-          "unit": "reqps"
+          "unit": "percentunit"
         },
-        "overrides": [
-          {
-            "__systemRef": "hideSeriesFrom",
-            "matcher": {
-              "id": "byNames",
-              "options": {
-                "mode": "exclude",
-                "names": ["GET /render: 429", "GET /render: 200"],
-                "prefix": "All except:",
-                "readOnly": true
-              }
-            },
-            "properties": [
-              {
-                "id": "custom.hideFrom",
-                "value": {
-                  "legend": false,
-                  "tooltip": true,
-                  "viz": true
-                }
-              }
-            ]
-          }
-        ]
+        "overrides": []
       },
       "gridPos": {
         "h": 9,
-        "w": 10,
-        "x": 14,
+        "w": 8,
+        "x": 8,
         "y": 1
       },
-      "id": 3,
+      "id": 25,
+      "interval": "15m",
       "options": {
         "legend": {
           "calcs": [],
@@ -340,7 +218,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "12.3.0-18893060694",
+      "pluginVersion": "12.3.0-18925857539",
       "targets": [
         {
           "datasource": {
@@ -348,13 +226,13 @@
             "uid": "${prom}"
           },
           "editorMode": "code",
-          "expr": "sum by(path, status_code) (increase(http_request_duration_count{job=\"image-renderer\"}[$__rate_interval]))",
-          "legendFormat": "{{path}}: {{status_code}}",
+          "expr": "sum by(path) (rate(http_request_duration_count{job=~\"$promjob\", status_code!~\"^2.*\"}[$__rate_interval]))\n/ sum by(path) (rate(http_request_duration_count{job=~\"$promjob\"}[$__rate_interval]))\n> 0",
+          "legendFormat": "{{path}}",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Service HTTP response rate",
+      "title": "HTTP Error response ratio",
       "type": "timeseries"
     },
     {
@@ -362,149 +240,86 @@
         "type": "prometheus",
         "uid": "${prom}"
       },
-      "description": "",
+      "description": "Out of all requests, how many of them are cancelled by the caller OR time out on our end as configured?\n\nThis is generally not particularly worrisome, but if it is very high for a very long period of time, it may be worth looking into. Consider raising the timeouts, for example.\n\nBy default, this panel is limited to 15 minute intervals. This is because most deployments have low traffic volume, so anything lower makes little sense.",
       "fieldConfig": {
         "defaults": {
-          "custom": {
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "scaleDistribution": {
-              "type": "linear"
-            }
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 12,
-        "w": 11,
-        "x": 0,
-        "y": 10
-      },
-      "id": 5,
-      "options": {
-        "calculate": false,
-        "cellGap": 1,
-        "cellValues": {
-          "unit": "s"
-        },
-        "color": {
-          "exponent": 0.5,
-          "fill": "dark-orange",
-          "mode": "scheme",
-          "reverse": false,
-          "scale": "exponential",
-          "scheme": "RdYlGn",
-          "steps": 64
-        },
-        "exemplars": {
-          "color": "rgba(255,0,255,0.7)"
-        },
-        "filterValues": {
-          "le": 1e-9
-        },
-        "legend": {
-          "show": true
-        },
-        "rowsFrame": {
-          "layout": "auto"
-        },
-        "tooltip": {
-          "mode": "multi",
-          "showColorScale": false,
-          "yHistogram": false
-        },
-        "yAxis": {
-          "axisPlacement": "left",
-          "reverse": false
-        }
-      },
-      "pluginVersion": "12.3.0-18893060694",
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${prom}"
+          "color": {
+            "mode": "palette-classic"
           },
-          "editorMode": "code",
-          "expr": "sum by(path, status_code) (histogram_quantile(0.95, http_request_duration_bucket{job=\"image-renderer\"}))",
-          "legendFormat": "{{path}}: {{status_code}}",
-          "range": true,
-          "refId": "A"
-        }
-      ],
-      "title": "Service HTTP request durations (95th percentile)",
-      "type": "heatmap"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${prom}"
-      },
-      "description": "",
-      "fieldConfig": {
-        "defaults": {
           "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
             "hideFrom": {
               "legend": false,
               "tooltip": false,
               "viz": false
             },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
+            },
+            "showPoints": "auto",
+            "showValues": false,
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
             }
-          }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "percentunit"
         },
         "overrides": []
       },
       "gridPos": {
-        "h": 12,
+        "h": 9,
         "w": 8,
-        "x": 11,
-        "y": 10
+        "x": 16,
+        "y": 1
       },
-      "id": 6,
+      "id": 26,
+      "interval": "15m",
       "options": {
-        "calculate": false,
-        "cellGap": 1,
-        "cellValues": {
-          "unit": "s"
-        },
-        "color": {
-          "exponent": 0.5,
-          "fill": "dark-orange",
-          "mode": "scheme",
-          "reverse": false,
-          "scale": "exponential",
-          "scheme": "RdYlGn",
-          "steps": 64
-        },
-        "exemplars": {
-          "color": "rgba(255,0,255,0.7)"
-        },
-        "filterValues": {
-          "le": 1e-9
-        },
         "legend": {
-          "show": true
-        },
-        "rowsFrame": {
-          "layout": "auto"
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
         },
         "tooltip": {
+          "hideZeros": false,
           "mode": "multi",
-          "showColorScale": false,
-          "yHistogram": false
-        },
-        "yAxis": {
-          "axisPlacement": "left",
-          "reverse": false
+          "sort": "none"
         }
       },
-      "pluginVersion": "12.3.0-18893060694",
+      "pluginVersion": "12.3.0-18925857539",
       "targets": [
         {
           "datasource": {
@@ -512,21 +327,21 @@
             "uid": "${prom}"
           },
           "editorMode": "code",
-          "expr": "sum by(path, status_code) (histogram_quantile(0.50, http_request_duration_bucket{job=\"image-renderer\"}))",
-          "legendFormat": "{{path}}: {{status_code}}",
+          "expr": "sum by(path) (rate(http_request_duration_count{job=~\"$promjob\", status_code=\"408\"}[$__rate_interval]))\n/ sum by(path) (rate(http_request_duration_count{job=~\"$promjob\"}[$__rate_interval]))\n> 0",
+          "legendFormat": "{{path}}",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Service HTTP request durations (50th percentile)",
-      "type": "heatmap"
+      "title": "HTTP request timeout ratio",
+      "type": "timeseries"
     },
     {
       "datasource": {
         "type": "prometheus",
         "uid": "${prom}"
       },
-      "description": "How often do our requests panic?",
+      "description": "How many HTTP requests do we get?\n\nThis panel is not intended to be worrisome. Use it for costs estimations and understanding what's going on during incidents.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -585,12 +400,12 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 12,
-        "w": 5,
-        "x": 19,
+        "h": 9,
+        "w": 8,
+        "x": 0,
         "y": 10
       },
-      "id": 7,
+      "id": 27,
       "options": {
         "legend": {
           "calcs": [],
@@ -604,7 +419,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "12.3.0-18893060694",
+      "pluginVersion": "12.3.0-18925857539",
       "targets": [
         {
           "datasource": {
@@ -612,13 +427,13 @@
             "uid": "${prom}"
           },
           "editorMode": "code",
-          "expr": "sum(increase(http_recovered_requests_total{job=\"image-renderer\"}[$__rate_interval]))",
-          "legendFormat": "Panicking requests",
+          "expr": "sum by(path) (rate(http_request_duration_count{job=~\"$promjob\"}[$__rate_interval]))",
+          "legendFormat": "{{path}}",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Service HTTP panicking requests rate",
+      "title": "HTTP request rate",
       "type": "timeseries"
     },
     {
@@ -626,7 +441,107 @@
         "type": "prometheus",
         "uid": "${prom}"
       },
-      "description": "",
+      "description": "How many HTTP requests do we get?\n\nThis panel is not intended to be worrisome. Use it for costs estimations and understanding what's going on during incidents.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "showValues": false,
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "reqps"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 8,
+        "x": 8,
+        "y": 10
+      },
+      "id": 28,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "12.3.0-18925857539",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${prom}"
+          },
+          "editorMode": "code",
+          "expr": "sum by(path, status_code) (rate(http_request_duration_count{job=~\"$promjob\"}[$__rate_interval]))",
+          "legendFormat": "{{path}}: {{status_code}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "HTTP request rate with status",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${prom}"
+      },
+      "description": "This is how many total requests we have in flight. This is essentially the request queue.\n\nOnly expensive calls are listed here; that means, metrics, healthchecks, etc. are not listed. Render requests are listed.\n\nIt is fine for this to spike every so often, but a growing number should be seen as worrisome. This is best used together with the response status panels.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -685,12 +600,112 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 8,
+        "h": 9,
+        "w": 8,
+        "x": 16,
+        "y": 10
+      },
+      "id": 29,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "12.3.0-18925857539",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${prom}"
+          },
+          "editorMode": "code",
+          "expr": "sum(http_requests_in_flight{job=~\"$promjob\"})",
+          "legendFormat": "requests in flight",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "HTTP requests in flight",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${prom}"
+      },
+      "description": "How long does a request take to complete, from start to finish? This only includes `^GET /render(/csv)?$`\n\nNote that this will include times that come from timeouts.\n\nThis panel is not intended to be worrisome. Use it during incidents.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "showValues": false,
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
         "w": 12,
         "x": 0,
-        "y": 22
+        "y": 19
       },
-      "id": 16,
+      "id": 30,
       "options": {
         "legend": {
           "calcs": [],
@@ -704,7 +719,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "12.3.0-18893060694",
+      "pluginVersion": "12.3.0-18925857539",
       "targets": [
         {
           "datasource": {
@@ -712,13 +727,39 @@
             "uid": "${prom}"
           },
           "editorMode": "code",
-          "expr": "max by(type) (http_rate_limiter_slots{job=\"image-renderer\"})",
-          "legendFormat": "__auto",
+          "expr": "histogram_quantile(0.99,\n  sum by(le) (\n    rate(http_request_duration_bucket{job=~\"$promjob\", path=~\"^GET /render(/csv)?$\"}[$__rate_interval])\n  )\n)",
+          "legendFormat": "p99",
           "range": true,
           "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${prom}"
+          },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.95,\n  sum by(le) (\n    rate(http_request_duration_bucket{job=~\"$promjob\", path=~\"^GET /render(/csv)?$\"}[$__rate_interval])\n  )\n)",
+          "hide": false,
+          "instant": false,
+          "legendFormat": "p95",
+          "range": true,
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${prom}"
+          },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.50,\n  sum by(le) (\n    rate(http_request_duration_bucket{job=~\"$promjob\", path=~\"^GET /render(/csv)?$\"}[$__rate_interval])\n  )\n)",
+          "hide": false,
+          "instant": false,
+          "legendFormat": "p50",
+          "range": true,
+          "refId": "C"
         }
       ],
-      "title": "HTTP rate-limiter slots by type",
+      "title": "HTTP response latency",
       "type": "timeseries"
     },
     {
@@ -726,85 +767,70 @@
         "type": "prometheus",
         "uid": "${prom}"
       },
-      "description": "",
+      "description": "How long does a request take to complete, from start to finish? This only includes `^GET /render(/csv)?$`\n\nNote that this will include times that come from timeouts.\n\nThis panel is not intended to be worrisome. Use it during incidents.",
       "fieldConfig": {
         "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
           "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "barWidthFactor": 0.6,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
             "hideFrom": {
               "legend": false,
               "tooltip": false,
               "viz": false
             },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
-            },
-            "showPoints": "auto",
-            "showValues": false,
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
             }
           },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": 0
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
-          "unit": "short"
+          "unit": "s"
         },
         "overrides": []
       },
       "gridPos": {
-        "h": 8,
+        "h": 9,
         "w": 12,
         "x": 12,
-        "y": 22
+        "y": 19
       },
-      "id": 17,
+      "id": 31,
       "options": {
+        "calculate": false,
+        "cellGap": 1,
+        "cellValues": {
+          "decimals": 0,
+          "unit": "short"
+        },
+        "color": {
+          "exponent": 0.5,
+          "fill": "dark-orange",
+          "mode": "scheme",
+          "reverse": false,
+          "scale": "exponential",
+          "scheme": "Spectral",
+          "steps": 64
+        },
+        "exemplars": {
+          "color": "rgba(255,0,255,0.7)"
+        },
+        "filterValues": {
+          "le": 1e-9
+        },
         "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
+          "show": true
+        },
+        "rowsFrame": {
+          "layout": "auto"
         },
         "tooltip": {
-          "hideZeros": false,
-          "mode": "multi",
-          "sort": "none"
+          "mode": "single",
+          "showColorScale": false,
+          "yHistogram": true
+        },
+        "yAxis": {
+          "axisPlacement": "left",
+          "reverse": false,
+          "unit": "s"
         }
       },
-      "pluginVersion": "12.3.0-18893060694",
+      "pluginVersion": "12.3.0-18925857539",
       "targets": [
         {
           "datasource": {
@@ -812,14 +838,269 @@
             "uid": "${prom}"
           },
           "editorMode": "code",
-          "expr": "sum by(result, why) (increase(http_rate_limiter_requests_total{job=\"image-renderer\"}[$__rate_interval]))",
-          "legendFormat": "__auto",
+          "expr": "sum by(le) (\n  rate(http_request_duration_bucket{job=~\"$promjob\", path=~\"^GET /render(/csv)?$\"}[$__rate_interval])\n)",
+          "legendFormat": "{{le}}",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "HTTP rate-limiter slots by type",
-      "type": "timeseries"
+      "title": "HTTP response latency",
+      "type": "heatmap"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${prom}"
+      },
+      "description": "How long does a request take to complete, from start to finish? This only includes `^GET /render(/csv)?$`\n\nThis panel is not intended to be worrisome. Use it during incidents.",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "scaleDistribution": {
+              "type": "linear"
+            }
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 8,
+        "x": 0,
+        "y": 28
+      },
+      "id": 32,
+      "options": {
+        "calculate": false,
+        "cellGap": 1,
+        "cellValues": {
+          "decimals": 0,
+          "unit": "short"
+        },
+        "color": {
+          "exponent": 0.5,
+          "fill": "dark-orange",
+          "mode": "scheme",
+          "reverse": false,
+          "scale": "exponential",
+          "scheme": "Spectral",
+          "steps": 64
+        },
+        "exemplars": {
+          "color": "rgba(255,0,255,0.7)"
+        },
+        "filterValues": {
+          "le": 1e-9
+        },
+        "legend": {
+          "show": true
+        },
+        "rowsFrame": {
+          "layout": "auto"
+        },
+        "tooltip": {
+          "mode": "single",
+          "showColorScale": false,
+          "yHistogram": true
+        },
+        "yAxis": {
+          "axisPlacement": "left",
+          "reverse": false,
+          "unit": "s"
+        }
+      },
+      "pluginVersion": "12.3.0-18925857539",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${prom}"
+          },
+          "editorMode": "code",
+          "expr": "sum by(le) (\n  rate(http_request_duration_bucket{job=~\"$promjob\", path=~\"^GET /render(/csv)?$\", status_code=~\"^2.*\"}[$__rate_interval])\n)",
+          "legendFormat": "{{le}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "HTTP response latency: OK (2xx)",
+      "type": "heatmap"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${prom}"
+      },
+      "description": "How long does a request take to complete, from start to finish? This only includes `^GET /render(/csv)?$`\n\nTimeouts are not considered errors here.\n\nThis panel is not intended to be worrisome. Use it during incidents.",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "scaleDistribution": {
+              "type": "linear"
+            }
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 8,
+        "x": 8,
+        "y": 28
+      },
+      "id": 33,
+      "options": {
+        "calculate": false,
+        "cellGap": 1,
+        "cellValues": {
+          "decimals": 0,
+          "unit": "short"
+        },
+        "color": {
+          "exponent": 0.5,
+          "fill": "dark-orange",
+          "mode": "scheme",
+          "reverse": false,
+          "scale": "exponential",
+          "scheme": "Spectral",
+          "steps": 64
+        },
+        "exemplars": {
+          "color": "rgba(255,0,255,0.7)"
+        },
+        "filterValues": {
+          "le": 1e-9
+        },
+        "legend": {
+          "show": true
+        },
+        "rowsFrame": {
+          "layout": "auto"
+        },
+        "tooltip": {
+          "mode": "single",
+          "showColorScale": false,
+          "yHistogram": true
+        },
+        "yAxis": {
+          "axisPlacement": "left",
+          "reverse": false,
+          "unit": "s"
+        }
+      },
+      "pluginVersion": "12.3.0-18925857539",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${prom}"
+          },
+          "editorMode": "code",
+          "expr": "sum by(le) (\n  rate(http_request_duration_bucket{job=~\"$promjob\", path=~\"^GET /render(/csv)?$\", status_code!~\"^2.*\", status_code!=\"408\"}[$__rate_interval])\n)",
+          "legendFormat": "{{le}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "HTTP response latency: Errors (4xx, 5xx)",
+      "type": "heatmap"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${prom}"
+      },
+      "description": "How long does a request take to complete, from start to finish? This only includes `^GET /render(/csv)?$`\n\nThis only considers timeouts.\n\nThis panel is not intended to be worrisome. Use it during incidents.",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "scaleDistribution": {
+              "type": "linear"
+            }
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 8,
+        "x": 16,
+        "y": 28
+      },
+      "id": 34,
+      "options": {
+        "calculate": false,
+        "cellGap": 1,
+        "cellValues": {
+          "decimals": 0,
+          "unit": "short"
+        },
+        "color": {
+          "exponent": 0.5,
+          "fill": "dark-orange",
+          "mode": "scheme",
+          "reverse": false,
+          "scale": "exponential",
+          "scheme": "Spectral",
+          "steps": 64
+        },
+        "exemplars": {
+          "color": "rgba(255,0,255,0.7)"
+        },
+        "filterValues": {
+          "le": 1e-9
+        },
+        "legend": {
+          "show": true
+        },
+        "rowsFrame": {
+          "layout": "auto"
+        },
+        "tooltip": {
+          "mode": "single",
+          "showColorScale": false,
+          "yHistogram": true
+        },
+        "yAxis": {
+          "axisPlacement": "left",
+          "reverse": false,
+          "unit": "s"
+        }
+      },
+      "pluginVersion": "12.3.0-18925857539",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${prom}"
+          },
+          "editorMode": "code",
+          "expr": "sum by(le) (\n  rate(http_request_duration_bucket{job=~\"$promjob\", path=~\"^GET /render(/csv)?$\", status_code=\"408\"}[$__rate_interval])\n)",
+          "legendFormat": "{{le}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "HTTP response latency: Timeouts (408)",
+      "type": "heatmap"
     },
     {
       "collapsed": false,
@@ -827,11 +1108,11 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 30
+        "y": 37
       },
       "id": 20,
       "panels": [],
-      "title": "Browser",
+      "title": "Internal services",
       "type": "row"
     },
     {
@@ -839,7 +1120,7 @@
         "type": "prometheus",
         "uid": "${prom}"
       },
-      "description": "",
+      "description": "How long do each of the functions take to complete?",
       "fieldConfig": {
         "defaults": {
           "custom": {
@@ -859,7 +1140,7 @@
         "h": 11,
         "w": 7,
         "x": 0,
-        "y": 31
+        "y": 38
       },
       "id": 9,
       "options": {
@@ -899,7 +1180,7 @@
           "reverse": false
         }
       },
-      "pluginVersion": "12.3.0-18893060694",
+      "pluginVersion": "12.3.0-18925857539",
       "targets": [
         {
           "datasource": {
@@ -907,7 +1188,7 @@
             "uid": "${prom}"
           },
           "editorMode": "code",
-          "expr": "max(histogram_quantile(0.95, browser_render_duration_bucket{job=\"image-renderer\", unit=\"seconds\"}))",
+          "expr": "max(histogram_quantile(0.95, sum by(le) (rate(browser_render_duration_bucket{job=~\"$promjob\", unit=\"seconds\"}[$__rate_interval]))))",
           "legendFormat": "BrowserService.Render",
           "range": true,
           "refId": "A"
@@ -918,7 +1199,7 @@
             "uid": "${prom}"
           },
           "editorMode": "code",
-          "expr": "max(histogram_quantile(0.95, browser_render_csv_duration_bucket{job=\"image-renderer\", unit=\"seconds\"}))",
+          "expr": "max(histogram_quantile(0.95, sum by(le) (rate(browser_render_csv_duration_bucket{job=~\"$promjob\", unit=\"seconds\"}[$__rate_interval]))))",
           "hide": false,
           "legendFormat": "BrowserService.RenderCSV",
           "range": true,
@@ -930,14 +1211,14 @@
             "uid": "${prom}"
           },
           "editorMode": "code",
-          "expr": "max(histogram_quantile(0.95, browser_get_version_duration_bucket{job=\"image-renderer\", unit=\"seconds\"}))",
+          "expr": "max(histogram_quantile(0.95, sum by(le) (rate(browser_get_version_duration_bucket{job=~\"$promjob\", unit=\"seconds\"}[$__rate_interval]))))",
           "hide": false,
           "legendFormat": "BrowserService.GetVersion",
           "range": true,
           "refId": "C"
         }
       ],
-      "title": "BrowserService durations (p95)",
+      "title": "BrowserService function durations (p95)",
       "type": "heatmap"
     },
     {
@@ -945,7 +1226,7 @@
         "type": "prometheus",
         "uid": "${prom}"
       },
-      "description": "",
+      "description": "How long does each action in render functions take?",
       "fieldConfig": {
         "defaults": {
           "custom": {
@@ -963,9 +1244,9 @@
       },
       "gridPos": {
         "h": 11,
-        "w": 17,
+        "w": 9,
         "x": 7,
-        "y": 31
+        "y": 38
       },
       "id": 10,
       "options": {
@@ -1005,7 +1286,7 @@
           "reverse": false
         }
       },
-      "pluginVersion": "12.3.0-18893060694",
+      "pluginVersion": "12.3.0-18925857539",
       "targets": [
         {
           "datasource": {
@@ -1013,7 +1294,7 @@
             "uid": "${prom}"
           },
           "editorMode": "code",
-          "expr": "max by(action) (histogram_quantile(0.95, browser_action_duration_bucket{job=\"image-renderer\", unit=\"seconds\"}))",
+          "expr": "max by(action) (histogram_quantile(0.95, sum by(le, action) (rate(browser_action_duration_bucket{job=~\"$promjob\", unit=\"seconds\"}[$__rate_interval]))))",
           "legendFormat": "__auto",
           "range": true,
           "refId": "A"
@@ -1086,10 +1367,10 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 42
+        "h": 11,
+        "w": 8,
+        "x": 16,
+        "y": 38
       },
       "id": 13,
       "options": {
@@ -1105,7 +1386,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "12.3.0-18893060694",
+      "pluginVersion": "12.3.0-18925857539",
       "targets": [
         {
           "datasource": {
@@ -1113,150 +1394,13 @@
             "uid": "${prom}"
           },
           "editorMode": "code",
-          "expr": "sum(browser_instances_active{job=\"image-renderer\"})",
+          "expr": "sum(browser_instances_active{job=~\"$promjob\"})",
           "legendFormat": "{{browsers}}",
           "range": true,
           "refId": "A"
         }
       ],
       "title": "Active browsers over time",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${prom}"
-      },
-      "description": "This is the peak memory usage reported by each process on every request.",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "barWidthFactor": 0.6,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "log": 2,
-              "type": "log"
-            },
-            "showPoints": "auto",
-            "showValues": false,
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": 0
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
-          "unit": "bytes"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 16,
-        "w": 12,
-        "x": 12,
-        "y": 42
-      },
-      "id": 12,
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "hideZeros": false,
-          "mode": "multi",
-          "sort": "none"
-        }
-      },
-      "pluginVersion": "12.3.0-18893060694",
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${prom}"
-          },
-          "editorMode": "code",
-          "expr": "max(histogram_quantile(0.99, process_peak_memory_bucket{unit=\"bytes\", job=\"image-renderer\"}))",
-          "legendFormat": "p99",
-          "range": true,
-          "refId": "A"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${prom}"
-          },
-          "editorMode": "code",
-          "expr": "max(histogram_quantile(0.95, process_peak_memory_bucket{unit=\"bytes\", job=\"image-renderer\"}))",
-          "hide": false,
-          "legendFormat": "p95",
-          "range": true,
-          "refId": "B"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${prom}"
-          },
-          "editorMode": "code",
-          "expr": "max(histogram_quantile(0.90, process_peak_memory_bucket{unit=\"bytes\", job=\"image-renderer\"}))",
-          "hide": false,
-          "legendFormat": "p90",
-          "range": true,
-          "refId": "C"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${prom}"
-          },
-          "editorMode": "code",
-          "expr": "max(histogram_quantile(0.50, process_peak_memory_bucket{unit=\"bytes\", job=\"image-renderer\"}))",
-          "hide": false,
-          "legendFormat": "p50",
-          "range": true,
-          "refId": "D"
-        }
-      ],
-      "title": "Chromium memory usage over time",
       "type": "timeseries"
     },
     {
@@ -1323,10 +1467,10 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 8,
-        "w": 12,
+        "h": 11,
+        "w": 8,
         "x": 0,
-        "y": 50
+        "y": 49
       },
       "id": 11,
       "options": {
@@ -1342,7 +1486,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "12.3.0-18893060694",
+      "pluginVersion": "12.3.0-18925857539",
       "targets": [
         {
           "datasource": {
@@ -1350,7 +1494,7 @@
             "uid": "${prom}"
           },
           "editorMode": "code",
-          "expr": "max(process_peak_memory_avg{unit=\"bytes\"})",
+          "expr": "max(process_peak_memory_avg{job=~\"$promjob\", unit=\"bytes\"})",
           "legendFormat": "peak over time",
           "range": true,
           "refId": "A"
@@ -1361,7 +1505,7 @@
             "uid": "${prom}"
           },
           "editorMode": "code",
-          "expr": "max(process_max_memory{unit=\"bytes\"})",
+          "expr": "max(process_max_memory{job=~\"$promjob\", unit=\"bytes\"})",
           "hide": false,
           "instant": false,
           "legendFormat": "max of any process",
@@ -1370,6 +1514,142 @@
         }
       ],
       "title": "Chromium memory usage over time",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${prom}"
+      },
+      "description": "This is the peak memory usage reported by each process on every request.\n\nThis is not intended to be worrisome, rather to help debug performance problems.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "showValues": false,
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "bytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 11,
+        "w": 8,
+        "x": 8,
+        "y": 49
+      },
+      "id": 35,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "12.3.0-18925857539",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${prom}"
+          },
+          "editorMode": "code",
+          "expr": "max(histogram_quantile(0.99, sum by(le) (rate(process_peak_memory_bucket{job=~\"$promjob\", unit=\"bytes\"}[$__rate_interval]))))",
+          "legendFormat": "p99",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${prom}"
+          },
+          "editorMode": "code",
+          "expr": "max(histogram_quantile(0.95, sum by(le) (rate(process_peak_memory_bucket{job=~\"$promjob\", unit=\"bytes\"}[$__rate_interval]))))",
+          "hide": false,
+          "legendFormat": "p95",
+          "range": true,
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${prom}"
+          },
+          "editorMode": "code",
+          "expr": "max(histogram_quantile(0.90, sum by(le) (rate(process_peak_memory_bucket{job=~\"$promjob\", unit=\"bytes\"}[$__rate_interval]))))",
+          "hide": false,
+          "legendFormat": "p90",
+          "range": true,
+          "refId": "C"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${prom}"
+          },
+          "editorMode": "code",
+          "expr": "max(histogram_quantile(0.75, sum by(le) (rate(process_peak_memory_bucket{job=~\"$promjob\", unit=\"bytes\"}[$__rate_interval]))))",
+          "hide": false,
+          "legendFormat": "p75",
+          "range": true,
+          "refId": "D"
+        }
+      ],
+      "title": "Chromium memory usage per request",
       "type": "timeseries"
     },
     {
@@ -1436,10 +1716,10 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 58
+        "h": 11,
+        "w": 8,
+        "x": 16,
+        "y": 49
       },
       "id": 22,
       "options": {
@@ -1455,7 +1735,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "12.3.0-18893060694",
+      "pluginVersion": "12.3.0-18925857539",
       "targets": [
         {
           "datasource": {
@@ -1463,7 +1743,7 @@
             "uid": "${prom}"
           },
           "editorMode": "code",
-          "expr": "avg by(mime_type) (histogram_quantile(0.99, sum by(le, mime_type) (browser_request_size_bucket{unit=\"bytes\", job=\"image-renderer\"})))",
+          "expr": "avg by(mime_type) (histogram_quantile(0.99, sum by(le, mime_type) (rate(browser_request_size_bucket{job=~\"$promjob\", unit=\"bytes\"}[$__rate_interval]))))",
           "legendFormat": "__auto",
           "range": true,
           "refId": "A"
@@ -1478,7 +1758,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 66
+        "y": 60
       },
       "id": 19,
       "panels": [],
@@ -1526,14 +1806,14 @@
         "h": 13,
         "w": 12,
         "x": 0,
-        "y": 67
+        "y": 61
       },
       "id": 1,
       "options": {
         "cellHeight": "sm",
         "showHeader": true
       },
-      "pluginVersion": "12.3.0-18893060694",
+      "pluginVersion": "12.3.0-18925857539",
       "targets": [
         {
           "datasource": {
@@ -1627,14 +1907,14 @@
         "h": 13,
         "w": 12,
         "x": 12,
-        "y": 67
+        "y": 61
       },
       "id": 21,
       "options": {
         "cellHeight": "sm",
         "showHeader": true
       },
-      "pluginVersion": "12.3.0-18893060694",
+      "pluginVersion": "12.3.0-18925857539",
       "targets": [
         {
           "datasource": {
@@ -1710,7 +1990,7 @@
         "h": 16,
         "w": 24,
         "x": 0,
-        "y": 80
+        "y": 74
       },
       "id": 14,
       "options": {
@@ -1724,7 +2004,7 @@
         "sortOrder": "Descending",
         "wrapLogMessage": false
       },
-      "pluginVersion": "12.3.0-18893060694",
+      "pluginVersion": "12.3.0-18925857539",
       "targets": [
         {
           "datasource": {
@@ -1754,7 +2034,7 @@
         "h": 16,
         "w": 24,
         "x": 0,
-        "y": 96
+        "y": 90
       },
       "id": 15,
       "options": {
@@ -1768,7 +2048,7 @@
         "sortOrder": "Descending",
         "wrapLogMessage": false
       },
-      "pluginVersion": "12.3.0-18893060694",
+      "pluginVersion": "12.3.0-18925857539",
       "targets": [
         {
           "datasource": {
@@ -1833,6 +2113,31 @@
         "refresh": 1,
         "regex": "",
         "type": "datasource"
+      },
+      {
+        "current": {
+          "text": "image-renderer",
+          "value": "image-renderer"
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${prom}"
+        },
+        "definition": "label_values(up,job)",
+        "description": "The name of the Prometheus Job we want to fetch from.",
+        "includeAll": false,
+        "label": "Prometheus Job",
+        "multi": true,
+        "name": "promjob",
+        "options": [],
+        "query": {
+          "qryType": 1,
+          "query": "label_values(up,job)",
+          "refId": "PrometheusVariableQueryEditor-VariableQuery"
+        },
+        "refresh": 1,
+        "regex": ".*render.*",
+        "type": "query"
       }
     ]
   },
@@ -1844,5 +2149,5 @@
   "timezone": "browser",
   "title": "grafana-image-renderer",
   "uid": "grafana-image-renderer",
-  "version": 12
+  "version": 16
 }
