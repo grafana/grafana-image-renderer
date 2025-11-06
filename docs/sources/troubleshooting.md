@@ -185,7 +185,7 @@ You can download the Windows binaries from the GitHub Release. As an example,
 this is how you run it with Brave on an ARM64 Windows host:
 
 ```powershell
-PS > .\grafana-image-renderer-windows-arm64.exe server --browser.path "C:\Program Files\BraveSoftware\Brave-Browser\Application\brave.exe"
+.\grafana-image-renderer-windows-arm64.exe server --browser.path "C:\Program Files\BraveSoftware\Brave-Browser\Application\brave.exe"
 ```
 
 The browser must be installed separately. The browser must be a Chromium-based
@@ -203,7 +203,7 @@ on Debian), and knowing the `$HOME` directory of the user that runs the service
 (often `grafana`):
 
 ```shell
-$ certutil -d sql:"$HOME"/.pki/nssdb -A -n internal-root-ca -t C -i /path/to/internal-root-ca-here.crt.pem
+certutil -d sql:"$HOME"/.pki/nssdb -A -n internal-root-ca -t C -i /path/to/internal-root-ca-here.crt.pem
 ```
 
 You may also require other tooling.
@@ -214,7 +214,7 @@ For Windows (that is, non-containerised), you will need to do the same as on
 Linux, but to your global store:
 
 ```powershell
-PS > certutil –addstore "Root" <path>/internal-root-ca-here.crt.pem
+certutil –addstore "Root" <path>/internal-root-ca-here.crt.pem
 ```
 
 ## Container
