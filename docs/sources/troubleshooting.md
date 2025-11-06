@@ -219,7 +219,7 @@ but to your global store:
 certutil –addstore "Root" <path>/internal-root-ca-here.crt.pem
 ```
 
-## Container
+### Container
 
 Perhaps the easiest way is to bake the CA certificate into your own Docker
 image, based on the official one:
