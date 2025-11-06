@@ -24,6 +24,8 @@ are targeted at users of Grafana on their own premises; they are not
 particularly useful for Grafana Cloud users, as we manage all this stuff for
 you.
 
+<!-- vale Grafana.GoogleFirstPerson = NO -->
+
 ## What options do I even have?
 
 See `docker run --rm grafana/grafana-image-renderer:latest server --help`.
@@ -198,9 +200,9 @@ Chromium in the logs (may require debug logging).
 
 ### Linux (non-containerised)
 
-For Linux (that is, non-containerised), you will need nss tools (`libnss3-tools`
-on Debian), and knowing the `$HOME` directory of the user that runs the service
-(often `grafana`):
+For Linux (that is, non-containerised), you will need `nss` tools
+(`libnss3-tools` on Debian), and knowing the `$HOME` directory of the user that
+runs the service (often `grafana`):
 
 ```shell
 certutil -d sql:"$HOME"/.pki/nssdb -A -n internal-root-ca -t C -i /path/to/internal-root-ca-here.crt.pem
