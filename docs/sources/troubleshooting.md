@@ -200,9 +200,9 @@ Chromium in the logs (may require debug logging).
 
 ### Linux (non-containerised)
 
-For Linux (that is, non-containerised), you will need `nss` tools
-(`libnss3-tools` on Debian), and knowing the `$HOME` directory of the user that
-runs the service (often `grafana`):
+For Linux (that is, non-containerised), you need `nss` tools (`libnss3-tools` on
+Debian), and knowing the `$HOME` directory of the user that runs the service
+(often `grafana`):
 
 ```shell
 certutil -d sql:"$HOME"/.pki/nssdb -A -n internal-root-ca -t C -i /path/to/internal-root-ca-here.crt.pem
@@ -212,8 +212,8 @@ You may also require other tooling.
 
 ### Windows (non-containerised)
 
-For Windows (that is, non-containerised), you will need to do the same as on
-Linux, but to your global store:
+For Windows (that is, non-containerised), you need to do the same as on Linux,
+but to your global store:
 
 ```powershell
 certutil –addstore "Root" <path>/internal-root-ca-here.crt.pem
