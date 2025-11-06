@@ -122,7 +122,7 @@ bug, disable this first. This requires Linux.
 
 ## I want to change the default timezone
 
-Pass in `--browser.timezone` with an IANA timezone name, e.g.
+Pass in `--browser.timezone` with an IANA timezone name, for example
 `America/Los_Angeles` or `Europe/Berlin`. Note that requests can also set this.
 
 ## I want to add a header to all requests
