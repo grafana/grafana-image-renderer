@@ -1,0 +1,29 @@
+name: Documentation
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    permissions:
+      contents: read # clone the repository
+      checks: write # write CI checkmarks
+      pull-requests: write # write/comment on PRs
+      security-events: write # write new SARIF events
+    uses: grafana/writers-toolkit/.github/workflows/docs-ci.yml@main
+    with:
+      build: true
+      build-website-directory: content/docs/grafana-image-renderer
+      prettier: true
+      vale: true
+      # Doesn't yet work on forks.
+      readability: false
