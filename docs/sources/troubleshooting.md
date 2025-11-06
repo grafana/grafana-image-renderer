@@ -27,13 +27,13 @@ you.
 ## What options do I even have?
 
 See `docker run --rm grafana/grafana-image-renderer:latest server --help`.
-Many options you see listed in this repository will have additional options you
-can use to tweak the exact behaviour more to your needs.
+Many options you see listed in this repository have additional options you can
+use to tweak the exact behaviour more to your needs.
 
 This should generally be the first step in troubleshooting when you believe you
 need to change some configuration option.
 
-## How do I use the config file?
+## How do I use the configuration file?
 
 Write a JSON or YAML configuration file named one of `config.json`,
 `config.yaml`, or `config.yml` in the current working directory of the service.
@@ -55,13 +55,13 @@ You can find an [example dashboard here](https://grafana.com/grafana/dashboards/
 
 ## I need to change the address
 
-See `--server.addr`. If no specific address is given, it will listen on all
+See `--server.addr`. If no specific address is given, it listens on all
 interfaces. The syntax to only change port is `:8081` (or any other port
 number).
 
 ## I want to use multiple authentication tokens
 
-Specify the option multiple times, e.g.: `--server.auth-token token1
+Specify the option multiple times, for example: `--server.auth-token token1
 --server.auth-token token2`.
 
 If you use JSON or YAML, you can use a list:
@@ -78,8 +78,8 @@ For environment variables, use a comma-separated list.
 ## I want to change the logging level
 
 You can set the level with `--log.level`. Valid values are `debug`, `info`,
-`warn`, and `error`. Please be prepared for `debug` being _very_ verbose.
-Production deployments should usually use `info` or `warn`.
+`warn`, and `error`. `debug` is _very_ verbose. Production deployments should
+usually use `info` or `warn`.
 
 ## I need to use TLS
 
@@ -99,7 +99,7 @@ with Chromium, Google Chrome, Microsoft Edge, Brave, and other similar browsers
 based on Chromium.
 
 We only officially support Chromium; if you (or we) cannot replicate your bug
-with it, it may be deprioritised or closed without a fix.
+with it, it may be not be prioritised or closed without a fix.
 
 ## I have a GPU I want to use
 
@@ -118,7 +118,7 @@ Pass in `--browser.sandbox`. This is not supported in all environments.
 ## I want to use Linux namespaces for better isolation
 
 Pass in `--browser.namespaced`. This is unsupported; if you want to report a
-bug, please disable this first. This requires Linux.
+bug, disable this first. This requires Linux.
 
 ## I want to change the default timezone
 
@@ -138,7 +138,7 @@ This is done by default. All requests also get a `Traceparent` header.
 The browser waits for the web page to become ready. This is done by waiting for
 all of the following to complete or time out:
 
-- Scrolls all the web-ports (i.e. to load the entire page).
+- Scrolls all the web-ports (that is, to load the entire page).
   - Every scroll waits `--browser.scroll-wait` (default 50ms) afterwards.
 - Wait `--browser.readiness.prior-wait` (default 1s).
 - The entire following sequence times out after `--browser.readiness.timeout` (default 30s):
@@ -198,8 +198,8 @@ Chromium in the logs (may require debug logging).
 
 ### Linux (non-containerised)
 
-For Linux (i.e. non-containerised), you will need nss tools (`libnss3-tools` on
-Debian), and knowing the `$HOME` directory of the user that runs the service
+For Linux (that is, non-containerised), you will need nss tools (`libnss3-tools`
+on Debian), and knowing the `$HOME` directory of the user that runs the service
 (often `grafana`):
 
 ```shell
@@ -210,8 +210,8 @@ You may also require other tooling.
 
 ### Windows (non-containerised)
 
-For Windows (i.e. non-containerised), you will need to do the same as on Linux,
-but to your global store:
+For Windows (that is, non-containerised), you will need to do the same as on
+Linux, but to your global store:
 
 ```powershell
 PS > certutil –addstore "Root" <path>/internal-root-ca-here.crt.pem

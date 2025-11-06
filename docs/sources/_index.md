@@ -19,7 +19,7 @@ weight: 1000
 # Set up image rendering
 
 The [Grafana Image Renderer service][github] exists to allow you to render
-webpages in Grafana to PDFs, PNGs, and CSVs. For example, you can export your
+web pages in Grafana to PDFs, PNGs, and CSVs. For example, you can export your
 panels or dashboards to PDFs to share with business stakeholders, or set up
 automatic exports for Slack alert notifications, such that you see your failing
 alerts with context. Some features are exclusive to Grafana Enterprise and
@@ -33,8 +33,8 @@ latest version of the service.
 
 {{< admonition type="note" >}}
 At any given time, we commit to supporting _all_ stable currently supported
-versions of Grafana. If you find a bug, please consider reporting it on our
-[issue tracker][issues].
+versions of Grafana. If you find a bug, consider reporting it on our [issue
+tracker][issues].
 
 [issues]: https://github.com/grafana/grafana-image-renderer/issues
 
@@ -53,7 +53,7 @@ Windows and Linux on our [GitHub Releases page][releases].
 To run the service, prefer to use a server with significant memory and CPU
 resources available. Some rendering tasks can require several gigabytes of
 memory and many cores in a spiky pattern. For a general recommendation, we
-suggest at least 16 GiB of memory and at least 4 CPU cores allocated; you will
+suggest at least 16 GiB of memory and at least 4 CPU cores allocated; you may
 have to adapt this to your specific use-case if your load is significant.
 
 ### Install with Docker
@@ -63,10 +63,10 @@ version in production environments. We do, however, commit to keeping the
 `latest` tag the latest stable release.
 
 ```shell
-$ docker network create grafana
-$ docker run --network grafana --name renderer --rm --detach grafana/grafana-image-renderer:latest
+docker network create grafana
+docker run --network grafana --name renderer --rm --detach grafana/grafana-image-renderer:latest
 # The following is not a production-ready Grafana instance, but shows what env vars you should set:
-$ docker run --network grafana --name grafana --rm --detach --env GF_RENDERING_SERVER_URL=http://renderer:8081/render --env http://grafana:3000/ --port 3000:3000 grafana/grafana-enterprise:latest
+docker run --network grafana --name grafana --rm --detach --env GF_RENDERING_SERVER_URL=http://renderer:8081/render --env http://grafana:3000/ --port 3000:3000 grafana/grafana-enterprise:latest
 ```
 
 Alternatively, if you prefer `docker compose`:
@@ -107,7 +107,7 @@ these include [Google Chrome](https://www.google.com/chrome/) and
 this browser binary with `--browser.path`.
 
 The binaries are hosted on [GitHub Releases][releases]. Download the appropriate
-binary for your platform, and run it from the terminal. You will want something
+binary for your platform, and run it from the terminal. You would run something
 like `./grafana-image-renderer server`; see `--help` for more information.
 
 ### Configuration
@@ -119,7 +119,7 @@ The service can be configured via several paths:
   Most, but not all, variables map 1:1 to the CLI flag names.
 - Use a JSON or YAML configuration file. This must be in the service's current
   working directory, and must be named one of `config.json`, `config.yaml`, or
-  `config.yml`. Dot-separated keys are nested keys. E.g.: `a.b` becomes
+  `config.yml`. Dot-separated keys are nested keys. For example: `a.b` becomes
   `{"a": {"b": "VALUE"}}` in the file.
 
 The current configuration options can all be accessed by checking `--help`.
