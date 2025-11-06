@@ -40,6 +40,14 @@ build-all: build $(OUT_DIR)
 clean:
 	rm -rf "$(OUT_DIR)"
 
+.PHONY: docs-dev
+docs-dev:
+	make -C docs docs
+
+.PHONY: docs
+docs:
+	make -C docs update vale
+
 .PHONY: all
 all: lint build-all test test-acceptance
 
