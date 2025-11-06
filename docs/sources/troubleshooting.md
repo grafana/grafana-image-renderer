@@ -53,7 +53,7 @@ set up both:
 - Point your metrics scraper to `/metrics` on the HTTP port (default `:8081`).
 - Point the service (`--tracing.endpoint`) to your tracing backend.
 
-You can find an [example dashboard here](https://grafana.com/grafana/dashboards/12203-grafana-image-rendering-service/).
+You can find an [example dashboard here](https://grafana.com/grafana/dashboards/12203-grafana-image-renderer/).
 
 ## I need to change the address
 

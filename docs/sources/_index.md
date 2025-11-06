@@ -143,7 +143,7 @@ backend (like [Grafana Tempo](https://grafana.com/oss/tempo)). Metrics are
 exposed on `/metrics` and traces are sent as configured in the configuration
 options (see `--help`).
 
-You can find an [example dashboard here](https://grafana.com/grafana/dashboards/12203-grafana-image-rendering-service/).
+You can find an [example dashboard here](https://grafana.com/grafana/dashboards/12203-grafana-image-renderer/).
 
 [github]: https://github.com/grafana/grafana-image-renderer
 [image]: https://hub.docker.com/r/grafana/grafana-image-renderer
