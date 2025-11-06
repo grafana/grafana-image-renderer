@@ -246,3 +246,8 @@ USER nonroot
 RUN mkdir -p /home/nonroot/.pki/nssdb
 RUN certutil -d sql:/home/nonroot/.pki/nssdb -A -n internal-root-ca -t C -i /usr/local/share/ca-certificates/rootCA.crt
 ```
+
+## My panels are squished in the PDF export
+
+You likely have Grafana's feature flag `newPDFRendering` set to `false`. Set it
+to `true` (or remove for default `true`).
