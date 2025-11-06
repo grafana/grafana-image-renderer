@@ -249,5 +249,6 @@ RUN certutil -d sql:/home/nonroot/.pki/nssdb -A -n internal-root-ca -t C -i /usr
 
 ## My panels are squished in the PDF export
 
-You likely have Grafana's feature flag `newPDFRendering` set to `false`. Set it
-to `true` (or remove for default `true`).
+You have likely configured Grafana to use the old PDF rendering engine by
+setting `newPDFRendering` to `false`. Consider removing the override, or
+explicitly set it to `true` to fix this.
