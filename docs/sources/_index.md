@@ -21,9 +21,8 @@ weight: 1000
 The [Grafana Image Renderer service][github] enables you to render web pages in
 Grafana to PDFs, PNGs, and CSVs. For example, you can export your panels or
 dashboards to PDFs to share with business stakeholders, or set up automatic
-exports for Slack alert notifications, such that you see your failing alerts
-with context. Some features are exclusive to Grafana Enterprise and Grafana
-Cloud.
+exports for Slack alert notifications, so you see your failing alerts with
+context. Some features are exclusive to Grafana Enterprise and Grafana Cloud.
 
 {{< admonition type="caution" >}}
 We historically provided this functionality as a Grafana plugin. This plugin is
