@@ -86,9 +86,9 @@ services:
 
 If you are running with memory limits, you may want to set the environment
 variable `GOMEMLIMIT` to a lower value than the limit, such as `1GiB`. You
-should not aim for the `GOMEMLIMIT` to match the container's limit: Chromium
-needs free memory on top. We recommend 1 GiB of `GOMEMLIMIT` per 8 GiB of
-container memory limit.
+should not aim for the `GOMEMLIMIT` to match the container's limit because
+Chromium needs free memory on top. We recommend 1 GiB of `GOMEMLIMIT` per 8 GiB
+of container memory limit.
 
 If you do not use memory limits, the above configuration can still prove useful,
 especially if you run the service alongside other services on the same host.
