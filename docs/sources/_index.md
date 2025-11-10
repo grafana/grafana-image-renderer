@@ -49,11 +49,11 @@ We [ship images][image] for `linux/amd64` and `linux/arm64`; Windows and macOS
 can run these images with Docker Desktop. Additionally, we ship binaries for
 Windows and Linux on our [GitHub Releases page][releases].
 
-To run the service, prefer to use a server with significant memory and CPU
-resources available. Some rendering tasks can require several gigabytes of
-memory and many cores in a spiky pattern. For a general recommendation, we
-suggest at least 16 GiB of memory and at least 4 CPU cores allocated; you may
-have to adapt this to your specific use-case if your load is significant.
+To run the service, use a server with significant memory and CPU resources
+available. Some rendering tasks can require several gigabytes of memory and many
+cores in a spiky pattern. For a general recommendation, we suggest at least 16
+GiB of memory and at least 4 CPU cores allocated; you may have to adapt this to
+your specific use-case if your load is significant.
 
 ### Install with Docker
 
