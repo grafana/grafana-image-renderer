@@ -20,9 +20,8 @@ weight: 200
 # Troubleshooting
 
 This section is dedicated to answering some of our more common questions. These
-are targeted at users of Grafana on their own premises; they are not
-particularly useful for Grafana Cloud users, as we manage all this stuff for
-you.
+are helpful for self-managed users of Grafana users; they are not particularly
+useful for Grafana Cloud users, as we manage all this stuff for you.
 
 <!-- vale Grafana.GoogleFirstPerson = NO -->
 
@@ -37,7 +36,7 @@ need to change some configuration option.
 
 ## How do I use the configuration file?
 
-Write a JSON or YAML configuration file named one of `config.json`,
+Write a JSON or YAML configuration file named either `config.json`,
 `config.yaml`, or `config.yml` in the current working directory of the service.
 The default directory is `/home/nonroot/`. You can write YAML in the `.json`
 file: all JSON is valid YAML, so we parse all as YAML. Kubernetes' own YAML

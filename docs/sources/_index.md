@@ -90,7 +90,7 @@ should not aim for the `GOMEMLIMIT` to match the container's limit because
 Chromium needs free memory on top. We recommend 1 GiB of `GOMEMLIMIT` per 8 GiB
 of container memory limit.
 
-If you do not use memory limits, the above configuration can still prove useful,
+If you do not use memory limits, the previous configuration can still be useful,
 especially if you run the service alongside other services on the same host.
 
 ### Install with binaries
@@ -109,21 +109,21 @@ The binaries are hosted on [GitHub Releases][releases]. Download the appropriate
 binary for your platform, and run it from the terminal. You would run something
 like `./grafana-image-renderer server`; see `--help` for more information.
 
-### Configuration
+## Configuration
 
-The service can be configured via several paths:
+You can configure the service several ways:
 
 - Set CLI flags. See `--help` for the available flag names.
 - Use environment variables. See `--help` for the names and current values.
   Most, but not all, variables map 1:1 to the CLI flag names.
 - Use a JSON or YAML configuration file. This must be in the service's current
-  working directory, and must be named one of `config.json`, `config.yaml`, or
+  working directory, and must be named either `config.json`, `config.yaml`, or
   `config.yml`. Dot-separated keys are nested keys. For example: `a.b` becomes
   `{"a": {"b": "VALUE"}}` in the file.
 
-The current configuration options can all be accessed by checking `--help`.
+You can see all the current configuration options by checking `--help`.
 
-As an example, see: `docker run --rm grafana/grafana-image-renderer:latest
+For example, see: `docker run --rm grafana/grafana-image-renderer:latest
 server --help`.
 
 ### Security
@@ -132,9 +132,9 @@ The service requires a secret token to be present in all render requests. This
 token is set by `--server.auth-token` (`AUTH_TOKEN`); you can specify multiple
 and have a unique key per Grafana instance. By default, the token used is `-`.
 In Grafana, you must set this to match one of the tokens with the `[rendering]
-renderer_token` (`GF_RENDERING_RENDERER_TOKEN`) setting.
+renderer_token` (`GF_RENDERING_RENDERER_TOKEN`) configuration setting.
 
-### Monitoring
+## Monitoring
 
 You can monitor the service via Prometheus or
 [Mimir](https://grafana.com/oss/mimir) and any OpenTelemetry-compatible Tracing
