@@ -46,7 +46,7 @@ software. This is not strictly required, however, so you can adapt to your
 specific environment as needed.
 
 We [ship images][image] for `linux/amd64` and `linux/arm64`; Windows and macOS
-can run these with Docker Desktop as well. Additionally, we ship binaries for
+can run these images with Docker Desktop. Additionally, we ship binaries for
 Windows and Linux on our [GitHub Releases page][releases].
 
 To run the service, prefer to use a server with significant memory and CPU
