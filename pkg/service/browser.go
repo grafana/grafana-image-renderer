@@ -77,7 +77,10 @@ var (
 	}, []string{"mime_type"})
 )
 
-var ErrInvalidBrowserOption = errors.New("invalid browser option")
+var (
+	ErrInvalidBrowserOption    = errors.New("invalid browser option")
+	ErrBrowserReadinessTimeout = errors.New("timed out waiting for readiness")
+)
 
 type BrowserService struct {
 	cfg       config.BrowserConfig
@@ -1001,8 +1004,8 @@ func waitForReady(browserCtx context.Context, cfg config.BrowserConfig) chromedp
 				span.SetStatus(codes.Error, "context completed before readiness detected")
 				return ctx.Err()
 			case <-readinessTimeout:
-				span.SetStatus(codes.Error, "timed out waiting for readiness")
-				return fmt.Errorf("timed out waiting for readiness")
+				span.SetStatus(codes.Error, ErrBrowserReadinessTimeout.Error())
+				return ErrBrowserReadinessTimeout
 
 			case <-time.After(cfg.ReadinessIterationInterval):
 				// Continue with the rest of the code; this is waiting for the next time we can do work.

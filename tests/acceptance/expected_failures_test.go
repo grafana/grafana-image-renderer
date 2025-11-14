@@ -98,3 +98,23 @@ func TestInvalidQueryParameters(t *testing.T) {
 		})
 	}
 }
+
+func TestBrowserTimeout(t *testing.T) {
+	t.Parallel()
+
+	t.Run("if the browser readiness timeout is exceeded, it returns a 408 status code", func(t *testing.T) {
+		t.Parallel()
+
+		// extremely low that no request could ever be server in the alloted time
+		svc := StartImageRenderer(t, WithEnv("BROWSER_READINESS_TIMEOUT", "1ns"))
+
+		req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, svc.HTTPEndpoint+"/render?url=http://localhost:8081/&encoding=pdf", nil)
+		require.NoError(t, err, "could not construct HTTP request to /render")
+		req.Header.Set("Accept", "application/pdf")
+		req.Header.Set("X-Auth-Token", "-")
+
+		resp, err := http.DefaultClient.Do(req)
+		require.NoError(t, err, "could not make HTTP request to /render")
+		require.Equal(t, http.StatusRequestTimeout, resp.StatusCode, "expected HTTP 408 Request Timeout from /render")
+	})
+}

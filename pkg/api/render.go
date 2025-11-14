@@ -237,7 +237,8 @@ func HandleGetRender(browser *service.BrowserService) http.Handler {
 			span.SetStatus(codes.Error, "rendering failed")
 			span.RecordError(err)
 			if errors.Is(err, context.DeadlineExceeded) ||
-				errors.Is(err, context.Canceled) {
+				errors.Is(err, context.Canceled) ||
+				errors.Is(err, service.ErrBrowserReadinessTimeout) {
 				http.Error(w, "Request timed out", http.StatusRequestTimeout)
 				return
 			} else if errors.Is(err, service.ErrInvalidBrowserOption) {
