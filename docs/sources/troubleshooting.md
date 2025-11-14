@@ -20,198 +20,325 @@ weight: 200
 # Troubleshooting
 
 This section is dedicated to answering some of our more common questions. These
-are helpful for self-managed users of Grafana users; they are not particularly
-useful for Grafana Cloud users, as we manage all this stuff for you.
+are helpful for self-managed Grafana users; they are not particularly useful for
+Grafana Cloud users, as we manage all this stuff for you.
 
-<!-- vale Grafana.GoogleFirstPerson = NO -->
+## Available configuration options
 
-## What options do I even have?
+To see all available options, run:
 
-See `docker run --rm grafana/grafana-image-renderer:latest server --help`.
-Many options you see listed in this repository have additional options you can
-use to tweak the exact behaviour more to your needs.
+```shell
+docker run --rm grafana/grafana-image-renderer:latest server --help
+```
 
-This should generally be the first step in troubleshooting when you believe you
-need to change some configuration option.
+Much of the service's functionality has fine-tunable options. When the image
+renderer service is likely to be at fault, these options tend to be the first
+ones that should be changed.
 
-## How do I use the configuration file?
+The rest of this document aims to clarify what these options are and do, so the
+right experiments and changes can be done.
 
-Write a JSON or YAML configuration file named either `config.json`,
-`config.yaml`, or `config.yml` in the current working directory of the service.
-The default directory is `/home/nonroot/`. You can write YAML in the `.json`
-file: all JSON is valid YAML, so we parse all as YAML. Kubernetes' own YAML
-format (KYAML) is valid.
+## Configuration file formats and paths
 
-## How do I monitor this service?
+The configuration files are read from the current working directory of the
+service. With our Docker images, this is `/home/nonroot/` by default.
+
+The file names must be one of `config.json`, `config.yaml`, or `config.yml`.
+
+## Monitoring
 
 You can monitor the service via Prometheus or
 [Mimir](https://grafana.com/oss/mimir) and any OpenTelemetry-compatible Tracing
-backend (like [Grafana Tempo](https://grafana.com/oss/tempo)). We recommend you
-set up both:
+backend, such as [Grafana Tempo](https://grafana.com/oss/tempo). We recommend
+setting up both:
 
-- Point your metrics scraper to `/metrics` on the HTTP port (default `:8081`).
-- Point the service (`--tracing.endpoint`) to your tracing backend.
+- Point the metrics scraper to `/metrics` on the HTTP port (default `:8081`).
+- Point the service (`--tracing.endpoint`) to the tracing backend.
 
-You can find an [example dashboard here](https://grafana.com/grafana/dashboards/12203-grafana-image-renderer/).
+We have an [example dashboard here](https://grafana.com/grafana/dashboards/12203-grafana-image-renderer/).
 
-## I need to change the address
+## Changing the HTTP server bind address
 
-See `--server.addr`. If no specific address is given, it listens on all
-interfaces. The syntax to only change port is `:8081` (or any other port
-number).
+Refer to the `--server.addr`.
 
-## I want to use multiple authentication tokens
+If no specific address is given, it listens on all interfaces. The syntax to
+only change the port is `:8081` or any other port number.
 
-Specify the option multiple times, for example: `--server.auth-token token1
---server.auth-token token2`.
+## Using multiple authentication tokens
+
+Specify the option multiple times, for example: `--server.auth-token <token1>
+--server.auth-token <token2>`.
 
 If you use JSON or YAML, you can use a list:
 
 ```yaml
 server:
   auth-token:
-    - token1
-    - token2
+    - <token1>
+    - <token2>
 ```
 
 For environment variables, use a comma-separated list.
 
-## I want to change the logging level
+## Changing the logging level
 
-You can set the level with `--log.level`. Valid values are `debug`, `info`,
-`warn`, and `error`. `debug` is _very_ verbose. Production deployments should
-usually use `info` or `warn`.
+The log level is changed with the `--log.level` option.
 
-## I need to use TLS
+Valid values are `debug`, `info`, `warn`, and `error`. `debug` is _very_
+verbose. Production deployments should usually use `info` or `warn`.
 
-You can set this up with `--server.certificate-file`, `--server.key-file`, and
-optionally, `--server.min-tls-version`. mTLS is not supported at this time.
+## Setting up TLS on the HTTP server
 
-## My tracing needs mTLS
+You can serve the HTTP server over TLS (HTTPS) through the following options:
 
-You can set this up with `--tracing.trusted-certificate`,
-`--tracing.client-certificate`, and `--tracing.client-key`.
+- `--server.certificate-file`: path to the TLS certificate file in PEM format.
+- `--server.key-file`: path to the TLS private key file in PEM format. This must
+  be the matching key for the given certificate file.
+- `--server.min-tls-version`: minimum TLS version to accept. Valid values are
+  `1.0`, `1.1`, `1.2` (default), and `1.3`. The default value is sufficient
+  for most security-concious users.
 
-## I need to change the browser path
+Mutual TLS (mTLS) is not supported at this time.
 
-You can use any browser binary with `--browser.path`. The browser must support
-the Chrome DevTools Protocol, limiting your choices somewhat. This works fine
-with Chromium, Google Chrome, Microsoft Edge, Brave, and other similar browsers
-based on Chromium.
+## Setting up mTLS with the tracing backend
 
-We only officially support Chromium; if you (or we) cannot replicate your bug
-with it, it may be not be prioritised or closed without a fix.
+You can set up mutual TLS (mTLS) for the connection to the tracing backend
+through the following options:
 
-## I have a GPU I want to use
+- `--tracing.trusted-certificate`: path to the trusted CA certificate file in
+  PEM format. This is used to verify the tracing backend's certificate.
+- `--tracing.client-certificate`: path to the client certificate file in PEM
+  format. This is used to authenticate to the tracing backend.
+- `--tracing.client-key`: path to the client private key file in PEM format.
+  This must be the matching key for the given client certificate file.
 
-Pass `--browser.gpu`. This may need additional configuration depending on your
-environment.
+## Using a custom browser binary
 
-## I want custom flags for my browser
+The browser binary is set with the `--browser.path` option.
 
-Pass `--browser.flag`. You can pass this multiple times. The `--` prefix of
-flags is optional. If your flag has a value, use `${flag}=${value}`.
+The browser must support the Chrome DevTools Protocol, limiting the choices
+somewhat. This works fine with Chromium, Google Chrome, Microsoft Edge, Brave,
+and other similar browsers based on Chromium.
 
-## I want to enable the Chrome sandbox
+Only Chromium is officially supported. If a bug cannot be replicated with
+Chromium, the bug may be not be prioritised or closed without a fix.
 
-Pass in `--browser.sandbox`. This is not supported in all environments.
+## Using GPU acceleration
 
-## I want to use Linux namespaces for better isolation
+Enable GPU acceleration in the browser through the `--browser.gpu` option.
 
-Pass in `--browser.namespaced`. This is unsupported; if you want to report a
-bug, disable this first. This requires Linux.
+On some environments, such as in Docker, Kubernetes, or other container and VM
+runtimes, further configuration may be required to pass the GPU through to the
+service.
 
-## I want to change the default timezone
+## Enabling custom flags in the browser
 
-Pass in `--browser.timezone` with an IANA timezone name, for example
-`America/Los_Angeles` or `Europe/Berlin`. Note that requests can also set this.
+The flags may be passed through with the `--browser.flag` option. The flag is
+repeatable, meaning you can pass multiple flags by specifying the option many
+times.
 
-## I want to add a header to all requests
+The format is `${flag}=${value}`. The `--` prefix is added if it is not present.
+For example, `--browser.flag --headless=false` enables headful mode.
 
-Pass in `--browser.header`. Note that this may break with CORS.
+## Enabling the browser sandbox
 
-## I want to pass my trace through to the browser
+Enable the sandbox through the `--browser.sandbox` option.
 
-This is done by default. All requests also get a `Traceparent` header.
+On some Linux distributions, in Docker, Kubernetes, OpenShift, and other
+container and VM setups, this may not work out of the box. Here, it may be
+required to enable various virtualisation features, `seccomp` profiles, AppArmor
+profiles, Linux capabilities, and more.
 
-## I get an incomplete page, or all requests time out
+## Using Linux namespaces for request isolation
+
+{{< admonition type="caution" >}}
+Although there is an option to enable Linux namespaces, the functionality is
+unsupported. Proceed at your own risk, and ensure the option is disabled before
+reporting bugs.
+{{< /admonition >}}
+
+To use new Linux namespaces for each rendering request, thus isolating the
+entire browser from the service and other requests, use the
+`--browser.namespaced` option.
+
+This functionality requires Linux and various capabilities and AppArmor profiles
+to be set up.
+
+## Changing the default browser time zone
+
+{{< admonition type="note" >}}
+Every request can override this in the request query parameters.
+{{< /admonition >}}
+
+To change the default timezone, set the `--browser.timezone` option to an IANA
+time zone name. For example, `America/Los_Angeles` or `Europe/Berlin`.
+
+Many containers automatically set a `TZ` environment variable. This is used by
+default.
+
+## Adding a header to every request from the browser
+
+{{< admonition type="note" >}}
+Depending on the target website's CORS settings, this may break all requests.
+{{< /admonition >}}
+
+You can set a new header with `--browser.header <name>=<value>`. This header is
+added to every request made by the browser.
+
+## Passing through a trace header to every request from the browser
+
+This is enabled by default if tracing is set up. Outgoing requests receive a
+`Traceparent` header.
+
+If the incoming request to the service has a `Traceparent` header, that value is
+used. Otherwise, a new trace is started for every request.
+
+## Understanding incomplete outputs and request timeouts
 
 The browser waits for the web page to become ready. This is done by waiting for
 all of the following to complete or time out:
 
 - Scrolls all the web-ports (that is, to load the entire page).
-  - Every scroll waits `--browser.scroll-wait` (default 50ms) afterwards.
-- Wait `--browser.readiness.prior-wait` (default 1s).
-- The entire following sequence times out after `--browser.readiness.timeout` (default 30s):
-  - Repeat the checks every `--browser.readiness.interval` (default 100ms).
-  - Wait for all Grafana queries to complete, unless `--browser.readiness.disable-query-wait`. This requires Scenes to be enabled.
-    Times out after `--browser.readiness.give-up-on-all-queries` (default 0s, meaning disabled).
-    The first query must happen within `--browser.readiness.give-up-on-first-query` (default 3s), otherwise we ignore the query check.
-  - Wait for all network requests to complete, unless `--browser.readiness.disable-network-wait`.
-    Times out after `--browser.readiness.network-idle-timeout` (default 0s, meaning disabled).
-  - Wait for the webpage DOM to stabilise, unless `--browser.readiness.disable-dom-hashcode-wait`.
-    Times out after `--browser.readiness.dom-hashcode-timeout` (default 0s, meaning disabled).
+  - After every scroll, the browser waits the duration declared by the
+    `--browser.scroll-wait` option, 50 milliseconds by default.
+- The browser waits the duration declared by the
+  `--browser.readiness.prior-wait` option, 1 second by default.
+- The entire following sequence times out after the duration declared by the
+  `--browser.readiness.timeout` option, 30 seconds by default:
+  - The sequence is repeated per duration declared by the
+    `--browser.readiness.interval` option, 100 milliseconds by default.
+  - The browser waits for all Grafana queries to complete, unless the
+    `--browser.readiness.disable-query-wait` option is enabled. This
+    functionality requires Scenes to be enabled. If Scenes are not enabled, the
+    check is skipped silently.
+    - If the queries do not complete within the duration declared by the
+      `--browser.readiness.give-up-on-all-queries` option, the check is silently
+      skipped. By default, this timeout is disabled.
+    - If there is no first query detected within the duration declared by the
+      `--browser.readiness.give-up-on-first-query` option, the check is silently
+      skipped. By default, this timeout is 3 seconds.
+  - The browser waits for all network requests to complete, unless the
+    `--browser.readiness.disable-network-wait` option is enabled.
+    - If the network requests do not complete within the duration declared by the
+      `--browser.readiness.network-idle-timeout` option, the check is silently
+      skipped. By default, this timeout is disabled.
+  - The browser waits for the web page's layout to stabilise, meaning no more
+    data changes. This can be disabled through the
+    `--browser.readiness.disable-dom-hashcode-wait` option.
+    - If the web page does not stabilise within the duration declared by the
+      `--browser.readiness.dom-hashcode-timeout` option, the check is silently
+      skipped. By default, this timeout is disabled.
 
-## Go eats up all the memory in my container
+## The service eats up all the memory in the container
 
-Set `GOMEMLIMIT` to a lower value than your container limit, such as `1GiB`. You
-should not aim for the `GOMEMLIMIT` to match the container's limit: Chromium
-needs free memory on top. We recommend 1 GiB of `GOMEMLIMIT` per 8 GiB of
-container memory limit.
+Set the `GOMEMLIMIT` environment variable to a lower value than the container's
+memory limit, such as `1GiB`. The value should not be the same as the
+container's memory limit, because Chromium needs free memory to serve requests.
 
-## You do not support an architecture I use
+We recommend adding 1 GiB to this environment variable for every 8 GiB of memory
+assigned to the container's memory limit.
 
-Sorry about that. Open an issue, or compile it yourself. See the
-[GitHub repository][github] for instructions.
+## Unsupported CPU architectures
+
+For unsupported CPU architectures, you can open an issue on [GitHub].
+
+Alternatively, compile the service yourself, following the instructions in the
+[GitHub repository][github].
 
 [github]: https://github.com/grafana/grafana-image-renderer
 
-## I'm air-gapped. How do I use this?
+## Using the image renderer service in an air-gapped environment
 
-You need to import the Docker image via a USB stick or similar. If you are a
-Grafana Enterprise customer, consider contacting Grafana Support.
+An air-gapped environment is one that does not have access to the public
+internet, and may have requirements such as not supporting Docker.
 
-You can also use the binary releases. See the instructions on [the setup
-page](./_index.md) for more details.
+Grafana Enterprise customers can receive more help with this from customer
+support.
 
-## My Grafana isn't in Docker
+### With Docker
+
+You will need:
+
+- A way to transfer data into the environment, such as a USB stick, SD card,
+  external hard-drive, or similar.
+- Docker on the air-gapped environment.
+- Docker on an internet-connected environment.
+
+To export a TAR file of the image, run:
+
+```shell
+docker image save -o grafana-image-renderer.tar grafana/grafana-image-renderer:latest
+```
+
+If you're using a different CPU architecture than the air-gapped environment,
+you may need to specify `--platform` when saving the image. For example, if you
+have an air-gapped x86_64 (amd64) machine, use `--platform linux/amd64`.
+
+Next, transfer the file to the machine.
+
+Finally, import the image on the air-gapped environment:
+
+```shell
+docker image load grafana-image-renderer.tar
+```
+
+### Without Docker
+
+You will need:
+
+- A way to transfer data into the environment, such as a USB stick, SD card,
+  external hard-drive, or similar.
+
+We release binary files for Linux and Windows on our [GitHub Releases][releases]
+page. Download the appropriate binary for your system, and transfer it to the
+machine.
+
+You will also need to install a Chromium-based browser separately.
+
+[releases]: https://github.com/grafana/grafana-image-renderer/releases
+
+## Using Docker without Grafana being dockerised
 
 You can use [host
 networking](https://docs.docker.com/engine/network/tutorials/host/) instead,
 or the binary releases.
 
-## I use Windows and do not want Docker
+## Using the image renderer service on Windows without Docker
 
-You can download the Windows binaries from the GitHub Release. As an example,
-this is how you run it with Brave on an ARM64 Windows host:
+You can download the Windows binaries from the [GitHub Releases page][releases].
+For example, to use the image renderer service with the Brave browser on an
+ARM64 Windows host, run:
 
 ```powershell
 .\grafana-image-renderer-windows-arm64.exe server --browser.path "C:\Program Files\BraveSoftware\Brave-Browser\Application\brave.exe"
 ```
 
-The browser must be installed separately. The browser must be a Chromium-based
-browser.
+The browser must be installed separately and be a Chromium-based browser.
 
-## I use my own CA certificates, how do I make Chromium accept them?
+## Custom CA certificates in Chromium
 
-This is often identified by seeing `net::ERR_CERT_AUTHORITY_INVALID` errors from
-Chromium in the logs (may require debug logging).
+Identifying that the CA certificate is the problem is done by checking for
+`net::ERR_CERT_AUTHORITY_INVALID` errors in the service's logs. Finding these
+errors may require enabling debug logging, via the `--log.level debug` option.
 
-### Linux (non-containerised)
+### Non-containerized Linux
 
-For Linux (that is, non-containerised), you need `nss` tools (`libnss3-tools` on
-Debian), and knowing the `$HOME` directory of the user that runs the service
-(often `grafana`):
+For non-containerized Linux, you need `nss` tools (`libnss3-tools` on Debian).
+You will also need to know the `$HOME` directory of the user running the
+service, which can be found via running either `eval echo ~username` (for
+example: `eval echo ~grafana`), or via `getent passwd username` (for example:
+`getent passwd grafana`). Run the following for that user:
 
 ```shell
 certutil -d sql:"$HOME"/.pki/nssdb -A -n internal-root-ca -t C -i /path/to/internal-root-ca-here.crt.pem
 ```
 
-You may also require other tooling.
+You might also need other tooling. The error message will likely indicate what
+is missing from your environment.
 
-### Windows (non-containerised)
+### Non-containerized Windows
 
-For Windows (that is, non-containerised), you need to do the same as on Linux,
+For non-containerized, you need to do the same as on Linux,
 but to your global store:
 
 ```powershell
@@ -220,7 +347,7 @@ certutil –addstore "Root" <path>/internal-root-ca-here.crt.pem
 
 ### Container
 
-Perhaps the easiest way is to bake the CA certificate into your own Docker
+The easiest way is to integrate the CA certificate directly into your own Docker
 image, based on the official one:
 
 ```dockerfile
@@ -246,8 +373,10 @@ RUN mkdir -p /home/nonroot/.pki/nssdb
 RUN certutil -d sql:/home/nonroot/.pki/nssdb -A -n internal-root-ca -t C -i /usr/local/share/ca-certificates/rootCA.crt
 ```
 
-## My panels are squished in the PDF export
+## Distorted panels in the PDF export
 
-You have likely configured Grafana to use the old PDF rendering engine by
-setting `newPDFRendering` to `false`. Consider removing the override, or
-explicitly set it to `true` to fix this.
+This is most commonly caused by using the old PDF rendering engine in Grafana.
+To identify whether this applies to you, check whether the `newPDFRendering`
+feature flag has been explicitly set to `false` in Grafana's configuration.
+
+To solve this problem, remove the feature toggle override.
