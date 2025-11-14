@@ -102,8 +102,8 @@ Mutual TLS (mTLS) is not supported at this time.
 
 ## Setting up mTLS with the tracing backend
 
-You can set up mutual TLS (mTLS) for the connection to the tracing backend
-through the following options:
+You can set up mTLS for the connection to the tracing backend through the
+following options:
 
 - `--tracing.trusted-certificate`: path to the trusted CA certificate file in
   PEM format. This is used to verify the tracing backend's certificate.
@@ -133,7 +133,7 @@ service.
 
 ## Enabling custom flags in the browser
 
-The flags may be passed through with the `--browser.flag` option. The flag is
+The flags can be passed through with the `--browser.flag` option. The flag is
 repeatable, meaning you can pass multiple flags by specifying the option many
 times.
 
@@ -157,9 +157,9 @@ unsupported. Proceed at your own risk, and ensure the option is disabled before
 reporting bugs.
 {{< /admonition >}}
 
-To use new Linux namespaces for each rendering request, thus isolating the
-entire browser from the service and other requests, use the
-`--browser.namespaced` option.
+To use new Linux namespaces for each rendering request, isolating the entire
+browser from the service and other requests, use the `--browser.namespaced`
+option.
 
 This functionality requires Linux and various capabilities and AppArmor profiles
 to be set up.
