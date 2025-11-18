@@ -45,7 +45,7 @@ service. With our Docker images, this is `/home/nonroot/` by default.
 
 The file names must be one of `config.json`, `config.yaml`, or `config.yml`.
 
-## Monitoring
+## Monitor the image renderer
 
 You can monitor the service via Prometheus or
 [Mimir](https://grafana.com/oss/mimir) and any OpenTelemetry-compatible Tracing
