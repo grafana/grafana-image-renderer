@@ -1,6 +1,7 @@
 ---
 aliases:
   - ../../image-rendering/troubleshooting/
+  - monitoring
 description: Image rendering troubleshooting
 keywords:
   - grafana
