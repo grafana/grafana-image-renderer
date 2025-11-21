@@ -111,9 +111,8 @@ like `./grafana-image-renderer server`; see `--help` for more information.
 
 ### Grafana configuration
 
-Grafana's configuration includes options to specify where to find the renderer
-service, and which authentication token to use in communication. These options
-are, in INI format:
+Grafana includes options to specify where to find the renderer service, and
+which authentication token to use in communication. These options are:
 
 ```ini
 [rendering]
@@ -126,6 +125,11 @@ server_url = http://renderer:8081/render
 ; By default, a single token is configured, with the value of `-`.
 renderer_token = -
 ```
+
+With Docker or similar setups that use environment variables, the options are:
+
+- `GF_RENDERING_SERVER_URL`, and
+- `GF_RENDERING_RENDERER_TOKEN`.
 
 ## Configuration
 
