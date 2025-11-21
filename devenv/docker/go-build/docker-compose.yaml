@@ -49,6 +49,7 @@ services:
     environment:
       TRACING_ENDPOINT: http://tempo:4318/v1/traces
       LOG_LEVEL: debug
+      AUTH_TOKEN: one,two,three,four,five
     command:
       - server
       # 1 GiB
@@ -91,6 +92,7 @@ services:
     environment:
       GF_RENDERING_SERVER_URL: http://renderer:8081/render
       GF_RENDERING_CALLBACK_URL: http://grafana:3000/
+      GF_RENDERING_RENDERER_TOKEN: three
       GF_TRACING_OPENTELEMETRY_OTLP_ADDRESS: tempo:4317
       GF_INSTALL_PLUGINS: https://storage.googleapis.com/integration-artifacts/grafana-exploretraces-app/grafana-exploretraces-app-latest.zip;grafana-traces-app
       GF_LOG_FILTERS: rendering:debug

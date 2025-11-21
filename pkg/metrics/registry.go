@@ -16,6 +16,7 @@ func NewRegistry() *prometheus.Registry {
 		collectors.NewBuildInfoCollector(),
 
 		middleware.MetricAuthenticatedRequestAttempt,
+		middleware.MetricAuthenticationTokenUsage,
 		middleware.MetricRateLimiterSlots,
 		middleware.MetricRateLimiterRequests,
 		middleware.MetricRequestsInFlight,
