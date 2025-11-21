@@ -109,6 +109,24 @@ The binaries are hosted on [GitHub Releases][releases]. Download the appropriate
 binary for your platform, and run it from the terminal. You would run something
 like `./grafana-image-renderer server`; see `--help` for more information.
 
+### Grafana configuration
+
+Grafana's configuration includes options to specify where to find the renderer
+service, and which authentication token to use in communication. These options
+are, in INI format:
+
+```ini
+[rendering]
+; The URL is an HTTP(S) URL to the service, and its rendering endpoint.
+; By default, the path is `/render`. This can be changed with nginx or similar reverse proxies.
+server_url = http://renderer:8081/render
+
+; The token is any _one_ token configured in the renderer service.
+; If you configured multiple tokens in the service, choose one for Grafana.
+; By default, a single token is configured, with the value of `-`.
+renderer_token = -
+```
+
 ## Configuration
 
 You can configure the service several ways:
