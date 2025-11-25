@@ -27,7 +27,7 @@ jobs:
       contents: read # clone the repository
       id-token: write # required to read secrets
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           persist-credentials: false
       - uses: actions/setup-go@v6

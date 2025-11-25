@@ -38,7 +38,7 @@ jobs:
       GOARCH: ${{ matrix.GOARCH }}
       SUFFIX: ${{ matrix.SUFFIX || '' }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           persist-credentials: false
       - uses: actions/setup-go@v6
@@ -47,7 +47,7 @@ jobs:
           cache: false
       - name: go build
         run: go build -o grafana-image-renderer-"$GOOS"-"$GOARCH""$SUFFIX" -buildvcs -ldflags '-s -w' .
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: grafana-image-renderer-${{ matrix.GOOS }}-${{ matrix.GOARCH }}${{ matrix.SUFFIX || '' }}
           path: grafana-image-renderer-${{ matrix.GOOS }}-${{ matrix.GOARCH }}${{ matrix.SUFFIX || '' }}
@@ -129,7 +129,7 @@ jobs:
         if: needs.tag.outputs.registry == 'docker.io'
         uses: grafana/shared-workflows/actions/dockerhub-login@dockerhub-login/v1
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           persist-credentials: false
 
@@ -222,7 +222,7 @@ jobs:
       contents: write # to create the release
       packages: read # to read the package information
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v5
         with:
           merge-multiple: true
           path: bins/
