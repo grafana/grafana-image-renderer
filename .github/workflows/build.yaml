@@ -37,6 +37,7 @@ jobs:
       GOOS: ${{ matrix.GOOS }}
       GOARCH: ${{ matrix.GOARCH }}
       SUFFIX: ${{ matrix.SUFFIX || '' }}
+      CGO_ENABLED: 0
     steps:
       - uses: actions/checkout@v6
         with:
@@ -46,7 +47,7 @@ jobs:
           go-version-file: go.mod
           cache: false
       - name: go build
-        run: go build -o grafana-image-renderer-"$GOOS"-"$GOARCH""$SUFFIX" -buildvcs -ldflags '-s -w' .
+        run: go build -o grafana-image-renderer-"$GOOS"-"$GOARCH""$SUFFIX" -buildvcs -ldflags '-s -w -extldflags "-static"' .
       - uses: actions/upload-artifact@v5
         with:
           name: grafana-image-renderer-${{ matrix.GOOS }}-${{ matrix.GOARCH }}${{ matrix.SUFFIX || '' }}
