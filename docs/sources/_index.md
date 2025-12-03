@@ -66,18 +66,14 @@ You may need to adapt this to your specific use case if your load is significant
 While we ship a `latest` tag, prefer pinning a specific version in production environments.
 We commit to keeping the `latest` tag the latest stable release.
 
-To install the renderer with Docker, run the following commands.
-
-The example creates a Docker network and starts both the renderer and Grafana services.
-This configuration is for demonstration purposes and isn't a production-ready Grafana instance:
+The following example creates a Docker network and starts both the renderer and Grafana services.
+This configuration demonstrates what environment variables to set, but it isn't a production-ready Grafana instance:
 
 ```shell
 docker network create grafana
 docker run --network grafana --name renderer --rm --detach grafana/grafana-image-renderer:latest
 docker run --network grafana --name grafana --rm --detach --env GF_RENDERING_SERVER_URL=http://renderer:8081/render --env GF_RENDERING_CALLBACK_URL=http://grafana:3000/ --port 3000:3000 grafana/grafana-enterprise:latest
 ```
-
-This configuration sets the required environment variables for Grafana to communicate with the renderer service.
 
 Alternatively, if you prefer `docker compose`:
 
