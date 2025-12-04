@@ -36,7 +36,6 @@ At any given time, we commit to supporting _all_ stable currently supported vers
 If you find a bug, consider reporting it on our [issue tracker][issues].
 
 [issues]: https://github.com/grafana/grafana-image-renderer/issues
-
 {{< /admonition >}}
 
 ## Before you begin
@@ -67,7 +66,7 @@ While we ship a `latest` tag, prefer pinning a specific version in production en
 We commit to keeping the `latest` tag the latest stable release.
 
 The following example creates a Docker network and starts both the renderer and Grafana services.
-This configuration demonstrates what environment variables to set, but it isn't a production-ready Grafana instance:
+This configuration demonstrates what environment variables to set, but it doesn't use a production-ready Grafana instance:
 
 ```shell
 docker network create grafana
