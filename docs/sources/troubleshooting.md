@@ -20,9 +20,9 @@ weight: 200
 
 # Troubleshooting
 
-This section is dedicated to answering some of our more common questions. These
-are helpful for self-managed Grafana users; they are not particularly useful for
-Grafana Cloud users, as we manage all this stuff for you.
+This section answers common questions about troubleshooting the image renderer.
+The guidance is helpful for self-managed Grafana users.
+It isn't particularly useful for Grafana Cloud users, as the image renderer is managed for you.
 
 ## Available configuration options
 
@@ -32,31 +32,27 @@ To see all available options, run:
 docker run --rm grafana/grafana-image-renderer:latest server --help
 ```
 
-Much of the service's functionality has fine-tunable options. When the image
-renderer service is likely to be at fault, these options tend to be the first
-ones that should be changed.
+Much of the service's functionality has configurable options.
+When troubleshooting the image renderer, these options are often the first ones to change.
 
-The rest of this document aims to clarify what these options are and do, so the
-right experiments and changes can be done.
+The rest of this guide clarifies what these options are and do, so you can make the right experiments and changes.
 
 ## Configuration file formats and paths
 
-The configuration files are read from the current working directory of the
-service. With our Docker images, this is `/home/nonroot/` by default.
+The service reads configuration files from its current working directory.
+With Docker images, this is `/home/nonroot/` by default.
 
 The file names must be one of `config.json`, `config.yaml`, or `config.yml`.
 
 ## Monitor the image renderer
 
-You can monitor the service via Prometheus or
-[Mimir](https://grafana.com/oss/mimir) and any OpenTelemetry-compatible Tracing
-backend, such as [Grafana Tempo](https://grafana.com/oss/tempo). We recommend
-setting up both:
+You can monitor the service using Prometheus or [Grafana Mimir](https://grafana.com/oss/mimir) for metrics and any OpenTelemetry-compatible tracing backend for traces, such as [Grafana Tempo](https://grafana.com/oss/tempo).
+We recommend setting up both:
 
 - Point the metrics scraper to `/metrics` on the HTTP port (default `:8081`).
 - Point the service (`--tracing.endpoint`) to the tracing backend.
 
-We have an [example dashboard here](https://grafana.com/grafana/dashboards/12203-grafana-image-renderer/).
+For a pre-built monitoring dashboard, refer to this [example dashboard](https://grafana.com/grafana/dashboards/12203-grafana-image-renderer/).
 
 ## Changing the HTTP server bind address
 
