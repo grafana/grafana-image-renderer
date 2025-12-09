@@ -322,6 +322,8 @@ type BrowserConfig struct {
 	// ReadinessTimeout is the maximum time to wait for the web-page to become ready (i.e. no longer loading anything).
 	ReadinessTimeout           time.Duration
 	ReadinessIterationInterval time.Duration
+	// ReadinessWaitForNCycles is the number of readiness checks that must pass consecutively before considering the page ready. This handles the case where queries drop to 0 briefly before incrementing again.
+	ReadinessWaitForNCycles int
 	// ReadinessPriorWait is the time to wait before checking for how ready the page is.
 	// This lets you force the webpage to take a beat and just do its thing before the service starts looking for whether it's time to render anything.
 	ReadinessPriorWait              time.Duration
@@ -443,6 +445,17 @@ func BrowserFlags() []cli.Flag {
 			Validator: func(d time.Duration) error {
 				if d <= 0 {
 					return fmt.Errorf("browser readiness iteration-interval must be positive (got %v)", d)
+				}
+				return nil
+			},
+		},
+		&cli.IntFlag{
+			Name:  "browser.readiness.wait-for-n-cycles",
+			Usage: "The number of readiness checks that must pass consecutively before considering the page ready.",
+			Value: 1,
+			Validator: func(i int) error {
+				if i < 1 {
+					return fmt.Errorf("browser readiness wait-for-n-cycles must be at least 1 (got %d)", i)
 				}
 				return nil
 			},
@@ -596,6 +609,7 @@ func BrowserConfigFromCommand(c *cli.Command) (BrowserConfig, error) {
 		TimeBetweenScrolls:              c.Duration("browser.time-between-scrolls"),
 		ReadinessTimeout:                c.Duration("browser.readiness.timeout"),
 		ReadinessIterationInterval:      c.Duration("browser.readiness.iteration-interval"),
+		ReadinessWaitForNCycles:         c.Int("browser.readiness.wait-for-n-cycles"),
 		ReadinessPriorWait:              c.Duration("browser.readiness.prior-wait"),
 		ReadinessDisableQueryWait:       c.Bool("browser.readiness.disable-query-wait"),
 		ReadinessFirstQueryTimeout:      c.Duration("browser.readiness.give-up-on-first-query"),
