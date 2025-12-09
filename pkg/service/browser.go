@@ -1035,9 +1035,9 @@ func waitForReady(browserCtx context.Context, cfg config.BrowserConfig) chromedp
 				} else if !hasSeenAnyQuery && (cfg.ReadinessFirstQueryTimeout <= 0 || time.Since(start) < cfg.ReadinessFirstQueryTimeout) {
 					span.AddEvent("no first query detected yet; giving it more time")
 					continue
-				} else if numSuccessfulCycles+1 < cfg.ReadinessWaitForNCycles {
+				} else if numSuccessfulCycles+1 < cfg.ReadinessWaitForNQueryCycles {
 					numSuccessfulCycles++
-					span.AddEvent("waiting for more successful readiness cycles", trace.WithAttributes(attribute.Int("currentCycle", numSuccessfulCycles), attribute.Int("requiredCycles", cfg.ReadinessWaitForNCycles)))
+					span.AddEvent("waiting for more successful readiness cycles", trace.WithAttributes(attribute.Int("currentCycle", numSuccessfulCycles), attribute.Int("requiredCycles", cfg.ReadinessWaitForNQueryCycles)))
 					continue // need more successful cycles
 				}
 			}
