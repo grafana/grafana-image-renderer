@@ -36,7 +36,7 @@ For example, a complete configuration file might look like this in YAML:
 
 ```yaml
 server:
-  addr: ":8081" # servver.addr
+  addr: ":8081" # server.addr
   auth-token: # server.auth-token
     - "a"
     - "b"
