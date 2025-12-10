@@ -24,13 +24,13 @@ This section aims to list the entire set of flags that can be used to configure 
 To configure the service, any of the following methods can be used:
 
 - Set CLI flags. These are passed in on the command line, and take complete precedence over all other methods.
-  For example, `--server.addr=":8081"` will set the HTTP address to listen on all interfaces on port `8081`.
+  For example, `--server.addr=":8081"` sets the HTTP address to listen on all interfaces on port `8081`.
 - Set environment variables. These are set in the environment.
   If environment variables are supported for a flag, they are listed in the help command.
 - Write a JSON or YAML configuration file. These must be named `config.json`, `config.yaml`, or `config.yml`.
   There should only be one file; precedence is undefined if multiple files are present.
   Dot-separated keys are nested keys. For example, the flag `a.b` becomes `{"a": {"b": "VALUE"}}` in the file.
-  The config keys are always mentioned in the help command alongside the flag.
+  The configuration keys are always mentioned in the help command alongside the flag.
 
 For example, a complete configuration file might look like this in YAML:
 
