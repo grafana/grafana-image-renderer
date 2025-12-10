@@ -65,7 +65,7 @@ version in production environments. We do, however, commit to keeping the
 docker network create grafana
 docker run --network grafana --name renderer --rm --detach grafana/grafana-image-renderer:latest
 # The following is not a production-ready Grafana instance, but shows what env vars you should set:
-docker run --network grafana --name grafana --rm --detach --env GF_RENDERING_SERVER_URL=http://renderer:8081/render --env http://grafana:3000/ --port 3000:3000 grafana/grafana-enterprise:latest
+docker run --network grafana --name grafana --rm --detach --env GF_RENDERING_SERVER_URL=http://renderer:8081/render --env GF_RENDERING_CALLBACK_URL=http://grafana:3000/ --port 3000:3000 grafana/grafana-enterprise:latest
 ```
 
 Alternatively, if you prefer `docker compose`:
