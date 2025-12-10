@@ -1016,7 +1016,6 @@ func waitForReady(browserCtx context.Context, cfg config.BrowserConfig) chromedp
 				(cfg.ReadinessNetworkIdleTimeout <= 0 || time.Since(start) < cfg.ReadinessNetworkIdleTimeout) &&
 				requests.Load() > 0 {
 				initialDOMPass = true
-				numSuccessfulCycles = 0
 				span.AddEvent("network requests still ongoing", trace.WithAttributes(attribute.Int64("inflight_requests", requests.Load())))
 				continue // still waiting on network requests to complete
 			}
