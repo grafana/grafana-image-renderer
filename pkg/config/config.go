@@ -443,9 +443,10 @@ func BrowserFlags() []cli.Flag {
 			Sources: FromConfig("browser.readiness.timeout", "BROWSER_READINESS_TIMEOUT"),
 		},
 		&cli.DurationFlag{
-			Name:  "browser.readiness.iteration-interval",
-			Usage: "How long to wait between each iteration of checking whether the page is ready. Must be positive. [config: browser.readiness.iteration-interval]",
-			Value: time.Millisecond * 100,
+			Name:    "browser.readiness.iteration-interval",
+			Usage:   "How long to wait between each iteration of checking whether the page is ready. Must be positive. [config: browser.readiness.iteration-interval]",
+			Value:   time.Millisecond * 100,
+			Sources: FromConfig("browser.readiness.iteration-interval", "BROWSER_READINESS_ITERATION_INTERVAL"),
 			Validator: func(d time.Duration) error {
 				if d <= 0 {
 					return fmt.Errorf("browser readiness iteration-interval must be positive (got %v)", d)
@@ -454,9 +455,10 @@ func BrowserFlags() []cli.Flag {
 			},
 		},
 		&cli.IntFlag{
-			Name:  "browser.readiness.wait-for-n-query-cycles",
-			Usage: "The number of readiness checks that must pass consecutively before considering the page ready.",
-			Value: 1,
+			Name:    "browser.readiness.wait-for-n-query-cycles",
+			Usage:   "The number of readiness checks that must pass consecutively before considering the page ready. [config: browser.readiness.wait-for-n-query-cycles]",
+			Value:   1,
+			Sources: FromConfig("browser.readiness.wait-for-n-query-cycles", "BROWSER_READINESS_WAIT_FOR_N_QUERY_CYCLES"),
 			Validator: func(i int) error {
 				if i < 1 {
 					return fmt.Errorf("browser readiness wait-for-n-query-cycles must be at least 1 (got %d)", i)

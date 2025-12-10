@@ -82,7 +82,7 @@ This is a verbatim copy of the output of the `grafana-image-renderer server --he
     How long to wait before giving up on all running queries. If <= 0, the give-up is disabled. [config: browser.readiness.give-up-on-all-queries]
 --browser.readiness.give-up-on-first-query=<duration> [${BROWSER_READINESS_GIVE_UP_ON_FIRST_QUERY}]
     How long to wait before giving up on a first query being registered. If <= 0, the give-up is disabled. [config: browser.readiness.give-up-on-first-query]
---browser.readiness.iteration-interval=<duration>
+--browser.readiness.iteration-interval=<duration> [${BROWSER_READINESS_ITERATION_INTERVAL}]
     How long to wait between each iteration of checking whether the page is ready. Must be positive. [config: browser.readiness.iteration-interval]
 --browser.readiness.network-idle-timeout=<duration> [${BROWSER_READINESS_NETWORK_IDLE_TIMEOUT}]
     How long to wait before giving up on the network being idle. If <= 0, the timeout is disabled. [config: browser.readiness.network-idle-timeout]
@@ -90,8 +90,8 @@ This is a verbatim copy of the output of the `grafana-image-renderer server --he
     The time to wait before checking for how ready the page is. This lets you force the webpage to take a beat and just do its thing before the service starts looking for whether it's time to render anything. If <= 0, this is disabled. [config: browser.readiness.prior-wait]
 --browser.readiness.timeout=<duration> [${BROWSER_READINESS_TIMEOUT}]
     The maximum time to wait for a web-page to become ready (i.e. no longer loading anything). If <= 0, the timeout is disabled. [config: browser.readiness.timeout]
---browser.readiness.wait-for-n-query-cycles=<int>
-    The number of readiness checks that must pass consecutively before considering the page ready.
+--browser.readiness.wait-for-n-query-cycles=<int> [${BROWSER_READINESS_WAIT_FOR_N_QUERY_CYCLES}]
+    The number of readiness checks that must pass consecutively before considering the page ready. [config: browser.readiness.wait-for-n-query-cycles]
 --browser.sandbox [${BROWSER_SANDBOX}]
     Enable the browser's sandbox. Sets the `no-sandbox` flag to `false` for you. [config: browser.sandbox]
 --browser.time-between-scrolls=<duration> [${BROWSER_TIME_BETWEEN_SCROLLS}]
