@@ -138,11 +138,16 @@ func flagString(flag cli.Flag) (string, error) {
 	}
 	slices.Sort(envVars)
 
+	var defaultText string
+	if docFlag.IsDefaultVisible() && docFlag.GetValue() != "" {
+		defaultText = fmt.Sprintf(" [default: %v]", docFlag.GetValue())
+	}
+
 	namesStr := strings.Join(names, " / ")
 	var envVarsStr string
 	if len(envVars) > 0 {
 		envVarsStr = fmt.Sprintf(" [%s]", strings.Join(envVars, ", "))
 	}
 
-	return fmt.Sprintf("%s%s\n    %s", namesStr, envVarsStr, docFlag.GetUsage()), nil
+	return fmt.Sprintf("%s%s%s\n    %s", namesStr, defaultText, envVarsStr, docFlag.GetUsage()), nil
 }
