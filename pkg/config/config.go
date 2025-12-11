@@ -339,6 +339,10 @@ type BrowserConfig struct {
 	ReadinessDisableDOMHashCodeWait bool
 	ReadinessDOMHashCodeTimeout     time.Duration
 
+	// ReadinessFirstQueryTimeoutOverride lets us override the first query timeout for specific slugs.
+	// Here temporarily to expedite escalation resolution, this will be changed to be request-config later
+	ReadinessFirstQueryTimeoutOverride map[string]string
+
 	// MinWidth is the minimum width of the browser viewport.
 	// If larger than MaxWidth, MaxWidth is used instead.
 	MinWidth int
@@ -482,6 +486,19 @@ func BrowserFlags() []cli.Flag {
 			Usage:   "How long to wait before giving up on a first query being registered. If <= 0, the give-up is disabled. [config: browser.readiness.give-up-on-first-query]",
 			Value:   time.Second * 3,
 			Sources: FromConfig("browser.readiness.give-up-on-first-query", "BROWSER_READINESS_GIVE_UP_ON_FIRST_QUERY"),
+		},
+		&cli.StringMapFlag{
+			Name:    "browser.readiness.give-up-on-first-query-override",
+			Usage:   "How long to wait before giving up on a first query being registered for specific slugs. Syntax is `${slug}=${duration}`. [config: browser.readiness.give-up-on-first-query-override]",
+			Sources: FromConfig("browser.readiness.give-up-on-first-query-override", "BROWSER_READINESS_GIVE_UP_ON_FIRST_QUERY_OVERRIDE"),
+			Validator: func(m map[string]string) error {
+				for k, v := range m {
+					if _, err := time.ParseDuration(v); err != nil {
+						return fmt.Errorf("invalid browser readiness give-up-on-first-query-override duration for slug %s: %w", k, err)
+					}
+				}
+				return nil
+			},
 		},
 		&cli.DurationFlag{
 			Name:    "browser.readiness.give-up-on-all-queries",
@@ -630,6 +647,8 @@ func BrowserConfigFromCommand(c *cli.Command) (BrowserConfig, error) {
 		MaxHeight:                       maxHeight,
 		PageScaleFactor:                 c.Float64("browser.page-scale-factor"),
 		Landscape:                       !c.Bool("browser.portrait"),
+
+		ReadinessFirstQueryTimeoutOverride: c.StringMap("browser.readiness.give-up-on-first-query-override"), // Temporary, will be changed to be request-config later
 	}, nil
 }
 

@@ -10,9 +10,11 @@ import (
 	"log/slog"
 	"maps"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"slices"
 	"strings"
 	"sync"
@@ -264,8 +266,8 @@ func (s *BrowserService) Render(ctx context.Context, url string, printer Printer
 		observingAction("WaitReady(body)", chromedp.WaitReady("body", chromedp.ByQuery)), // wait for a body to exist; this is when the page has started to actually render
 		observingAction("scrollForElements", scrollForElements(cfg.TimeBetweenScrolls)),
 		observingAction("waitForDuration", waitForDuration(cfg.ReadinessPriorWait)),
-		observingAction("waitForReady", waitForReady(browserCtx, cfg)),
-		observingAction("printer.prepare", printer.prepare(cfg)),
+		observingAction("waitForReady", waitForReady(browserCtx, url, cfg)),
+		observingAction("printer.prepare", printer.prepare(url, cfg)),
 		observingAction("printer.action", printer.action(fileChan, cfg)),
 	}
 	span.AddEvent("actions created")
@@ -639,7 +641,7 @@ func (p PaperSize) FormatInches() (width float64, height float64, err error) {
 }
 
 type Printer interface {
-	prepare(cfg config.BrowserConfig) chromedp.Action
+	prepare(url string, cfg config.BrowserConfig) chromedp.Action
 	action(output chan []byte, cfg config.BrowserConfig) chromedp.Action
 	contentType() string
 }
@@ -650,7 +652,7 @@ type pdfPrinter struct {
 	pageRanges      string // empty string is all pages
 }
 
-func (p *pdfPrinter) prepare(_ config.BrowserConfig) chromedp.Action {
+func (p *pdfPrinter) prepare(_ string, _ config.BrowserConfig) chromedp.Action {
 	return chromedp.ActionFunc(func(context.Context) error {
 		return nil
 	})
@@ -750,7 +752,7 @@ type pngPrinter struct {
 	fullHeight bool
 }
 
-func (p *pngPrinter) prepare(cfg config.BrowserConfig) chromedp.Action {
+func (p *pngPrinter) prepare(url string, cfg config.BrowserConfig) chromedp.Action {
 	return chromedp.ActionFunc(func(ctx context.Context) error {
 		if !p.fullHeight {
 			return nil
@@ -799,7 +801,7 @@ func (p *pngPrinter) prepare(cfg config.BrowserConfig) chromedp.Action {
 			}
 
 			span.SetStatus(codes.Ok, "viewport resized successfully")
-			if err := waitForReady(ctx, cfg).Do(ctx); err != nil {
+			if err := waitForReady(ctx, url, cfg).Do(ctx); err != nil {
 				return fmt.Errorf("failed to wait for readiness after resizing viewport: %w", err)
 			}
 		} else {
@@ -944,7 +946,7 @@ func scrollForElements(timeBetweenScrolls time.Duration) chromedp.Action {
 	})
 }
 
-func waitForReady(browserCtx context.Context, cfg config.BrowserConfig) chromedp.Action {
+func waitForReady(browserCtx context.Context, urlStr string, cfg config.BrowserConfig) chromedp.Action {
 	getRunningQueries := func(ctx context.Context) (bool, error) {
 		var running bool
 		err := chromedp.Evaluate(`!!(window.__grafanaSceneContext && window.__grafanaRunningQueryCount > 0)`, &running).Do(ctx)
@@ -982,11 +984,31 @@ func waitForReady(browserCtx context.Context, cfg config.BrowserConfig) chromedp
 		defer cancelNetworkListener()
 
 		tracer := tracer(ctx)
-		ctx, span := tracer.Start(ctx, "waitForReady",
-			trace.WithAttributes(attribute.String("timeout", cfg.ReadinessTimeout.String())))
+		ctx, span := tracer.Start(ctx, "waitForReady", trace.WithAttributes(attribute.String("timeout", cfg.ReadinessTimeout.String())))
 		defer span.End()
 
 		start := time.Now()
+
+		slug, err := extractSlug(urlStr)
+		if err != nil {
+			span.SetStatus(codes.Error, err.Error())
+			span.RecordError(err)
+			return fmt.Errorf("error extracting slug from URL: %w", err)
+		}
+
+		readinessFirstQueryTimeout := cfg.ReadinessFirstQueryTimeout
+		if slug != "" {
+			span.AddEvent("extracted slug from Grafana Cloud URL", trace.WithAttributes(attribute.String("slug", slug)))
+			if timeout, ok := cfg.ReadinessFirstQueryTimeoutOverride[slug]; ok {
+				readinessFirstQueryTimeout, err = time.ParseDuration(timeout)
+				if err != nil {
+					span.SetStatus(codes.Error, err.Error())
+					span.RecordError(err)
+					return fmt.Errorf("failed to parse custom timeout for slug %s: %w", slug, err)
+				}
+				span.AddEvent("using custom timeout for slug", trace.WithAttributes(attribute.String("slug", slug), attribute.String("timeout", timeout)))
+			}
+		}
 
 		var readinessTimeout <-chan time.Time
 		if cfg.ReadinessTimeout > 0 {
@@ -1033,7 +1055,7 @@ func waitForReady(browserCtx context.Context, cfg config.BrowserConfig) chromedp
 					hasSeenAnyQuery = true
 					numSuccessfulCycles = 0
 					continue // still waiting on queries to complete
-				} else if !hasSeenAnyQuery && (cfg.ReadinessFirstQueryTimeout <= 0 || time.Since(start) < cfg.ReadinessFirstQueryTimeout) {
+				} else if !hasSeenAnyQuery && (readinessFirstQueryTimeout <= 0 || time.Since(start) < readinessFirstQueryTimeout) {
 					span.AddEvent("no first query detected yet; giving it more time")
 					continue
 				} else if numSuccessfulCycles+1 < cfg.ReadinessWaitForNQueryCycles {
@@ -1078,6 +1100,21 @@ func waitForReady(browserCtx context.Context, cfg config.BrowserConfig) chromedp
 
 		return nil
 	})
+}
+
+// extractSlug extracts the slug from a Grafana Cloud URL e.g. "{slug}.grafana.net"
+func extractSlug(urlStr string) (string, error) {
+	parsedURL, err := url.Parse(urlStr)
+	if err != nil {
+		return "", fmt.Errorf("failed to parse URL: %w", err)
+	}
+
+	reSlug := regexp.MustCompile(`^([a-z0-9]+)\.grafana\.net$`)
+	if match := reSlug.FindStringSubmatch(parsedURL.Host); match != nil && len(match) > 1 {
+		return match[1], nil
+	}
+
+	return "", nil
 }
 
 func waitForDuration(d time.Duration) chromedp.Action {

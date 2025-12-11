@@ -82,6 +82,8 @@ This is a verbatim copy of the output of the `grafana-image-renderer server --he
     How long to wait before giving up on all running queries. If <= 0, the give-up is disabled. [config: browser.readiness.give-up-on-all-queries]
 --browser.readiness.give-up-on-first-query=<duration> [default: 3s] [${BROWSER_READINESS_GIVE_UP_ON_FIRST_QUERY}]
     How long to wait before giving up on a first query being registered. If <= 0, the give-up is disabled. [config: browser.readiness.give-up-on-first-query]
+--browser.readiness.give-up-on-first-query-override=<stringmap> [default: {}] [%{BROWSER_READINESS_GIVE_UP_ON_FIRST_QUERY_OVERRIDE}]
+   How long to wait before giving up on a first query being registered for specific slugs. Syntax is `${slug}=${duration}`. [config: browser.readiness.give-up-on-first-query-override]
 --browser.readiness.iteration-interval=<duration> [default: 100ms] [${BROWSER_READINESS_ITERATION_INTERVAL}]
     How long to wait between each iteration of checking whether the page is ready. Must be positive. [config: browser.readiness.iteration-interval]
 --browser.readiness.network-idle-timeout=<duration> [default: 0s] [${BROWSER_READINESS_NETWORK_IDLE_TIMEOUT}]
