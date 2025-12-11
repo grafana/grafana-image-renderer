@@ -648,7 +648,7 @@ func BrowserConfigFromCommand(c *cli.Command) (BrowserConfig, error) {
 		PageScaleFactor:                 c.Float64("browser.page-scale-factor"),
 		Landscape:                       !c.Bool("browser.portrait"),
 
-		ReadinessFirstQueryTimeoutOverride: c.StringMap("browser.readiness.give-up-on-first-query-override"), // Temporary, will be changed to be request-config later
+		ReadinessFirstQueryTimeoutOverride: c.StringMap("browser.readiness.give-up-on-first-query-override"),
 	}, nil
 }
 
