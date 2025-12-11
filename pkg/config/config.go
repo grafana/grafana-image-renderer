@@ -339,7 +339,7 @@ type BrowserConfig struct {
 	ReadinessDisableDOMHashCodeWait bool
 	ReadinessDOMHashCodeTimeout     time.Duration
 
-	// ReadinessFirstQueryTimeoutOverride lets us override the first query timeout for specific slugs.
+	// ReadinessFirstQueryTimeoutOverride lets us override the first query timeout for specific slugs in Grafana Cloud.
 	// TODO change to request-config instead of service config
 	ReadinessFirstQueryTimeoutOverride map[string]string
 
@@ -489,7 +489,7 @@ func BrowserFlags() []cli.Flag {
 		},
 		&cli.StringMapFlag{
 			Name:    "browser.readiness.give-up-on-first-query-override",
-			Usage:   "How long to wait before giving up on a first query being registered for specific slugs. Syntax is `${slug}=${duration}`. [config: browser.readiness.give-up-on-first-query-override]",
+			Usage:   "How long to wait before giving up on a first query being registered for specific slugs in Grafana Cloud. Syntax is `${slug}=${duration}`. [config: browser.readiness.give-up-on-first-query-override]",
 			Sources: FromConfig("browser.readiness.give-up-on-first-query-override", "BROWSER_READINESS_GIVE_UP_ON_FIRST_QUERY_OVERRIDE"),
 			Validator: func(m map[string]string) error {
 				for k, v := range m {
