@@ -340,7 +340,7 @@ type BrowserConfig struct {
 	ReadinessDOMHashCodeTimeout     time.Duration
 
 	// ReadinessFirstQueryTimeoutOverride lets us override the first query timeout for specific slugs.
-	// Here temporarily to expedite escalation resolution, this will be changed to be request-config later
+	// TODO change to request-config instead of service config
 	ReadinessFirstQueryTimeoutOverride map[string]string
 
 	// MinWidth is the minimum width of the browser viewport.
