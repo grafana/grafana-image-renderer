@@ -1110,7 +1110,7 @@ func extractSlug(urlStr string) (string, error) {
 	}
 
 	reSlug := regexp.MustCompile(`^([a-z0-9]+)\.grafana\.net$`)
-	if match := reSlug.FindStringSubmatch(parsedURL.Host); match != nil && len(match) > 1 {
+	if match := reSlug.FindStringSubmatch(parsedURL.Host); len(match) > 1 {
 		return match[1], nil
 	}
 
