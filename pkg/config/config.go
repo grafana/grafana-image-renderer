@@ -320,41 +320,50 @@ type BrowserConfig struct {
 	Headers network.Headers // DeepClone: can't just be copied (is a map)
 	// TimeBetweenScrolls changes how long we wait for a scroll event to complete before starting a new one.
 	//
+	// DefaultRequestConfig contains default settings for handling rendering requests. Overrides for specific URL patterns can be configured separately.
+	DefaultRequestConfig RequestConfig
+	// RequestConfigOverrides allows you to specify different request configurations for specific URL regex patterns.
+	RequestConfigOverrides map[string]RequestConfig
+}
+
+type RequestConfig struct {
 	// We will scroll the entire web-page by the entire viewport over and over until we have seen everything.
 	// That means for a viewport that is 500px high, and a webpage that is 2500px high, we will scroll 5 times, meaning a total wait duration of 6 * duration (as we have to wait on the first & last scrolls as well).
-	TimeBetweenScrolls time.Duration
-	// ReadinessTimeout is the maximum time to wait for the web-page to become ready (i.e. no longer loading anything).
-	ReadinessTimeout           time.Duration
-	ReadinessIterationInterval time.Duration
-	// ReadinessWaitForNQueryCycles is the number of readiness checks that must pass consecutively before considering the page ready. This handles the case where queries drop to 0 briefly before incrementing again.
-	ReadinessWaitForNQueryCycles int
-	// ReadinessPriorWait is the time to wait before checking for how ready the page is.
-	// This lets you force the webpage to take a beat and just do its thing before the service starts looking for whether it's time to render anything.
-	ReadinessPriorWait              time.Duration
-	ReadinessDisableQueryWait       bool
-	ReadinessFirstQueryTimeout      time.Duration
-	ReadinessQueriesTimeout         time.Duration
-	ReadinessDisableNetworkWait     bool
-	ReadinessNetworkIdleTimeout     time.Duration
-	ReadinessDisableDOMHashCodeWait bool
-	ReadinessDOMHashCodeTimeout     time.Duration
+	TimeBetweenScrolls time.Duration `json:"time_between_scrolls"`
 
 	// MinWidth is the minimum width of the browser viewport.
 	// If larger than MaxWidth, MaxWidth is used instead.
-	MinWidth int
+	MinWidth int `json:"min_width" yaml:"min_width"`
 	// MinHeight is the minimum height of the browser viewport.
 	// If larger than MaxHeight, MaxHeight is used instead.
-	MinHeight int
+	MinHeight int `json:"min_height" yaml:"min_height"`
 	// MaxWidth is the maximum width of the browser viewport.
 	// A request cannot request a larger browser viewport than this.
 	// If negative, it is ignored.
-	MaxWidth int
+	MaxWidth int `json:"max_width" yaml:"max_width"`
 	// MaxHeight is the maximum height of the browser viewport.
 	// A request cannot request a larger browser viewport than this, except for when capturing full-page screenshots.
 	// If negative, it is ignored.
-	MaxHeight       int
-	PageScaleFactor float64
-	Landscape       bool
+	MaxHeight       int     `json:"max_height" yaml:"max_height"`
+	PageScaleFactor float64 `json:"page_scale_factor" yaml:"page_scale_factor"`
+	Landscape       bool    `json:"landscape" yaml:"landscape"`
+
+	// Readiness properties are a "best guess" configuration for waiting for the page to be ready for capture
+	// ReadinessTimeout is the maximum time to wait for the web-page to become ready (i.e. no longer loading anything).
+	ReadinessTimeout           time.Duration `json:"readiness_timeout" yaml:"readiness_timeout"`
+	ReadinessIterationInterval time.Duration `json:"readiness_iteration_interval" yaml:"readiness_iteration_interval"`
+	// ReadinessWaitForNQueryCycles is the number of readiness checks that must pass consecutively before considering the page ready. This handles the case where queries drop to 0 briefly before incrementing again.
+	ReadinessWaitForNQueryCycles int `json:"readiness_wait_for_n_query_cycles" yaml:"readiness_wait_for_n_query_cycles"`
+	// ReadinessPriorWait is the time to wait before checking for how ready the page is.
+	// This lets you force the webpage to take a beat and just do its thing before the service starts looking for whether it's time to render anything.
+	ReadinessPriorWait              time.Duration `json:"readiness_prior_wait" yaml:"readiness_prior_wait"`
+	ReadinessDisableQueryWait       bool          `json:"readiness_disable_query_wait" yaml:"readiness_disable_query_wait"`
+	ReadinessFirstQueryTimeout      time.Duration `json:"readiness_first_query_timeout" yaml:"readiness_first_query_timeout"`
+	ReadinessQueriesTimeout         time.Duration `json:"readiness_queries_timeout" yaml:"readiness_queries_timeout"`
+	ReadinessDisableNetworkWait     bool          `json:"readiness_disable_network_wait" yaml:"readiness_disable_network_wait"`
+	ReadinessNetworkIdleTimeout     time.Duration `json:"readiness_network_idle_timeout" yaml:"readiness_network_idle_timeout"`
+	ReadinessDisableDOMHashCodeWait bool          `json:"readiness_disable_dom_hashcode_wait" yaml:"readiness_disable_dom_hashcode_wait"`
+	ReadinessDOMHashCodeTimeout     time.Duration `json:"readiness_dom_hashcode_timeout" yaml:"readiness_dom_hashcode_timeout"`
 }
 
 func (c BrowserConfig) DeepClone() BrowserConfig {
@@ -604,32 +613,36 @@ func BrowserConfigFromCommand(c *cli.Command) (BrowserConfig, error) {
 	}
 
 	return BrowserConfig{
-		Path:                            c.String("browser.path"),
-		Flags:                           c.StringSlice("browser.flag"),
-		GPU:                             c.Bool("browser.gpu"),
-		Sandbox:                         c.Bool("browser.sandbox"),
-		Namespaced:                      c.Bool("browser.namespaced"),
-		TimeZone:                        timeZone,
-		Cookies:                         nil,
-		Headers:                         headers,
-		TimeBetweenScrolls:              c.Duration("browser.time-between-scrolls"),
-		ReadinessTimeout:                c.Duration("browser.readiness.timeout"),
-		ReadinessIterationInterval:      c.Duration("browser.readiness.iteration-interval"),
-		ReadinessWaitForNQueryCycles:    c.Int("browser.readiness.wait-for-n-query-cycles"),
-		ReadinessPriorWait:              c.Duration("browser.readiness.prior-wait"),
-		ReadinessDisableQueryWait:       c.Bool("browser.readiness.disable-query-wait"),
-		ReadinessFirstQueryTimeout:      c.Duration("browser.readiness.give-up-on-first-query"),
-		ReadinessQueriesTimeout:         c.Duration("browser.readiness.give-up-on-all-queries"),
-		ReadinessDisableNetworkWait:     c.Bool("browser.readiness.disable-network-wait"),
-		ReadinessNetworkIdleTimeout:     c.Duration("browser.readiness.network-idle-timeout"),
-		ReadinessDisableDOMHashCodeWait: c.Bool("browser.readiness.disable-dom-hashcode-wait"),
-		ReadinessDOMHashCodeTimeout:     c.Duration("browser.readiness.dom-hashcode-timeout"),
-		MinWidth:                        minWidth,
-		MinHeight:                       minHeight,
-		MaxWidth:                        maxWidth,
-		MaxHeight:                       maxHeight,
-		PageScaleFactor:                 c.Float64("browser.page-scale-factor"),
-		Landscape:                       !c.Bool("browser.portrait"),
+		Path:       c.String("browser.path"),
+		Flags:      c.StringSlice("browser.flag"),
+		GPU:        c.Bool("browser.gpu"),
+		Sandbox:    c.Bool("browser.sandbox"),
+		Namespaced: c.Bool("browser.namespaced"),
+		TimeZone:   timeZone,
+		Cookies:    nil,
+		Headers:    headers,
+
+		DefaultRequestConfig: RequestConfig{
+			TimeBetweenScrolls: c.Duration("browser.time-between-scrolls"),
+			MinWidth:           minWidth,
+			MinHeight:          minHeight,
+			MaxWidth:           maxWidth,
+			MaxHeight:          maxHeight,
+			PageScaleFactor:    c.Float64("browser.page-scale-factor"),
+			Landscape:          !c.Bool("browser.portrait"),
+
+			ReadinessTimeout:                c.Duration("browser.readiness.timeout"),
+			ReadinessIterationInterval:      c.Duration("browser.readiness.iteration-interval"),
+			ReadinessWaitForNQueryCycles:    c.Int("browser.readiness.wait-for-n-query-cycles"),
+			ReadinessPriorWait:              c.Duration("browser.readiness.prior-wait"),
+			ReadinessDisableQueryWait:       c.Bool("browser.readiness.disable-query-wait"),
+			ReadinessFirstQueryTimeout:      c.Duration("browser.readiness.give-up-on-first-query"),
+			ReadinessQueriesTimeout:         c.Duration("browser.readiness.give-up-on-all-queries"),
+			ReadinessDisableNetworkWait:     c.Bool("browser.readiness.disable-network-wait"),
+			ReadinessNetworkIdleTimeout:     c.Duration("browser.readiness.network-idle-timeout"),
+			ReadinessDisableDOMHashCodeWait: c.Bool("browser.readiness.disable-dom-hashcode-wait"),
+			ReadinessDOMHashCodeTimeout:     c.Duration("browser.readiness.dom-hashcode-timeout"),
+		},
 	}, nil
 }
 
