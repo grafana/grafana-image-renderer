@@ -3,9 +3,11 @@ package config
 import (
 	"context"
 	"crypto/tls"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"maps"
+	"os"
 	"slices"
 	"strings"
 	"time"
@@ -579,6 +581,12 @@ func BrowserFlags() []cli.Flag {
 			Usage:   "Use a portrait viewport instead of the default landscape. [config: browser.portrait]",
 			Sources: FromConfig("browser.portrait", "BROWSER_PORTRAIT"),
 		},
+		&cli.StringFlag{
+			Name:      "browser.request-overrides-file",
+			Usage:     "Path to a JSON file containing URL pattern to RequestConfig overrides. [config: browser.request-overrides-file]",
+			TakesFile: true,
+			Sources:   FromConfig("browser.request-overrides-file", "BROWSER_REQUEST_OVERRIDES_FILE"),
+		},
 	}
 }
 
@@ -612,6 +620,11 @@ func BrowserConfigFromCommand(c *cli.Command) (BrowserConfig, error) {
 		return BrowserConfig{}, fmt.Errorf("browser min-height (%d) cannot be larger than max-height (%d)", minHeight, maxHeight)
 	}
 
+	requestConfigOverrides, err := loadRequestConfigOverrides(c.String("browser.request-overrides-file"))
+	if err != nil {
+		return BrowserConfig{}, err
+	}
+
 	return BrowserConfig{
 		Path:       c.String("browser.path"),
 		Flags:      c.StringSlice("browser.flag"),
@@ -643,7 +656,30 @@ func BrowserConfigFromCommand(c *cli.Command) (BrowserConfig, error) {
 			ReadinessDisableDOMHashCodeWait: c.Bool("browser.readiness.disable-dom-hashcode-wait"),
 			ReadinessDOMHashCodeTimeout:     c.Duration("browser.readiness.dom-hashcode-timeout"),
 		},
+
+		RequestConfigOverrides: requestConfigOverrides,
 	}, nil
+}
+
+func loadRequestConfigOverrides(path string) (map[string]RequestConfig, error) {
+	if path == "" {
+		return make(map[string]RequestConfig), nil
+	}
+
+	data, err := os.ReadFile(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return make(map[string]RequestConfig), nil
+		}
+		return nil, fmt.Errorf("failed to read request overrides file at %q: %w", path, err)
+	}
+
+	var overrides map[string]RequestConfig
+	if err := json.Unmarshal(data, &overrides); err != nil {
+		return nil, fmt.Errorf("failed to parse request overrides file: %w", err)
+	}
+
+	return overrides, nil
 }
 
 type RateLimitConfig struct {
