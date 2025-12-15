@@ -148,7 +148,7 @@ This is a verbatim copy of the output of the `grafana-image-renderer server --he
     A path to a PEM-encoded certificate to use as a trusted root when connecting to the tracing endpoint over gRPC or HTTPS. [config: tracing.trusted_certificate]
 ```
 
-## Debugging the configuration
+## Debug the configuration
 
 {{< admonition type="note" >}}
 The command recommended here prints secrets and sensitive information in
