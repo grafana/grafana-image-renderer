@@ -26,6 +26,38 @@ func NewCmd() *cli.Command {
 	}
 }
 
+type Cfg struct {
+	server    config.ServerConfig
+	browser   config.BrowserConfig
+	tracing   config.TracingConfig
+	rateLimit config.RateLimitConfig
+}
+
+func ParseConfig(c *cli.Command) (*Cfg, error) {
+	serverConfig, err := config.ServerConfigFromCommand(c)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse server config: %w", err)
+	}
+	browserConfig, err := config.BrowserConfigFromCommand(c)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse browser config: %w", err)
+	}
+	tracingConfig, err := config.TracingConfigFromCommand(c)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse tracing config: %w", err)
+	}
+	rateLimitConfig, err := config.RateLimitConfigFromCommand(c)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse process tracker config: %w", err)
+	}
+	return &Cfg{
+		server:    serverConfig,
+		browser:   browserConfig,
+		tracing:   tracingConfig,
+		rateLimit: rateLimitConfig,
+	}, nil
+}
+
 func run(ctx context.Context, c *cli.Command) error {
 	_, err := maxprocs.Set(
 		// We use maxprocs over automaxprocs because we need a new minimum value.
@@ -36,23 +68,11 @@ func run(ctx context.Context, c *cli.Command) error {
 		slog.Info("failed to set GOMAXPROCS", "err", err)
 	}
 
-	serverConfig, err := config.ServerConfigFromCommand(c)
+	cfg, err := ParseConfig(c)
 	if err != nil {
-		return fmt.Errorf("failed to parse server config: %w", err)
+		return fmt.Errorf("failed to parse config: %w", err)
 	}
-	browserConfig, err := config.BrowserConfigFromCommand(c)
-	if err != nil {
-		return fmt.Errorf("failed to parse browser config: %w", err)
-	}
-	tracingConfig, err := config.TracingConfigFromCommand(c)
-	if err != nil {
-		return fmt.Errorf("failed to parse tracing config: %w", err)
-	}
-	rateLimitConfig, err := config.RateLimitConfigFromCommand(c)
-	if err != nil {
-		return fmt.Errorf("failed to parse process tracker config: %w", err)
-	}
-	tracerProvider, err := traces.NewTracerProvider(ctx, tracingConfig)
+	tracerProvider, err := traces.NewTracerProvider(ctx, cfg.tracing)
 	if err != nil {
 		return fmt.Errorf("failed to set up tracer: %w", err)
 	}
@@ -62,15 +82,15 @@ func run(ctx context.Context, c *cli.Command) error {
 		otel.SetTracerProvider(tracerProvider)
 		otel.SetTextMapPropagator(propagation.TraceContext{})
 	}
-	processStatService := service.NewProcessStatService(rateLimitConfig)
-	browser := service.NewBrowserService(browserConfig, processStatService)
+	processStatService := service.NewProcessStatService(cfg.rateLimit)
+	browser := service.NewBrowserService(cfg.browser, processStatService)
 	versions := service.NewVersionService()
 	metrics := metrics.NewRegistry()
-	handler, err := api.NewHandler(metrics, serverConfig, rateLimitConfig, processStatService, browser, versions)
+	handler, err := api.NewHandler(metrics, cfg.server, cfg.rateLimit, processStatService, browser, versions)
 	if err != nil {
 		return fmt.Errorf("failed to create API handler: %w", err)
 	}
-	return api.ListenAndServe(ctx, serverConfig, handler)
+	return api.ListenAndServe(ctx, cfg.server, handler)
 }
 
 func maxProcsLog(format string, args ...any) {
