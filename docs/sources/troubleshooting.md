@@ -382,7 +382,7 @@ feature flag has been explicitly set to `false` in Grafana's configuration.
 
 To solve this problem, remove the feature toggle override.
 
-## Debugging the configuration
+## Debug the configuration
 
 {{< admonition type="note" >}}
 The command recommended here prints secrets and sensitive information in
