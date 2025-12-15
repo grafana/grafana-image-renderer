@@ -385,7 +385,7 @@ To solve this problem, remove the feature toggle override.
 ## Debugging the configuration
 
 {{< admonition type="note" >}}
-The command recommended here will print secrets and sensitive information in
+The command recommended here prints secrets and sensitive information in
 plain text. Be careful when sharing the output or storing it in logs.
 {{< /admonition >}}
 
