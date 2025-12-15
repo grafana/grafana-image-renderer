@@ -9,7 +9,7 @@ concurrency:
 on:
   push:
     branches:
-      - main
+      - master
     paths:
       - "docs/sources/**"
   workflow_dispatch:

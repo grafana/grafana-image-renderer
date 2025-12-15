@@ -25,7 +25,7 @@ func LoggingFlags() []cli.Flag {
 	return []cli.Flag{
 		&cli.StringFlag{
 			Name:    "log.level",
-			Usage:   fmt.Sprintf("The minimum level to log at (enum: %s, %s, %s, %s)", LogLevelDebug, LogLevelInfo, LogLevelWarn, LogLevelError),
+			Usage:   fmt.Sprintf("The minimum level to log at (enum: %s, %s, %s, %s) [config: log.level]", LogLevelDebug, LogLevelInfo, LogLevelWarn, LogLevelError),
 			Value:   LogLevelInfo.String(),
 			Sources: FromConfig("log.level", "LOG_LEVEL"),
 			Validator: func(s string) error {
@@ -88,34 +88,34 @@ func ServerFlags() []cli.Flag {
 		[]cli.Flag{
 			&cli.StringFlag{
 				Name:    "server.addr",
-				Usage:   "The address to listen on for HTTP requests.",
+				Usage:   "The address to listen on for HTTP requests. [config: server.addr]",
 				Value:   ":8081",
 				Sources: FromConfig("server.addr", "SERVER_ADDR"),
 			},
 			&cli.StringSliceFlag{
 				Name:    "server.auth-token",
 				Aliases: []string{"server.auth-tokens", "server.token", "server.tokens"},
-				Usage:   "The X-Auth-Token header value that must be sent to the service to permit requests. May be repeated.",
+				Usage:   "The X-Auth-Token header value that must be sent to the service to permit requests. May be repeated. [config: server.auth-token]",
 				Value:   []string{"-"},
 				Sources: FromConfig("server.auth-token", "AUTH_TOKEN"),
 			},
 			&cli.StringFlag{
 				Name:      "server.certificate-file",
 				Aliases:   []string{"server.certificate", "server.cert-file", "server.cert"},
-				Usage:     "A path to a TLS certificate file to use for HTTPS. If not set, HTTP is used.",
+				Usage:     "A path to a TLS certificate file to use for HTTPS. If not set, HTTP is used. [config: server.certificate-file]",
 				TakesFile: true,
 				Sources:   FromConfig("server.certificate-file", "SERVER_CERTIFICATE_FILE"),
 			},
 			&cli.StringFlag{
 				Name:      "server.key-file",
 				Aliases:   []string{"server.key"},
-				Usage:     "A path to a TLS key file to use for HTTPS.",
+				Usage:     "A path to a TLS key file to use for HTTPS. [config: server.key-file]",
 				TakesFile: true,
 				Sources:   FromConfig("server.key-file", "SERVER_KEY_FILE"),
 			},
 			&cli.StringFlag{
 				Name:    "server.min-tls-version",
-				Usage:   "The minimum TLS version to accept for HTTPS connections. (enum: 1.0, 1.1, 1.2, 1.3)",
+				Usage:   "The minimum TLS version to accept for HTTPS connections. (enum: 1.0, 1.1, 1.2, 1.3) [config: server.min-tls-version]",
 				Value:   "1.2",
 				Sources: FromConfig("server.min-tls-version", "SERVER_MIN_TLS_VERSION"),
 			},
@@ -182,7 +182,7 @@ func TracingFlags() []cli.Flag {
 	return []cli.Flag{
 		&cli.StringFlag{
 			Name:    "tracing.endpoint",
-			Usage:   "The tracing endpoint to send spans to. Use grpc://, http://, or https:// to specify the protocol (grpc:// is implied).",
+			Usage:   "The tracing endpoint to send spans to. Use grpc://, http://, or https:// to specify the protocol (grpc:// is implied). [config: tracing.endpoint]",
 			Sources: FromConfig("tracing.endpoint", "TRACING_ENDPOINT"),
 			Validator: func(s string) error {
 				before, _, found := strings.Cut(s, "://")
@@ -199,13 +199,13 @@ func TracingFlags() []cli.Flag {
 		},
 		&cli.BoolFlag{
 			Name:    "tracing.insecure",
-			Usage:   "Whether to skip TLS verification when connecting. If set, the scheme in the endpoint is overridden to be insecure.",
+			Usage:   "Whether to skip TLS verification when connecting. If set, the scheme in the endpoint is overridden to be insecure. [config: tracing.insecure]",
 			Sources: FromConfig("tracing.insecure", "TRACING_INSECURE"),
 		},
 		&cli.StringSliceFlag{
 			Name:    "tracing.header",
 			Aliases: []string{"tracing.headers"},
-			Usage:   "A header to add to requests to the tracing endpoint. Syntax is `${key}=${value}`. May be repeated. This is useful for things like authentication.",
+			Usage:   "A header to add to requests to the tracing endpoint. Syntax is `${key}=${value}`. May be repeated. This is useful for things like authentication. [config: tracing.header]",
 			Sources: FromConfig("tracing.header", "TRACING_HEADER"),
 			Validator: func(s []string) error {
 				for _, kv := range s {
@@ -218,7 +218,7 @@ func TracingFlags() []cli.Flag {
 		},
 		&cli.StringFlag{
 			Name:    "tracing.compressor",
-			Usage:   "The compression algorithm to use when sending traces. (enum: none, gzip)",
+			Usage:   "The compression algorithm to use when sending traces. (enum: none, gzip) [config: tracing.compressor]",
 			Value:   "none",
 			Sources: FromConfig("tracing.compressor", "TRACING_COMPRESSOR"),
 			Validator: func(s string) error {
@@ -230,32 +230,36 @@ func TracingFlags() []cli.Flag {
 		},
 		&cli.DurationFlag{
 			Name:    "tracing.timeout",
-			Usage:   "The timeout for requests to the tracing endpoint.",
+			Usage:   "The timeout for requests to the tracing endpoint. [config: tracing.timeout]",
 			Value:   10 * time.Second,
 			Sources: FromConfig("tracing.timeout", "TRACING_TIMEOUT"),
 		},
 		&cli.StringFlag{
 			Name:      "tracing.trusted-certificate",
-			Usage:     "A path to a PEM-encoded certificate to use as a trusted root when connecting to the tracing endpoint over gRPC or HTTPS.",
+			Usage:     "A path to a PEM-encoded certificate to use as a trusted root when connecting to the tracing endpoint over gRPC or HTTPS. [config: tracing.trusted_certificate]",
 			TakesFile: true,
-			Sources:   FromConfig("tracing.trusted_certificate", "TRACING_TRUSTED_CERTIFICATE"),
+			// FIXME(v6): rename config key to `trusted-certificate` on next major version.
+			Sources: FromConfig("tracing.trusted_certificate", "TRACING_TRUSTED_CERTIFICATE"),
 		},
 		&cli.StringFlag{
 			Name:      "tracing.client-certificate",
-			Usage:     "A path to a PEM-encoded client certificate to use for mTLS when connecting to the tracing endpoint over gRPC or HTTPS.",
+			Usage:     "A path to a PEM-encoded client certificate to use for mTLS when connecting to the tracing endpoint over gRPC or HTTPS. [config: tracing.client_certificate]",
 			TakesFile: true,
-			Sources:   FromConfig("tracing.client_certificate", "TRACING_CLIENT_CERTIFICATE"),
+			// FIXME(v6): rename config key to `client-certificate` on next major version.
+			Sources: FromConfig("tracing.client_certificate", "TRACING_CLIENT_CERTIFICATE"),
 		},
 		&cli.StringFlag{
 			Name:      "tracing.client-key",
-			Usage:     "A path to a PEM-encoded client key to use for mTLS when connecting to the tracing endpoint over gRPC or HTTPS.",
+			Usage:     "A path to a PEM-encoded client key to use for mTLS when connecting to the tracing endpoint over gRPC or HTTPS. [config: tracing.client_key]",
 			TakesFile: true,
-			Sources:   FromConfig("tracing.client_key", "TRACING_CLIENT_KEY"),
+			// FIXME(v6): rename config key to `client-key` on next major version.
+			Sources: FromConfig("tracing.client_key", "TRACING_CLIENT_KEY"),
 		},
 		&cli.StringFlag{
-			Name:    "tracing.service-name",
-			Usage:   "The service name to use in traces.",
-			Value:   "grafana-image-renderer",
+			Name:  "tracing.service-name",
+			Usage: "The service name to use in traces. [config: tracing.service_name]",
+			Value: "grafana-image-renderer",
+			// FIXME(v6): rename config key to `service-name` on next major version.
 			Sources: FromConfig("tracing.service_name", "TRACING_SERVICE_NAME"),
 		},
 	}
@@ -322,6 +326,8 @@ type BrowserConfig struct {
 	// ReadinessTimeout is the maximum time to wait for the web-page to become ready (i.e. no longer loading anything).
 	ReadinessTimeout           time.Duration
 	ReadinessIterationInterval time.Duration
+	// ReadinessWaitForNQueryCycles is the number of readiness checks that must pass consecutively before considering the page ready. This handles the case where queries drop to 0 briefly before incrementing again.
+	ReadinessWaitForNQueryCycles int
 	// ReadinessPriorWait is the time to wait before checking for how ready the page is.
 	// This lets you force the webpage to take a beat and just do its thing before the service starts looking for whether it's time to render anything.
 	ReadinessPriorWait              time.Duration
@@ -365,7 +371,7 @@ func BrowserFlags() []cli.Flag {
 	return []cli.Flag{
 		&cli.StringFlag{
 			Name:      "browser.path",
-			Usage:     "The path to the browser's binary. This is resolved against PATH.",
+			Usage:     "The path to the browser's binary. This is resolved against PATH. [config: browser.path]",
 			TakesFile: true,
 			Value:     "chromium",
 			Sources:   FromConfig("browser.path", "BROWSER_PATH"),
@@ -373,22 +379,22 @@ func BrowserFlags() []cli.Flag {
 		&cli.StringSliceFlag{
 			Name:    "browser.flag",
 			Aliases: []string{"browser.flags"},
-			Usage:   "Flags to pass to the browser. These are syntaxed `${flag}` or `${flag}=${value}`.",
+			Usage:   "Flags to pass to the browser. These are syntaxed `${flag}` or `${flag}=${value}`. [config: browser.flag]",
 			Sources: FromConfig("browser.flag", "BROWSER_FLAG"),
 		},
 		&cli.BoolFlag{
 			Name:    "browser.gpu",
-			Usage:   "Enable GPU support in the browser.",
+			Usage:   "Enable GPU support in the browser. [config: browser.gpu]",
 			Sources: FromConfig("browser.gpu", "BROWSER_GPU"),
 		},
 		&cli.BoolFlag{
 			Name:    "browser.sandbox",
-			Usage:   "Enable the browser's sandbox. Sets the `no-sandbox` flag to `false` for you.",
+			Usage:   "Enable the browser's sandbox. Sets the `no-sandbox` flag to `false` for you. [config: browser.sandbox]",
 			Sources: FromConfig("browser.sandbox", "BROWSER_SANDBOX"),
 		},
 		&cli.BoolFlag{
 			Name:    "browser.namespaced",
-			Usage:   "Enable namespacing the browser. This requires Linux and the CAP_SYS_ADMIN and CAP_SYS_CHROOT capabilities, or a privileged user.",
+			Usage:   "Enable namespacing the browser. This requires Linux and the CAP_SYS_ADMIN and CAP_SYS_CHROOT capabilities, or a privileged user. [config: browser.namespaced]",
 			Sources: FromConfig("browser.namespaced", "BROWSER_NAMESPACED"),
 			Validator: func(b bool) error {
 				if b {
@@ -406,14 +412,14 @@ func BrowserFlags() []cli.Flag {
 		&cli.StringFlag{
 			Name:    "browser.timezone",
 			Aliases: []string{"browser.tz", "browser.time-zone"},
-			Usage:   "The timezone for the browser to use, e.g. 'America/New_York'.",
+			Usage:   "The timezone for the browser to use, e.g. 'America/New_York'. [config: browser.timezone]",
 			Value:   "Etc/UTC",
 			Sources: FromConfig("browser.timezone", "BROWSER_TIMEZONE", "TZ" /* standard practice in containers */),
 		},
 		&cli.StringSliceFlag{
 			Name:    "browser.header",
 			Aliases: []string{"browser.headers"},
-			Usage:   "Headers to add to every request the browser makes. Syntax is `${key}=${value}`. May be repeated.",
+			Usage:   "Headers to add to every request the browser makes. Syntax is `${key}=${value}`. May be repeated. [config: browser.header]",
 			Sources: FromConfig("browser.header", "BROWSER_HEADER"),
 			Validator: func(s []string) error {
 				for _, kv := range s {
@@ -426,20 +432,21 @@ func BrowserFlags() []cli.Flag {
 		},
 		&cli.DurationFlag{
 			Name:    "browser.time-between-scrolls",
-			Usage:   "The time between scroll events when capturing a full-page screenshot.",
+			Usage:   "The time between scroll events when capturing a full-page screenshot. [config: browser.time-between-scrolls]",
 			Value:   time.Millisecond * 50,
 			Sources: FromConfig("browser.time-between-scrolls", "BROWSER_TIME_BETWEEN_SCROLLS"),
 		},
 		&cli.DurationFlag{
 			Name:    "browser.readiness.timeout",
-			Usage:   "The maximum time to wait for a web-page to become ready (i.e. no longer loading anything). If <= 0, the timeout is disabled.",
+			Usage:   "The maximum time to wait for a web-page to become ready (i.e. no longer loading anything). If <= 0, the timeout is disabled. [config: browser.readiness.timeout]",
 			Value:   time.Second * 30,
 			Sources: FromConfig("browser.readiness.timeout", "BROWSER_READINESS_TIMEOUT"),
 		},
 		&cli.DurationFlag{
-			Name:  "browser.readiness.iteration-interval",
-			Usage: "How long to wait between each iteration of checking whether the page is ready. Must be positive.",
-			Value: time.Millisecond * 100,
+			Name:    "browser.readiness.iteration-interval",
+			Usage:   "How long to wait between each iteration of checking whether the page is ready. Must be positive. [config: browser.readiness.iteration-interval]",
+			Value:   time.Millisecond * 100,
+			Sources: FromConfig("browser.readiness.iteration-interval", "BROWSER_READINESS_ITERATION_INTERVAL"),
 			Validator: func(d time.Duration) error {
 				if d <= 0 {
 					return fmt.Errorf("browser readiness iteration-interval must be positive (got %v)", d)
@@ -447,54 +454,66 @@ func BrowserFlags() []cli.Flag {
 				return nil
 			},
 		},
+		&cli.IntFlag{
+			Name:    "browser.readiness.wait-for-n-query-cycles",
+			Usage:   "The number of readiness checks that must pass consecutively before considering the page ready. [config: browser.readiness.wait-for-n-query-cycles]",
+			Value:   1,
+			Sources: FromConfig("browser.readiness.wait-for-n-query-cycles", "BROWSER_READINESS_WAIT_FOR_N_QUERY_CYCLES"),
+			Validator: func(i int) error {
+				if i < 1 {
+					return fmt.Errorf("browser readiness wait-for-n-query-cycles must be at least 1 (got %d)", i)
+				}
+				return nil
+			},
+		},
 		&cli.DurationFlag{
 			Name:    "browser.readiness.prior-wait",
-			Usage:   "The time to wait before checking for how ready the page is. This lets you force the webpage to take a beat and just do its thing before the service starts looking for whether it's time to render anything. If <= 0, this is disabled.",
+			Usage:   "The time to wait before checking for how ready the page is. This lets you force the webpage to take a beat and just do its thing before the service starts looking for whether it's time to render anything. If <= 0, this is disabled. [config: browser.readiness.prior-wait]",
 			Value:   time.Second,
 			Sources: FromConfig("browser.readiness.prior-wait", "BROWSER_READINESS_PRIOR_WAIT"),
 		},
 		&cli.BoolFlag{
 			Name:    "browser.readiness.disable-query-wait",
-			Usage:   "Disable waiting for queries to finish before capturing.",
+			Usage:   "Disable waiting for queries to finish before capturing. [config: browser.readiness.disable-query-wait]",
 			Sources: FromConfig("browser.readiness.disable-query-wait", "BROWSER_READINESS_DISABLE_QUERY_WAIT"),
 		},
 		&cli.DurationFlag{
 			Name:    "browser.readiness.give-up-on-first-query",
-			Usage:   "How long to wait before giving up on a first query being registered. If <= 0, the give-up is disabled.",
+			Usage:   "How long to wait before giving up on a first query being registered. If <= 0, the give-up is disabled. [config: browser.readiness.give-up-on-first-query]",
 			Value:   time.Second * 3,
 			Sources: FromConfig("browser.readiness.give-up-on-first-query", "BROWSER_READINESS_GIVE_UP_ON_FIRST_QUERY"),
 		},
 		&cli.DurationFlag{
 			Name:    "browser.readiness.give-up-on-all-queries",
-			Usage:   "How long to wait before giving up on all running queries. If <= 0, the give-up is disabled.",
+			Usage:   "How long to wait before giving up on all running queries. If <= 0, the give-up is disabled. [config: browser.readiness.give-up-on-all-queries]",
 			Value:   0,
 			Sources: FromConfig("browser.readiness.give-up-on-all-queries", "BROWSER_READINESS_GIVE_UP_ON_ALL_QUERIES"),
 		},
 		&cli.BoolFlag{
 			Name:    "browser.readiness.disable-network-wait",
-			Usage:   "Disable waiting for network requests to finish before capturing.",
+			Usage:   "Disable waiting for network requests to finish before capturing. [config: browser.readiness.disable-network-wait]",
 			Sources: FromConfig("browser.readiness.disable-network-wait", "BROWSER_READINESS_DISABLE_NETWORK_WAIT"),
 		},
 		&cli.DurationFlag{
 			Name:    "browser.readiness.network-idle-timeout",
-			Usage:   "How long to wait before giving up on the network being idle. If <= 0, the timeout is disabled.",
+			Usage:   "How long to wait before giving up on the network being idle. If <= 0, the timeout is disabled. [config: browser.readiness.network-idle-timeout]",
 			Value:   0,
 			Sources: FromConfig("browser.readiness.network-idle-timeout", "BROWSER_READINESS_NETWORK_IDLE_TIMEOUT"),
 		},
 		&cli.BoolFlag{
 			Name:    "browser.readiness.disable-dom-hashcode-wait",
-			Usage:   "Disable waiting for the DOM to stabilize (i.e. not change) before capturing.",
+			Usage:   "Disable waiting for the DOM to stabilize (i.e. not change) before capturing. [config: browser.readiness.disable-dom-hashcode-wait]",
 			Sources: FromConfig("browser.readiness.disable-dom-hashcode-wait", "BROWSER_READINESS_DISABLE_DOM_HASHCODE_WAIT"),
 		},
 		&cli.DurationFlag{
 			Name:    "browser.readiness.dom-hashcode-timeout",
-			Usage:   "How long to wait before giving up on the DOM stabilizing (i.e. not changing). If <= 0, the timeout is disabled.",
+			Usage:   "How long to wait before giving up on the DOM stabilizing (i.e. not changing). If <= 0, the timeout is disabled. [config: browser.readiness.dom-hashcode-timeout]",
 			Value:   0,
 			Sources: FromConfig("browser.readiness.dom-hashcode-timeout", "BROWSER_READINESS_DOM_HASHCODE_TIMEOUT"),
 		},
 		&cli.IntFlag{
 			Name:    "browser.min-width",
-			Usage:   "The minimum width of the browser viewport. This is the default width in requests.",
+			Usage:   "The minimum width of the browser viewport. This is the default width in requests. [config: browser.min-width]",
 			Value:   1000,
 			Sources: FromConfig("browser.min-width", "BROWSER_MIN_WIDTH"),
 			Validator: func(i int) error {
@@ -506,7 +525,7 @@ func BrowserFlags() []cli.Flag {
 		},
 		&cli.IntFlag{
 			Name:    "browser.min-height",
-			Usage:   "The minimum height of the browser viewport. This is the default height in requests.",
+			Usage:   "The minimum height of the browser viewport. This is the default height in requests. [config: browser.min-height]",
 			Value:   500,
 			Sources: FromConfig("browser.min-height", "BROWSER_MIN_HEIGHT"),
 			Validator: func(i int) error {
@@ -518,7 +537,7 @@ func BrowserFlags() []cli.Flag {
 		},
 		&cli.IntFlag{
 			Name:    "browser.max-width",
-			Usage:   "The maximum width of the browser viewport. Requests cannot request a larger width than this. Negative means ignored.",
+			Usage:   "The maximum width of the browser viewport. Requests cannot request a larger width than this. Negative means ignored. [config: browser.max-width]",
 			Value:   3000,
 			Sources: FromConfig("browser.max-width", "BROWSER_MAX_WIDTH"),
 			Validator: func(i int) error {
@@ -530,7 +549,7 @@ func BrowserFlags() []cli.Flag {
 		},
 		&cli.IntFlag{
 			Name:    "browser.max-height",
-			Usage:   "The maximum height of the browser viewport. Requests cannot request a larger height than this, except for when capturing full-page screenshots. Negative means ignored.",
+			Usage:   "The maximum height of the browser viewport. Requests cannot request a larger height than this, except for when capturing full-page screenshots. Negative means ignored. [config: browser.max-height]",
 			Value:   3000,
 			Sources: FromConfig("browser.max-height", "BROWSER_MAX_HEIGHT"),
 			Validator: func(i int) error {
@@ -542,13 +561,13 @@ func BrowserFlags() []cli.Flag {
 		},
 		&cli.Float64Flag{
 			Name:    "browser.page-scale-factor",
-			Usage:   "The page scale factor of the browser.",
+			Usage:   "The page scale factor of the browser. [config: browser.page-scale-factor]",
 			Value:   1.0,
 			Sources: FromConfig("browser.page-scale-factor", "BROWSER_PAGE_SCALE_FACTOR"),
 		},
 		&cli.BoolFlag{
 			Name:    "browser.portrait",
-			Usage:   "Use a portrait viewport instead of the default landscape.",
+			Usage:   "Use a portrait viewport instead of the default landscape. [config: browser.portrait]",
 			Sources: FromConfig("browser.portrait", "BROWSER_PORTRAIT"),
 		},
 	}
@@ -596,6 +615,7 @@ func BrowserConfigFromCommand(c *cli.Command) (BrowserConfig, error) {
 		TimeBetweenScrolls:              c.Duration("browser.time-between-scrolls"),
 		ReadinessTimeout:                c.Duration("browser.readiness.timeout"),
 		ReadinessIterationInterval:      c.Duration("browser.readiness.iteration-interval"),
+		ReadinessWaitForNQueryCycles:    c.Int("browser.readiness.wait-for-n-query-cycles"),
 		ReadinessPriorWait:              c.Duration("browser.readiness.prior-wait"),
 		ReadinessDisableQueryWait:       c.Bool("browser.readiness.disable-query-wait"),
 		ReadinessFirstQueryTimeout:      c.Duration("browser.readiness.give-up-on-first-query"),
@@ -651,12 +671,12 @@ func RateLimitFlags() []cli.Flag {
 	return []cli.Flag{
 		&cli.BoolFlag{
 			Name:    "rate-limit.disabled",
-			Usage:   "Disable rate limiting entirely.",
+			Usage:   "Disable rate limiting entirely. [config: rate-limit.disabled]",
 			Sources: FromConfig("rate-limit.disabled", "RATE_LIMIT_DISABLED"),
 		},
 		&cli.Int64Flag{
 			Name:    "rate-limit.process-tracker.decay",
-			Usage:   "The decay factor N to use in slow-moving averages of process statistics, where `avg = ((N-1)*avg + new) / N`. Must be at least 1.",
+			Usage:   "The decay factor N to use in slow-moving averages of process statistics, where `avg = ((N-1)*avg + new) / N`. Must be at least 1. [config: rate-limit.process-tracker.decay]",
 			Value:   5,
 			Sources: FromConfig("rate-limit.process-tracker.decay", "RATE_LIMIT_PROCESS_TRACKER_DECAY"),
 			Validator: func(i int64) error {
@@ -668,7 +688,7 @@ func RateLimitFlags() []cli.Flag {
 		},
 		&cli.DurationFlag{
 			Name:    "rate-limit.process-tracker.interval",
-			Usage:   "How often to sample process statistics on the browser processes. Must be >= 1ms.",
+			Usage:   "How often to sample process statistics on the browser processes. Must be >= 1ms. [config: rate-limit.process-tracker.interval]",
 			Value:   50 * time.Millisecond,
 			Sources: FromConfig("rate-limit.process-tracker.interval", "RATE_LIMIT_PROCESS_TRACKER_INTERVAL"),
 			Validator: func(d time.Duration) error {
@@ -680,31 +700,31 @@ func RateLimitFlags() []cli.Flag {
 		},
 		&cli.Uint32Flag{
 			Name:    "rate-limit.min-limit",
-			Usage:   "The minimum number of requests to permit. Ratelimiting will not reject requests if the number of currently running requests is below this value. Set to 0 to disable minimum (not recommended).",
+			Usage:   "The minimum number of requests to permit. Ratelimiting will not reject requests if the number of currently running requests is below this value. Set to 0 to disable minimum (not recommended). [config: rate-limit.min-limit]",
 			Value:   3,
 			Sources: FromConfig("rate-limit.min-limit", "RATE_LIMIT_MIN_LIMIT"),
 		},
 		&cli.Uint32Flag{
 			Name:    "rate-limit.max-limit",
-			Usage:   "The maximum number of requests to permit. Ratelimiting will reject requests if the number of currently running requests is at or above this value. Set to 0 to disable maximum. The v4 service used 5 by default.",
+			Usage:   "The maximum number of requests to permit. Ratelimiting will reject requests if the number of currently running requests is at or above this value. Set to 0 to disable maximum. The v4 service used 5 by default. [config: rate-limit.max-limit]",
 			Value:   0,
 			Sources: FromConfig("rate-limit.max-limit", "RATE_LIMIT_MAX_LIMIT"),
 		},
 		&cli.Uint64Flag{
 			Name:    "rate-limit.max-available",
-			Usage:   "The maximum amount of memory (in bytes) available to processes. If more memory exists, only this amount is used. 0 disables the maximum.",
+			Usage:   "The maximum amount of memory (in bytes) available to processes. If more memory exists, only this amount is used. 0 disables the maximum. [config: rate-limit.max-available]",
 			Value:   0,
 			Sources: FromConfig("rate-limit.max-available", "RATE_LIMIT_MAX_AVAILABLE"),
 		},
 		&cli.Uint64Flag{
 			Name:    "rate-limit.min-memory-per-browser",
-			Usage:   "The minimum amount of memory (in bytes) each browser process is expected to use. Set to 0 to disable the minimum.",
+			Usage:   "The minimum amount of memory (in bytes) each browser process is expected to use. Set to 0 to disable the minimum. [config: rate-limit.min-memory-per-browser]",
 			Value:   64 * 1024 * 1024, // 64 MiB
 			Sources: FromConfig("rate-limit.min-memory-per-browser", "RATE_LIMIT_MIN_MEMORY_PER_BROWSER"),
 		},
 		&cli.Uint64Flag{
 			Name:    "rate-limit.headroom",
-			Usage:   "The amount of memory (in bytes) to leave as headroom after allocating memory for browser processes. Set to 0 to disable headroom.",
+			Usage:   "The amount of memory (in bytes) to leave as headroom after allocating memory for browser processes. Set to 0 to disable headroom. [config: rate-limit.headroom]",
 			Value:   32 * 1024 * 1024, // 32 MiB
 			Sources: FromConfig("rate-limit.headroom", "RATE_LIMIT_HEADROOM"),
 		},
