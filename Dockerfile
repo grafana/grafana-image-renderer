@@ -22,7 +22,7 @@ LABEL maintainer="Grafana team <hello@grafana.com>"
 LABEL org.opencontainers.image.source="https://github.com/grafana/grafana-image-renderer/tree/master/Dockerfile"
 
 # If we ever need to bust the cache, just change the date here.
-RUN echo 'cachebuster 2025-11-19' && apt-get update && apt-get upgrade -y --no-install-recommends --no-install-suggests
+RUN echo 'cachebuster 2025-12-16' && apt-get update && apt-get upgrade -y --no-install-recommends --no-install-suggests
 
 RUN apt-get install -y --no-install-recommends --no-install-suggests \
   fonts-ipaexfont-gothic fonts-wqy-zenhei fonts-thai-tlwg fonts-khmeros fonts-kacst-one fonts-freefont-ttf \
@@ -30,7 +30,7 @@ RUN apt-get install -y --no-install-recommends --no-install-suggests \
   bash util-linux openssl tini ca-certificates locales libnss3-tools ca-certificates
 
 # renovate: depName=chromium
-ARG CHROMIUM_VERSION=142.0.7444.162
+ARG CHROMIUM_VERSION=143.0.7499.109
 RUN apt-get satisfy -y --no-install-recommends --no-install-suggests \
   "chromium (>=${CHROMIUM_VERSION}), chromium-driver (>=${CHROMIUM_VERSION}), chromium-shell (>=${CHROMIUM_VERSION}), chromium-sandbox (>=${CHROMIUM_VERSION})"
 
