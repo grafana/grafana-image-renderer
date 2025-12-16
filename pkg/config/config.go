@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"maps"
 	"os"
+	"regexp"
 	"slices"
 	"strings"
 	"time"
@@ -16,6 +17,8 @@ import (
 	"github.com/chromedp/cdproto/network"
 	"github.com/grafana/grafana-image-renderer/pkg/sandbox"
 	"github.com/urfave/cli/v3"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type LoggingConfig struct {
@@ -324,48 +327,48 @@ type BrowserConfig struct {
 	//
 	// DefaultRequestConfig contains default settings for handling rendering requests. Overrides for specific URL patterns can be configured separately.
 	DefaultRequestConfig RequestConfig
-	// RequestConfigOverrides allows you to specify different request configurations for specific URL regex patterns.
-	RequestConfigOverrides map[string]RequestConfig
+	// requestConfigOverrides allows you to specify different request configurations for specific URL regex patterns.
+	requestConfigOverrides map[string]map[string]any
 }
 
 type RequestConfig struct {
 	// We will scroll the entire web-page by the entire viewport over and over until we have seen everything.
 	// That means for a viewport that is 500px high, and a webpage that is 2500px high, we will scroll 5 times, meaning a total wait duration of 6 * duration (as we have to wait on the first & last scrolls as well).
-	TimeBetweenScrolls time.Duration `json:"time_between_scrolls"`
+	TimeBetweenScrolls time.Duration
 
 	// MinWidth is the minimum width of the browser viewport.
 	// If larger than MaxWidth, MaxWidth is used instead.
-	MinWidth int `json:"min_width" yaml:"min_width"`
+	MinWidth int
 	// MinHeight is the minimum height of the browser viewport.
 	// If larger than MaxHeight, MaxHeight is used instead.
-	MinHeight int `json:"min_height" yaml:"min_height"`
+	MinHeight int
 	// MaxWidth is the maximum width of the browser viewport.
 	// A request cannot request a larger browser viewport than this.
 	// If negative, it is ignored.
-	MaxWidth int `json:"max_width" yaml:"max_width"`
+	MaxWidth int
 	// MaxHeight is the maximum height of the browser viewport.
 	// A request cannot request a larger browser viewport than this, except for when capturing full-page screenshots.
 	// If negative, it is ignored.
-	MaxHeight       int     `json:"max_height" yaml:"max_height"`
-	PageScaleFactor float64 `json:"page_scale_factor" yaml:"page_scale_factor"`
-	Landscape       bool    `json:"landscape" yaml:"landscape"`
+	MaxHeight       int
+	PageScaleFactor float64
+	Landscape       bool
 
 	// Readiness properties are a "best guess" configuration for waiting for the page to be ready for capture
 	// ReadinessTimeout is the maximum time to wait for the web-page to become ready (i.e. no longer loading anything).
-	ReadinessTimeout           time.Duration `json:"readiness_timeout" yaml:"readiness_timeout"`
-	ReadinessIterationInterval time.Duration `json:"readiness_iteration_interval" yaml:"readiness_iteration_interval"`
+	ReadinessTimeout           time.Duration
+	ReadinessIterationInterval time.Duration
 	// ReadinessWaitForNQueryCycles is the number of readiness checks that must pass consecutively before considering the page ready. This handles the case where queries drop to 0 briefly before incrementing again.
-	ReadinessWaitForNQueryCycles int `json:"readiness_wait_for_n_query_cycles" yaml:"readiness_wait_for_n_query_cycles"`
+	ReadinessWaitForNQueryCycles int
 	// ReadinessPriorWait is the time to wait before checking for how ready the page is.
 	// This lets you force the webpage to take a beat and just do its thing before the service starts looking for whether it's time to render anything.
-	ReadinessPriorWait              time.Duration `json:"readiness_prior_wait" yaml:"readiness_prior_wait"`
-	ReadinessDisableQueryWait       bool          `json:"readiness_disable_query_wait" yaml:"readiness_disable_query_wait"`
-	ReadinessFirstQueryTimeout      time.Duration `json:"readiness_first_query_timeout" yaml:"readiness_first_query_timeout"`
-	ReadinessQueriesTimeout         time.Duration `json:"readiness_queries_timeout" yaml:"readiness_queries_timeout"`
-	ReadinessDisableNetworkWait     bool          `json:"readiness_disable_network_wait" yaml:"readiness_disable_network_wait"`
-	ReadinessNetworkIdleTimeout     time.Duration `json:"readiness_network_idle_timeout" yaml:"readiness_network_idle_timeout"`
-	ReadinessDisableDOMHashCodeWait bool          `json:"readiness_disable_dom_hashcode_wait" yaml:"readiness_disable_dom_hashcode_wait"`
-	ReadinessDOMHashCodeTimeout     time.Duration `json:"readiness_dom_hashcode_timeout" yaml:"readiness_dom_hashcode_timeout"`
+	ReadinessPriorWait              time.Duration
+	ReadinessDisableQueryWait       bool
+	ReadinessFirstQueryTimeout      time.Duration
+	ReadinessQueriesTimeout         time.Duration
+	ReadinessDisableNetworkWait     bool
+	ReadinessNetworkIdleTimeout     time.Duration
+	ReadinessDisableDOMHashCodeWait bool
+	ReadinessDOMHashCodeTimeout     time.Duration
 }
 
 func (c BrowserConfig) DeepClone() BrowserConfig {
@@ -375,7 +378,126 @@ func (c BrowserConfig) DeepClone() BrowserConfig {
 		cpy.Cookies[i] = &cloned
 	}
 	cpy.Headers = network.Headers(maps.Clone(c.Headers))
+
+	for url, config := range c.requestConfigOverrides {
+		cpy.requestConfigOverrides[url] = make(map[string]any)
+		for key, value := range config {
+			cpy.requestConfigOverrides[url][key] = value
+		}
+	}
 	return cpy
+}
+
+// RenderRequestConfig renders the request config for a given URL, merging any overrides with the default config.
+// If there are multiple potential overrides for a given URL, only the first one is used.
+// Invalid override values are added to the span and ignored in favor of the default.
+func (c *BrowserConfig) RenderRequestConfig(span trace.Span, url string) RequestConfig {
+	config := c.DefaultRequestConfig
+
+	addInvalidTypeEvent := func(key, expectedType string, value any) {
+		span.AddEvent("invalid request config override type", trace.WithAttributes(
+			attribute.String("key", key),
+			attribute.String("expected_type", expectedType),
+			attribute.String("actual_value", fmt.Sprintf("%v", value)),
+		))
+	}
+
+	parseDuration := func(key string, value any, defaultValue time.Duration) time.Duration {
+		str, ok := value.(string)
+		if !ok {
+			addInvalidTypeEvent(key, "string (duration)", value)
+			return defaultValue
+		}
+		v, err := time.ParseDuration(str)
+		if err != nil {
+			span.AddEvent("invalid request config override value", trace.WithAttributes(
+				attribute.String("key", key),
+				attribute.String("value", str),
+				attribute.String("error", err.Error()),
+			))
+			return defaultValue
+		}
+		return v
+	}
+
+	parseInt := func(key string, value any, defaultValue int) int {
+		// JSON unmarshaling into map[string]any produces float64 for numbers
+		if v, ok := value.(float64); ok {
+			return int(v)
+		}
+		if v, ok := value.(int); ok {
+			return v
+		}
+		addInvalidTypeEvent(key, "int", value)
+		return defaultValue
+	}
+
+	parseFloat := func(key string, value any, defaultValue float64) float64 {
+		if v, ok := value.(float64); ok {
+			return v
+		}
+		addInvalidTypeEvent(key, "float64", value)
+		return defaultValue
+	}
+
+	parseBool := func(key string, value any, defaultValue bool) bool {
+		if v, ok := value.(bool); ok {
+			return v
+		}
+		addInvalidTypeEvent(key, "bool", value)
+		return defaultValue
+	}
+
+	for urlRegex, overrideConfig := range c.requestConfigOverrides {
+		if regexp.MustCompile(urlRegex).MatchString(url) {
+			span.AddEvent("request config override matched", trace.WithAttributes(attribute.String("urlRegex", urlRegex), attribute.String("url", url)))
+
+			for key, value := range overrideConfig {
+				switch key {
+				case "time-between-scrolls":
+					config.TimeBetweenScrolls = parseDuration(key, value, config.TimeBetweenScrolls)
+				case "min-width":
+					config.MinWidth = parseInt(key, value, config.MinWidth)
+				case "min-height":
+					config.MinHeight = parseInt(key, value, config.MinHeight)
+				case "max-width":
+					config.MaxWidth = parseInt(key, value, config.MaxWidth)
+				case "max-height":
+					config.MaxHeight = parseInt(key, value, config.MaxHeight)
+				case "page-scale-factor":
+					config.PageScaleFactor = parseFloat(key, value, config.PageScaleFactor)
+				case "landscape":
+					config.Landscape = parseBool(key, value, config.Landscape)
+				case "readiness-timeout":
+					config.ReadinessTimeout = parseDuration(key, value, config.ReadinessTimeout)
+				case "readiness-iteration-interval":
+					config.ReadinessIterationInterval = parseDuration(key, value, config.ReadinessIterationInterval)
+				case "readiness-wait-for-n-query-cycles":
+					config.ReadinessWaitForNQueryCycles = parseInt(key, value, config.ReadinessWaitForNQueryCycles)
+				case "readiness-prior-wait":
+					config.ReadinessPriorWait = parseDuration(key, value, config.ReadinessPriorWait)
+				case "readiness-disable-query-wait":
+					config.ReadinessDisableQueryWait = parseBool(key, value, config.ReadinessDisableQueryWait)
+				case "readiness-first-query-timeout":
+					config.ReadinessFirstQueryTimeout = parseDuration(key, value, config.ReadinessFirstQueryTimeout)
+				case "readiness-queries-timeout":
+					config.ReadinessQueriesTimeout = parseDuration(key, value, config.ReadinessQueriesTimeout)
+				case "readiness-disable-network-wait":
+					config.ReadinessDisableNetworkWait = parseBool(key, value, config.ReadinessDisableNetworkWait)
+				case "readiness-network-idle-timeout":
+					config.ReadinessNetworkIdleTimeout = parseDuration(key, value, config.ReadinessNetworkIdleTimeout)
+				case "readiness-disable-dom-hashcode-wait":
+					config.ReadinessDisableDOMHashCodeWait = parseBool(key, value, config.ReadinessDisableDOMHashCodeWait)
+				case "readiness-dom-hashcode-timeout":
+					config.ReadinessDOMHashCodeTimeout = parseDuration(key, value, config.ReadinessDOMHashCodeTimeout)
+				default:
+					span.AddEvent("found unsupported config override key", trace.WithAttributes(attribute.String("key", key)))
+				}
+			}
+			break // to avoid conflicts with other overrides, return after one match.
+		}
+	}
+	return config
 }
 
 func BrowserFlags() []cli.Flag {
@@ -657,29 +779,29 @@ func BrowserConfigFromCommand(c *cli.Command) (BrowserConfig, error) {
 			ReadinessDOMHashCodeTimeout:     c.Duration("browser.readiness.dom-hashcode-timeout"),
 		},
 
-		RequestConfigOverrides: requestConfigOverrides,
+		requestConfigOverrides: requestConfigOverrides,
 	}, nil
 }
 
-func loadRequestConfigOverrides(path string) (map[string]RequestConfig, error) {
+func loadRequestConfigOverrides(path string) (map[string]map[string]any, error) {
+	result := make(map[string]map[string]any)
 	if path == "" {
-		return make(map[string]RequestConfig), nil
+		return result, nil
 	}
 
 	data, err := os.ReadFile(path)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return make(map[string]RequestConfig), nil
+			return result, nil
 		}
 		return nil, fmt.Errorf("failed to read request overrides file at %q: %w", path, err)
 	}
 
-	var overrides map[string]RequestConfig
-	if err := json.Unmarshal(data, &overrides); err != nil {
+	if err := json.Unmarshal(data, &result); err != nil {
 		return nil, fmt.Errorf("failed to parse request overrides file: %w", err)
 	}
 
-	return overrides, nil
+	return result, nil
 }
 
 type RateLimitConfig struct {
