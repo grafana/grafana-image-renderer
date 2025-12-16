@@ -3,7 +3,7 @@
 #        -> Why static linking? We want to ensure we can switch base-image with little to no effort.
 #   2. It builds a running environment. This is the environment that exists for the Go binary, and should have all necessary pieces to run the application.
 
-FROM golang:1.25.3-alpine@sha256:aee43c3ccbf24fdffb7295693b6e33b21e01baec1b2a55acc351fde345e9ec34 AS app
+FROM golang:1.25.5-alpine@sha256:26111811bc967321e7b6f852e914d14bede324cd1accb7f81811929a6a57fea9 AS app
 
 RUN apk add --no-cache git
 
@@ -22,7 +22,7 @@ LABEL maintainer="Grafana team <hello@grafana.com>"
 LABEL org.opencontainers.image.source="https://github.com/grafana/grafana-image-renderer/tree/master/Dockerfile"
 
 # If we ever need to bust the cache, just change the date here.
-RUN echo 'cachebuster 2025-11-19' && apt-get update && apt-get upgrade -y --no-install-recommends --no-install-suggests
+RUN echo 'cachebuster 2025-12-16' && apt-get update && apt-get upgrade -y --no-install-recommends --no-install-suggests
 
 RUN apt-get install -y --no-install-recommends --no-install-suggests \
   fonts-ipaexfont-gothic fonts-wqy-zenhei fonts-thai-tlwg fonts-khmeros fonts-kacst-one fonts-freefont-ttf \
@@ -30,7 +30,7 @@ RUN apt-get install -y --no-install-recommends --no-install-suggests \
   bash util-linux openssl tini ca-certificates locales libnss3-tools ca-certificates
 
 # renovate: depName=chromium
-ARG CHROMIUM_VERSION=142.0.7444.162
+ARG CHROMIUM_VERSION=143.0.7499.109
 RUN apt-get satisfy -y --no-install-recommends --no-install-suggests \
   "chromium (>=${CHROMIUM_VERSION}), chromium-driver (>=${CHROMIUM_VERSION}), chromium-shell (>=${CHROMIUM_VERSION}), chromium-sandbox (>=${CHROMIUM_VERSION})"
 
