@@ -98,6 +98,8 @@ This is a verbatim copy of the output of the `grafana-image-renderer server --he
     The time between scroll events when capturing a full-page screenshot. [config: browser.time-between-scrolls]
 --browser.time-zone=<string> / --browser.timezone=<string> / --browser.tz=<string> [default: "Etc/UTC"] [${BROWSER_TIMEZONE}, ${TZ}]
     The timezone for the browser to use, e.g. 'America/New_York'. [config: browser.timezone]
+--browser.request-overrides-file=<string> [$BROWSER_REQUEST_OVERRIDES_FILE]
+    Path to a JSON file containing URL pattern to RequestConfig overrides. [config: browser.request-overrides-file]
 --help / -h
     show help
 --log.level=<string> [default: "info"] [${LOG_LEVEL}]

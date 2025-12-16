@@ -706,7 +706,7 @@ func BrowserFlags() []cli.Flag {
 		&cli.StringFlag{
 			Name:      "browser.request-overrides-file",
 			Usage:     "Path to a JSON file containing URL pattern to RequestConfig overrides. [config: browser.request-overrides-file]",
-			TakesFile: true,
+			TakesFile: false, // file is manually loaded by us
 			Sources:   FromConfig("browser.request-overrides-file", "BROWSER_REQUEST_OVERRIDES_FILE"),
 		},
 	}
@@ -744,7 +744,7 @@ func BrowserConfigFromCommand(c *cli.Command) (BrowserConfig, error) {
 
 	requestConfigOverrides, err := loadRequestConfigOverrides(c.String("browser.request-overrides-file"))
 	if err != nil {
-		return BrowserConfig{}, err
+		return BrowserConfig{}, fmt.Errorf("failed to load request config overrides file %q: %w", c.String("browser.request-overrides-file"), err)
 	}
 
 	return BrowserConfig{
