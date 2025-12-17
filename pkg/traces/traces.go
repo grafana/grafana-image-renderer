@@ -6,8 +6,8 @@ import (
 	"crypto/x509"
 	"fmt"
 	"log/slog"
+	"net/url"
 	"os"
-	"strings"
 
 	"github.com/grafana/grafana-image-renderer/pkg/config"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
@@ -74,31 +74,23 @@ func NewTracerProvider(ctx context.Context, cfg config.TracingConfig) (*sdktrace
 	}
 
 	var exporter *otlptrace.Exporter
-	if strings.HasPrefix(cfg.Endpoint, "http://") || strings.HasPrefix(cfg.Endpoint, "https://") {
+	dsn, err := url.Parse(cfg.Endpoint)
+	if dsn.Scheme == "http" || dsn.Scheme == "https" {
 		slog.InfoContext(ctx, "setting up HTTP trace exporter", "endpoint", cfg.Endpoint)
 		if cfg.Insecure == nil {
-			v := strings.HasPrefix(cfg.Endpoint, "http://")
+			v := dsn.Scheme == "http"
 			cfg.Insecure = &v // force no nil ptr so we can unconditionally deref
-		}
-		_, cfg.Endpoint, _ = strings.Cut(cfg.Endpoint, "://")
-		var urlPath string
-		cfg.Endpoint, urlPath, _ = strings.Cut(cfg.Endpoint, "/")
-		if urlPath != "" {
-			urlPath = "/" + urlPath
 		}
 
 		var opts []otlptracehttp.Option
-		opts = append(opts, otlptracehttp.WithEndpoint(cfg.Endpoint))
-		if urlPath != "" {
-			opts = append(opts, otlptracehttp.WithURLPath(urlPath))
-		}
+		opts = append(opts, otlptracehttp.WithEndpointURL(dsn.String()))
 		if *cfg.Insecure {
 			opts = append(opts, otlptracehttp.WithInsecure())
 		}
 		if len(cfg.Headers) > 0 {
 			opts = append(opts, otlptracehttp.WithHeaders(cfg.Headers))
 		}
-		if cfg.Compressor != "" && cfg.Compressor != "none" {
+		if cfg.Compressor == "gzip" {
 			opts = append(opts, otlptracehttp.WithCompression(otlptracehttp.GzipCompression))
 		}
 		if cfg.Timeout > 0 {
@@ -115,7 +107,6 @@ func NewTracerProvider(ctx context.Context, cfg config.TracingConfig) (*sdktrace
 		}
 	} else { // gRPC
 		slog.InfoContext(ctx, "setting up gRPC trace exporter", "endpoint", cfg.Endpoint)
-		_, cfg.Endpoint, _ = strings.Cut(cfg.Endpoint, "://")
 
 		var opts []otlptracegrpc.Option
 		opts = append(opts, otlptracegrpc.WithEndpoint(cfg.Endpoint))
@@ -125,7 +116,7 @@ func NewTracerProvider(ctx context.Context, cfg config.TracingConfig) (*sdktrace
 		if len(cfg.Headers) > 0 {
 			opts = append(opts, otlptracegrpc.WithHeaders(cfg.Headers))
 		}
-		if cfg.Compressor != "" && cfg.Compressor != "none" {
+		if cfg.Compressor == "gzip" {
 			opts = append(opts, otlptracegrpc.WithCompressor(cfg.Compressor))
 		}
 		if cfg.Timeout > 0 {

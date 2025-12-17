@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"maps"
+	"net/url"
 	"slices"
 	"strings"
 	"time"
@@ -185,15 +186,19 @@ func TracingFlags() []cli.Flag {
 			Usage:   "The tracing endpoint to send spans to. Use grpc://, http://, or https:// to specify the protocol (grpc:// is implied). [config: tracing.endpoint]",
 			Sources: FromConfig("tracing.endpoint", "TRACING_ENDPOINT"),
 			Validator: func(s string) error {
-				before, _, found := strings.Cut(s, "://")
-				if !found {
-					return nil // grpc://
+				if s == "" {
+					return nil
 				}
-				switch before {
+				u, err := url.Parse(s)
+				if err != nil {
+					return fmt.Errorf("tracing endpoint is not a valid URL: %w", err)
+				}
+
+				switch u.Scheme {
 				case "grpc", "http", "https":
 					return nil
 				default:
-					return fmt.Errorf("unknown protocol scheme in tracing endpoint: %s", before)
+					return fmt.Errorf("unknown protocol scheme in tracing endpoint: %s", u.Scheme)
 				}
 			},
 		},
