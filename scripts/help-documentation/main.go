@@ -6,7 +6,6 @@ import (
 	_ "embed"
 	"fmt"
 	"io"
-	"log/slog"
 	"maps"
 	"os"
 	"path/filepath"
@@ -27,7 +26,7 @@ type templateData struct {
 
 func main() {
 	if err := run(); err != nil {
-		slog.Error("failed to run", "err", err)
+		fmt.Println("application error:", err)
 		os.Exit(1)
 	}
 }
@@ -60,9 +59,9 @@ func run() error {
 		return fmt.Errorf("failed to execute template: %w", err)
 	}
 
-	gitRoot := findGitRoot()
-	if gitRoot == "" {
-		return fmt.Errorf("failed to find git root")
+	gitRoot, err := findGitRoot()
+	if err != nil {
+		return fmt.Errorf("failed to find git root: %w", err)
 	}
 
 	helpFile := filepath.Join(gitRoot, "docs", "sources", "flags.md")
@@ -70,23 +69,22 @@ func run() error {
 		return fmt.Errorf("failed to write help file to %q: %w", helpFile, err)
 	}
 
-	slog.Info("wrote help", "file", helpFile)
+	fmt.Println("Help documentation generated at", helpFile)
 	return nil
 }
 
-func findGitRoot() string {
+func findGitRoot() (string, error) {
 	dir, err := os.Getwd()
 	if err != nil {
-		slog.Error("failed to get current working directory", "err", err)
-		os.Exit(1)
+		return "", fmt.Errorf("failed to get working directory: %w", err)
 	}
 	for {
 		if _, err := os.Stat(filepath.Join(dir, ".git")); err == nil {
-			return dir
+			return dir, nil
 		}
 		dir = filepath.Dir(dir)
 		if dir == "/" {
-			return ""
+			return "", fmt.Errorf("git root not found")
 		}
 	}
 }

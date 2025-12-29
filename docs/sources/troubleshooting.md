@@ -381,3 +381,25 @@ To identify whether this applies to you, check whether the `newPDFRendering`
 feature flag has been explicitly set to `false` in Grafana's configuration.
 
 To solve this problem, remove the feature toggle override.
+
+## Debug the configuration
+
+{{< admonition type="note" >}}
+The command recommended here prints secrets and sensitive information in
+plain text. Be careful when sharing the output or storing it in logs.
+{{< /admonition >}}
+
+When the service doesn't appear to be working as expected, it can be because the
+configuration is invalid. If the flags are invalid, the service won't start, but
+the configuration files may contain unknown keys and thus silently ignore them.
+
+To debug that the configuration is valid and what you expect, you can get a full
+dump of the Go structures representing the configuration by running the
+`print-config` command. For example:
+
+```
+docker run --rm -v ./config.json:/home/nonroot/config.json grafana/grafana-image-renderer:latest print-config
+```
+
+The command takes the exact same flags and configuration files as the `server`
+command does.
