@@ -607,6 +607,43 @@ func BrowserFlags() []cli.Flag {
 	}
 }
 
+// requestConfigFromCommand extracts RequestConfig fields from a CLI command.
+// Used for both the default config and per-pattern overrides.
+func requestConfigFromCommand(c *cli.Command) (RequestConfig, error) {
+	minWidth := c.Int("browser.min-width")
+	minHeight := c.Int("browser.min-height")
+	maxWidth := c.Int("browser.max-width")
+	maxHeight := c.Int("browser.max-height")
+
+	if maxWidth >= 0 && minWidth > maxWidth {
+		return RequestConfig{}, fmt.Errorf("browser min-width (%d) cannot be larger than max-width (%d)", minWidth, maxWidth)
+	}
+	if maxHeight >= 0 && minHeight > maxHeight {
+		return RequestConfig{}, fmt.Errorf("browser min-height (%d) cannot be larger than max-height (%d)", minHeight, maxHeight)
+	}
+
+	return RequestConfig{
+		TimeBetweenScrolls:              c.Duration("browser.time-between-scrolls"),
+		MinWidth:                        minWidth,
+		MinHeight:                       minHeight,
+		MaxWidth:                        maxWidth,
+		MaxHeight:                       maxHeight,
+		PageScaleFactor:                 c.Float64("browser.page-scale-factor"),
+		Landscape:                       !c.Bool("browser.portrait"),
+		ReadinessTimeout:                c.Duration("browser.readiness.timeout"),
+		ReadinessIterationInterval:      c.Duration("browser.readiness.iteration-interval"),
+		ReadinessWaitForNQueryCycles:    c.Int("browser.readiness.wait-for-n-query-cycles"),
+		ReadinessPriorWait:              c.Duration("browser.readiness.prior-wait"),
+		ReadinessDisableQueryWait:       c.Bool("browser.readiness.disable-query-wait"),
+		ReadinessFirstQueryTimeout:      c.Duration("browser.readiness.give-up-on-first-query"),
+		ReadinessQueriesTimeout:         c.Duration("browser.readiness.give-up-on-all-queries"),
+		ReadinessDisableNetworkWait:     c.Bool("browser.readiness.disable-network-wait"),
+		ReadinessNetworkIdleTimeout:     c.Duration("browser.readiness.network-idle-timeout"),
+		ReadinessDisableDOMHashCodeWait: c.Bool("browser.readiness.disable-dom-hashcode-wait"),
+		ReadinessDOMHashCodeTimeout:     c.Duration("browser.readiness.dom-hashcode-timeout"),
+	}, nil
+}
+
 func BrowserConfigFromCommand(c *cli.Command) (BrowserConfig, error) {
 	timeZone := time.UTC
 	if tz := c.String("browser.timezone"); tz != "" {
@@ -626,37 +663,9 @@ func BrowserConfigFromCommand(c *cli.Command) (BrowserConfig, error) {
 		}
 	}
 
-	minWidth := c.Int("browser.min-width")
-	minHeight := c.Int("browser.min-height")
-	maxWidth := c.Int("browser.max-width")
-	maxHeight := c.Int("browser.max-height")
-	if maxWidth >= 0 && minWidth > maxWidth {
-		return BrowserConfig{}, fmt.Errorf("browser min-width (%d) cannot be larger than max-width (%d)", minWidth, maxWidth)
-	}
-	if maxHeight >= 0 && minHeight > maxHeight {
-		return BrowserConfig{}, fmt.Errorf("browser min-height (%d) cannot be larger than max-height (%d)", minHeight, maxHeight)
-	}
-
-	defaultRequestConfig := RequestConfig{
-		TimeBetweenScrolls: c.Duration("browser.time-between-scrolls"),
-		MinWidth:           minWidth,
-		MinHeight:          minHeight,
-		MaxWidth:           maxWidth,
-		MaxHeight:          maxHeight,
-		PageScaleFactor:    c.Float64("browser.page-scale-factor"),
-		Landscape:          !c.Bool("browser.portrait"),
-
-		ReadinessTimeout:                c.Duration("browser.readiness.timeout"),
-		ReadinessIterationInterval:      c.Duration("browser.readiness.iteration-interval"),
-		ReadinessWaitForNQueryCycles:    c.Int("browser.readiness.wait-for-n-query-cycles"),
-		ReadinessPriorWait:              c.Duration("browser.readiness.prior-wait"),
-		ReadinessDisableQueryWait:       c.Bool("browser.readiness.disable-query-wait"),
-		ReadinessFirstQueryTimeout:      c.Duration("browser.readiness.give-up-on-first-query"),
-		ReadinessQueriesTimeout:         c.Duration("browser.readiness.give-up-on-all-queries"),
-		ReadinessDisableNetworkWait:     c.Bool("browser.readiness.disable-network-wait"),
-		ReadinessNetworkIdleTimeout:     c.Duration("browser.readiness.network-idle-timeout"),
-		ReadinessDisableDOMHashCodeWait: c.Bool("browser.readiness.disable-dom-hashcode-wait"),
-		ReadinessDOMHashCodeTimeout:     c.Duration("browser.readiness.dom-hashcode-timeout"),
+	defaultRequestConfig, err := requestConfigFromCommand(c)
+	if err != nil {
+		return BrowserConfig{}, err
 	}
 
 	// Build per-pattern request config overrides at startup (eager evaluation)
@@ -774,41 +783,9 @@ func buildConfigWithOverrides(original *cli.Command, baseFlags, overrideFlags []
 	clone := &cli.Command{
 		Flags: original.Flags,
 		Action: func(ctx context.Context, c *cli.Command) error {
-			// Only extract the RequestConfig fields
-			minWidth := c.Int("browser.min-width")
-			minHeight := c.Int("browser.min-height")
-			maxWidth := c.Int("browser.max-width")
-			maxHeight := c.Int("browser.max-height")
-
-			if maxWidth >= 0 && minWidth > maxWidth {
-				return fmt.Errorf("browser min-width (%d) cannot be larger than max-width (%d)", minWidth, maxWidth)
-			}
-			if maxHeight >= 0 && minHeight > maxHeight {
-				return fmt.Errorf("browser min-height (%d) cannot be larger than max-height (%d)", minHeight, maxHeight)
-			}
-
-			result = RequestConfig{
-				TimeBetweenScrolls: c.Duration("browser.time-between-scrolls"),
-				MinWidth:           minWidth,
-				MinHeight:          minHeight,
-				MaxWidth:           maxWidth,
-				MaxHeight:          maxHeight,
-				PageScaleFactor:    c.Float64("browser.page-scale-factor"),
-				Landscape:          !c.Bool("browser.portrait"),
-
-				ReadinessTimeout:                c.Duration("browser.readiness.timeout"),
-				ReadinessIterationInterval:      c.Duration("browser.readiness.iteration-interval"),
-				ReadinessWaitForNQueryCycles:    c.Int("browser.readiness.wait-for-n-query-cycles"),
-				ReadinessPriorWait:              c.Duration("browser.readiness.prior-wait"),
-				ReadinessDisableQueryWait:       c.Bool("browser.readiness.disable-query-wait"),
-				ReadinessFirstQueryTimeout:      c.Duration("browser.readiness.give-up-on-first-query"),
-				ReadinessQueriesTimeout:         c.Duration("browser.readiness.give-up-on-all-queries"),
-				ReadinessDisableNetworkWait:     c.Bool("browser.readiness.disable-network-wait"),
-				ReadinessNetworkIdleTimeout:     c.Duration("browser.readiness.network-idle-timeout"),
-				ReadinessDisableDOMHashCodeWait: c.Bool("browser.readiness.disable-dom-hashcode-wait"),
-				ReadinessDOMHashCodeTimeout:     c.Duration("browser.readiness.dom-hashcode-timeout"),
-			}
-			return nil
+			var err error
+			result, err = requestConfigFromCommand(c)
+			return err
 		},
 		// Suppress all output
 		Reader:    nopReader{},
