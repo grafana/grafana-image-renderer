@@ -17,40 +17,6 @@ import (
 	"go.uber.org/automaxprocs/maxprocs"
 )
 
-// Cfg holds all configuration for the server command.
-type Cfg struct {
-	Server    config.ServerConfig
-	Browser   config.BrowserConfig
-	Tracing   config.TracingConfig
-	RateLimit config.RateLimitConfig
-}
-
-// ParseConfig parses the server configuration from the CLI command.
-func ParseConfig(c *cli.Command) (*Cfg, error) {
-	serverConfig, err := config.ServerConfigFromCommand(c)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse server config: %w", err)
-	}
-	browserConfig, err := config.BrowserConfigFromCommand(c)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse browser config: %w", err)
-	}
-	tracingConfig, err := config.TracingConfigFromCommand(c)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse tracing config: %w", err)
-	}
-	rateLimitConfig, err := config.RateLimitConfigFromCommand(c)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse rate limit config: %w", err)
-	}
-	return &Cfg{
-		Server:    serverConfig,
-		Browser:   browserConfig,
-		Tracing:   tracingConfig,
-		RateLimit: rateLimitConfig,
-	}, nil
-}
-
 func NewCmd() *cli.Command {
 	return &cli.Command{
 		Name:   "server",
