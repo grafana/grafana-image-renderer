@@ -747,7 +747,7 @@ func parseOverrideFlags(flagsStr string) []string {
 
 	var flags []string
 	var current strings.Builder
-	inFlag := false
+	seenFirstFlag := false
 
 	for i := 0; i < len(flagsStr); i++ {
 		ch := flagsStr[i]
@@ -758,10 +758,10 @@ func parseOverrideFlags(flagsStr string) []string {
 				flags = append(flags, strings.TrimSpace(current.String()))
 				current.Reset()
 			}
-			inFlag = true
+			seenFirstFlag = true
 		}
 
-		if inFlag {
+		if seenFirstFlag {
 			current.WriteByte(ch)
 		}
 	}

@@ -524,3 +524,84 @@ func TestEagerConfigValidation(t *testing.T) {
 	})
 	require.NoError(t, err)
 }
+
+func TestParseOverrideFlags(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected []string
+	}{
+		{
+			name:     "empty string",
+			input:    "",
+			expected: nil,
+		},
+		{
+			name:     "whitespace only",
+			input:    "   ",
+			expected: nil,
+		},
+		{
+			name:     "single flag",
+			input:    "--flag=value",
+			expected: []string{"--flag=value"},
+		},
+		{
+			name:     "two flags",
+			input:    "--flag=value --flag2=value2",
+			expected: []string{"--flag=value", "--flag2=value2"},
+		},
+		{
+			name:     "multiple flags",
+			input:    "--a=1 --b=2 --c=3",
+			expected: []string{"--a=1", "--b=2", "--c=3"},
+		},
+		{
+			name:     "flag with spaces in value",
+			input:    "--flag=value with spaces --flag2=other",
+			expected: []string{"--flag=value with spaces", "--flag2=other"},
+		},
+		{
+			name:     "garbage before first flag is ignored",
+			input:    "garbage --flag=value",
+			expected: []string{"--flag=value"},
+		},
+		{
+			name:     "leading whitespace",
+			input:    "  --flag=value",
+			expected: []string{"--flag=value"},
+		},
+		{
+			name:     "trailing whitespace",
+			input:    "--flag=value  ",
+			expected: []string{"--flag=value"},
+		},
+		{
+			name:     "real world example with duration",
+			input:    "--browser.readiness.timeout=60s",
+			expected: []string{"--browser.readiness.timeout=60s"},
+		},
+		{
+			name:     "real world example with multiple flags",
+			input:    "--browser.readiness.timeout=60s --browser.min-width=1200",
+			expected: []string{"--browser.readiness.timeout=60s", "--browser.min-width=1200"},
+		},
+		{
+			name:     "single dash in value should not split",
+			input:    "--flag=some-value --flag2=other",
+			expected: []string{"--flag=some-value", "--flag2=other"},
+		},
+		{
+			name:     "flag with no value",
+			input:    "--flag --flag2=value",
+			expected: []string{"--flag", "--flag2=value"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := parseOverrideFlags(tt.input)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
