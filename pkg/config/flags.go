@@ -2,14 +2,15 @@ package config
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/urfave/cli/v3"
 )
 
-// ReconstructFlags extracts all set flag values from a command and returns them
+// reconstructFlags extracts all set flag values from a command and returns them
 // as CLI argument strings (e.g., ["--flag=value", "--other=123"]).
 // This is useful for cloning a command's configuration to build overrides.
-func ReconstructFlags(cmd *cli.Command) ([]string, error) {
+func reconstructFlags(cmd *cli.Command) ([]string, error) {
 	flags := []string{}
 	for _, flag := range cmd.Flags {
 		names := flag.Names()
@@ -57,3 +58,38 @@ func reconstructFlagValue(v any) ([]string, error) {
 	}
 }
 
+// parseOverrideFlags splits a flag string into individual flags.
+// Handles formats like "--flag=value --flag2=value2" and "--flag=value with spaces".
+func parseOverrideFlags(flagsStr string) []string {
+	flagsStr = strings.TrimSpace(flagsStr)
+	if flagsStr == "" {
+		return nil
+	}
+
+	var flags []string
+	var current strings.Builder
+	seenFirstFlag := false
+
+	for i := 0; i < len(flagsStr); i++ {
+		ch := flagsStr[i]
+
+		// Check if we're starting a new flag
+		if i+1 < len(flagsStr) && flagsStr[i:i+2] == "--" {
+			if current.Len() > 0 {
+				flags = append(flags, strings.TrimSpace(current.String()))
+				current.Reset()
+			}
+			seenFirstFlag = true
+		}
+
+		if seenFirstFlag {
+			current.WriteByte(ch)
+		}
+	}
+
+	if current.Len() > 0 {
+		flags = append(flags, strings.TrimSpace(current.String()))
+	}
+
+	return flags
+}

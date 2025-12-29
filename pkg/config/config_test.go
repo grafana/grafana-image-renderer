@@ -447,7 +447,7 @@ func TestReconstructFlags(t *testing.T) {
 			Flags: slices.Concat(ServerFlags(), BrowserFlags()),
 			Action: func(ctx context.Context, c *cli.Command) error {
 				var err error
-				reconstructed, err = ReconstructFlags(c)
+				reconstructed, err = reconstructFlags(c)
 				return err
 			},
 			Reader:    nopReader{},
@@ -473,7 +473,7 @@ func TestReconstructFlags(t *testing.T) {
 			Flags: BrowserFlags(),
 			Action: func(ctx context.Context, c *cli.Command) error {
 				var err error
-				reconstructed, err = ReconstructFlags(c)
+				reconstructed, err = reconstructFlags(c)
 				return err
 			},
 			Reader:    nopReader{},

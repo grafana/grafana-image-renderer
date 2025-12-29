@@ -700,7 +700,7 @@ func buildRequestConfigOverrides(c *cli.Command) (map[string]RequestConfig, erro
 	result := make(map[string]RequestConfig, len(overrides))
 
 	// Get the current flags as strings so we can re-parse with overrides
-	baseFlags, err := ReconstructFlags(c)
+	baseFlags, err := reconstructFlags(c)
 	if err != nil {
 		return nil, fmt.Errorf("failed to reconstruct base flags: %w", err)
 	}
@@ -735,42 +735,6 @@ func buildRequestConfigOverrides(c *cli.Command) (map[string]RequestConfig, erro
 	}
 
 	return result, nil
-}
-
-// parseOverrideFlags splits a flag string into individual flags.
-// Handles formats like "--flag=value --flag2=value2" and "--flag=value with spaces".
-func parseOverrideFlags(flagsStr string) []string {
-	flagsStr = strings.TrimSpace(flagsStr)
-	if flagsStr == "" {
-		return nil
-	}
-
-	var flags []string
-	var current strings.Builder
-	seenFirstFlag := false
-
-	for i := 0; i < len(flagsStr); i++ {
-		ch := flagsStr[i]
-
-		// Check if we're starting a new flag
-		if i+1 < len(flagsStr) && flagsStr[i:i+2] == "--" {
-			if current.Len() > 0 {
-				flags = append(flags, strings.TrimSpace(current.String()))
-				current.Reset()
-			}
-			seenFirstFlag = true
-		}
-
-		if seenFirstFlag {
-			current.WriteByte(ch)
-		}
-	}
-
-	if current.Len() > 0 {
-		flags = append(flags, strings.TrimSpace(current.String()))
-	}
-
-	return flags
 }
 
 // buildConfigWithOverrides creates a new RequestConfig by re-running CLI parsing
