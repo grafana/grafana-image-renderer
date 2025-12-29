@@ -39,9 +39,7 @@ func reconstructFlagValue(v any) ([]string, error) {
 	switch v := v.(type) {
 	case []string:
 		result := make([]string, len(v))
-		for i, s := range v {
-			result[i] = s
-		}
+		copy(result, v)
 		return result, nil
 	case []any:
 		result := []string{}
