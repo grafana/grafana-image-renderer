@@ -52,7 +52,7 @@ func TestRenderRequestConfig(t *testing.T) {
 			},
 		}
 
-		result := browserConfig.RenderRequestConfig(noopSpan(), "https://other-domain.com/dashboard")
+		result := browserConfig.LookupRequestConfig(noopSpan(), "https://other-domain.com/dashboard")
 
 		assert.Equal(t, defaultConfig, result)
 	})
@@ -69,7 +69,7 @@ func TestRenderRequestConfig(t *testing.T) {
 			},
 		}
 
-		result := browserConfig.RenderRequestConfig(noopSpan(), "https://example.com/dashboard")
+		result := browserConfig.LookupRequestConfig(noopSpan(), "https://example.com/dashboard")
 
 		assert.Equal(t, 1200, result.MinWidth)
 		assert.Equal(t, 800, result.MinHeight)
@@ -112,7 +112,7 @@ func TestRenderRequestConfig(t *testing.T) {
 			},
 		}
 
-		result := browserConfig.RenderRequestConfig(noopSpan(), "https://example.com/dashboard")
+		result := browserConfig.LookupRequestConfig(noopSpan(), "https://example.com/dashboard")
 
 		assert.Equal(t, 100*time.Millisecond, result.TimeBetweenScrolls)
 		assert.Equal(t, 1200, result.MinWidth)
@@ -146,7 +146,7 @@ func TestRenderRequestConfig(t *testing.T) {
 			},
 		}
 
-		result := browserConfig.RenderRequestConfig(noopSpan(), "https://example.com/dashboard")
+		result := browserConfig.LookupRequestConfig(noopSpan(), "https://example.com/dashboard")
 
 		// Overridden values
 		assert.Equal(t, 1200, result.MinWidth)
@@ -174,11 +174,11 @@ func TestRenderRequestConfig(t *testing.T) {
 		}
 
 		// Should match
-		result := browserConfig.RenderRequestConfig(noopSpan(), "https://grafana.example.com/d/abc123/my-dashboard")
+		result := browserConfig.LookupRequestConfig(noopSpan(), "https://grafana.example.com/d/abc123/my-dashboard")
 		assert.Equal(t, 1400, result.MinWidth)
 
 		// Should not match (different path structure)
-		result = browserConfig.RenderRequestConfig(noopSpan(), "https://grafana.example.com/explore")
+		result = browserConfig.LookupRequestConfig(noopSpan(), "https://grafana.example.com/explore")
 		assert.Equal(t, defaultConfig.MinWidth, result.MinWidth)
 	})
 
@@ -188,7 +188,7 @@ func TestRenderRequestConfig(t *testing.T) {
 			RequestConfigOverrides: map[string]RequestConfig{},
 		}
 
-		result := browserConfig.RenderRequestConfig(noopSpan(), "https://example.com/dashboard")
+		result := browserConfig.LookupRequestConfig(noopSpan(), "https://example.com/dashboard")
 
 		assert.Equal(t, defaultConfig, result)
 	})
@@ -199,7 +199,7 @@ func TestRenderRequestConfig(t *testing.T) {
 			RequestConfigOverrides: nil,
 		}
 
-		result := browserConfig.RenderRequestConfig(noopSpan(), "https://example.com/dashboard")
+		result := browserConfig.LookupRequestConfig(noopSpan(), "https://example.com/dashboard")
 
 		assert.Equal(t, defaultConfig, result)
 	})
@@ -252,11 +252,11 @@ func TestBrowserOverrideFlag(t *testing.T) {
 		assert.Equal(t, 60*time.Second, overrideConfig.ReadinessTimeout)
 
 		// RenderRequestConfig should return the override for matching URLs
-		result := browserConfig.RenderRequestConfig(noopSpan(), "https://slow.example.com/dashboard")
+		result := browserConfig.LookupRequestConfig(noopSpan(), "https://slow.example.com/dashboard")
 		assert.Equal(t, 60*time.Second, result.ReadinessTimeout)
 
 		// RenderRequestConfig should return the default for non-matching URLs
-		result = browserConfig.RenderRequestConfig(noopSpan(), "https://fast.example.com/dashboard")
+		result = browserConfig.LookupRequestConfig(noopSpan(), "https://fast.example.com/dashboard")
 		assert.Equal(t, 15*time.Second, result.ReadinessTimeout)
 	})
 

@@ -380,11 +380,9 @@ func (c BrowserConfig) DeepClone() BrowserConfig {
 	return cpy
 }
 
-// RenderRequestConfig returns the request config for a given URL.
-// If a URL matches one of the override patterns, the pre-built override config is returned.
+// LookupRequestConfig returns the request config for a given URL, either the default config or an override config if the URL matches one of the override patterns.
 // If there are multiple potential matches, only the first one is used.
-// All configs are pre-parsed at startup, so this is just a map lookup.
-func (c *BrowserConfig) RenderRequestConfig(span trace.Span, url string) RequestConfig {
+func (c *BrowserConfig) LookupRequestConfig(span trace.Span, url string) RequestConfig {
 	for pattern, overrideConfig := range c.RequestConfigOverrides {
 		if regexp.MustCompile(pattern).MatchString(url) {
 			span.AddEvent("request config override matched", trace.WithAttributes(
@@ -662,7 +660,7 @@ func BrowserConfigFromCommand(c *cli.Command) (BrowserConfig, error) {
 	}
 
 	// Build per-pattern request config overrides at startup (eager evaluation)
-	requestConfigOverrides, err := buildRequestConfigOverrides(c, defaultRequestConfig)
+	requestConfigOverrides, err := buildRequestConfigOverrides(c)
 	if err != nil {
 		return BrowserConfig{}, fmt.Errorf("failed to build request config overrides: %w", err)
 	}
@@ -683,8 +681,8 @@ func BrowserConfigFromCommand(c *cli.Command) (BrowserConfig, error) {
 }
 
 // buildRequestConfigOverrides builds pre-parsed RequestConfig instances for each URL pattern override.
-// It uses CLI re-parsing to apply overrides on top of the current config, giving eager validation.
-func buildRequestConfigOverrides(c *cli.Command, defaultConfig RequestConfig) (map[string]RequestConfig, error) {
+// It uses CLI re-parsing to apply overrides on top of the current config, providing eager validation.
+func buildRequestConfigOverrides(c *cli.Command) (map[string]RequestConfig, error) {
 	overrides := c.StringSlice("browser.override")
 	if len(overrides) == 0 {
 		return nil, nil

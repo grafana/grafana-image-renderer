@@ -248,7 +248,7 @@ func (s *BrowserService) Render(ctx context.Context, url string, printer Printer
 
 	orientation := chromedp.EmulatePortrait
 
-	requestConfig := cfg.RenderRequestConfig(span, url)
+	requestConfig := cfg.LookupRequestConfig(span, url)
 	if requestConfig.Landscape {
 		orientation = chromedp.EmulateLandscape
 	}
@@ -425,7 +425,7 @@ func (s *BrowserService) createAllocatorOptions(ctx context.Context, cfg config.
 		opts = append(opts, chromedp.ExecPath(cfg.Path))
 		opts = append(opts, chromedp.UserDataDir(cwd))
 	}
-	requestConfig := cfg.RenderRequestConfig(span, url)
+	requestConfig := cfg.LookupRequestConfig(span, url)
 	opts = append(opts, chromedp.WindowSize(requestConfig.MinWidth, requestConfig.MinHeight))
 	opts = append(opts, chromedp.Env("TZ="+cfg.TimeZone.String()))
 	for _, arg := range cfg.Flags {
@@ -669,7 +669,7 @@ func (p *pdfPrinter) action(dst chan []byte, cfg config.BrowserConfig, url strin
 		ctx, span := tracer.Start(ctx, "pdfPrinter.action")
 		defer span.End()
 
-		requestConfig := cfg.RenderRequestConfig(span, url)
+		requestConfig := cfg.LookupRequestConfig(span, url)
 		span.SetAttributes(
 			attribute.String("paperSize", string(p.paperSize)),
 			attribute.Bool("printBackground", p.printBackground),
@@ -769,7 +769,7 @@ func (p *pngPrinter) prepare(cfg config.BrowserConfig, url string) chromedp.Acti
 		ctx, span := tracer.Start(ctx, "pngPrinter.prepare")
 		defer span.End()
 
-		requestConfig := cfg.RenderRequestConfig(span, url)
+		requestConfig := cfg.LookupRequestConfig(span, url)
 		span.SetAttributes(
 			attribute.Int("currentViewportWidth", requestConfig.MinWidth),
 			attribute.Int("currentViewportHeight", requestConfig.MinHeight),
@@ -960,7 +960,7 @@ func waitForReady(browserCtx context.Context, cfg config.BrowserConfig, url stri
 	browserCtx, span := t.Start(browserCtx, "waitForReadySetup")
 	defer span.End()
 
-	requestConfig := cfg.RenderRequestConfig(span, url)
+	requestConfig := cfg.LookupRequestConfig(span, url)
 	span.SetAttributes(
 		attribute.String("timeout", requestConfig.ReadinessTimeout.String()),
 	)
