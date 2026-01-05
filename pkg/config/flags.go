@@ -56,8 +56,8 @@ func reconstructFlagValue(v any) ([]string, error) {
 	}
 }
 
-// parseOverrideFlags splits a flag string into individual flags.
-// Handles formats like "--flag=value --flag2=value2" and "--flag=value with spaces".
+// parseOverrideFlags splits a flag string into individual flags. This format is required by the cli library. We cannot use Strings.Fields() because it improperly handles special characters.
+// Handles formats like "--flag=value --flag2=value2", "-f=value", and flags with spaces in values.
 func parseOverrideFlags(flagsStr string) []string {
 	flagsStr = strings.TrimSpace(flagsStr)
 	if flagsStr == "" {
@@ -71,12 +71,22 @@ func parseOverrideFlags(flagsStr string) []string {
 	for i := 0; i < len(flagsStr); i++ {
 		ch := flagsStr[i]
 
-		// Check if we're starting a new flag
-		if i+1 < len(flagsStr) && flagsStr[i:i+2] == "--" {
-			if current.Len() > 0 {
-				flags = append(flags, strings.TrimSpace(current.String()))
-				current.Reset()
+		// Check if we're starting a new flag (- or -- at start or after whitespace).
+		// Dashes in the middle of values (e.g., "--flag=some-value") are not flag boundaries.
+		isAtFlagStart := false
+		if ch == '-' {
+			atBoundary := i == 0 || flagsStr[i-1] == ' ' || flagsStr[i-1] == '\t'
+			if atBoundary {
+				isAtFlagStart = true
 			}
+		}
+
+		if isAtFlagStart && seenFirstFlag && current.Len() > 0 {
+			flags = append(flags, strings.TrimSpace(current.String()))
+			current.Reset()
+		}
+
+		if isAtFlagStart {
 			seenFirstFlag = true
 		}
 

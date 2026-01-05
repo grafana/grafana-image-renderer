@@ -596,6 +596,21 @@ func TestParseOverrideFlags(t *testing.T) {
 			input:    "--flag --flag2=value",
 			expected: []string{"--flag", "--flag2=value"},
 		},
+		{
+			name:     "single dash flag",
+			input:    "-f=value",
+			expected: []string{"-f=value"},
+		},
+		{
+			name:     "mixed single and double dash flags",
+			input:    "-f=value --long=other -g",
+			expected: []string{"-f=value", "--long=other", "-g"},
+		},
+		{
+			name:     "single dash flag with dash in value",
+			input:    "-f=some-value -g=other",
+			expected: []string{"-f=some-value", "-g=other"},
+		},
 	}
 
 	for _, tt := range tests {
