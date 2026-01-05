@@ -257,7 +257,7 @@ func (s *BrowserService) Render(ctx context.Context, url string, printer Printer
 		observingAction("network.Enable", network.Enable()), // required by waitForReady
 		observingAction("fetch.Enable", fetch.Enable()),     // required by handleNetworkEvents
 		observingAction("SetPageScaleFactor", emulation.SetPageScaleFactor(cfg.PageScaleFactor)),
-		observingAction("EmulateViewport", chromedp.EmulateViewport(int64(cfg.MinWidth), int64(cfg.MinHeight), orientation)),
+		observingAction("EmulateViewport", chromedp.EmulateViewport(int64(cfg.MinWidth), int64(cfg.MinHeight), orientation, chromedp.EmulateScale(cfg.PageScaleFactor))),
 		observingAction("setHeaders", setHeaders(browserCtx, cfg.Headers)),
 		observingAction("setCookies", setCookies(cfg.Cookies)),
 		observingAction("Navigate", chromedp.Navigate(url)),
@@ -762,6 +762,7 @@ func (p *pngPrinter) prepare(cfg config.BrowserConfig) chromedp.Action {
 				attribute.Int("currentViewportWidth", cfg.MinWidth),
 				attribute.Int("currentViewportHeight", cfg.MinHeight),
 				attribute.Bool("landscape", cfg.Landscape),
+				attribute.Float64("pageScaleFactor", cfg.PageScaleFactor),
 			))
 		defer span.End()
 
@@ -792,7 +793,7 @@ func (p *pngPrinter) prepare(cfg config.BrowserConfig) chromedp.Action {
 				width, height = int64(cfg.MinWidth), int64(scrollHeight)
 			}
 
-			err = chromedp.EmulateViewport(width, height, orientation).Do(ctx)
+			err = chromedp.EmulateViewport(width, height, orientation, chromedp.EmulateScale(cfg.PageScaleFactor)).Do(ctx)
 			if err != nil {
 				span.SetStatus(codes.Error, "failed to resize viewport: "+err.Error())
 				return fmt.Errorf("failed to resize viewport for full height: %w", err)
