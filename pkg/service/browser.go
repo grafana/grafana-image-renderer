@@ -258,7 +258,7 @@ func (s *BrowserService) Render(ctx context.Context, url string, printer Printer
 		observingAction("trackProcess", trackProcess(browserCtx, s.processes)),
 		observingAction("network.Enable", network.Enable()), // required by waitForReady
 		observingAction("fetch.Enable", fetch.Enable()),     // required by handleNetworkEvents
-		observingAction("SetPageScaleFactor", emulation.SetPageScaleFactor(requestConfig.PageScaleFactor.PageScaleFactor)),
+		observingAction("SetPageScaleFactor", emulation.SetPageScaleFactor(requestConfig.PageScaleFactor)),
 		observingAction("EmulateViewport", chromedp.EmulateViewport(int64(requestConfig.MinWidth), int64(requestConfig.MinHeight), orientation, chromedp.EmulateScale(requestConfig.PageScaleFactor))),
 		observingAction("setHeaders", setHeaders(browserCtx, cfg.Headers)),
 		observingAction("setCookies", setCookies(cfg.Cookies)),
@@ -804,7 +804,7 @@ func (p *pngPrinter) prepare(cfg config.BrowserConfig, url string) chromedp.Acti
 				width, height = int64(requestConfig.MinWidth), int64(scrollHeight)
 			}
 
-			err = chromedp.EmulateViewport(width, height, orientation, chromedp.EmulateScale(cfg.PageScaleFactor)).Do(ctx)
+			err = chromedp.EmulateViewport(width, height, orientation, chromedp.EmulateScale(requestConfig.PageScaleFactor)).Do(ctx)
 			if err != nil {
 				span.SetStatus(codes.Error, "failed to resize viewport: "+err.Error())
 				return fmt.Errorf("failed to resize viewport for full height: %w", err)
