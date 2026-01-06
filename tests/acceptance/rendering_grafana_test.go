@@ -733,4 +733,58 @@ func TestRenderingGrafana(t *testing.T) {
 		}
 	})
 
+	t.Run("render PDF with no data", func(t *testing.T) {
+		t.Parallel()
+
+		net, err := network.New(t.Context())
+		require.NoError(t, err, "could not create Docker network")
+		testcontainers.CleanupNetwork(t, net)
+
+		StartPrometheus(t, WithNetwork(net, "prometheus"))
+		svc := StartImageRenderer(t, WithNetwork(net, "gir"))
+		_ = StartGrafana(t,
+			WithNetwork(net, "grafana"),
+			WithEnv("GF_RENDERING_SERVER_URL", "http://gir:8081/render"),
+			WithEnv("GF_RENDERING_CALLBACK_URL", "http://grafana:3000/"),
+			WithEnv("GF_RENDERING_RENDERER_TOKEN", rendererAuthToken))
+
+		t.Run("returns the PDF with no data in the panel", func(t *testing.T) {
+			t.Parallel()
+
+			req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, svc.HTTPEndpoint+"/render", nil)
+			require.NoError(t, err, "could not construct HTTP request to Grafana")
+			req.Header.Set("Accept", "application/pdf")
+			req.Header.Set("X-Auth-Token", "-")
+			query := req.URL.Query()
+			query.Set("url", "http://grafana:3000/d/no-data-prom-testing?render=1&from=1699333200000&to=1699344000000&kiosk=true")
+			query.Set("encoding", "pdf")
+			query.Set("renderKey", renderKey)
+			query.Set("domain", "grafana")
+			req.URL.RawQuery = query.Encode()
+
+			resp, err := http.DefaultClient.Do(req)
+			require.NoError(t, err, "could not send HTTP request to Grafana")
+			require.Equal(t, http.StatusOK, resp.StatusCode, "unexpected HTTP status code from Grafana")
+		})
+
+		t.Run("returns an empty response but no PDF", func(t *testing.T) {
+			t.Parallel()
+
+			req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, svc.HTTPEndpoint+"/render", nil)
+			require.NoError(t, err, "could not construct HTTP request to Grafana")
+			req.Header.Set("Accept", "application/pdf")
+			req.Header.Set("X-Auth-Token", "-")
+			query := req.URL.Query()
+			query.Set("url", "http://grafana:3000/d/no-data-prom-testing?render=1&from=1699333200000&to=1699344000000&kiosk=true")
+			query.Set("encoding", "pdf")
+			query.Set("renderKey", renderKey)
+			query.Set("domain", "grafana")
+			query.Set("emptyResponseOnNoQueries", "true")
+			req.URL.RawQuery = query.Encode()
+
+			resp, err := http.DefaultClient.Do(req)
+			require.NoError(t, err, "could not send HTTP request to Grafana")
+			require.Equal(t, http.StatusNoContent, resp.StatusCode, "unexpected HTTP status code from Grafana")
+		})
+	})
 }

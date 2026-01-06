@@ -135,6 +135,10 @@ func HandleGetRender(browser *service.BrowserService) http.Handler {
 			options = append(options, service.WithLandscape(landscape == "true"))
 			span.SetAttributes(attribute.Bool("landscape", landscape == "true"))
 		}
+		if emptyResponseOnNoQueries := r.URL.Query().Get("emptyResponseOnNoQueries"); emptyResponseOnNoQueries != "" {
+			options = append(options, service.WithEmptyResponseOnNoQueries(emptyResponseOnNoQueries == "true"))
+			span.SetAttributes(attribute.Bool("emptyResponseOnNoQueries", emptyResponseOnNoQueries == "true"))
+		}
 		renderKey := r.URL.Query().Get("renderKey")
 		domain := r.URL.Query().Get("domain")
 		if renderKey != "" && domain != "" {
@@ -244,6 +248,10 @@ func HandleGetRender(browser *service.BrowserService) http.Handler {
 				return
 			} else if errors.Is(err, service.ErrInvalidBrowserOption) {
 				http.Error(w, fmt.Sprintf("invalid request: %v", err), http.StatusBadRequest)
+				return
+			} else if errors.Is(err, service.ErrNoQueriesSeen) {
+				w.Header().Set("Content-Type", contentType)
+				w.WriteHeader(http.StatusNoContent)
 				return
 			}
 			slog.ErrorContext(ctx, "failed to render", "error", err)

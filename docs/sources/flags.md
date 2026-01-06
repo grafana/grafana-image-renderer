@@ -48,6 +48,8 @@ The following is a complete list of all flags that are currently supported in th
 This is a verbatim copy of the output of the `grafana-image-renderer server --help` command.
 
 ```
+--browser.empty-response-on-no-queries [default: false] [${BROWSER_EMPTY_RESPONSE_ON_NO_QUERIES}]
+    Whether to return an empty response if no data source queries are seen during page load. Instead of rendering a blank page, the API will return an empty response with status code 204. Note that this does not apply if some panels on a dashboard make no queries, only if no queries are seen at all. [config: browser.empty-response-on-no-queries]
 --browser.flag=<string> / --browser.flags=<string> [${BROWSER_FLAG}]
     Flags to pass to the browser. These are syntaxed `${flag}` or `${flag}=${value}`. [config: browser.flag]
 --browser.gpu [default: false] [${BROWSER_GPU}]

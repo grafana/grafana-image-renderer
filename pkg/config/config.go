@@ -373,6 +373,11 @@ type RequestConfig struct {
 	ReadinessNetworkIdleTimeout     time.Duration
 	ReadinessDisableDOMHashCodeWait bool
 	ReadinessDOMHashCodeTimeout     time.Duration
+
+	// Whether to return an empty response if no data source queries are seen during page load.
+	// Instead of rendering a blank page, the API will return an empty response with status code 204.
+	// Note that this does not apply if some panels on a dashboard make no queries, only if no queries are seen at all.
+	EmptyResponseOnNoQueries bool
 }
 
 func (c BrowserConfig) DeepClone() BrowserConfig {
@@ -619,6 +624,11 @@ func BrowserFlags() []cli.Flag {
 			Usage:   "URL pattern override in format: 'pattern=--flag=value --flag2=value2'. Pattern is a regex. May be repeated. Example: --browser.override='^https://slow\\.example\\.com/.*=--browser.readiness.timeout=60s' [config: browser.override]",
 			Sources: FromConfig("browser.override", "BROWSER_OVERRIDE"),
 		},
+		&cli.BoolFlag{
+			Name:    "browser.empty-response-on-no-queries",
+			Usage:   "Whether to return an empty response if no data source queries are seen during page load. Instead of rendering a blank page, the API will return an empty response with status code 204. Note that this does not apply if some panels on a dashboard make no queries, only if no queries are seen at all. [config: browser.empty-response-on-no-queries]",
+			Sources: FromConfig("browser.empty-response-on-no-queries", "BROWSER_EMPTY_RESPONSE_ON_NO_QUERIES"),
+		},
 	}
 }
 
@@ -656,6 +666,7 @@ func requestConfigFromCommand(c *cli.Command) (RequestConfig, error) {
 		ReadinessNetworkIdleTimeout:     c.Duration("browser.readiness.network-idle-timeout"),
 		ReadinessDisableDOMHashCodeWait: c.Bool("browser.readiness.disable-dom-hashcode-wait"),
 		ReadinessDOMHashCodeTimeout:     c.Duration("browser.readiness.dom-hashcode-timeout"),
+		EmptyResponseOnNoQueries:        c.Bool("browser.empty-response-on-no-queries"),
 	}, nil
 }
 
