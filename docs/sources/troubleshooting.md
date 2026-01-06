@@ -197,6 +197,9 @@ This is done by waiting for all of the following to complete or time out:
       By default, this timeout is disabled.
     - If there is no first query detected within the duration declared by the `--browser.readiness.give-up-on-first-query` option, the check is silently skipped.
       By default, this timeout is 3 seconds.
+    - If the `--browser.readiness.wait-for-n-query-cycles` is set to a value greater than `1`, the service waits for `N` full query cycles to succeed before proceeding.
+      Each query cycle is separated by the duration as declared by the `--browser.readiness.interval` option.
+      If any query timeout passes during these cycles, the check is silently skipped.
   - The browser waits for all network requests to complete, unless the `--browser.readiness.disable-network-wait` option is enabled.
     - If the network requests don't complete within the duration declared by the `--browser.readiness.network-idle-timeout` option, the check is silently skipped.
       By default, this timeout is disabled.
