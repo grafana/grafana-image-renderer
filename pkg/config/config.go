@@ -4,8 +4,10 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"io"
 	"log/slog"
 	"maps"
+	"regexp"
 	"slices"
 	"strings"
 	"time"
@@ -14,6 +16,8 @@ import (
 	"github.com/chromedp/cdproto/network"
 	"github.com/grafana/grafana-image-renderer/pkg/sandbox"
 	"github.com/urfave/cli/v3"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type LoggingConfig struct {
@@ -318,26 +322,17 @@ type BrowserConfig struct {
 	// Headers are set on every request the browser makes, not only to a specific domain.
 	// This is useful to pass around trace IDs and similar, but should be avoided for sensitive data (e.g. authentication).
 	Headers network.Headers // DeepClone: can't just be copied (is a map)
-	// TimeBetweenScrolls changes how long we wait for a scroll event to complete before starting a new one.
-	//
+	// DefaultRequestConfig contains default settings for handling rendering requests. Overrides for specific URL patterns can be configured separately.
+	DefaultRequestConfig RequestConfig
+	// RequestConfigOverrides contains pre-parsed request configurations for specific URL regex patterns.
+	// Each pattern maps to a fully-resolved RequestConfig that was built at startup.
+	RequestConfigOverrides map[string]RequestConfig
+}
+
+type RequestConfig struct {
 	// We will scroll the entire web-page by the entire viewport over and over until we have seen everything.
 	// That means for a viewport that is 500px high, and a webpage that is 2500px high, we will scroll 5 times, meaning a total wait duration of 6 * duration (as we have to wait on the first & last scrolls as well).
 	TimeBetweenScrolls time.Duration
-	// ReadinessTimeout is the maximum time to wait for the web-page to become ready (i.e. no longer loading anything).
-	ReadinessTimeout           time.Duration
-	ReadinessIterationInterval time.Duration
-	// ReadinessWaitForNQueryCycles is the number of readiness checks that must pass consecutively before considering the page ready. This handles the case where queries drop to 0 briefly before incrementing again.
-	ReadinessWaitForNQueryCycles int
-	// ReadinessPriorWait is the time to wait before checking for how ready the page is.
-	// This lets you force the webpage to take a beat and just do its thing before the service starts looking for whether it's time to render anything.
-	ReadinessPriorWait              time.Duration
-	ReadinessDisableQueryWait       bool
-	ReadinessFirstQueryTimeout      time.Duration
-	ReadinessQueriesTimeout         time.Duration
-	ReadinessDisableNetworkWait     bool
-	ReadinessNetworkIdleTimeout     time.Duration
-	ReadinessDisableDOMHashCodeWait bool
-	ReadinessDOMHashCodeTimeout     time.Duration
 
 	// MinWidth is the minimum width of the browser viewport.
 	// If larger than MaxWidth, MaxWidth is used instead.
@@ -355,6 +350,23 @@ type BrowserConfig struct {
 	MaxHeight       int
 	PageScaleFactor float64
 	Landscape       bool
+
+	// Readiness properties are a "best guess" configuration for waiting for the page to be ready for capture
+	// ReadinessTimeout is the maximum time to wait for the web-page to become ready (i.e. no longer loading anything).
+	ReadinessTimeout           time.Duration
+	ReadinessIterationInterval time.Duration
+	// ReadinessWaitForNQueryCycles is the number of readiness checks that must pass consecutively before considering the page ready. This handles the case where queries drop to 0 briefly before incrementing again.
+	ReadinessWaitForNQueryCycles int
+	// ReadinessPriorWait is the time to wait before checking for how ready the page is.
+	// This lets you force the webpage to take a beat and just do its thing before the service starts looking for whether it's time to render anything.
+	ReadinessPriorWait              time.Duration
+	ReadinessDisableQueryWait       bool
+	ReadinessFirstQueryTimeout      time.Duration
+	ReadinessQueriesTimeout         time.Duration
+	ReadinessDisableNetworkWait     bool
+	ReadinessNetworkIdleTimeout     time.Duration
+	ReadinessDisableDOMHashCodeWait bool
+	ReadinessDOMHashCodeTimeout     time.Duration
 }
 
 func (c BrowserConfig) DeepClone() BrowserConfig {
@@ -364,7 +376,23 @@ func (c BrowserConfig) DeepClone() BrowserConfig {
 		cpy.Cookies[i] = &cloned
 	}
 	cpy.Headers = network.Headers(maps.Clone(c.Headers))
+	cpy.RequestConfigOverrides = maps.Clone(c.RequestConfigOverrides)
 	return cpy
+}
+
+// LookupRequestConfig returns the request config for a given URL, either the default config or an override config if the URL matches one of the override patterns.
+// If there are multiple potential matches, only the first one is used.
+func (c *BrowserConfig) LookupRequestConfig(span trace.Span, url string) RequestConfig {
+	for pattern, overrideConfig := range c.RequestConfigOverrides {
+		if regexp.MustCompile(pattern).MatchString(url) {
+			span.AddEvent("request config override matched", trace.WithAttributes(
+				attribute.String("pattern", pattern),
+				attribute.String("url", url),
+			))
+			return overrideConfig
+		}
+	}
+	return c.DefaultRequestConfig
 }
 
 func BrowserFlags() []cli.Flag {
@@ -570,7 +598,50 @@ func BrowserFlags() []cli.Flag {
 			Usage:   "Use a portrait viewport instead of the default landscape. [config: browser.portrait]",
 			Sources: FromConfig("browser.portrait", "BROWSER_PORTRAIT"),
 		},
+		&cli.StringSliceFlag{
+			Name:    "browser.override",
+			Aliases: []string{"browser.overrides"},
+			Usage:   "URL pattern override in format: 'pattern=--flag=value --flag2=value2'. Pattern is a regex. May be repeated. Example: --browser.override='^https://slow\\.example\\.com/.*=--browser.readiness.timeout=60s' [config: browser.override]",
+			Sources: FromConfig("browser.override", "BROWSER_OVERRIDE"),
+		},
 	}
+}
+
+// requestConfigFromCommand extracts RequestConfig fields from a CLI command.
+// Used for both the default config and per-pattern overrides.
+func requestConfigFromCommand(c *cli.Command) (RequestConfig, error) {
+	minWidth := c.Int("browser.min-width")
+	minHeight := c.Int("browser.min-height")
+	maxWidth := c.Int("browser.max-width")
+	maxHeight := c.Int("browser.max-height")
+
+	if maxWidth >= 0 && minWidth > maxWidth {
+		return RequestConfig{}, fmt.Errorf("browser min-width (%d) cannot be larger than max-width (%d)", minWidth, maxWidth)
+	}
+	if maxHeight >= 0 && minHeight > maxHeight {
+		return RequestConfig{}, fmt.Errorf("browser min-height (%d) cannot be larger than max-height (%d)", minHeight, maxHeight)
+	}
+
+	return RequestConfig{
+		TimeBetweenScrolls:              c.Duration("browser.time-between-scrolls"),
+		MinWidth:                        minWidth,
+		MinHeight:                       minHeight,
+		MaxWidth:                        maxWidth,
+		MaxHeight:                       maxHeight,
+		PageScaleFactor:                 c.Float64("browser.page-scale-factor"),
+		Landscape:                       !c.Bool("browser.portrait"),
+		ReadinessTimeout:                c.Duration("browser.readiness.timeout"),
+		ReadinessIterationInterval:      c.Duration("browser.readiness.iteration-interval"),
+		ReadinessWaitForNQueryCycles:    c.Int("browser.readiness.wait-for-n-query-cycles"),
+		ReadinessPriorWait:              c.Duration("browser.readiness.prior-wait"),
+		ReadinessDisableQueryWait:       c.Bool("browser.readiness.disable-query-wait"),
+		ReadinessFirstQueryTimeout:      c.Duration("browser.readiness.give-up-on-first-query"),
+		ReadinessQueriesTimeout:         c.Duration("browser.readiness.give-up-on-all-queries"),
+		ReadinessDisableNetworkWait:     c.Bool("browser.readiness.disable-network-wait"),
+		ReadinessNetworkIdleTimeout:     c.Duration("browser.readiness.network-idle-timeout"),
+		ReadinessDisableDOMHashCodeWait: c.Bool("browser.readiness.disable-dom-hashcode-wait"),
+		ReadinessDOMHashCodeTimeout:     c.Duration("browser.readiness.dom-hashcode-timeout"),
+	}, nil
 }
 
 func BrowserConfigFromCommand(c *cli.Command) (BrowserConfig, error) {
@@ -592,45 +663,123 @@ func BrowserConfigFromCommand(c *cli.Command) (BrowserConfig, error) {
 		}
 	}
 
-	minWidth := c.Int("browser.min-width")
-	minHeight := c.Int("browser.min-height")
-	maxWidth := c.Int("browser.max-width")
-	maxHeight := c.Int("browser.max-height")
-	if maxWidth >= 0 && minWidth > maxWidth {
-		return BrowserConfig{}, fmt.Errorf("browser min-width (%d) cannot be larger than max-width (%d)", minWidth, maxWidth)
+	defaultRequestConfig, err := requestConfigFromCommand(c)
+	if err != nil {
+		return BrowserConfig{}, err
 	}
-	if maxHeight >= 0 && minHeight > maxHeight {
-		return BrowserConfig{}, fmt.Errorf("browser min-height (%d) cannot be larger than max-height (%d)", minHeight, maxHeight)
+
+	// Build per-pattern request config overrides at startup (eager evaluation)
+	requestConfigOverrides, err := buildRequestConfigOverrides(c)
+	if err != nil {
+		return BrowserConfig{}, fmt.Errorf("failed to build request config overrides: %w", err)
 	}
 
 	return BrowserConfig{
-		Path:                            c.String("browser.path"),
-		Flags:                           c.StringSlice("browser.flag"),
-		GPU:                             c.Bool("browser.gpu"),
-		Sandbox:                         c.Bool("browser.sandbox"),
-		Namespaced:                      c.Bool("browser.namespaced"),
-		TimeZone:                        timeZone,
-		Cookies:                         nil,
-		Headers:                         headers,
-		TimeBetweenScrolls:              c.Duration("browser.time-between-scrolls"),
-		ReadinessTimeout:                c.Duration("browser.readiness.timeout"),
-		ReadinessIterationInterval:      c.Duration("browser.readiness.iteration-interval"),
-		ReadinessWaitForNQueryCycles:    c.Int("browser.readiness.wait-for-n-query-cycles"),
-		ReadinessPriorWait:              c.Duration("browser.readiness.prior-wait"),
-		ReadinessDisableQueryWait:       c.Bool("browser.readiness.disable-query-wait"),
-		ReadinessFirstQueryTimeout:      c.Duration("browser.readiness.give-up-on-first-query"),
-		ReadinessQueriesTimeout:         c.Duration("browser.readiness.give-up-on-all-queries"),
-		ReadinessDisableNetworkWait:     c.Bool("browser.readiness.disable-network-wait"),
-		ReadinessNetworkIdleTimeout:     c.Duration("browser.readiness.network-idle-timeout"),
-		ReadinessDisableDOMHashCodeWait: c.Bool("browser.readiness.disable-dom-hashcode-wait"),
-		ReadinessDOMHashCodeTimeout:     c.Duration("browser.readiness.dom-hashcode-timeout"),
-		MinWidth:                        minWidth,
-		MinHeight:                       minHeight,
-		MaxWidth:                        maxWidth,
-		MaxHeight:                       maxHeight,
-		PageScaleFactor:                 c.Float64("browser.page-scale-factor"),
-		Landscape:                       !c.Bool("browser.portrait"),
+		Path:       c.String("browser.path"),
+		Flags:      c.StringSlice("browser.flag"),
+		GPU:        c.Bool("browser.gpu"),
+		Sandbox:    c.Bool("browser.sandbox"),
+		Namespaced: c.Bool("browser.namespaced"),
+		TimeZone:   timeZone,
+		Cookies:    nil,
+		Headers:    headers,
+
+		DefaultRequestConfig:   defaultRequestConfig,
+		RequestConfigOverrides: requestConfigOverrides,
 	}, nil
+}
+
+// buildRequestConfigOverrides builds pre-parsed RequestConfig instances for each URL pattern override.
+// It uses CLI re-parsing to apply overrides on top of the current config, providing eager validation.
+func buildRequestConfigOverrides(c *cli.Command) (map[string]RequestConfig, error) {
+	overrides := c.StringSlice("browser.override")
+	if len(overrides) == 0 {
+		return nil, nil
+	}
+
+	result := make(map[string]RequestConfig, len(overrides))
+
+	// Get the current flags as strings so we can re-parse with overrides
+	baseFlags, err := reconstructFlags(c)
+	if err != nil {
+		return nil, fmt.Errorf("failed to reconstruct base flags: %w", err)
+	}
+
+	for _, override := range overrides {
+		// Parse the override format: "pattern=--flag=value --flag2=value2"
+		pattern, flagsStr, found := strings.Cut(override, "=")
+		if !found {
+			return nil, fmt.Errorf("invalid override format %q: expected 'pattern=--flag=value'", override)
+		}
+
+		pattern = strings.TrimSpace(pattern)
+		if pattern == "" {
+			return nil, fmt.Errorf("invalid override format %q: pattern cannot be empty", override)
+		}
+
+		// Validate that the pattern is a valid regex
+		if _, err := regexp.Compile(pattern); err != nil {
+			return nil, fmt.Errorf("invalid regex pattern %q: %w", pattern, err)
+		}
+
+		// Parse the override flags (space-separated)
+		overrideFlags := parseOverrideFlags(flagsStr)
+
+		// Build the config for this pattern by re-running CLI parsing with base + override flags
+		overrideConfig, err := buildConfigWithOverrides(c, baseFlags, overrideFlags)
+		if err != nil {
+			return nil, fmt.Errorf("failed to build config for pattern %q: %w", pattern, err)
+		}
+
+		result[pattern] = overrideConfig
+	}
+
+	return result, nil
+}
+
+// buildConfigWithOverrides creates a new RequestConfig by re-running CLI parsing
+// with the base flags plus the override flags. This ensures all validation runs.
+func buildConfigWithOverrides(original *cli.Command, baseFlags, overrideFlags []string) (RequestConfig, error) {
+	var result RequestConfig
+	var parseErr error
+
+	// Create a clone command that only parses flags
+	clone := &cli.Command{
+		Flags: original.Flags,
+		Action: func(ctx context.Context, c *cli.Command) error {
+			var err error
+			result, err = requestConfigFromCommand(c)
+			return err
+		},
+		// Suppress all output
+		Reader:    nopReader{},
+		Writer:    nopWriter{},
+		ErrWriter: nopWriter{},
+	}
+
+	// Combine base flags with override flags (overrides come last to take precedence)
+	args := append([]string{""}, baseFlags...)
+	args = append(args, overrideFlags...)
+
+	if err := clone.Run(context.Background(), args); err != nil {
+		return RequestConfig{}, err
+	}
+
+	return result, parseErr
+}
+
+// nopReader is a no-op io.Reader that returns EOF immediately.
+type nopReader struct{}
+
+func (nopReader) Read(p []byte) (n int, err error) {
+	return 0, io.EOF
+}
+
+// nopWriter is a no-op io.Writer that discards all writes.
+type nopWriter struct{}
+
+func (nopWriter) Write(p []byte) (n int, err error) {
+	return len(p), nil
 }
 
 type RateLimitConfig struct {

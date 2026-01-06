@@ -64,6 +64,8 @@ This is a verbatim copy of the output of the `grafana-image-renderer server --he
     The minimum width of the browser viewport. This is the default width in requests. [config: browser.min-width]
 --browser.namespaced [default: false] [${BROWSER_NAMESPACED}]
     Enable namespacing the browser. This requires Linux and the CAP_SYS_ADMIN and CAP_SYS_CHROOT capabilities, or a privileged user. [config: browser.namespaced]
+--browser.override=<string> / --browser.overrides=<string> [${BROWSER_OVERRIDE}]
+    URL pattern override in format: 'pattern=--flag=value --flag2=value2'. Pattern is a regex. May be repeated. Example: --browser.override='^https://slow\.example\.com/.*=--browser.readiness.timeout=60s' [config: browser.override]
 --browser.page-scale-factor=<float> [default: 1] [${BROWSER_PAGE_SCALE_FACTOR}]
     The page scale factor of the browser. [config: browser.page-scale-factor]
 --browser.path=<string> [default: "chromium"] [${BROWSER_PATH}]

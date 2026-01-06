@@ -181,10 +181,10 @@ func WithViewport(width, height int) RenderingOption {
 
 	return func(cfg config.BrowserConfig) (config.BrowserConfig, error) {
 		if width != -1 {
-			cfg.MinWidth = clamped(width, cfg.MinWidth, cfg.MaxWidth)
+			cfg.DefaultRequestConfig.MinWidth = clamped(width, cfg.DefaultRequestConfig.MinWidth, cfg.DefaultRequestConfig.MaxWidth)
 		}
 		if height != -1 {
-			cfg.MinHeight = clamped(height, cfg.MinHeight, cfg.MaxHeight)
+			cfg.DefaultRequestConfig.MinHeight = clamped(height, cfg.DefaultRequestConfig.MinHeight, cfg.DefaultRequestConfig.MaxHeight)
 		}
 		return cfg, nil
 	}
@@ -196,14 +196,14 @@ func WithPageScaleFactor(factor float64) RenderingOption {
 		if factor <= 0 {
 			return cfg, fmt.Errorf("%w: page scale factor must be positive", ErrInvalidBrowserOption)
 		}
-		cfg.PageScaleFactor = factor
+		cfg.DefaultRequestConfig.PageScaleFactor = factor
 		return cfg, nil
 	}
 }
 
 func WithLandscape(landscape bool) RenderingOption {
 	return func(cfg config.BrowserConfig) (config.BrowserConfig, error) {
-		cfg.Landscape = landscape
+		cfg.DefaultRequestConfig.Landscape = landscape
 		return cfg, nil
 	}
 }
@@ -234,7 +234,7 @@ func (s *BrowserService) Render(ctx context.Context, url string, printer Printer
 	}
 	defer func() { _ = os.RemoveAll(chromiumCwd) }()
 
-	allocatorOptions, err := s.createAllocatorOptions(ctx, cfg, chromiumCwd)
+	allocatorOptions, err := s.createAllocatorOptions(ctx, cfg, url, chromiumCwd)
 	if err != nil {
 		return nil, "text/plain", fmt.Errorf("failed to create allocator options: %w", err)
 	}
@@ -247,7 +247,9 @@ func (s *BrowserService) Render(ctx context.Context, url string, printer Printer
 	s.handleNetworkEvents(browserCtx)
 
 	orientation := chromedp.EmulatePortrait
-	if cfg.Landscape {
+
+	requestConfig := cfg.LookupRequestConfig(span, url)
+	if requestConfig.Landscape {
 		orientation = chromedp.EmulateLandscape
 	}
 
@@ -256,17 +258,17 @@ func (s *BrowserService) Render(ctx context.Context, url string, printer Printer
 		observingAction("trackProcess", trackProcess(browserCtx, s.processes)),
 		observingAction("network.Enable", network.Enable()), // required by waitForReady
 		observingAction("fetch.Enable", fetch.Enable()),     // required by handleNetworkEvents
-		observingAction("SetPageScaleFactor", emulation.SetPageScaleFactor(cfg.PageScaleFactor)),
-		observingAction("EmulateViewport", chromedp.EmulateViewport(int64(cfg.MinWidth), int64(cfg.MinHeight), orientation, chromedp.EmulateScale(cfg.PageScaleFactor))),
+		observingAction("SetPageScaleFactor", emulation.SetPageScaleFactor(requestConfig.PageScaleFactor)),
+		observingAction("EmulateViewport", chromedp.EmulateViewport(int64(requestConfig.MinWidth), int64(requestConfig.MinHeight), orientation, chromedp.EmulateScale(requestConfig.PageScaleFactor))),
 		observingAction("setHeaders", setHeaders(browserCtx, cfg.Headers)),
 		observingAction("setCookies", setCookies(cfg.Cookies)),
 		observingAction("Navigate", chromedp.Navigate(url)),
 		observingAction("WaitReady(body)", chromedp.WaitReady("body", chromedp.ByQuery)), // wait for a body to exist; this is when the page has started to actually render
-		observingAction("scrollForElements", scrollForElements(cfg.TimeBetweenScrolls)),
-		observingAction("waitForDuration", waitForDuration(cfg.ReadinessPriorWait)),
-		observingAction("waitForReady", waitForReady(browserCtx, cfg)),
-		observingAction("printer.prepare", printer.prepare(cfg)),
-		observingAction("printer.action", printer.action(fileChan, cfg)),
+		observingAction("scrollForElements", scrollForElements(requestConfig.TimeBetweenScrolls)),
+		observingAction("waitForDuration", waitForDuration(requestConfig.ReadinessPriorWait)),
+		observingAction("waitForReady", waitForReady(browserCtx, cfg, url)),
+		observingAction("printer.prepare", printer.prepare(cfg, url)),
+		observingAction("printer.action", printer.action(fileChan, cfg, url)),
 	}
 	span.AddEvent("actions created")
 	MetricBrowserInstancesActive.Inc()
@@ -316,7 +318,7 @@ func (s *BrowserService) RenderCSV(ctx context.Context, url, renderKey, domain, 
 		return nil, "", fmt.Errorf("failed to create download directory at %q: %w", realDownloadDir, err)
 	}
 
-	allocatorOptions, err := s.createAllocatorOptions(ctx, s.cfg, chromiumCwd)
+	allocatorOptions, err := s.createAllocatorOptions(ctx, s.cfg, url, chromiumCwd)
 	if err != nil {
 		return nil, "", fmt.Errorf("failed to create allocator options: %w", err)
 	}
@@ -396,7 +398,11 @@ func (s *BrowserService) RenderCSV(ctx context.Context, url, renderKey, domain, 
 	return fileContents, filepath.Base(filename), nil
 }
 
-func (s *BrowserService) createAllocatorOptions(ctx context.Context, cfg config.BrowserConfig, cwd string) ([]chromedp.ExecAllocatorOption, error) {
+func (s *BrowserService) createAllocatorOptions(ctx context.Context, cfg config.BrowserConfig, url string, cwd string) ([]chromedp.ExecAllocatorOption, error) {
+	tracer := tracer(ctx)
+	ctx, span := tracer.Start(ctx, "BrowserService.createAllocatorOptions")
+	defer span.End()
+
 	opts := chromedp.DefaultExecAllocatorOptions[:]
 	opts = append(opts, chromedp.NoFirstRun, chromedp.NoDefaultBrowserCheck)
 	if !cfg.GPU {
@@ -419,7 +425,8 @@ func (s *BrowserService) createAllocatorOptions(ctx context.Context, cfg config.
 		opts = append(opts, chromedp.ExecPath(cfg.Path))
 		opts = append(opts, chromedp.UserDataDir(cwd))
 	}
-	opts = append(opts, chromedp.WindowSize(cfg.MinWidth, cfg.MinHeight))
+	requestConfig := cfg.LookupRequestConfig(span, url)
+	opts = append(opts, chromedp.WindowSize(requestConfig.MinWidth, requestConfig.MinHeight))
 	opts = append(opts, chromedp.Env("TZ="+cfg.TimeZone.String()))
 	for _, arg := range cfg.Flags {
 		arg = strings.TrimPrefix(arg, "--")
@@ -639,8 +646,8 @@ func (p PaperSize) FormatInches() (width float64, height float64, err error) {
 }
 
 type Printer interface {
-	prepare(cfg config.BrowserConfig) chromedp.Action
-	action(output chan []byte, cfg config.BrowserConfig) chromedp.Action
+	prepare(cfg config.BrowserConfig, url string) chromedp.Action
+	action(output chan []byte, cfg config.BrowserConfig, url string) chromedp.Action
 	contentType() string
 }
 
@@ -650,23 +657,25 @@ type pdfPrinter struct {
 	pageRanges      string // empty string is all pages
 }
 
-func (p *pdfPrinter) prepare(_ config.BrowserConfig) chromedp.Action {
+func (p *pdfPrinter) prepare(_ config.BrowserConfig, _ string) chromedp.Action {
 	return chromedp.ActionFunc(func(context.Context) error {
 		return nil
 	})
 }
 
-func (p *pdfPrinter) action(dst chan []byte, cfg config.BrowserConfig) chromedp.Action {
+func (p *pdfPrinter) action(dst chan []byte, cfg config.BrowserConfig, url string) chromedp.Action {
 	return chromedp.ActionFunc(func(ctx context.Context) error {
 		tracer := tracer(ctx)
-		ctx, span := tracer.Start(ctx, "pdfPrinter.action",
-			trace.WithAttributes(
-				attribute.String("paperSize", string(p.paperSize)),
-				attribute.Bool("printBackground", p.printBackground),
-				attribute.Bool("landscape", cfg.Landscape),
-				attribute.Float64("pageScaleFactor", cfg.PageScaleFactor),
-			))
+		ctx, span := tracer.Start(ctx, "pdfPrinter.action")
 		defer span.End()
+
+		requestConfig := cfg.LookupRequestConfig(span, url)
+		span.SetAttributes(
+			attribute.String("paperSize", string(p.paperSize)),
+			attribute.Bool("printBackground", p.printBackground),
+			attribute.Bool("landscape", requestConfig.Landscape),
+			attribute.Float64("pageScaleFactor", requestConfig.PageScaleFactor),
+		)
 
 		width, height, err := p.paperSize.FormatInches()
 		if err != nil {
@@ -675,8 +684,8 @@ func (p *pdfPrinter) action(dst chan []byte, cfg config.BrowserConfig) chromedp.
 		}
 
 		scale := 1.0
-		if cfg.PageScaleFactor != 0 {
-			scale = 1.0 / cfg.PageScaleFactor
+		if requestConfig.PageScaleFactor != 0 {
+			scale = 1.0 / requestConfig.PageScaleFactor
 		}
 
 		// We don't need the stream return value; we don't ask for a stream.
@@ -686,7 +695,7 @@ func (p *pdfPrinter) action(dst chan []byte, cfg config.BrowserConfig) chromedp.
 			WithMarginLeft(0).
 			WithMarginRight(0).
 			WithMarginTop(0).
-			WithLandscape(cfg.Landscape).
+			WithLandscape(requestConfig.Landscape).
 			WithPaperWidth(width).
 			WithPaperHeight(height).
 			WithScale(scale).
@@ -750,21 +759,23 @@ type pngPrinter struct {
 	fullHeight bool
 }
 
-func (p *pngPrinter) prepare(cfg config.BrowserConfig) chromedp.Action {
+func (p *pngPrinter) prepare(cfg config.BrowserConfig, url string) chromedp.Action {
 	return chromedp.ActionFunc(func(ctx context.Context) error {
 		if !p.fullHeight {
 			return nil
 		}
 
 		tracer := tracer(ctx)
-		ctx, span := tracer.Start(ctx, "pngPrinter.prepare",
-			trace.WithAttributes(
-				attribute.Int("currentViewportWidth", cfg.MinWidth),
-				attribute.Int("currentViewportHeight", cfg.MinHeight),
-				attribute.Bool("landscape", cfg.Landscape),
-				attribute.Float64("pageScaleFactor", cfg.PageScaleFactor),
-			))
+		ctx, span := tracer.Start(ctx, "pngPrinter.prepare")
 		defer span.End()
+
+		requestConfig := cfg.LookupRequestConfig(span, url)
+		span.SetAttributes(
+			attribute.Int("currentViewportWidth", requestConfig.MinWidth),
+			attribute.Int("currentViewportHeight", requestConfig.MinHeight),
+			attribute.Bool("landscape", requestConfig.Landscape),
+			attribute.Float64("pageScaleFactor", requestConfig.PageScaleFactor),
+		)
 
 		var scrollHeight int
 		err := chromedp.Evaluate("document.body.scrollHeight", &scrollHeight).Do(ctx)
@@ -774,33 +785,33 @@ func (p *pngPrinter) prepare(cfg config.BrowserConfig) chromedp.Action {
 		}
 		span.AddEvent("obtained scroll height", trace.WithAttributes(attribute.Int("scrollHeight", scrollHeight)))
 
-		if scrollHeight > cfg.MinHeight {
+		if scrollHeight > requestConfig.MinHeight {
 			span.AddEvent("resizing viewport for full height capture",
 				trace.WithAttributes(
-					attribute.Int("originalHeight", cfg.MinHeight),
+					attribute.Int("originalHeight", requestConfig.MinHeight),
 					attribute.Int("newHeight", scrollHeight),
 				))
 
 			orientation := chromedp.EmulatePortrait
-			if cfg.Landscape {
+			if requestConfig.Landscape {
 				orientation = chromedp.EmulateLandscape
 			}
 
 			var width, height int64
-			if cfg.Landscape {
-				width, height = int64(cfg.MinHeight), int64(scrollHeight)
+			if requestConfig.Landscape {
+				width, height = int64(requestConfig.MinHeight), int64(scrollHeight)
 			} else {
-				width, height = int64(cfg.MinWidth), int64(scrollHeight)
+				width, height = int64(requestConfig.MinWidth), int64(scrollHeight)
 			}
 
-			err = chromedp.EmulateViewport(width, height, orientation, chromedp.EmulateScale(cfg.PageScaleFactor)).Do(ctx)
+			err = chromedp.EmulateViewport(width, height, orientation, chromedp.EmulateScale(requestConfig.PageScaleFactor)).Do(ctx)
 			if err != nil {
 				span.SetStatus(codes.Error, "failed to resize viewport: "+err.Error())
 				return fmt.Errorf("failed to resize viewport for full height: %w", err)
 			}
 
 			span.SetStatus(codes.Ok, "viewport resized successfully")
-			if err := waitForReady(ctx, cfg).Do(ctx); err != nil {
+			if err := waitForReady(ctx, cfg, url).Do(ctx); err != nil {
 				return fmt.Errorf("failed to wait for readiness after resizing viewport: %w", err)
 			}
 		} else {
@@ -811,7 +822,7 @@ func (p *pngPrinter) prepare(cfg config.BrowserConfig) chromedp.Action {
 	})
 }
 
-func (p *pngPrinter) action(dst chan []byte, cfg config.BrowserConfig) chromedp.Action {
+func (p *pngPrinter) action(dst chan []byte, cfg config.BrowserConfig, url string) chromedp.Action {
 	return chromedp.ActionFunc(func(ctx context.Context) error {
 		tracer := tracer(ctx)
 		ctx, span := tracer.Start(ctx, "pngPrinter.action",
@@ -945,7 +956,16 @@ func scrollForElements(timeBetweenScrolls time.Duration) chromedp.Action {
 	})
 }
 
-func waitForReady(browserCtx context.Context, cfg config.BrowserConfig) chromedp.Action {
+func waitForReady(browserCtx context.Context, cfg config.BrowserConfig, url string) chromedp.Action {
+	t := tracer(browserCtx)
+	browserCtx, span := t.Start(browserCtx, "waitForReadySetup")
+	defer span.End()
+
+	requestConfig := cfg.LookupRequestConfig(span, url)
+	span.SetAttributes(
+		attribute.String("timeout", requestConfig.ReadinessTimeout.String()),
+	)
+
 	getRunningQueries := func(ctx context.Context) (bool, error) {
 		var running bool
 		err := chromedp.Evaluate(`!!(window.__grafanaSceneContext && window.__grafanaRunningQueryCount > 0)`, &running).Do(ctx)
@@ -967,7 +987,7 @@ func waitForReady(browserCtx context.Context, cfg config.BrowserConfig) chromedp
 	lastRequest := &atomicTime{} // TODO: use this to wait for network stabilisation.
 	lastRequest.Store(time.Now())
 	networkListenerCtx, cancelNetworkListener := context.WithCancel(browserCtx)
-	if !cfg.ReadinessDisableNetworkWait {
+	if !requestConfig.ReadinessDisableNetworkWait {
 		chromedp.ListenTarget(networkListenerCtx, func(ev any) {
 			switch ev.(type) {
 			case *network.EventRequestWillBeSent:
@@ -984,14 +1004,14 @@ func waitForReady(browserCtx context.Context, cfg config.BrowserConfig) chromedp
 
 		tracer := tracer(ctx)
 		ctx, span := tracer.Start(ctx, "waitForReady",
-			trace.WithAttributes(attribute.String("timeout", cfg.ReadinessTimeout.String())))
+			trace.WithAttributes(attribute.String("timeout", requestConfig.ReadinessTimeout.String())))
 		defer span.End()
 
 		start := time.Now()
 
 		var readinessTimeout <-chan time.Time
-		if cfg.ReadinessTimeout > 0 {
-			readinessTimeout = time.After(cfg.ReadinessTimeout)
+		if requestConfig.ReadinessTimeout > 0 {
+			readinessTimeout = time.After(requestConfig.ReadinessTimeout)
 		}
 
 		hasSeenAnyQuery := false
@@ -1009,19 +1029,19 @@ func waitForReady(browserCtx context.Context, cfg config.BrowserConfig) chromedp
 				span.SetStatus(codes.Error, ErrBrowserReadinessTimeout.Error())
 				return ErrBrowserReadinessTimeout
 
-			case <-time.After(cfg.ReadinessIterationInterval):
+			case <-time.After(requestConfig.ReadinessIterationInterval):
 				// Continue with the rest of the code; this is waiting for the next time we can do work.
 			}
 
-			if !cfg.ReadinessDisableNetworkWait &&
-				(cfg.ReadinessNetworkIdleTimeout <= 0 || time.Since(start) < cfg.ReadinessNetworkIdleTimeout) &&
+			if !requestConfig.ReadinessDisableNetworkWait &&
+				(requestConfig.ReadinessNetworkIdleTimeout <= 0 || time.Since(start) < requestConfig.ReadinessNetworkIdleTimeout) &&
 				requests.Load() > 0 {
 				initialDOMPass = true
 				span.AddEvent("network requests still ongoing", trace.WithAttributes(attribute.Int64("inflight_requests", requests.Load())))
 				continue // still waiting on network requests to complete
 			}
 
-			if !cfg.ReadinessDisableQueryWait && (cfg.ReadinessQueriesTimeout <= 0 || time.Since(start) < cfg.ReadinessQueriesTimeout) {
+			if !requestConfig.ReadinessDisableQueryWait && (requestConfig.ReadinessQueriesTimeout <= 0 || time.Since(start) < requestConfig.ReadinessQueriesTimeout) {
 				running, err := getRunningQueries(ctx)
 				if err != nil {
 					span.SetStatus(codes.Error, err.Error())
@@ -1034,17 +1054,17 @@ func waitForReady(browserCtx context.Context, cfg config.BrowserConfig) chromedp
 					hasSeenAnyQuery = true
 					numSuccessfulCycles = 0
 					continue // still waiting on queries to complete
-				} else if !hasSeenAnyQuery && (cfg.ReadinessFirstQueryTimeout <= 0 || time.Since(start) < cfg.ReadinessFirstQueryTimeout) {
+				} else if !hasSeenAnyQuery && (requestConfig.ReadinessFirstQueryTimeout <= 0 || time.Since(start) < requestConfig.ReadinessFirstQueryTimeout) {
 					span.AddEvent("no first query detected yet; giving it more time")
 					continue
-				} else if numSuccessfulCycles+1 < cfg.ReadinessWaitForNQueryCycles {
+				} else if numSuccessfulCycles+1 < requestConfig.ReadinessWaitForNQueryCycles {
 					numSuccessfulCycles++
-					span.AddEvent("waiting for more successful readiness cycles", trace.WithAttributes(attribute.Int("currentCycle", numSuccessfulCycles), attribute.Int("requiredCycles", cfg.ReadinessWaitForNQueryCycles)))
+					span.AddEvent("waiting for more successful readiness cycles", trace.WithAttributes(attribute.Int("currentCycle", numSuccessfulCycles), attribute.Int("requiredCycles", requestConfig.ReadinessWaitForNQueryCycles)))
 					continue // need more successful cycles
 				}
 			}
 
-			if !cfg.ReadinessDisableDOMHashCodeWait && (cfg.ReadinessDOMHashCodeTimeout <= 0 || time.Since(start) < cfg.ReadinessDOMHashCodeTimeout) {
+			if !requestConfig.ReadinessDisableDOMHashCodeWait && (requestConfig.ReadinessDOMHashCodeTimeout <= 0 || time.Since(start) < requestConfig.ReadinessDOMHashCodeTimeout) {
 				if initialDOMPass {
 					var err error
 					domHashCode, err = getDOMHashCode(ctx)
