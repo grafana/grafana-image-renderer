@@ -1,34 +1,56 @@
-.PHONY: all clean deps build clean_package package archive build_package docker
+OUT_DIR = dist
+BINARY ?= $(OUT_DIR)/grafana-image-renderer
+GO_BUILD_FLAGS = -buildvcs -ldflags '-s -w -extldflags "-static"'
 
-ARCH = darwin-x64-unknown
-SKIP_CHROMIUM =
-OUT =
-DOCKER_TAG = dev
+.PHONY: check
+check: lint test
 
-all: clean build
+.PHONY: test
+test:
+	go test ./... -timeout=60s
 
+.PHONY: test-acceptance
+test-acceptance:
+	docker build -t gir .
+	IMAGE=gir go test ./tests/acceptance/... -timeout=60s
+
+.PHONY: lint
+lint:
+	go tool goimports -l .
+	golangci-lint run
+
+.PHONY: fix
+fix:
+	go tool goimports -w .
+	golangci-lint run --fix
+
+.PHONY: build
+build: $(OUT_DIR)
+	CGO_ENABLED=0 go build $(GO_BUILD_FLAGS) -o $(BINARY) .
+
+.PHONY: build-all
+build-all: build $(OUT_DIR)
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build $(GO_BUILD_FLAGS) -o $(OUT_DIR)/grafana-image-renderer-linux-amd64 .
+	CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build $(GO_BUILD_FLAGS) -o $(OUT_DIR)/grafana-image-renderer-linux-arm64 .
+	CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build $(GO_BUILD_FLAGS) -o $(OUT_DIR)/grafana-image-renderer-darwin-amd64 .
+	CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build $(GO_BUILD_FLAGS) -o $(OUT_DIR)/grafana-image-renderer-darwin-arm64 .
+	CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build $(GO_BUILD_FLAGS) -o $(OUT_DIR)/grafana-image-renderer-windows-amd64.exe .
+	CGO_ENABLED=0 GOOS=windows GOARCH=arm64 go build $(GO_BUILD_FLAGS) -o $(OUT_DIR)/grafana-image-renderer-windows-arm64.exe .
+
+.PHONY: clean
 clean:
-	rm -rf build
+	rm -rf "$(OUT_DIR)"
 
-deps: node_modules
+.PHONY: docs-dev
+docs-dev:
+	make -C docs docs
 
-node_modules: package.json yarn.lock ## Install node modules.
-	@echo "install frontend dependencies"
-	yarn install --pure-lockfile --no-progress
+.PHONY: docs
+docs:
+	make -C docs update vale
 
-build:
-	yarn build
+.PHONY: all
+all: lint build-all test test-acceptance
 
-clean_package:
-	./scripts/clean_target.sh ${ARCH} ${OUT}
-
-package:
-	./scripts/package_target.sh ${ARCH} ${SKIP_CHROMIUM} ${OUT}
-
-archive:
-	./scripts/archive_target.sh ${ARCH} ${OUT}
-
-build_package: clean clean_package build package archive
-
-docker:
-	docker build -t grafana/grafana-image-renderer:${DOCKER_TAG} .
+$(OUT_DIR):
+	mkdir -p "$(OUT_DIR)"

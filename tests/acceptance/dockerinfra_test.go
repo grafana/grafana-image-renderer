@@ -151,6 +151,14 @@ func StartImageRenderer(tb testing.TB, options ...ContainerOption) *ImageRendere
 				c.Healthcheck.StartInterval = time.Millisecond * 50
 				c.Healthcheck.StartPeriod = time.Second * 5
 			},
+			// TODO: We need a good way to support both non-namespaced and namespaced tests.
+			HostConfigModifier: func(hc *container.HostConfig) {
+				hc.CapAdd = append(hc.CapAdd, "CAP_SYS_ADMIN", "CAP_SYS_CHROOT")
+				hc.SecurityOpt = append(hc.SecurityOpt, "apparmor=unconfined")
+			},
+			Env: map[string]string{
+				"BROWSER_NAMESPACED": "true",
+			},
 			LogConsumerCfg: containerLogs(tb, "image-renderer"),
 		},
 	}

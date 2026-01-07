@@ -1,0 +1,45 @@
+name: Documentation
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    permissions:
+      contents: read # clone the repository
+      checks: write # write CI checkmarks
+      pull-requests: write # write/comment on PRs
+      security-events: write # write new SARIF events
+    uses: grafana/writers-toolkit/.github/workflows/docs-ci.yml@main
+    with:
+      build: true
+      build-website-directory: content/docs/grafana-image-renderer
+      prettier: true
+      vale: true
+      # Doesn't yet work on forks.
+      readability: false
+
+  flags-up-to-date:
+    name: Flags up to date
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: false
+      - run: go run ./scripts/help-documentation/
+      - run: git diff --exit-code docs/

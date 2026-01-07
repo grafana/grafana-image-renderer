@@ -19,19 +19,18 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        file: [Dockerfile, go.Dockerfile]
         runs-on: [ubuntu-x64, ubuntu-arm64]
 
-    name: acceptance tests (${{ matrix.runs-on }}, ${{ matrix.file }})
+    name: acceptance tests (${{ matrix.runs-on }})
     runs-on: ${{ matrix.runs-on }}
     permissions:
       contents: read # clone the repository
       id-token: write # required to read secrets
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
           cache: false
@@ -41,8 +40,7 @@ jobs:
           DOCKER_BUILDKIT: 1
           BUILDKIT_STEP_LOG_MAX_SIZE: -1
           BUILDKIT_STEP_LOG_MAX_SPEED: -1
-          FILE: ${{ matrix.file }}
-        run: docker build . -t image-renderer -f "$FILE"
+        run: docker build . -t image-renderer
 
       - name: Read license
         if: ${{ github.event.repository.fork == false }}
@@ -62,6 +60,10 @@ jobs:
           echo "$SECRET" > "$LPATH"
           echo "LICENSE_JWT=$LPATH" >> "$GITHUB_ENV"
 
+      - name: Enable unprivileged user namespaces
+        run: |
+          sudo sysctl kernel.unprivileged_userns_clone=1
+          sudo sysctl kernel.apparmor_restrict_unprivileged_userns=0
       - name: go test ./tests/acceptance/...
         run: go test ./tests/acceptance/... -count=1
         env:
@@ -87,7 +89,7 @@ jobs:
         if: ${{ steps.tar.outputs.upload == 'true' && (success() || failure()) }}
         uses: actions/upload-artifact@v4
         with:
-          name: changed-files-${{ matrix.file }}-${{ matrix.runs-on }}
+          name: changed-files-${{ matrix.runs-on }}
           path: changed-files.tar.xz
 
   # This is the job that is actually required by rulesets.

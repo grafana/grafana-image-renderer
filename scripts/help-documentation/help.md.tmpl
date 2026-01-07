@@ -1,0 +1,74 @@
+---
+description: Flags for the grafana-image-renderer service
+keywords:
+  - grafana
+  - image
+  - rendering
+  - plugin
+  - troubleshooting
+labels:
+  products:
+    - enterprise
+    - oss
+menuTitle: Flags
+title: Image rendering flags
+weight: 300
+---
+
+# Image rendering flags
+
+This section aims to list the entire set of flags that can be used to configure the image rendering service.
+
+## Configuration format
+
+To configure the service, any of the following methods can be used:
+
+- Set CLI flags. These are passed in on the command line, and take complete precedence over all other methods.
+  For example, `--server.addr=":8081"` sets the HTTP address to listen on all interfaces on port `8081`.
+- Set environment variables. These are set in the environment.
+  If environment variables are supported for a flag, they are listed in the help command.
+- Write a JSON or YAML configuration file. These must be named `config.json`, `config.yaml`, or `config.yml`.
+  There should only be one file; precedence is undefined if multiple files are present.
+  Dot-separated keys are nested keys. For example, the flag `a.b` becomes `{"a": {"b": "VALUE"}}` in the file.
+  The configuration keys are always mentioned in the help command alongside the flag.
+
+For example, a complete configuration file might look like this in YAML:
+
+```yaml
+server:
+  addr: ":8081" # server.addr
+  auth-token: # server.auth-token
+    - "a"
+    - "b"
+```
+
+## List of flags
+
+The following is a complete list of all flags that are currently supported in the latest release.
+This is a verbatim copy of the output of the `grafana-image-renderer server --help` command.
+
+```
+{{.Help}}
+```
+
+## Debug the configuration
+
+{{"{{< admonition type=\"note\" >}}"}}
+The command recommended here prints secrets and sensitive information in
+plain text. Be careful when sharing the output or storing it in logs.
+{{"{{< /admonition >}}"}}
+
+When the service doesn't appear to be working as expected, it can be because the
+configuration is invalid. If the flags are invalid, the service won't start, but
+the configuration files may contain unknown keys and thus silently ignore them.
+
+To debug that the configuration is valid and what you expect, you can get a full
+dump of the Go structures representing the configuration by running the
+`print-config` command. For example:
+
+```
+docker run --rm -v ./config.json:/home/nonroot/config.json grafana/grafana-image-renderer:latest print-config
+```
+
+The command takes the exact same flags and configuration files as the `server`
+command does.

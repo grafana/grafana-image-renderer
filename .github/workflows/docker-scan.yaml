@@ -5,7 +5,7 @@ on:
     branches:
       - master
     tags:
-      - 'v*'
+      - "v*"
   pull_request:
 
 permissions: {}
@@ -19,18 +19,18 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        file: [Dockerfile, go.Dockerfile]
         runs-on: [ubuntu-x64, ubuntu-arm64]
 
-    name: grype scanning (${{ matrix.runs-on }}, ${{ matrix.file }})
+    name: grype scanning (${{ matrix.runs-on }})
     runs-on: ${{ matrix.runs-on }}
     permissions:
       contents: read # clone the repository
+      security-events: write # upload SARIF results
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
           cache: false
@@ -40,8 +40,7 @@ jobs:
           DOCKER_BUILDKIT: 1
           BUILDKIT_STEP_LOG_MAX_SIZE: -1
           BUILDKIT_STEP_LOG_MAX_SPEED: -1
-          FILE: ${{ matrix.file }}
-        run: docker build . -t image-renderer -f "$FILE"
+        run: docker build . -t image-renderer
 
       - name: Scan with Grype
         id: scan
@@ -59,18 +58,18 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        file: [Dockerfile, go.Dockerfile]
         runs-on: [ubuntu-x64, ubuntu-arm64]
 
-    name: trivy scanning (${{ matrix.runs-on }}, ${{ matrix.file }})
+    name: trivy scanning (${{ matrix.runs-on }})
     runs-on: ${{ matrix.runs-on }}
     permissions:
       contents: read # clone the repository
+      security-events: write # upload SARIF results
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
           cache: false
@@ -80,8 +79,7 @@ jobs:
           DOCKER_BUILDKIT: 1
           BUILDKIT_STEP_LOG_MAX_SIZE: -1
           BUILDKIT_STEP_LOG_MAX_SPEED: -1
-          FILE: ${{ matrix.file }}
-        run: docker build . -t image-renderer -f "$FILE"
+        run: docker build . -t image-renderer
 
       - name: Scan with Trivy
         uses: aquasecurity/trivy-action@b6643a29fecd7f34b3597bc6acb0a98b03d33ff8 # 0.33.1

@@ -3,66 +3,76 @@ package server
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"slices"
 
-	"github.com/grafana/grafana-image-renderer/cmd/config"
 	"github.com/grafana/grafana-image-renderer/pkg/api"
+	"github.com/grafana/grafana-image-renderer/pkg/config"
 	"github.com/grafana/grafana-image-renderer/pkg/metrics"
 	"github.com/grafana/grafana-image-renderer/pkg/service"
 	"github.com/grafana/grafana-image-renderer/pkg/traces"
 	"github.com/urfave/cli/v3"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/propagation"
+	"go.uber.org/automaxprocs/maxprocs"
 )
 
 func NewCmd() *cli.Command {
 	return &cli.Command{
-		Name:  "server",
-		Usage: "Run the server part of the service.",
-		Flags: slices.Concat([]cli.Flag{
-			&cli.StringFlag{
-				Name:     "addr",
-				Usage:    "The address to listen on for HTTP requests.",
-				Category: "Server",
-				Value:    ":8081",
-				Sources:  config.FromConfig("server.addr", "SERVER_ADDR"),
-			},
-			&cli.StringSliceFlag{
-				Name:     "auth-token",
-				Usage:    "The X-Auth-Token header value that must be sent to the service to permit requests. May be repeated.",
-				Category: "Server",
-				Value:    []string{"-"},
-				Sources:  config.FromConfig("auth.token", "AUTH_TOKEN"),
-			},
-
-			&cli.StringFlag{
-				Name:      "browser",
-				Usage:     "The path to the browser's binary. This is resolved against PATH.",
-				Category:  "Browser",
-				TakesFile: true,
-				Value:     "chromium",
-				Sources:   config.FromConfig("browser.path", "BROWSER_PATH"),
-			},
-			&cli.StringSliceFlag{
-				Name:     "browser-flags",
-				Usage:    "Flags to pass to the browser. These are syntaxed `<flag>` or `<flag>=<value>`. No -- should be passed in for the flag; these are implied.",
-				Category: "Browser",
-				Sources:  config.FromConfig("browser.flags", "BROWSER_FLAGS"),
-			},
-			&cli.BoolFlag{
-				Name:     "browser-gpu",
-				Usage:    "Enable GPU support in the browser.",
-				Category: "Browser",
-				Sources:  config.FromConfig("browser.gpu", "BROWSER_GPU"),
-			},
-		}, traces.TracerFlags()),
+		Name:   "server",
+		Usage:  "Run the server part of the service.",
+		Flags:  slices.Concat(config.ServerFlags(), config.TracingFlags(), config.BrowserFlags(), config.RateLimitFlags()),
 		Action: run,
 	}
 }
 
+type Cfg struct {
+	server    config.ServerConfig
+	browser   config.BrowserConfig
+	tracing   config.TracingConfig
+	rateLimit config.RateLimitConfig
+}
+
+func ParseConfig(c *cli.Command) (*Cfg, error) {
+	serverConfig, err := config.ServerConfigFromCommand(c)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse server config: %w", err)
+	}
+	browserConfig, err := config.BrowserConfigFromCommand(c)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse browser config: %w", err)
+	}
+	tracingConfig, err := config.TracingConfigFromCommand(c)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse tracing config: %w", err)
+	}
+	rateLimitConfig, err := config.RateLimitConfigFromCommand(c)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse process tracker config: %w", err)
+	}
+	return &Cfg{
+		server:    serverConfig,
+		browser:   browserConfig,
+		tracing:   tracingConfig,
+		rateLimit: rateLimitConfig,
+	}, nil
+}
+
 func run(ctx context.Context, c *cli.Command) error {
-	metrics := metrics.NewRegistry()
-	tracerProvider, err := traces.NewTracerProvider(ctx, c)
+	_, err := maxprocs.Set(
+		// We use maxprocs over automaxprocs because we need a new minimum value.
+		// 2 is the absolute minimum we can handle, because we use multiple goroutines many places for timeouts.
+		maxprocs.Min(2),
+		maxprocs.Logger(maxProcsLog))
+	if err != nil {
+		slog.Info("failed to set GOMAXPROCS", "err", err)
+	}
+
+	cfg, err := ParseConfig(c)
+	if err != nil {
+		return fmt.Errorf("failed to parse config: %w", err)
+	}
+	tracerProvider, err := traces.NewTracerProvider(ctx, cfg.tracing)
 	if err != nil {
 		return fmt.Errorf("failed to set up tracer: %w", err)
 	}
@@ -72,13 +82,17 @@ func run(ctx context.Context, c *cli.Command) error {
 		otel.SetTracerProvider(tracerProvider)
 		otel.SetTextMapPropagator(propagation.TraceContext{})
 	}
-	browser := service.NewBrowserService(c.String("browser"), c.StringSlice("browser-flags"),
-		service.WithViewport(1000, 500),
-		service.WithGPU(c.Bool("browser-gpu")))
+	processStatService := service.NewProcessStatService(cfg.rateLimit)
+	browser := service.NewBrowserService(cfg.browser, processStatService)
 	versions := service.NewVersionService()
-	handler, err := api.NewHandler(metrics, browser, api.AuthTokens(c.StringSlice("auth-token")), versions)
+	metrics := metrics.NewRegistry()
+	handler, err := api.NewHandler(metrics, cfg.server, cfg.rateLimit, processStatService, browser, versions)
 	if err != nil {
 		return fmt.Errorf("failed to create API handler: %w", err)
 	}
-	return api.ListenAndServe(ctx, c.String("addr"), handler)
+	return api.ListenAndServe(ctx, cfg.server, handler)
+}
+
+func maxProcsLog(format string, args ...any) {
+	slog.Debug(fmt.Sprintf(format, args...), "component", "automaxprocs")
 }

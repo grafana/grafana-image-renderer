@@ -8,7 +8,7 @@ import (
 )
 
 var MetricTrustedURLRequests = prometheus.NewCounterVec(prometheus.CounterOpts{
-	Name: "http_trusted_url_requests",
+	Name: "http_trusted_url_requests_total",
 	Help: "Counts the requests with URL queries",
 }, []string{"result"})
 
@@ -16,14 +16,14 @@ var MetricTrustedURLRequests = prometheus.NewCounterVec(prometheus.CounterOpts{
 func TrustedURL(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		tracer := tracer(r.Context())
-		ctx, span := tracer.Start(r.Context(), "TrustedURL")
+		_, span := tracer.Start(r.Context(), "TrustedURL")
 		defer span.End()
-		r = r.WithContext(ctx)
 
 		urlQuery := r.URL.Query().Get("url")
 		if urlQuery == "" {
 			// Nothing to check: let it through.
 			MetricTrustedURLRequests.WithLabelValues("missing-query").Inc()
+			span.End() // we don't want to track the next middleware in this span
 			h.ServeHTTP(w, r)
 			return
 		}
@@ -42,6 +42,7 @@ func TrustedURL(h http.Handler) http.Handler {
 		}
 
 		MetricTrustedURLRequests.WithLabelValues("valid").Inc()
+		span.End() // we don't want to track the next middleware in this span
 		h.ServeHTTP(w, r)
 	})
 }

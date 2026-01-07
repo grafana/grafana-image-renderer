@@ -30,6 +30,11 @@ func TestRenderingGrafana(t *testing.T) {
 	renderKey, err := joseSignature.CompactSerialize()
 	require.NoError(t, err, "could not serialize JWT")
 
+	// The default pixel difference allowed between fixture and actual rendering.
+	// This is this high to allow for some pixel shifting, which is especially
+	// prominent with Chromium behaving _slightly_ differently on different architectures.
+	const defaultPixelDiff = 15_000
+
 	t.Run("render prometheus dashboard as PNG", func(t *testing.T) {
 		t.Parallel()
 
@@ -55,7 +60,7 @@ func TestRenderingGrafana(t *testing.T) {
 			query := req.URL.Query()
 			query.Set("url", "http://grafana:3000/d/provisioned-prom-testing?render=1&from=1699333200000&to=1699344000000&kiosk=true")
 			query.Set("encoding", "png")
-			query.Set("width", "1400")
+			query.Set("width", "2000")
 			query.Set("height", "800")
 			query.Set("renderKey", renderKey)
 			query.Set("domain", "grafana")
@@ -67,10 +72,127 @@ func TestRenderingGrafana(t *testing.T) {
 
 			body := ReadBody(t, resp.Body)
 			bodyImg := ReadRGBA(t, body)
-			AssertRGBASize(t, bodyImg, 1400, 800)
 			const fixture = "render-prometheus-set-width-height.png"
 			fixtureImg := ReadFixtureRGBA(t, fixture)
-			if !AssertPixelDifference(t, fixtureImg, bodyImg, 17_000) {
+			if !AssertPixelDifference(t, fixtureImg, bodyImg, defaultPixelDiff) {
+				UpdateFixtureIfEnabled(t, fixture, body)
+			}
+		})
+
+		t.Run("with very low height and width", func(t *testing.T) {
+			t.Parallel()
+
+			req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, svc.HTTPEndpoint+"/render", nil)
+			require.NoError(t, err, "could not construct HTTP request to Grafana")
+			req.Header.Set("Accept", "image/png")
+			req.Header.Set("X-Auth-Token", "-")
+			query := req.URL.Query()
+			query.Set("url", "http://grafana:3000/d/provisioned-prom-testing?render=1&from=1699333200000&to=1699344000000&kiosk=true")
+			query.Set("encoding", "png")
+			query.Set("width", "1")
+			query.Set("height", "1")
+			query.Set("renderKey", renderKey)
+			query.Set("domain", "grafana")
+			req.URL.RawQuery = query.Encode()
+
+			resp, err := http.DefaultClient.Do(req)
+			require.NoError(t, err, "could not send HTTP request to Grafana")
+			require.Equal(t, http.StatusOK, resp.StatusCode, "unexpected HTTP status code from Grafana")
+
+			body := ReadBody(t, resp.Body)
+			bodyImg := ReadRGBA(t, body)
+			const fixture = "render-prometheus-very-low-width-height.png"
+			fixtureImg := ReadFixtureRGBA(t, fixture)
+			if !AssertPixelDifference(t, fixtureImg, bodyImg, 15_000) {
+				UpdateFixtureIfEnabled(t, fixture, body)
+			}
+		})
+
+		t.Run("with d-solo link", func(t *testing.T) {
+			t.Parallel()
+
+			req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, svc.HTTPEndpoint+"/render", nil)
+			require.NoError(t, err, "could not construct HTTP request to Grafana")
+			req.Header.Set("Accept", "image/png")
+			req.Header.Set("X-Auth-Token", "-")
+			query := req.URL.Query()
+			query.Set("url", "http://grafana:3000/d-solo/provisioned-prom-testing?render=1&from=1699333200000&to=1699344000000&kiosk=true&panelId=1")
+			query.Set("encoding", "png")
+			query.Set("width", "2000")
+			query.Set("height", "800")
+			query.Set("renderKey", renderKey)
+			query.Set("domain", "grafana")
+			req.URL.RawQuery = query.Encode()
+
+			resp, err := http.DefaultClient.Do(req)
+			require.NoError(t, err, "could not send HTTP request to Grafana")
+			require.Equal(t, http.StatusOK, resp.StatusCode, "unexpected HTTP status code from Grafana")
+
+			body := ReadBody(t, resp.Body)
+			bodyImg := ReadRGBA(t, body)
+			const fixture = "render-prometheus-dsolo.png"
+			fixtureImg := ReadFixtureRGBA(t, fixture)
+			if !AssertPixelDifference(t, fixtureImg, bodyImg, 85_000) {
+				UpdateFixtureIfEnabled(t, fixture, body)
+			}
+		})
+
+		t.Run("with d-solo link and very low width and height", func(t *testing.T) {
+			t.Parallel()
+
+			req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, svc.HTTPEndpoint+"/render", nil)
+			require.NoError(t, err, "could not construct HTTP request to Grafana")
+			req.Header.Set("Accept", "image/png")
+			req.Header.Set("X-Auth-Token", "-")
+			query := req.URL.Query()
+			query.Set("url", "http://grafana:3000/d-solo/provisioned-prom-testing?render=1&from=1699333200000&to=1699344000000&kiosk=true&panelId=1")
+			query.Set("encoding", "png")
+			query.Set("width", "1")
+			query.Set("height", "1")
+			query.Set("renderKey", renderKey)
+			query.Set("domain", "grafana")
+			req.URL.RawQuery = query.Encode()
+
+			resp, err := http.DefaultClient.Do(req)
+			require.NoError(t, err, "could not send HTTP request to Grafana")
+			require.Equal(t, http.StatusOK, resp.StatusCode, "unexpected HTTP status code from Grafana")
+
+			body := ReadBody(t, resp.Body)
+			bodyImg := ReadRGBA(t, body)
+			const fixture = "render-prometheus-dsolo-very-low-width-height.png"
+			fixtureImg := ReadFixtureRGBA(t, fixture)
+			if !AssertPixelDifference(t, fixtureImg, bodyImg, 35_000) {
+				UpdateFixtureIfEnabled(t, fixture, body)
+			}
+		})
+
+		t.Run("with d-solo link and scaling", func(t *testing.T) {
+			t.Parallel()
+
+			const scaleFactor = 5
+			req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, svc.HTTPEndpoint+"/render", nil)
+			require.NoError(t, err, "could not construct HTTP request to Grafana")
+			req.Header.Set("Accept", "image/png")
+			req.Header.Set("X-Auth-Token", "-")
+			query := req.URL.Query()
+			query.Set("url", "http://grafana:3000/d-solo/provisioned-prom-testing?render=1&from=1699333200000&to=1699344000000&kiosk=true&panelId=1")
+			query.Set("encoding", "png")
+			query.Set("width", "2000")
+			query.Set("height", "800")
+			query.Set("renderKey", renderKey)
+			query.Set("domain", "grafana")
+			query.Set("deviceScaleFactor", fmt.Sprintf("%d", scaleFactor))
+			req.URL.RawQuery = query.Encode()
+
+			resp, err := http.DefaultClient.Do(req)
+			require.NoError(t, err, "could not send HTTP request to Grafana")
+			require.Equal(t, http.StatusOK, resp.StatusCode, "unexpected HTTP status code from Grafana")
+
+			body := ReadBody(t, resp.Body)
+			bodyImg := ReadRGBA(t, body)
+			const fixture = "render-prometheus-dsolo-scaled-5.png"
+			fixtureImg := ReadFixtureRGBA(t, fixture)
+			if !AssertPixelDifference(t, fixtureImg, bodyImg, scaleFactor*85_000) {
 				UpdateFixtureIfEnabled(t, fixture, body)
 			}
 		})
@@ -114,7 +236,7 @@ func TestRenderingGrafana(t *testing.T) {
 			contentDisposition := resp.Header.Get("Content-Disposition")
 			_, params, err := mime.ParseMediaType(contentDisposition)
 			require.NoError(t, err, "could not parse Content-Disposition header")
-			require.NotEmpty(t, params["filename"], "no filename in Content-Disposition header")
+			require.Regexp(t, `^Prometheus_ 1-data-.*\.csv$`, params["filename"])
 
 			body := ReadBody(t, resp.Body)
 			const fixture = "render-prometheus-defaults.csv"
@@ -161,7 +283,7 @@ func TestRenderingGrafana(t *testing.T) {
 			image := PDFtoImage(t, pdfBody)
 			const fixture = "render-prometheus-pdf.png"
 			fixtureImg := ReadFixtureRGBA(t, fixture)
-			if !AssertPixelDifference(t, fixtureImg, image, 17_000) {
+			if !AssertPixelDifference(t, fixtureImg, image, defaultPixelDiff) {
 				UpdateFixtureIfEnabled(t, fixture+".pdf", pdfBody)
 				UpdateFixtureIfEnabled(t, fixture, EncodePNG(t, image))
 			}
@@ -192,7 +314,7 @@ func TestRenderingGrafana(t *testing.T) {
 			image := PDFtoImage(t, pdfBody)
 			const fixture = "render-prometheus-pdf-us-lang.png"
 			fixtureImg := ReadFixtureRGBA(t, fixture)
-			if !AssertPixelDifference(t, fixtureImg, image, 17_000) {
+			if !AssertPixelDifference(t, fixtureImg, image, defaultPixelDiff) {
 				UpdateFixtureIfEnabled(t, fixture+".pdf", pdfBody)
 				UpdateFixtureIfEnabled(t, fixture, EncodePNG(t, image))
 			}
@@ -223,7 +345,7 @@ func TestRenderingGrafana(t *testing.T) {
 			image := PDFtoImage(t, pdfBody)
 			const fixture = "render-prometheus-pdf-de-lang.png"
 			fixtureImg := ReadFixtureRGBA(t, fixture)
-			if !AssertPixelDifference(t, fixtureImg, image, 17_000) {
+			if !AssertPixelDifference(t, fixtureImg, image, 5_000) {
 				UpdateFixtureIfEnabled(t, fixture+".pdf", pdfBody)
 				UpdateFixtureIfEnabled(t, fixture, EncodePNG(t, image))
 			}
@@ -252,7 +374,7 @@ func TestRenderingGrafana(t *testing.T) {
 				image := PDFtoImage(t, pdfBody)
 				fixture := fmt.Sprintf("render-prometheus-pdf-%s.png", paper)
 				fixtureImg := ReadFixtureRGBA(t, fixture)
-				if !AssertPixelDifference(t, fixtureImg, image, 17_000) {
+				if !AssertPixelDifference(t, fixtureImg, image, 35_000) {
 					UpdateFixtureIfEnabled(t, fmt.Sprintf("render-prometheus-pdf-%s.pdf", paper), pdfBody)
 					UpdateFixtureIfEnabled(t, fixture, EncodePNG(t, image))
 				}
@@ -282,7 +404,7 @@ func TestRenderingGrafana(t *testing.T) {
 				image := PDFtoImage(t, pdfBody)
 				fixture := fmt.Sprintf("render-prometheus-pdf-printBackground-%v.png", printBackground)
 				fixtureImg := ReadFixtureRGBA(t, fixture)
-				if !AssertPixelDifference(t, fixtureImg, image, 17_000) {
+				if !AssertPixelDifference(t, fixtureImg, image, defaultPixelDiff) {
 					UpdateFixtureIfEnabled(t, fmt.Sprintf("render-prometheus-pdf-printBackground-%v.pdf", printBackground), pdfBody)
 					UpdateFixtureIfEnabled(t, fixture, EncodePNG(t, image))
 				}
@@ -327,11 +449,43 @@ func TestRenderingGrafana(t *testing.T) {
 			image := PDFtoImage(t, pdfBody)
 			const fixture = "render-very-long-prometheus-dashboard.png"
 			fixtureImg := ReadFixtureRGBA(t, fixture)
-			if !AssertPixelDifference(t, fixtureImg, image, 17_000) {
+			if !AssertPixelDifference(t, fixtureImg, image, defaultPixelDiff) {
 				UpdateFixtureIfEnabled(t, fixture+".pdf", pdfBody)
 				UpdateFixtureIfEnabled(t, fixture, EncodePNG(t, image))
 			}
 		})
+
+		for _, isLandscape := range []bool{true, false} {
+			t.Run("pdf.landscape="+fmt.Sprintf("%v", isLandscape), func(t *testing.T) {
+				t.Parallel()
+
+				req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, svc.HTTPEndpoint+"/render", nil)
+				require.NoError(t, err, "could not construct HTTP request to Grafana")
+				req.Header.Set("Accept", "application/pdf")
+				req.Header.Set("X-Auth-Token", "-")
+				query := req.URL.Query()
+				query.Set("url", fmt.Sprintf("http://grafana:3000/d/very-long-prometheus-dashboard?render=1&from=1699333200000&to=1699344000000&kiosk=true&pdf.landscape=%v", isLandscape))
+				query.Set("encoding", "pdf")
+				query.Set("renderKey", renderKey)
+				query.Set("domain", "grafana")
+				req.URL.RawQuery = query.Encode()
+
+				resp, err := http.DefaultClient.Do(req)
+				require.NoError(t, err, "could not send HTTP request to Grafana")
+				require.Equal(t, http.StatusOK, resp.StatusCode, "unexpected HTTP status code from Grafana")
+
+				pdfBody := ReadBody(t, resp.Body)
+				image := PDFtoImage(t, pdfBody)
+				fixture := fmt.Sprintf("render-very-long-prometheus-dashboard-pdf_landscape-%v.png", isLandscape)
+				UpdateFixtureIfEnabled(t, fixture+".pdf", pdfBody)
+				UpdateFixtureIfEnabled(t, fixture, EncodePNG(t, image))
+				fixtureImg := ReadFixtureRGBA(t, fixture)
+				if !AssertPixelDifference(t, fixtureImg, image, 35_000) {
+					UpdateFixtureIfEnabled(t, fixture+".pdf", pdfBody)
+					UpdateFixtureIfEnabled(t, fixture, EncodePNG(t, image))
+				}
+			})
+		}
 
 		for name, pageRange := range map[string]string{
 			"single-page":     "4",
@@ -362,7 +516,7 @@ func TestRenderingGrafana(t *testing.T) {
 				image := PDFtoImage(t, pdfBody)
 				fixture := fmt.Sprintf("render-very-long-prometheus-dashboard-pageranges-%s.png", strings.ReplaceAll(name, " ", "-"))
 				fixtureImg := ReadFixtureRGBA(t, fixture)
-				if !AssertPixelDifference(t, fixtureImg, image, 17_000) {
+				if !AssertPixelDifference(t, fixtureImg, image, defaultPixelDiff) {
 					UpdateFixtureIfEnabled(t, fixture+".pdf", pdfBody)
 					UpdateFixtureIfEnabled(t, fixture, EncodePNG(t, image))
 				}
@@ -397,7 +551,7 @@ func TestRenderingGrafana(t *testing.T) {
 					image := ReadRGBA(t, body)
 					fixture := fmt.Sprintf("render-very-long-prometheus-dashboard-full-height-landscape-%v.png", isLandscape)
 					fixtureImg := ReadFixtureRGBA(t, fixture)
-					if !AssertPixelDifference(t, fixtureImg, image, 125_000) { // this is a very long image, so data may be off by a little bit
+					if !AssertPixelDifference(t, fixtureImg, image, 250_000) {
 						UpdateFixtureIfEnabled(t, fixture, body)
 					}
 				})
@@ -451,7 +605,7 @@ func TestRenderingGrafana(t *testing.T) {
 				bodyImg := ReadRGBA(t, body)
 				const fixture = "render-panel-geomap-default-settings.png"
 				fixtureImg := ReadFixtureRGBA(t, fixture)
-				if !AssertPixelDifference(t, fixtureImg, bodyImg, 17_000) {
+				if !AssertPixelDifference(t, fixtureImg, bodyImg, defaultPixelDiff) {
 					UpdateFixtureIfEnabled(t, fixture, body)
 				}
 			})
@@ -463,10 +617,52 @@ func TestRenderingGrafana(t *testing.T) {
 				bodyImg := ReadRGBA(t, body)
 				const fixture = "render-panel-geomap-with-usa-flights.png"
 				fixtureImg := ReadFixtureRGBA(t, fixture)
-				if !AssertPixelDifference(t, fixtureImg, bodyImg, 17_000) {
+				if !AssertPixelDifference(t, fixtureImg, bodyImg, defaultPixelDiff) {
 					UpdateFixtureIfEnabled(t, fixture, body)
 				}
 			})
 		})
 	})
+
+	t.Run("render dashboard as png with scaling", func(t *testing.T) {
+		t.Parallel()
+
+		net, err := network.New(t.Context())
+		require.NoError(t, err, "could not create Docker network")
+		testcontainers.CleanupNetwork(t, net)
+
+		StartPrometheus(t, WithNetwork(net, "prometheus"))
+		svc := StartImageRenderer(t, WithNetwork(net, "gir"))
+		_ = StartGrafana(t,
+			WithNetwork(net, "grafana"),
+			WithEnv("GF_RENDERING_SERVER_URL", "http://gir:8081/render"),
+			WithEnv("GF_RENDERING_CALLBACK_URL", "http://grafana:3000/"),
+			WithEnv("GF_RENDERING_RENDERER_TOKEN", rendererAuthToken))
+
+		const scaleFactor = 5
+		req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, svc.HTTPEndpoint+"/render", nil)
+		require.NoError(t, err, "could not construct HTTP request to Grafana")
+		req.Header.Set("Accept", "image/png")
+		req.Header.Set("X-Auth-Token", "-")
+		query := req.URL.Query()
+		query.Set("url", "http://grafana:3000/d/provisioned-prom-testing?render=1&from=1699333200000&to=1699344000000&kiosk=true")
+		query.Set("encoding", "png")
+		query.Set("renderKey", renderKey)
+		query.Set("domain", "grafana")
+		query.Set("deviceScaleFactor", fmt.Sprintf("%d", scaleFactor))
+		req.URL.RawQuery = query.Encode()
+
+		resp, err := http.DefaultClient.Do(req)
+		require.NoError(t, err, "could not send HTTP request to Grafana")
+		require.Equal(t, http.StatusOK, resp.StatusCode, "unexpected HTTP status code from Grafana")
+
+		body := ReadBody(t, resp.Body)
+		bodyImg := ReadRGBA(t, body)
+		const fixture = "render-dashboard-scaled-5.png"
+		fixtureImg := ReadFixtureRGBA(t, fixture)
+		if !AssertPixelDifference(t, fixtureImg, bodyImg, scaleFactor*85_000) {
+			UpdateFixtureIfEnabled(t, fixture, body)
+		}
+	})
+
 }

@@ -13,100 +13,16 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  tests:
-    strategy:
-      fail-fast: false
-      matrix:
-        version: [lts/*, .nvmrc]
-
-    name: Tests (Node.js ${{ matrix.version }})
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read # clone the repository
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-
-      # We start the backend service while we install dependencies.
-      # We'll wait on it when we are about to start the actual tests.
-      - working-directory: devenv/docker/test
-        run: docker compose up -d
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ (matrix.version != '.nvmrc' && matrix.version) || '' }}
-          node-version-file: ${{ (matrix.version == '.nvmrc' && matrix.version) || '' }}
-      - run: yarn install --frozen-lockfile
-
-      # Time to wait for Grafana to be ready, if it isn't already. (It probably is, but we can be sure for practically free...)
-      - working-directory: devenv/docker/test
-        run: docker compose up -d --wait
-      - run: yarn run test-ci
-        env:
-          GRAFANA_DOMAIN: localhost
-
-  eslint:
-    name: ESLint
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read # clone the repository
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: lts/*
-
-      - run: yarn install --frozen-lockfile
-      - run: yarn run eslint
-
-  typecheck:
-    name: Typecheck
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read # clone the repository
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: lts/*
-
-      - run: yarn install --frozen-lockfile
-      - run: yarn run typecheck
-
-  prettier:
-    name: Prettier
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read # clone the repository
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: lts/*
-
-      - run: yarn install --frozen-lockfile
-      - run: yarn run prettier:check
-
   go-test:
     name: go test
     runs-on: ubuntu-latest
     permissions:
       contents: read # clone the repository
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
       - run: go test -buildvcs ./...
@@ -117,10 +33,10 @@ jobs:
     permissions:
       contents: read # clone the repository
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
       - run: go tool goimports -l .
@@ -131,10 +47,10 @@ jobs:
     permissions:
       contents: read # clone the repository
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
       - run: go mod tidy -diff
@@ -145,10 +61,10 @@ jobs:
     permissions:
       contents: read # clone the repository
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
       - uses: golangci/golangci-lint-action@4afd733a84b1f43292c63897423277bb7f4313a9 # v8

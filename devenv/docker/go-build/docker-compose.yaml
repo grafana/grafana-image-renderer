@@ -20,7 +20,7 @@ services:
     depends_on:
       - tempo-chown
       - memcached
-    command: 
+    command:
       - "-config.file=/etc/tempo.yaml"
     volumes:
       - tempo-data:/var/tempo
@@ -42,15 +42,48 @@ services:
   renderer:
     build:
       context: ../../../
-      dockerfile: go.Dockerfile
+      dockerfile: Dockerfile
+    cap_add:
+      - CAP_SYS_ADMIN # for clone, mount, unmount, unshare,
+      - CAP_SYS_CHROOT # for chroot
     environment:
       TRACING_ENDPOINT: http://tempo:4318/v1/traces
       LOG_LEVEL: debug
+      AUTH_TOKEN: one,two,three,four,five
+    command:
+      - server
+      # 1 GiB
+      - --rate-limit.max-available=1073741824
+      - --browser.namespaced
     ports:
       - 8081:8081
     depends_on:
       - tempo
       - prometheus
+
+  alloy:
+    image: grafana/alloy:latest
+    privileged: true
+    command:
+      - run
+      - --storage.path=/var/lib/alloy/data
+      - /etc/alloy/config.alloy
+    volumes:
+      - ./config.alloy:/etc/alloy/config.alloy:ro
+      - alloy-data:/var/lib/alloy/data
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/lib/docker/:/var/lib/docker/:ro
+    depends_on:
+      - loki
+    restart: unless-stopped
+
+  loki:
+    image: grafana/loki:latest
+    command:
+      - -config.file=/etc/loki/local-config.yaml
+    volumes:
+      - ./loki.yaml:/etc/loki/local-config.yaml:ro
+    restart: unless-stopped
 
   grafana:
     image: grafana/grafana-enterprise:nightly
@@ -59,6 +92,7 @@ services:
     environment:
       GF_RENDERING_SERVER_URL: http://renderer:8081/render
       GF_RENDERING_CALLBACK_URL: http://grafana:3000/
+      GF_RENDERING_RENDERER_TOKEN: three
       GF_TRACING_OPENTELEMETRY_OTLP_ADDRESS: tempo:4317
       GF_INSTALL_PLUGINS: https://storage.googleapis.com/integration-artifacts/grafana-exploretraces-app/grafana-exploretraces-app-latest.zip;grafana-traces-app
       GF_LOG_FILTERS: rendering:debug
@@ -74,3 +108,4 @@ volumes:
   grafana-data:
   prometheus-data:
   tempo-data:
+  alloy-data:

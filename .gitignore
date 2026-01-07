@@ -1,25 +1,5 @@
-lib-cov
-*.seed
-*.log
-*.dat
-*.out
-*.pid
-*.gz
-*.swp
-
-pids
-logs
-results
-tmp
-
 # Build
 dist
-build
-artifacts
-
-# Dependency directory
-node_modules
-bower_components
 
 # Editors
 .idea
@@ -29,20 +9,6 @@ bower_components
 # OS metadata
 .DS_Store
 Thumbs.db
-
-# Ignore built ts files
-dist/**/*
-
-# Ignore output from coverage report
-coverage
-
-scripts/tmp
-
-tests/testdata/diff_*
-
-cache
-
-/devenv/docker/tracing/tempo-data/
 
 # Grafana Enterprise licence keys
 *.jwt

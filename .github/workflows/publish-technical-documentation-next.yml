@@ -1,0 +1,30 @@
+name: Documentation publication
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - "docs/sources/**"
+  workflow_dispatch:
+
+jobs:
+  sync:
+    if: github.repository == 'grafana/grafana-image-renderer'
+    permissions:
+      contents: read
+      id-token: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: grafana/writers-toolkit/publish-technical-documentation@9aed4f7c5b3caa1b58d72ee39232333407d4acbf # publish-technical-documentation/v1
+        with:
+          website_directory: content/docs/grafana-image-renderer/next

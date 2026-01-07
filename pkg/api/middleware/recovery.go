@@ -9,7 +9,7 @@ import (
 )
 
 var MetricRecoveredRequests = prometheus.NewCounter(prometheus.CounterOpts{
-	Name: "http_recovered_requests",
+	Name: "http_recovered_requests_total",
 	Help: "How many HTTP requests have panicked but recovered to not crash the application?",
 })
 
@@ -30,6 +30,7 @@ func Recovery(h http.Handler) http.Handler {
 				span.SetStatus(codes.Error, "panic in HTTP handler")
 			}
 		}()
+
 		h.ServeHTTP(w, r)
 		span.SetStatus(codes.Ok, "no panic")
 	})
