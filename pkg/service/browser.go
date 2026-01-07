@@ -840,12 +840,7 @@ func resizeViewportForFullHeight(opts *renderingOptions) chromedp.Action {
 		}
 
 		tracer := tracer(ctx)
-		ctx, span := tracer.Start(ctx, "resizeViewportForFullHeight",
-			trace.WithAttributes(
-				attribute.Int("currentViewportWidth", opts.viewportWidth),
-				attribute.Int("currentViewportHeight", opts.viewportHeight),
-				attribute.Bool("landscape", opts.landscape),
-			))
+		ctx, span := tracer.Start(ctx, "resizeViewportForFullHeight")
 		defer span.End()
 
 		var scrollHeight int
@@ -854,7 +849,6 @@ func resizeViewportForFullHeight(opts *renderingOptions) chromedp.Action {
 			span.SetStatus(codes.Error, "failed to get scroll height: "+err.Error())
 			return fmt.Errorf("failed to get scroll height: %w", err)
 		}
-		span.AddEvent("obtained scroll height", trace.WithAttributes(attribute.Int("scrollHeight", scrollHeight)))
 
 		// Only resize if the page is actually taller than the current viewport
 		if scrollHeight > opts.viewportHeight {
@@ -878,7 +872,7 @@ func resizeViewportForFullHeight(opts *renderingOptions) chromedp.Action {
 
 			span.SetStatus(codes.Ok, "viewport resized successfully")
 		} else {
-			span.AddEvent("no viewport resize needed")
+			span.AddEvent("no viewport resize needed", trace.WithAttributes(attribute.Int("pageHeight", scrollHeight)))
 		}
 
 		return nil
@@ -970,7 +964,7 @@ func waitForReady(browserCtx context.Context, timeout time.Duration) chromedp.Ac
 		timeout := time.After(timeout)
 
 		hasHadQueries := false
-		giveUpFirstQuery := time.Now().Add(time.Second * 1)
+		giveUpFirstQuery := time.Now().Add(time.Second * 3)
 
 		var domHashCode int
 		initialDOMPass := true

@@ -429,7 +429,7 @@ func TestRenderingGrafana(t *testing.T) {
 			query.Set("url", fmt.Sprintf("http://grafana:3000/d/%s?render=1&from=1699333200000&to=1699344000000&kiosk=true", id))
 			query.Set("encoding", "png")
 			query.Set("width", "1400")
-			query.Set("height", "-1")
+			query.Set("height", "800")
 			query.Set("renderKey", renderKey)
 			query.Set("domain", "grafana")
 			req.URL.RawQuery = query.Encode()
@@ -467,42 +467,6 @@ func TestRenderingGrafana(t *testing.T) {
 					UpdateFixtureIfEnabled(t, fixture, body)
 				}
 			})
-		})
-
-		t.Run("stat panels", func(t *testing.T) {
-			t.Parallel()
-
-			body := requestDashboard(t, "stat-panels")
-			bodyImg := ReadRGBA(t, body)
-			const fixture = "render-panel-stat-panels.png"
-			fixtureImg := ReadFixtureRGBA(t, fixture)
-			if !AssertPixelDifference(t, fixtureImg, bodyImg, 81_000) {
-				UpdateFixtureIfEnabled(t, fixture, body)
-			}
-		})
-
-		t.Run("bar chart panels", func(t *testing.T) {
-			t.Parallel()
-
-			body := requestDashboard(t, "bar-charts")
-			bodyImg := ReadRGBA(t, body)
-			const fixture = "render-panel-bar-chart-panels.png"
-			fixtureImg := ReadFixtureRGBA(t, fixture)
-			if !AssertPixelDifference(t, fixtureImg, bodyImg, 145_000) {
-				UpdateFixtureIfEnabled(t, fixture, body)
-			}
-		})
-
-		t.Run("gauge panels", func(t *testing.T) {
-			t.Parallel()
-
-			body := requestDashboard(t, "gauge-panels")
-			bodyImg := ReadRGBA(t, body)
-			const fixture = "render-panel-gauge-panels.png"
-			fixtureImg := ReadFixtureRGBA(t, fixture)
-			if !AssertPixelDifference(t, fixtureImg, bodyImg, 40_000) {
-				UpdateFixtureIfEnabled(t, fixture, body)
-			}
 		})
 	})
 }

@@ -150,7 +150,7 @@ func HandleGetRender(browser *service.BrowserService) http.Handler {
 			var printerOpts []service.PNGPrinterOption
 			if height == -1 {
 				printerOpts = append(printerOpts, service.WithFullHeight(true))
-				options = append(options, service.WithViewport(width, int(float64(width)*0.75)))
+				options = append(options, service.WithViewport(width, 1080)) // add some height to make scrolling faster
 			}
 			options = append(options, service.WithPNGPrinter(printerOpts...))
 		default:
