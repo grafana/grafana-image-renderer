@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"math"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -206,7 +207,7 @@ func HandleGetRender(browser *service.BrowserService) http.Handler {
 			var printerOpts []service.PNGPrinterOption
 			if height == -1 {
 				printerOpts = append(printerOpts, service.WithFullHeight(true))
-				options = append(options, service.WithViewport(width, 1080)) // add some height to make scrolling faster
+				options = append(options, service.WithViewport(width, int(math.Floor(0.75*float64(width))))) // add some height to make scrolling faster
 				span.SetAttributes(attribute.Bool("fullHeight", true))
 			}
 
