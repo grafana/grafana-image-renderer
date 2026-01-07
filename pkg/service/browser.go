@@ -797,12 +797,8 @@ func (p *pngPrinter) prepare(cfg config.BrowserConfig, url string) chromedp.Acti
 				orientation = chromedp.EmulateLandscape
 			}
 
-			var width, height int64
-			if requestConfig.Landscape {
-				width, height = int64(requestConfig.MinHeight), int64(scrollHeight)
-			} else {
-				width, height = int64(requestConfig.MinWidth), int64(scrollHeight)
-			}
+			width := int64(requestConfig.MinWidth)
+			height := int64(scrollHeight)
 
 			err = chromedp.EmulateViewport(width, height, orientation, chromedp.EmulateScale(requestConfig.PageScaleFactor)).Do(ctx)
 			if err != nil {
