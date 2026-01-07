@@ -3,8 +3,10 @@ package config
 import (
 	"context"
 	"crypto/tls"
+	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"log/slog"
 	"maps"
 	"regexp"
@@ -384,7 +386,10 @@ func (c BrowserConfig) DeepClone() BrowserConfig {
 // If there are multiple potential matches, only the first one is used.
 func (c *BrowserConfig) LookupRequestConfig(span trace.Span, url string) RequestConfig {
 	for pattern, overrideConfig := range c.RequestConfigOverrides {
+		log.Println("pattern", pattern)
+		log.Println("url", url)
 		if regexp.MustCompile(pattern).MatchString(url) {
+			log.Println("matched")
 			span.AddEvent("request config override matched", trace.WithAttributes(
 				attribute.String("pattern", pattern),
 				attribute.String("url", url),
@@ -673,6 +678,9 @@ func BrowserConfigFromCommand(c *cli.Command) (BrowserConfig, error) {
 	if err != nil {
 		return BrowserConfig{}, fmt.Errorf("failed to build request config overrides: %w", err)
 	}
+
+	str, _ := json.MarshalIndent(requestConfigOverrides, "", "  ")
+	log.Println("requestConfigOverrides", string(str))
 
 	return BrowserConfig{
 		Path:       c.String("browser.path"),

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"log/slog"
 	"math"
 	"net/http"
@@ -41,6 +42,7 @@ func HandleGetRender(browser *service.BrowserService) http.Handler {
 		r = r.WithContext(ctx)
 
 		rawTargetURL := r.URL.Query().Get("url")
+		log.Println("rawTargetURL", rawTargetURL)
 		if rawTargetURL == "" {
 			span.SetStatus(codes.Error, "url query param empty")
 			http.Error(w, "missing 'url' query parameter", http.StatusBadRequest)
