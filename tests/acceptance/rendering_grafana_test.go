@@ -622,6 +622,42 @@ func TestRenderingGrafana(t *testing.T) {
 				}
 			})
 		})
+
+		t.Run("stat panels", func(t *testing.T) {
+			t.Parallel()
+
+			body := requestDashboard(t, "stat-panels")
+			bodyImg := ReadRGBA(t, body)
+			const fixture = "render-panel-stat-panels.png"
+			fixtureImg := ReadFixtureRGBA(t, fixture)
+			if !AssertPixelDifference(t, fixtureImg, bodyImg, 81_000) {
+				UpdateFixtureIfEnabled(t, fixture, body)
+			}
+		})
+
+		t.Run("bar chart panels", func(t *testing.T) {
+			t.Parallel()
+
+			body := requestDashboard(t, "bar-charts")
+			bodyImg := ReadRGBA(t, body)
+			const fixture = "render-panel-bar-chart-panels.png"
+			fixtureImg := ReadFixtureRGBA(t, fixture)
+			if !AssertPixelDifference(t, fixtureImg, bodyImg, 145_000) {
+				UpdateFixtureIfEnabled(t, fixture, body)
+			}
+		})
+
+		t.Run("gauge panels", func(t *testing.T) {
+			t.Parallel()
+
+			body := requestDashboard(t, "gauge-panels")
+			bodyImg := ReadRGBA(t, body)
+			const fixture = "render-panel-gauge-panels.png"
+			fixtureImg := ReadFixtureRGBA(t, fixture)
+			if !AssertPixelDifference(t, fixtureImg, bodyImg, 40_000) {
+				UpdateFixtureIfEnabled(t, fixture, body)
+			}
+		})
 	})
 
 	t.Run("render dashboard as png with scaling", func(t *testing.T) {
