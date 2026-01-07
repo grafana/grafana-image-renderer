@@ -80,6 +80,7 @@ var (
 var (
 	ErrInvalidBrowserOption    = errors.New("invalid browser option")
 	ErrBrowserReadinessTimeout = errors.New("timed out waiting for readiness")
+	ErrNoQueriesSeen           = errors.New("no data source queries were seen")
 )
 
 type BrowserService struct {
@@ -204,6 +205,13 @@ func WithPageScaleFactor(factor float64) RenderingOption {
 func WithLandscape(landscape bool) RenderingOption {
 	return func(cfg config.BrowserConfig) (config.BrowserConfig, error) {
 		cfg.DefaultRequestConfig.Landscape = landscape
+		return cfg, nil
+	}
+}
+
+func WithEmptyResponseOnNoQueries(emptyResponseOnNoQueries bool) RenderingOption {
+	return func(cfg config.BrowserConfig) (config.BrowserConfig, error) {
+		cfg.DefaultRequestConfig.EmptyResponseOnNoQueries = emptyResponseOnNoQueries
 		return cfg, nil
 	}
 }
@@ -1091,6 +1099,11 @@ func waitForReady(browserCtx context.Context, cfg config.BrowserConfig, url stri
 			}
 
 			break // we're done!!
+		}
+
+		// need to check this here rather than at the API level because otherwise the next Chromium action would fail.
+		if requestConfig.EmptyResponseOnNoQueries && !hasSeenAnyQuery {
+			return ErrNoQueriesSeen
 		}
 
 		return nil
