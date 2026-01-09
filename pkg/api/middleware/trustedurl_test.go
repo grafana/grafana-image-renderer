@@ -11,7 +11,7 @@ import (
 )
 
 func TestTrustedURL(t *testing.T) {
-	t.Parallel()
+	// t.Parallel()
 
 	assertOK := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		url := r.URL.Query().Get("url")
@@ -36,7 +36,7 @@ func TestTrustedURL(t *testing.T) {
 		"invalid URL":         {Value: "://", ExpectedStatus: http.StatusBadRequest},
 	} {
 		t.Run(name, func(t *testing.T) {
-			t.Parallel()
+			// t.Parallel()
 
 			rec := httptest.NewRecorder()
 			middleware := middleware.TrustedURL(assertOK)

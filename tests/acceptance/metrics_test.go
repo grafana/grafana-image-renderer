@@ -9,7 +9,7 @@ import (
 
 func TestMetricsEndpoint(t *testing.T) {
 	LongTest(t)
-	t.Parallel()
+	// t.Parallel()
 
 	svc := StartImageRenderer(t,
 		WithEnv("ENABLE_METRICS", "true")) // only required for node.js

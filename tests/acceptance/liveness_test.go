@@ -9,7 +9,7 @@ import (
 
 func TestServiceStartsHealthily(t *testing.T) {
 	LongTest(t)
-	t.Parallel()
+	// t.Parallel()
 
 	svc := StartImageRenderer(t)
 

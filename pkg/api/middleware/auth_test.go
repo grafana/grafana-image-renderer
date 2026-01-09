@@ -10,7 +10,7 @@ import (
 )
 
 func TestAuthTokenRequired(t *testing.T) {
-	t.Parallel()
+	// t.Parallel()
 
 	alwaysOK := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -27,7 +27,7 @@ func TestAuthTokenRequired(t *testing.T) {
 		"correct auth token": {Value: "correct", ExpectedStatus: http.StatusOK},
 	} {
 		t.Run(name, func(t *testing.T) {
-			t.Parallel()
+			// t.Parallel()
 
 			rec := httptest.NewRecorder()
 			middleware := middleware.RequireAuthToken(alwaysOK, "correct")

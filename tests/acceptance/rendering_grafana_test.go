@@ -17,7 +17,7 @@ import (
 
 func TestRenderingGrafana(t *testing.T) {
 	LongTest(t)
-	t.Parallel()
+	// t.Parallel()
 
 	rendererAuthToken := strings.Repeat("-", 512/8)
 	joseSigner, err := jose.NewSigner(jose.SigningKey{
@@ -36,7 +36,7 @@ func TestRenderingGrafana(t *testing.T) {
 	const defaultPixelDiff = 15_000
 
 	t.Run("render prometheus dashboard as PNG", func(t *testing.T) {
-		t.Parallel()
+		// t.Parallel()
 
 		net, err := network.New(t.Context())
 		require.NoError(t, err, "could not create Docker network")
@@ -51,7 +51,7 @@ func TestRenderingGrafana(t *testing.T) {
 			WithEnv("GF_RENDERING_RENDERER_TOKEN", rendererAuthToken))
 
 		t.Run("with set width and height", func(t *testing.T) {
-			t.Parallel()
+			// t.Parallel()
 
 			req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, svc.HTTPEndpoint+"/render", nil)
 			require.NoError(t, err, "could not construct HTTP request to Grafana")
@@ -80,7 +80,7 @@ func TestRenderingGrafana(t *testing.T) {
 		})
 
 		t.Run("with very low height and width", func(t *testing.T) {
-			t.Parallel()
+			// t.Parallel()
 
 			req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, svc.HTTPEndpoint+"/render", nil)
 			require.NoError(t, err, "could not construct HTTP request to Grafana")
@@ -109,7 +109,7 @@ func TestRenderingGrafana(t *testing.T) {
 		})
 
 		t.Run("with d-solo link", func(t *testing.T) {
-			t.Parallel()
+			// t.Parallel()
 
 			req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, svc.HTTPEndpoint+"/render", nil)
 			require.NoError(t, err, "could not construct HTTP request to Grafana")
@@ -138,7 +138,7 @@ func TestRenderingGrafana(t *testing.T) {
 		})
 
 		t.Run("with d-solo link and very low width and height", func(t *testing.T) {
-			t.Parallel()
+			// t.Parallel()
 
 			req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, svc.HTTPEndpoint+"/render", nil)
 			require.NoError(t, err, "could not construct HTTP request to Grafana")
@@ -167,7 +167,7 @@ func TestRenderingGrafana(t *testing.T) {
 		})
 
 		t.Run("with d-solo link and scaling", func(t *testing.T) {
-			t.Parallel()
+			// t.Parallel()
 
 			const scaleFactor = 5
 			req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, svc.HTTPEndpoint+"/render", nil)
@@ -199,7 +199,7 @@ func TestRenderingGrafana(t *testing.T) {
 	})
 
 	t.Run("render prometheus dashboard as CSV", func(t *testing.T) {
-		t.Parallel()
+		// t.Parallel()
 		OnlyEnterprise(t)
 
 		net, err := network.New(t.Context())
@@ -215,7 +215,7 @@ func TestRenderingGrafana(t *testing.T) {
 			WithEnv("GF_RENDERING_RENDERER_TOKEN", rendererAuthToken))
 
 		t.Run("with defaults", func(t *testing.T) {
-			t.Parallel()
+			// t.Parallel()
 
 			req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, svc.HTTPEndpoint+"/render/csv", nil)
 			require.NoError(t, err, "could not construct HTTP request to Grafana")
@@ -247,7 +247,7 @@ func TestRenderingGrafana(t *testing.T) {
 	})
 
 	t.Run("render prometheus dashboard as PDF", func(t *testing.T) {
-		t.Parallel()
+		// t.Parallel()
 
 		net, err := network.New(t.Context())
 		require.NoError(t, err, "could not create Docker network")
@@ -262,7 +262,7 @@ func TestRenderingGrafana(t *testing.T) {
 			WithEnv("GF_RENDERING_RENDERER_TOKEN", rendererAuthToken))
 
 		t.Run("with defaults", func(t *testing.T) {
-			t.Parallel()
+			// t.Parallel()
 
 			req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, svc.HTTPEndpoint+"/render", nil)
 			require.NoError(t, err, "could not construct HTTP request to Grafana")
@@ -290,7 +290,7 @@ func TestRenderingGrafana(t *testing.T) {
 		})
 
 		t.Run("with deviceScaleFactor", func(t *testing.T) {
-			t.Parallel()
+			// t.Parallel()
 
 			req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, svc.HTTPEndpoint+"/render", nil)
 			require.NoError(t, err, "could not construct HTTP request to Grafana")
@@ -319,7 +319,7 @@ func TestRenderingGrafana(t *testing.T) {
 		})
 
 		t.Run("with US English language", func(t *testing.T) {
-			t.Parallel()
+			// t.Parallel()
 
 			req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, svc.HTTPEndpoint+"/render", nil)
 			require.NoError(t, err, "could not construct HTTP request to Grafana")
@@ -350,7 +350,7 @@ func TestRenderingGrafana(t *testing.T) {
 		})
 
 		t.Run("with German language", func(t *testing.T) {
-			t.Parallel()
+			// t.Parallel()
 
 			req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, svc.HTTPEndpoint+"/render", nil)
 			require.NoError(t, err, "could not construct HTTP request to Grafana")
@@ -382,7 +382,7 @@ func TestRenderingGrafana(t *testing.T) {
 
 		for _, paper := range []string{"letter", "legal", "tabloid", "ledger", "a0", "a1", "a2", "a3", "a4", "a5", "a6"} {
 			t.Run("print with paper="+paper, func(t *testing.T) {
-				t.Parallel()
+				// t.Parallel()
 
 				req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, svc.HTTPEndpoint+"/render", nil)
 				require.NoError(t, err, "could not construct HTTP request to Grafana")
@@ -412,7 +412,7 @@ func TestRenderingGrafana(t *testing.T) {
 
 		for _, printBackground := range []bool{true, false} {
 			t.Run(fmt.Sprintf("print with background=%v", printBackground), func(t *testing.T) {
-				t.Parallel()
+				// t.Parallel()
 
 				req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, svc.HTTPEndpoint+"/render", nil)
 				require.NoError(t, err, "could not construct HTTP request to Grafana")
@@ -442,7 +442,7 @@ func TestRenderingGrafana(t *testing.T) {
 	})
 
 	t.Run("render very long prometheus dashboard", func(t *testing.T) {
-		t.Parallel()
+		// t.Parallel()
 
 		net, err := network.New(t.Context())
 		require.NoError(t, err, "could not create Docker network")
@@ -457,7 +457,7 @@ func TestRenderingGrafana(t *testing.T) {
 			WithEnv("GF_RENDERING_RENDERER_TOKEN", rendererAuthToken))
 
 		t.Run("render PDF of many pages", func(t *testing.T) {
-			t.Parallel()
+			// t.Parallel()
 
 			req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, svc.HTTPEndpoint+"/render", nil)
 			require.NoError(t, err, "could not construct HTTP request to Grafana")
@@ -486,7 +486,7 @@ func TestRenderingGrafana(t *testing.T) {
 
 		for _, isLandscape := range []bool{true, false} {
 			t.Run("pdf.landscape="+fmt.Sprintf("%v", isLandscape), func(t *testing.T) {
-				t.Parallel()
+				// t.Parallel()
 
 				req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, svc.HTTPEndpoint+"/render", nil)
 				require.NoError(t, err, "could not construct HTTP request to Grafana")
@@ -524,7 +524,7 @@ func TestRenderingGrafana(t *testing.T) {
 			"1 and 3":         "1, 3",
 		} {
 			t.Run("print PDF with pageRanges="+name, func(t *testing.T) {
-				t.Parallel()
+				// t.Parallel()
 
 				req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, svc.HTTPEndpoint+"/render", nil)
 				require.NoError(t, err, "could not construct HTTP request to Grafana")
@@ -553,11 +553,11 @@ func TestRenderingGrafana(t *testing.T) {
 		}
 
 		t.Run("render many pages as PNG with full height", func(t *testing.T) {
-			t.Parallel()
+			// t.Parallel()
 
 			for _, isLandscape := range []bool{true, false} {
 				t.Run("landscape="+fmt.Sprintf("%v", isLandscape), func(t *testing.T) {
-					t.Parallel()
+					// t.Parallel()
 
 					req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, svc.HTTPEndpoint+"/render", nil)
 					require.NoError(t, err, "could not construct HTTP request to Grafana")
@@ -589,7 +589,7 @@ func TestRenderingGrafana(t *testing.T) {
 	})
 
 	t.Run("render panel dashboards as PNG", func(t *testing.T) {
-		t.Parallel()
+		// t.Parallel()
 
 		net, err := network.New(t.Context())
 		require.NoError(t, err, "could not create Docker network")
@@ -625,10 +625,10 @@ func TestRenderingGrafana(t *testing.T) {
 		}
 
 		t.Run("geomap", func(t *testing.T) {
-			t.Parallel()
+			// t.Parallel()
 
 			t.Run("with default settings", func(t *testing.T) {
-				t.Parallel()
+				// t.Parallel()
 
 				body := requestDashboard(t, "default-geomap")
 				bodyImg := ReadRGBA(t, body)
@@ -640,7 +640,7 @@ func TestRenderingGrafana(t *testing.T) {
 			})
 
 			t.Run("with USA states flight info", func(t *testing.T) {
-				t.Parallel()
+				// t.Parallel()
 
 				body := requestDashboard(t, "geomap-with-usa-flights")
 				bodyImg := ReadRGBA(t, body)
@@ -653,7 +653,7 @@ func TestRenderingGrafana(t *testing.T) {
 		})
 
 		t.Run("stat panels", func(t *testing.T) {
-			t.Parallel()
+			// t.Parallel()
 
 			body := requestDashboard(t, "stat-panels")
 			bodyImg := ReadRGBA(t, body)
@@ -665,7 +665,7 @@ func TestRenderingGrafana(t *testing.T) {
 		})
 
 		t.Run("bar chart panels", func(t *testing.T) {
-			t.Parallel()
+			// t.Parallel()
 
 			body := requestDashboard(t, "bar-charts")
 			bodyImg := ReadRGBA(t, body)
@@ -677,7 +677,7 @@ func TestRenderingGrafana(t *testing.T) {
 		})
 
 		t.Run("gauge panels", func(t *testing.T) {
-			t.Parallel()
+			// t.Parallel()
 
 			body := requestDashboard(t, "gauge-panels")
 			bodyImg := ReadRGBA(t, body)
@@ -690,7 +690,7 @@ func TestRenderingGrafana(t *testing.T) {
 	})
 
 	t.Run("render dashboard as png with scaling", func(t *testing.T) {
-		t.Parallel()
+		// t.Parallel()
 
 		net, err := network.New(t.Context())
 		require.NoError(t, err, "could not create Docker network")

@@ -11,10 +11,10 @@ import (
 
 func TestRegression694(t *testing.T) {
 	LongTest(t)
-	t.Parallel()
+	// t.Parallel()
 
 	t.Run("openshift: docker image is alive when using random UID", func(t *testing.T) {
-		t.Parallel()
+		// t.Parallel()
 		// https://docs.redhat.com/en/documentation/openshift_container_platform/4.18/html/images/creating-images#use-uid_create-images
 		//   > Because the container user is always a member of the root group, the container user can read and write these files.
 		// https://www.redhat.com/en/blog/a-guide-to-openshift-and-uids

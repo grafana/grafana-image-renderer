@@ -207,7 +207,7 @@ func TestRenderRequestConfig(t *testing.T) {
 
 // TestBrowserOverrideFlag tests the eager config building with --browser.override flag
 func TestBrowserOverrideFlag(t *testing.T) {
-	t.Parallel()
+	// t.Parallel()
 
 	// Create a test command with browser flags
 	testCmd := &cli.Command{
@@ -438,7 +438,7 @@ func TestBrowserOverrideFlag(t *testing.T) {
 
 // TestReconstructFlags tests the flag reconstruction utility
 func TestReconstructFlags(t *testing.T) {
-	t.Parallel()
+	// t.Parallel()
 
 	t.Run("reconstructs set flags", func(t *testing.T) {
 		var reconstructed []string
@@ -495,7 +495,7 @@ func TestReconstructFlags(t *testing.T) {
 
 // TestEagerConfigValidation tests that config validation happens at startup
 func TestEagerConfigValidation(t *testing.T) {
-	t.Parallel()
+	// t.Parallel()
 
 	// Create a command that exercises the eager config building
 	cmd := &cli.Command{
