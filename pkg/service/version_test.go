@@ -10,7 +10,7 @@ import (
 )
 
 func TestPrettyVersion(t *testing.T) {
-	t.Parallel()
+	// t.Parallel()
 	if !isGitVcs(t) {
 		t.Skip("skipping test, not built with -buildvcs")
 	}
@@ -21,7 +21,7 @@ func TestPrettyVersion(t *testing.T) {
 }
 
 func TestRenderVersion(t *testing.T) {
-	t.Parallel()
+	// t.Parallel()
 
 	svc := service.NewVersionService()
 	version := svc.GetRenderVersion()

@@ -11,10 +11,10 @@ import (
 // Regression test for: https://github.com/grafana/grafana-image-renderer/issues/686
 func TestRegression686(t *testing.T) {
 	LongTest(t)
-	t.Parallel()
+	// t.Parallel()
 
 	t.Run("kubernetes behaviour: user is set to numeric UID", func(t *testing.T) {
-		t.Parallel()
+		// t.Parallel()
 
 		client, err := testcontainers.NewDockerClientWithOpts(t.Context())
 		require.NoError(t, err, "could not create Docker client")
@@ -27,7 +27,7 @@ func TestRegression686(t *testing.T) {
 		require.Greater(t, uid, 0, "image user UID should be greater than 0")
 
 		t.Run("UID is same as nonroot user", func(t *testing.T) {
-			t.Parallel()
+			// t.Parallel()
 
 			exitCode, logs := RunImageRendererWithCommand(t, []string{"id", "-u"}, nil,
 				WithUser("nonroot"))

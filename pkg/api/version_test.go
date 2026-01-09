@@ -13,10 +13,10 @@ import (
 )
 
 func TestGetRenderVersion(t *testing.T) {
-	t.Parallel()
+	// t.Parallel()
 
 	t.Run("version is semver compatible", func(t *testing.T) {
-		t.Parallel()
+		// t.Parallel()
 
 		rec := httptest.NewRecorder()
 		handler := api.HandleGetRenderVersion(service.NewVersionService())

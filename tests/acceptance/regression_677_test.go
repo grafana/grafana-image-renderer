@@ -10,10 +10,10 @@ import (
 // Regression test for: https://github.com/grafana/grafana-image-renderer/issues/677
 func TestRegression677(t *testing.T) {
 	LongTest(t)
-	t.Parallel()
+	// t.Parallel()
 
 	t.Run("entrypoint is wrapped in tini", func(t *testing.T) {
-		t.Parallel()
+		// t.Parallel()
 
 		client, err := testcontainers.NewDockerClientWithOpts(t.Context())
 		require.NoError(t, err, "could not create Docker client")

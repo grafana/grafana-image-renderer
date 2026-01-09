@@ -10,7 +10,7 @@ import (
 )
 
 func TestGetHealthzReturnsOK(t *testing.T) {
-	t.Parallel()
+	// t.Parallel()
 
 	rec := httptest.NewRecorder()
 	req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/healthz", nil)

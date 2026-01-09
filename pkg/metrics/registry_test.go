@@ -8,7 +8,7 @@ import (
 )
 
 func TestNewRegistryWorks(t *testing.T) {
-	t.Parallel()
+	// t.Parallel()
 
 	require.NotPanics(t, func() {
 		// We use MustRegister, which can panic. We just want to make sure it doesn't in this case.

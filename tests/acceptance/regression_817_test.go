@@ -10,7 +10,7 @@ import (
 
 func TestRegression817(t *testing.T) {
 	LongTest(t)
-	t.Parallel()
+	// t.Parallel()
 
 	for font, fileName := range map[string]string{
 		"Inter":      "Inter-Regular.otf",
@@ -18,7 +18,7 @@ func TestRegression817(t *testing.T) {
 		"sans-serif": "DejaVuSans.ttf",
 	} {
 		t.Run(fmt.Sprintf("font %q is provided by %q", font, fileName), func(t *testing.T) {
-			t.Parallel()
+			// t.Parallel()
 
 			// use fc-match ${font}
 			exitCode, logs := RunImageRendererWithCommand(t, []string{"fc-match", font}, []string{})
