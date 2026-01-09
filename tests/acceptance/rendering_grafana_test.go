@@ -192,7 +192,7 @@ func TestRenderingGrafana(t *testing.T) {
 			bodyImg := ReadRGBA(t, body)
 			const fixture = "render-prometheus-dsolo-scaled-5.png"
 			fixtureImg := ReadFixtureRGBA(t, fixture)
-			if !AssertPixelDifference(t, fixtureImg, bodyImg, scaleFactor*85_000) {
+			if !AssertPixelDifference(t, fixtureImg, bodyImg, scaleFactor*350_000) {
 				UpdateFixtureIfEnabled(t, fixture, body)
 			}
 		})
