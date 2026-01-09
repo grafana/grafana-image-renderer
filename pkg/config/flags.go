@@ -7,8 +7,9 @@ import (
 	"github.com/urfave/cli/v3"
 )
 
-// reconstructFlags extracts all set flag values from a command and returns them
+// reconstructFlags extracts all flag values from a command and returns them
 // as CLI argument strings (e.g., ["--flag=value", "--other=123"]).
+// This includes all values regardless of source (CLI, config file, env var, or default).
 // This is useful for cloning a command's configuration to build overrides.
 func reconstructFlags(cmd *cli.Command) ([]string, error) {
 	flags := []string{}
@@ -18,9 +19,6 @@ func reconstructFlags(cmd *cli.Command) ([]string, error) {
 			return nil, fmt.Errorf("flag %v has no names", flag)
 		}
 		name := names[0]
-		if !cmd.IsSet(name) {
-			continue // skip flags that are not explicitly set
-		}
 		value := flag.Get()
 		vals, err := reconstructFlagValue(value)
 		if err != nil {

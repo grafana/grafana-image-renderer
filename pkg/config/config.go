@@ -325,8 +325,14 @@ type BrowserConfig struct {
 	// DefaultRequestConfig contains default settings for handling rendering requests. Overrides for specific URL patterns can be configured separately.
 	DefaultRequestConfig RequestConfig
 	// RequestConfigOverrides contains pre-parsed request configurations for specific URL regex patterns.
-	// Each pattern maps to a fully-resolved RequestConfig that was built at startup.
-	RequestConfigOverrides map[string]RequestConfig
+	// Each override contains a precompiled regex and its associated RequestConfig.
+	RequestConfigOverrides []RequestConfigOverride
+}
+
+// RequestConfigOverride pairs a precompiled regex pattern with its RequestConfig.
+type RequestConfigOverride struct {
+	Pattern *regexp.Regexp
+	Config  RequestConfig
 }
 
 type RequestConfig struct {
@@ -376,20 +382,20 @@ func (c BrowserConfig) DeepClone() BrowserConfig {
 		cpy.Cookies[i] = &cloned
 	}
 	cpy.Headers = network.Headers(maps.Clone(c.Headers))
-	cpy.RequestConfigOverrides = maps.Clone(c.RequestConfigOverrides)
+	cpy.RequestConfigOverrides = slices.Clone(c.RequestConfigOverrides)
 	return cpy
 }
 
 // LookupRequestConfig returns the request config for a given URL, either the default config or an override config if the URL matches one of the override patterns.
 // If there are multiple potential matches, only the first one is used.
 func (c *BrowserConfig) LookupRequestConfig(span trace.Span, url string) RequestConfig {
-	for pattern, overrideConfig := range c.RequestConfigOverrides {
-		if regexp.MustCompile(pattern).MatchString(url) {
+	for _, override := range c.RequestConfigOverrides {
+		if override.Pattern.MatchString(url) {
 			span.AddEvent("request config override matched", trace.WithAttributes(
-				attribute.String("pattern", pattern),
+				attribute.String("pattern", override.Pattern.String()),
 				attribute.String("url", url),
 			))
-			return overrideConfig
+			return override.Config
 		}
 	}
 	return c.DefaultRequestConfig
@@ -691,13 +697,14 @@ func BrowserConfigFromCommand(c *cli.Command) (BrowserConfig, error) {
 
 // buildRequestConfigOverrides builds pre-parsed RequestConfig instances for each URL pattern override.
 // It uses CLI re-parsing to apply overrides on top of the current config, providing eager validation.
-func buildRequestConfigOverrides(c *cli.Command) (map[string]RequestConfig, error) {
+// Regex patterns are compiled at startup for efficient matching at request time.
+func buildRequestConfigOverrides(c *cli.Command) ([]RequestConfigOverride, error) {
 	overrides := c.StringSlice("browser.override")
 	if len(overrides) == 0 {
 		return nil, nil
 	}
 
-	result := make(map[string]RequestConfig, len(overrides))
+	result := make([]RequestConfigOverride, 0, len(overrides))
 
 	// Get the current flags as strings so we can re-parse with overrides
 	baseFlags, err := reconstructFlags(c)
@@ -717,8 +724,9 @@ func buildRequestConfigOverrides(c *cli.Command) (map[string]RequestConfig, erro
 			return nil, fmt.Errorf("invalid override format %q: pattern cannot be empty", override)
 		}
 
-		// Validate that the pattern is a valid regex
-		if _, err := regexp.Compile(pattern); err != nil {
+		// Compile the regex pattern (done once at startup)
+		compiledPattern, err := regexp.Compile(pattern)
+		if err != nil {
 			return nil, fmt.Errorf("invalid regex pattern %q: %w", pattern, err)
 		}
 
@@ -731,7 +739,10 @@ func buildRequestConfigOverrides(c *cli.Command) (map[string]RequestConfig, erro
 			return nil, fmt.Errorf("failed to build config for pattern %q: %w", pattern, err)
 		}
 
-		result[pattern] = overrideConfig
+		result = append(result, RequestConfigOverride{
+			Pattern: compiledPattern,
+			Config:  overrideConfig,
+		})
 	}
 
 	return result, nil

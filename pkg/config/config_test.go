@@ -2,7 +2,8 @@ package config
 
 import (
 	"context"
-	"slices"
+	"os"
+	"regexp"
 	"testing"
 	"time"
 
@@ -47,8 +48,8 @@ func TestRenderRequestConfig(t *testing.T) {
 
 		browserConfig := &BrowserConfig{
 			DefaultRequestConfig: defaultConfig,
-			RequestConfigOverrides: map[string]RequestConfig{
-				"^https://example\\.com/.*$": overrideConfig,
+			RequestConfigOverrides: []RequestConfigOverride{
+				{Pattern: regexp.MustCompile("^https://example\\.com/.*$"), Config: overrideConfig},
 			},
 		}
 
@@ -64,8 +65,8 @@ func TestRenderRequestConfig(t *testing.T) {
 
 		browserConfig := &BrowserConfig{
 			DefaultRequestConfig: defaultConfig,
-			RequestConfigOverrides: map[string]RequestConfig{
-				"^https://example\\.com/.*$": overrideConfig,
+			RequestConfigOverrides: []RequestConfigOverride{
+				{Pattern: regexp.MustCompile("^https://example\\.com/.*$"), Config: overrideConfig},
 			},
 		}
 
@@ -107,8 +108,8 @@ func TestRenderRequestConfig(t *testing.T) {
 
 		browserConfig := &BrowserConfig{
 			DefaultRequestConfig: defaultConfig,
-			RequestConfigOverrides: map[string]RequestConfig{
-				".*": overrideConfig,
+			RequestConfigOverrides: []RequestConfigOverride{
+				{Pattern: regexp.MustCompile(".*"), Config: overrideConfig},
 			},
 		}
 
@@ -141,8 +142,8 @@ func TestRenderRequestConfig(t *testing.T) {
 
 		browserConfig := &BrowserConfig{
 			DefaultRequestConfig: defaultConfig,
-			RequestConfigOverrides: map[string]RequestConfig{
-				".*": overrideConfig,
+			RequestConfigOverrides: []RequestConfigOverride{
+				{Pattern: regexp.MustCompile(".*"), Config: overrideConfig},
 			},
 		}
 
@@ -168,8 +169,8 @@ func TestRenderRequestConfig(t *testing.T) {
 
 		browserConfig := &BrowserConfig{
 			DefaultRequestConfig: defaultConfig,
-			RequestConfigOverrides: map[string]RequestConfig{
-				"^https://grafana\\.example\\.com/d/[a-zA-Z0-9]+/.*$": overrideConfig,
+			RequestConfigOverrides: []RequestConfigOverride{
+				{Pattern: regexp.MustCompile("^https://grafana\\.example\\.com/d/[a-zA-Z0-9]+/.*$"), Config: overrideConfig},
 			},
 		}
 
@@ -185,7 +186,7 @@ func TestRenderRequestConfig(t *testing.T) {
 	t.Run("empty overrides returns default", func(t *testing.T) {
 		browserConfig := &BrowserConfig{
 			DefaultRequestConfig:   defaultConfig,
-			RequestConfigOverrides: map[string]RequestConfig{},
+			RequestConfigOverrides: []RequestConfigOverride{},
 		}
 
 		result := browserConfig.LookupRequestConfig(noopSpan(), "https://example.com/dashboard")
@@ -247,9 +248,10 @@ func TestBrowserOverrideFlag(t *testing.T) {
 		assert.Equal(t, 15*time.Second, browserConfig.DefaultRequestConfig.ReadinessTimeout)
 
 		// Override config for slow.example.com should have 60s timeout
-		overrideConfig, ok := browserConfig.RequestConfigOverrides["^https://slow\\.example\\.com/.*"]
-		require.True(t, ok, "expected override config for pattern")
-		assert.Equal(t, 60*time.Second, overrideConfig.ReadinessTimeout)
+		require.Len(t, browserConfig.RequestConfigOverrides, 1, "expected one override config")
+		override := browserConfig.RequestConfigOverrides[0]
+		assert.Equal(t, "^https://slow\\.example\\.com/.*", override.Pattern.String())
+		assert.Equal(t, 60*time.Second, override.Config.ReadinessTimeout)
 
 		// RenderRequestConfig should return the override for matching URLs
 		result := browserConfig.LookupRequestConfig(noopSpan(), "https://slow.example.com/dashboard")
@@ -287,15 +289,15 @@ func TestBrowserOverrideFlag(t *testing.T) {
 		// Should have two override configs
 		assert.Len(t, browserConfig.RequestConfigOverrides, 2)
 
-		// Check wide override
-		wideConfig, ok := browserConfig.RequestConfigOverrides["^https://wide\\.example\\.com/.*"]
-		require.True(t, ok)
-		assert.Equal(t, 1920, wideConfig.MinWidth)
+		// Check wide override (first one)
+		wideOverride := browserConfig.RequestConfigOverrides[0]
+		assert.Equal(t, "^https://wide\\.example\\.com/.*", wideOverride.Pattern.String())
+		assert.Equal(t, 1920, wideOverride.Config.MinWidth)
 
-		// Check slow override
-		slowConfig, ok := browserConfig.RequestConfigOverrides["^https://slow\\.example\\.com/.*"]
-		require.True(t, ok)
-		assert.Equal(t, 120*time.Second, slowConfig.ReadinessTimeout)
+		// Check slow override (second one)
+		slowOverride := browserConfig.RequestConfigOverrides[1]
+		assert.Equal(t, "^https://slow\\.example\\.com/.*", slowOverride.Pattern.String())
+		assert.Equal(t, 120*time.Second, slowOverride.Config.ReadinessTimeout)
 	})
 
 	t.Run("override inherits base config", func(t *testing.T) {
@@ -323,9 +325,11 @@ func TestBrowserOverrideFlag(t *testing.T) {
 		require.NoError(t, parseErr)
 
 		// Override config should inherit min-width from base
-		overrideConfig := browserConfig.RequestConfigOverrides["^https://slow\\.example\\.com/.*"]
-		assert.Equal(t, 1500, overrideConfig.MinWidth, "override should inherit min-width from base")
-		assert.Equal(t, 60*time.Second, overrideConfig.ReadinessTimeout, "override should have its own timeout")
+		require.Len(t, browserConfig.RequestConfigOverrides, 1)
+		override := browserConfig.RequestConfigOverrides[0]
+		assert.Equal(t, "^https://slow\\.example\\.com/.*", override.Pattern.String())
+		assert.Equal(t, 1500, override.Config.MinWidth, "override should inherit min-width from base")
+		assert.Equal(t, 60*time.Second, override.Config.ReadinessTimeout, "override should have its own timeout")
 	})
 
 	t.Run("invalid regex pattern fails at startup", func(t *testing.T) {
@@ -427,70 +431,106 @@ func TestBrowserOverrideFlag(t *testing.T) {
 		assert.Equal(t, 500, browserConfig.DefaultRequestConfig.MinHeight)
 
 		// Override config should have overridden values for timeout and min-width
-		overrideConfig, ok := browserConfig.RequestConfigOverrides[".*"]
-		require.True(t, ok)
-		assert.Equal(t, 60*time.Second, overrideConfig.ReadinessTimeout, "override timeout should win (last value)")
-		assert.Equal(t, 1920, overrideConfig.MinWidth, "override min-width should win (last value)")
+		require.Len(t, browserConfig.RequestConfigOverrides, 1)
+		override := browserConfig.RequestConfigOverrides[0]
+		assert.Equal(t, ".*", override.Pattern.String())
+		assert.Equal(t, 60*time.Second, override.Config.ReadinessTimeout, "override timeout should win (last value)")
+		assert.Equal(t, 1920, override.Config.MinWidth, "override min-width should win (last value)")
 		// min-height was NOT in the override, so it should inherit from base
-		assert.Equal(t, 500, overrideConfig.MinHeight, "min-height should be inherited from base")
+		assert.Equal(t, 500, override.Config.MinHeight, "min-height should be inherited from base")
 	})
 }
 
-// TestReconstructFlags tests the flag reconstruction utility
+// TestReconstructFlags tests that all flag values are reconstructed regardless of source,
+// ensuring overrides properly inherit all base config values including defaults.
 func TestReconstructFlags(t *testing.T) {
-	// t.Parallel()
+	t.Run("override only differs by explicitly overridden property", func(t *testing.T) {
+		// Create a config file with only min-width set (page-scale-factor uses default)
+		tempDir := t.TempDir()
+		configFile := tempDir + "/config.yaml"
+		configContent := `
+browser:
+  min-width: 1200
+  override:
+    - "^https://custom\\.example\\.com/.*=--browser.readiness.timeout=60s"
+`
+		require.NoError(t, writeFile(configFile, configContent))
 
-	t.Run("reconstructs set flags", func(t *testing.T) {
-		var reconstructed []string
-
-		cmd := &cli.Command{
-			Flags: slices.Concat(ServerFlags(), BrowserFlags()),
-			Action: func(ctx context.Context, c *cli.Command) error {
-				var err error
-				reconstructed, err = reconstructFlags(c)
-				return err
-			},
-			Reader:    nopReader{},
-			Writer:    nopWriter{},
-			ErrWriter: nopWriter{},
-		}
-
-		err := cmd.Run(t.Context(), []string{
-			"",
-			"--server.addr=:9999",
-			"--browser.readiness.timeout=45s",
-		})
+		oldDir, err := os.Getwd()
 		require.NoError(t, err)
+		require.NoError(t, os.Chdir(tempDir))
+		defer func() { _ = os.Chdir(oldDir) }()
 
-		assert.Contains(t, reconstructed, "--server.addr=:9999")
-		assert.Contains(t, reconstructed, "--browser.readiness.timeout=45s")
-	})
-
-	t.Run("handles slice flags", func(t *testing.T) {
-		var reconstructed []string
+		var browserConfig BrowserConfig
+		var parseErr error
 
 		cmd := &cli.Command{
 			Flags: BrowserFlags(),
 			Action: func(ctx context.Context, c *cli.Command) error {
-				var err error
-				reconstructed, err = reconstructFlags(c)
-				return err
+				browserConfig, parseErr = BrowserConfigFromCommand(c)
+				return parseErr
 			},
 			Reader:    nopReader{},
 			Writer:    nopWriter{},
 			ErrWriter: nopWriter{},
 		}
 
-		err := cmd.Run(t.Context(), []string{
-			"",
-			"--browser.header=X-Custom-Header=value1",
-			"--browser.header=X-Another-Header=value2",
-		})
+		err = cmd.Run(t.Context(), []string{""})
 		require.NoError(t, err)
+		require.NoError(t, parseErr)
 
-		assert.Contains(t, reconstructed, "--browser.header=X-Custom-Header=value1")
-		assert.Contains(t, reconstructed, "--browser.header=X-Another-Header=value2")
+		// Must have exactly one override
+		require.Len(t, browserConfig.RequestConfigOverrides, 1, "expected one override config")
+		override := browserConfig.RequestConfigOverrides[0]
+
+		defaultCfg := browserConfig.DefaultRequestConfig
+		overrideCfg := override.Config
+
+		// The ONLY difference should be the readiness timeout (explicitly overridden)
+		assert.Equal(t, 30*time.Second, defaultCfg.ReadinessTimeout, "default timeout should be 30s")
+		assert.Equal(t, 60*time.Second, overrideCfg.ReadinessTimeout, "override timeout should be 60s")
+
+		// All other properties should be identical (inherited from base config)
+		assert.Equal(t, defaultCfg.MinWidth, overrideCfg.MinWidth,
+			"override should inherit min-width from base")
+		assert.Equal(t, defaultCfg.MinHeight, overrideCfg.MinHeight,
+			"override should inherit min-height from base")
+		assert.Equal(t, defaultCfg.MaxWidth, overrideCfg.MaxWidth,
+			"override should inherit max-width from base")
+		assert.Equal(t, defaultCfg.MaxHeight, overrideCfg.MaxHeight,
+			"override should inherit max-height from base")
+		assert.Equal(t, defaultCfg.PageScaleFactor, overrideCfg.PageScaleFactor,
+			"override should inherit page-scale-factor from base (even though it's a default)")
+		assert.Equal(t, defaultCfg.Landscape, overrideCfg.Landscape,
+			"override should inherit landscape from base")
+		assert.Equal(t, defaultCfg.TimeBetweenScrolls, overrideCfg.TimeBetweenScrolls,
+			"override should inherit time-between-scrolls from base")
+		assert.Equal(t, defaultCfg.ReadinessIterationInterval, overrideCfg.ReadinessIterationInterval,
+			"override should inherit readiness iteration interval from base")
+		assert.Equal(t, defaultCfg.ReadinessWaitForNQueryCycles, overrideCfg.ReadinessWaitForNQueryCycles,
+			"override should inherit readiness wait-for-n-query-cycles from base")
+		assert.Equal(t, defaultCfg.ReadinessPriorWait, overrideCfg.ReadinessPriorWait,
+			"override should inherit readiness prior-wait from base")
+		assert.Equal(t, defaultCfg.ReadinessDisableQueryWait, overrideCfg.ReadinessDisableQueryWait,
+			"override should inherit readiness disable-query-wait from base")
+		assert.Equal(t, defaultCfg.ReadinessFirstQueryTimeout, overrideCfg.ReadinessFirstQueryTimeout,
+			"override should inherit readiness first-query-timeout from base")
+		assert.Equal(t, defaultCfg.ReadinessQueriesTimeout, overrideCfg.ReadinessQueriesTimeout,
+			"override should inherit readiness queries-timeout from base")
+		assert.Equal(t, defaultCfg.ReadinessDisableNetworkWait, overrideCfg.ReadinessDisableNetworkWait,
+			"override should inherit readiness disable-network-wait from base")
+		assert.Equal(t, defaultCfg.ReadinessNetworkIdleTimeout, overrideCfg.ReadinessNetworkIdleTimeout,
+			"override should inherit readiness network-idle-timeout from base")
+		assert.Equal(t, defaultCfg.ReadinessDisableDOMHashCodeWait, overrideCfg.ReadinessDisableDOMHashCodeWait,
+			"override should inherit readiness disable-dom-hashcode-wait from base")
+		assert.Equal(t, defaultCfg.ReadinessDOMHashCodeTimeout, overrideCfg.ReadinessDOMHashCodeTimeout,
+			"override should inherit readiness dom-hashcode-timeout from base")
 	})
+}
+
+// writeFile is a helper to write content to a file
+func writeFile(path, content string) error {
+	return os.WriteFile(path, []byte(content), 0644)
 }
 
 // TestEagerConfigValidation tests that config validation happens at startup
