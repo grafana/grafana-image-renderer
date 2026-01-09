@@ -289,6 +289,35 @@ func TestRenderingGrafana(t *testing.T) {
 			}
 		})
 
+		t.Run("with deviceScaleFactor", func(t *testing.T) {
+			t.Parallel()
+
+			req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, svc.HTTPEndpoint+"/render", nil)
+			require.NoError(t, err, "could not construct HTTP request to Grafana")
+			req.Header.Set("Accept", "application/pdf")
+			req.Header.Set("X-Auth-Token", "-")
+			query := req.URL.Query()
+			query.Set("url", "http://grafana:3000/d/provisioned-prom-testing?render=1&from=1699333200000&to=1699344000000&kiosk=true")
+			query.Set("encoding", "pdf")
+			query.Set("renderKey", renderKey)
+			query.Set("domain", "grafana")
+			query.Set("deviceScaleFactor", "2")
+			req.URL.RawQuery = query.Encode()
+
+			resp, err := http.DefaultClient.Do(req)
+			require.NoError(t, err, "could not send HTTP request to Grafana")
+			require.Equal(t, http.StatusOK, resp.StatusCode, "unexpected HTTP status code from Grafana")
+
+			pdfBody := ReadBody(t, resp.Body)
+			image := PDFtoImage(t, pdfBody)
+			const fixture = "render-prometheus-pdf-device-scale-factor-2.png"
+			fixtureImg := ReadFixtureRGBA(t, fixture)
+			if !AssertPixelDifference(t, fixtureImg, image, defaultPixelDiff) {
+				UpdateFixtureIfEnabled(t, fixture+".pdf", pdfBody)
+				UpdateFixtureIfEnabled(t, fixture, EncodePNG(t, image))
+			}
+		})
+
 		t.Run("with US English language", func(t *testing.T) {
 			t.Parallel()
 
