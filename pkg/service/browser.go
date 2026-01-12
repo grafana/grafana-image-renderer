@@ -182,10 +182,10 @@ func WithViewport(width, height int) RenderingOption {
 	return func(cfg config.BrowserConfig) (config.BrowserConfig, error) {
 		cfg.ApplyAll(func(rc *config.RequestConfig) {
 			if width != -1 {
-				cfg.DefaultRequestConfig.MinWidth = clamped(width, cfg.DefaultRequestConfig.MinWidth, cfg.DefaultRequestConfig.MaxWidth)
+				rc.MinWidth = clamped(width, rc.MinWidth, rc.MaxWidth)
 			}
 			if height != -1 {
-				cfg.DefaultRequestConfig.MinHeight = clamped(height, cfg.DefaultRequestConfig.MinHeight, cfg.DefaultRequestConfig.MaxHeight)
+				rc.MinHeight = clamped(height, rc.MinHeight, rc.MaxHeight)
 			}
 		})
 

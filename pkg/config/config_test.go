@@ -209,7 +209,6 @@ func TestRenderRequestConfig(t *testing.T) {
 // TestBrowserOverrideFlag tests the eager config building with --browser.override flag
 func TestBrowserOverrideFlag(t *testing.T) {
 	t.Parallel()
-	t.Parallel()
 
 	// Create a test command with browser flags
 	testCmd := &cli.Command{
@@ -584,7 +583,6 @@ func TestOverrideWithOnlyPageScaleFactor(t *testing.T) {
 
 // TestEagerConfigValidation tests that config validation happens at startup
 func TestEagerConfigValidation(t *testing.T) {
-	t.Parallel()
 	t.Parallel()
 
 	// Create a command that exercises the eager config building
