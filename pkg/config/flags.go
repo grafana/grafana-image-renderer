@@ -19,6 +19,9 @@ func reconstructFlags(cmd *cli.Command) ([]string, error) {
 			return nil, fmt.Errorf("flag %v has no names", flag)
 		}
 		name := names[0]
+		if !cmd.IsSet(name) {
+			continue // skip flags that are not explicitly set
+		}
 		value := flag.Get()
 		vals, err := reconstructFlagValue(value)
 		if err != nil {

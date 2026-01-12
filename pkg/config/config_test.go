@@ -49,7 +49,7 @@ func TestRenderRequestConfig(t *testing.T) {
 		browserConfig := &BrowserConfig{
 			DefaultRequestConfig: defaultConfig,
 			RequestConfigOverrides: []RequestConfigOverride{
-				{Pattern: regexp.MustCompile("^https://example\\.com/.*$"), Config: overrideConfig},
+				{Pattern: regexp.MustCompile(`^https://example\.com/.*$`), Config: overrideConfig},
 			},
 		}
 
@@ -66,7 +66,7 @@ func TestRenderRequestConfig(t *testing.T) {
 		browserConfig := &BrowserConfig{
 			DefaultRequestConfig: defaultConfig,
 			RequestConfigOverrides: []RequestConfigOverride{
-				{Pattern: regexp.MustCompile("^https://example\\.com/.*$"), Config: overrideConfig},
+				{Pattern: regexp.MustCompile(`^https://example\.com/.*$`), Config: overrideConfig},
 			},
 		}
 
@@ -170,7 +170,7 @@ func TestRenderRequestConfig(t *testing.T) {
 		browserConfig := &BrowserConfig{
 			DefaultRequestConfig: defaultConfig,
 			RequestConfigOverrides: []RequestConfigOverride{
-				{Pattern: regexp.MustCompile("^https://grafana\\.example\\.com/d/[a-zA-Z0-9]+/.*$"), Config: overrideConfig},
+				{Pattern: regexp.MustCompile(`^https://grafana\.example\.com/d/[a-zA-Z0-9]+/.*$`), Config: overrideConfig},
 			},
 		}
 
@@ -454,7 +454,7 @@ browser:
   override:
     - "^https://custom\\.example\\.com/.*=--browser.readiness.timeout=60s"
 `
-		require.NoError(t, writeFile(configFile, configContent))
+		require.NoError(t, os.WriteFile(configFile, []byte(configContent), 0644))
 
 		oldDir, err := os.Getwd()
 		require.NoError(t, err)
@@ -528,9 +528,57 @@ browser:
 	})
 }
 
-// writeFile is a helper to write content to a file
-func writeFile(path, content string) error {
-	return os.WriteFile(path, []byte(content), 0644)
+// TestOverrideWithOnlyPageScaleFactor is a regression test that verifies that when
+// only page-scale-factor is set (to its default value), the override config inherits
+// all other default values correctly.
+func TestOverrideWithOnlyPageScaleFactor(t *testing.T) {
+	var browserConfig BrowserConfig
+	var parseErr error
+
+	cmd := &cli.Command{
+		Flags: BrowserFlags(),
+		Action: func(ctx context.Context, c *cli.Command) error {
+			browserConfig, parseErr = BrowserConfigFromCommand(c)
+			return parseErr
+		},
+		Reader:    nopReader{},
+		Writer:    nopWriter{},
+		ErrWriter: nopWriter{},
+	}
+
+	err := cmd.Run(t.Context(), []string{
+		"",
+		"--browser.page-scale-factor=1.0",
+		"--browser.override=grafana-with-override=--browser.page-scale-factor=1.0",
+	})
+	require.NoError(t, err)
+	require.NoError(t, parseErr)
+
+	// Default config should have default values
+	assert.Equal(t, 1000, browserConfig.DefaultRequestConfig.MinWidth, "default MinWidth")
+	assert.Equal(t, 500, browserConfig.DefaultRequestConfig.MinHeight, "default MinHeight")
+	assert.Equal(t, 3000, browserConfig.DefaultRequestConfig.MaxWidth, "default MaxWidth")
+	assert.Equal(t, 3000, browserConfig.DefaultRequestConfig.MaxHeight, "default MaxHeight")
+	assert.Equal(t, 1.0, browserConfig.DefaultRequestConfig.PageScaleFactor, "default PageScaleFactor")
+
+	// Override config should also have the SAME default values
+	require.Len(t, browserConfig.RequestConfigOverrides, 1, "expected one override")
+	override := browserConfig.RequestConfigOverrides[0]
+
+	assert.Equal(t, browserConfig.DefaultRequestConfig.MinWidth, override.Config.MinWidth,
+		"override should have same MinWidth as default")
+	assert.Equal(t, browserConfig.DefaultRequestConfig.MinHeight, override.Config.MinHeight,
+		"override should have same MinHeight as default")
+	assert.Equal(t, browserConfig.DefaultRequestConfig.MaxWidth, override.Config.MaxWidth,
+		"override should have same MaxWidth as default")
+	assert.Equal(t, browserConfig.DefaultRequestConfig.MaxHeight, override.Config.MaxHeight,
+		"override should have same MaxHeight as default")
+	assert.Equal(t, browserConfig.DefaultRequestConfig.PageScaleFactor, override.Config.PageScaleFactor,
+		"override should have same PageScaleFactor as default")
+	assert.Equal(t, browserConfig.DefaultRequestConfig.TimeBetweenScrolls, override.Config.TimeBetweenScrolls,
+		"override should have same TimeBetweenScrolls as default")
+	assert.Equal(t, browserConfig.DefaultRequestConfig.Landscape, override.Config.Landscape,
+		"override should have same Landscape as default")
 }
 
 // TestEagerConfigValidation tests that config validation happens at startup

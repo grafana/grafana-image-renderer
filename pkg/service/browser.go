@@ -180,12 +180,15 @@ func WithViewport(width, height int) RenderingOption {
 	}
 
 	return func(cfg config.BrowserConfig) (config.BrowserConfig, error) {
-		if width != -1 {
-			cfg.DefaultRequestConfig.MinWidth = clamped(width, cfg.DefaultRequestConfig.MinWidth, cfg.DefaultRequestConfig.MaxWidth)
-		}
-		if height != -1 {
-			cfg.DefaultRequestConfig.MinHeight = clamped(height, cfg.DefaultRequestConfig.MinHeight, cfg.DefaultRequestConfig.MaxHeight)
-		}
+		cfg.ApplyAll(func(rc *config.RequestConfig) {
+			if width != -1 {
+				cfg.DefaultRequestConfig.MinWidth = clamped(width, cfg.DefaultRequestConfig.MinWidth, cfg.DefaultRequestConfig.MaxWidth)
+			}
+			if height != -1 {
+				cfg.DefaultRequestConfig.MinHeight = clamped(height, cfg.DefaultRequestConfig.MinHeight, cfg.DefaultRequestConfig.MaxHeight)
+			}
+		})
+
 		return cfg, nil
 	}
 }
@@ -196,14 +199,21 @@ func WithPageScaleFactor(factor float64) RenderingOption {
 		if factor <= 0 {
 			return cfg, fmt.Errorf("%w: page scale factor must be positive", ErrInvalidBrowserOption)
 		}
-		cfg.DefaultRequestConfig.PageScaleFactor = factor
+
+		cfg.ApplyAll(func(rc *config.RequestConfig) {
+			rc.PageScaleFactor = factor
+		})
+
 		return cfg, nil
 	}
 }
 
 func WithLandscape(landscape bool) RenderingOption {
 	return func(cfg config.BrowserConfig) (config.BrowserConfig, error) {
-		cfg.DefaultRequestConfig.Landscape = landscape
+		cfg.ApplyAll(func(rc *config.RequestConfig) {
+			rc.Landscape = landscape
+		})
+
 		return cfg, nil
 	}
 }

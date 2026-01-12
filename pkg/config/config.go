@@ -401,6 +401,15 @@ func (c *BrowserConfig) LookupRequestConfig(span trace.Span, url string) Request
 	return c.DefaultRequestConfig
 }
 
+// ApplyAll applies the function to both the default request config and to the overrides. It mutates the BrowserConfig instance.
+func (c *BrowserConfig) ApplyAll(fn func(*RequestConfig)) {
+	fn(&c.DefaultRequestConfig)
+
+	for i := range c.RequestConfigOverrides {
+		fn(&c.RequestConfigOverrides[i].Config)
+	}
+}
+
 func BrowserFlags() []cli.Flag {
 	return []cli.Flag{
 		&cli.StringFlag{
