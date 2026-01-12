@@ -13,10 +13,10 @@ import (
 
 func TestBasicRenders(t *testing.T) {
 	LongTest(t)
-	// t.Parallel()
+	t.Parallel()
 
 	t.Run("render PDF of service's root route", func(t *testing.T) {
-		// t.Parallel()
+		t.Parallel()
 
 		svc := StartImageRenderer(t)
 
@@ -37,7 +37,7 @@ func TestBasicRenders(t *testing.T) {
 	})
 
 	t.Run("render PNG of service's root route", func(t *testing.T) {
-		// t.Parallel()
+		t.Parallel()
 
 		svc := StartImageRenderer(t)
 

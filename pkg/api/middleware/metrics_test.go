@@ -10,7 +10,7 @@ import (
 )
 
 func TestMetricsMiddlewareDoesNotPanic(t *testing.T) {
-	// t.Parallel()
+	t.Parallel()
 
 	rec := httptest.NewRecorder()
 	middleware := middleware.Recovery(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
