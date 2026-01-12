@@ -10,7 +10,7 @@ import (
 
 func TestAuthTokenFailures(t *testing.T) {
 	LongTest(t)
-	// t.Parallel()
+	t.Parallel()
 
 	svc := StartImageRenderer(t)
 
@@ -21,7 +21,7 @@ func TestAuthTokenFailures(t *testing.T) {
 		"wrong token":      ptr("wrong"),
 	} {
 		t.Run(name, func(t *testing.T) {
-			// t.Parallel()
+			t.Parallel()
 
 			req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, svc.HTTPEndpoint+"/render?url=http://localhost:8081/", nil)
 			require.NoError(t, err, "could not construct HTTP request to /render")
@@ -38,7 +38,7 @@ func TestAuthTokenFailures(t *testing.T) {
 
 func TestRejectedURLs(t *testing.T) {
 	LongTest(t)
-	// t.Parallel()
+	t.Parallel()
 
 	svc := StartImageRenderer(t)
 
@@ -49,7 +49,7 @@ func TestRejectedURLs(t *testing.T) {
 		"socket scheme": "socket://localhost:8081/",
 	} {
 		t.Run(name, func(t *testing.T) {
-			// t.Parallel()
+			t.Parallel()
 
 			req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, svc.HTTPEndpoint+"/render?url="+url, nil)
 			require.NoError(t, err, "could not construct HTTP request to /render")
@@ -65,7 +65,7 @@ func TestRejectedURLs(t *testing.T) {
 
 func TestInvalidQueryParameters(t *testing.T) {
 	LongTest(t)
-	// t.Parallel()
+	t.Parallel()
 
 	svc := StartImageRenderer(t)
 
@@ -77,7 +77,7 @@ func TestInvalidQueryParameters(t *testing.T) {
 		// "unknown encoding": {"url": "http://localhost:8081/", "encoding": "invalid"}, // node.js doesn't do this
 	} {
 		t.Run(name, func(t *testing.T) {
-			// t.Parallel()
+			t.Parallel()
 
 			reqURL, err := url.Parse(svc.HTTPEndpoint + "/render")
 			require.NoError(t, err, "could not parse /render URL")
@@ -100,10 +100,10 @@ func TestInvalidQueryParameters(t *testing.T) {
 }
 
 func TestBrowserTimeout(t *testing.T) {
-	// t.Parallel()
+	t.Parallel()
 
 	t.Run("if the browser readiness timeout is exceeded, it returns a 408 status code", func(t *testing.T) {
-		// t.Parallel()
+		t.Parallel()
 
 		// extremely low that no request could ever be server in the alloted time
 		svc := StartImageRenderer(t, WithEnv("BROWSER_READINESS_TIMEOUT", "1ns"))

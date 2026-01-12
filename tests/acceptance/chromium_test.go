@@ -8,7 +8,7 @@ import (
 
 func TestChromiumInstalled(t *testing.T) {
 	LongTest(t)
-	// t.Parallel()
+	t.Parallel()
 
 	exitCode, logs := RunImageRendererWithCommand(t, []string{"chromium", "--version"}, nil)
 	require.Zero(t, exitCode, "chromium did not exist in the container (--version failed)")

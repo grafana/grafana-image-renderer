@@ -13,7 +13,7 @@ import (
 
 func TestRequestConfigOverrides(t *testing.T) {
 	LongTest(t)
-	// t.Parallel()
+	t.Parallel()
 
 	rendererAuthToken := strings.Repeat("-", 512/8)
 	joseSigner, err := jose.NewSigner(jose.SigningKey{
@@ -27,7 +27,7 @@ func TestRequestConfigOverrides(t *testing.T) {
 	require.NoError(t, err, "could not serialize JWT")
 
 	t.Run("min width and height overrides by URL pattern", func(t *testing.T) {
-		// t.Parallel()
+		t.Parallel()
 
 		net, err := network.New(t.Context())
 		require.NoError(t, err, "could not create Docker network")
@@ -56,7 +56,7 @@ func TestRequestConfigOverrides(t *testing.T) {
 			WithEnv("GF_RENDERING_RENDERER_TOKEN", rendererAuthToken))
 
 		t.Run("non-matching URL uses default min dimensions (1000x1000)", func(t *testing.T) {
-			// t.Parallel()
+			t.Parallel()
 
 			req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, svc.HTTPEndpoint+"/render", nil)
 			require.NoError(t, err, "could not construct HTTP request")
@@ -86,7 +86,7 @@ func TestRequestConfigOverrides(t *testing.T) {
 		})
 
 		t.Run("matching URL uses override min dimensions (500x500)", func(t *testing.T) {
-			// t.Parallel()
+			t.Parallel()
 
 			req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, svc.HTTPEndpoint+"/render", nil)
 			require.NoError(t, err, "could not construct HTTP request")
