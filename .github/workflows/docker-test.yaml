@@ -19,7 +19,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runs-on: [ubuntu-x64, ubuntu-arm64]
+        runs-on: [ubuntu-x64-xlarge, ubuntu-arm64-xlarge]
 
     name: acceptance tests (${{ matrix.runs-on }})
     runs-on: ${{ matrix.runs-on }}

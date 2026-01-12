@@ -12,7 +12,7 @@ import (
 )
 
 func TestTracing(t *testing.T) {
-	// t.Parallel()
+	t.Parallel()
 
 	okHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -21,7 +21,7 @@ func TestTracing(t *testing.T) {
 	mux.Handle("GET /", okHandler)
 
 	t.Run("without TracerProvider in context", func(t *testing.T) {
-		// t.Parallel()
+		t.Parallel()
 
 		rec := httptest.NewRecorder()
 		middleware := middleware.Recovery(mux)
@@ -32,7 +32,7 @@ func TestTracing(t *testing.T) {
 	})
 
 	t.Run("with no-op TracerProvider in context", func(t *testing.T) {
-		// t.Parallel()
+		t.Parallel()
 
 		tracerProvider := noop.NewTracerProvider()
 		ctx := traces.WithTracerProvider(t.Context(), tracerProvider)

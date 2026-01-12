@@ -10,7 +10,7 @@ import (
 )
 
 func TestRecovery(t *testing.T) {
-	// t.Parallel()
+	t.Parallel()
 
 	panickingHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		panic("oh no")
@@ -20,7 +20,7 @@ func TestRecovery(t *testing.T) {
 	})
 
 	t.Run("non-panicking handler returns fine", func(t *testing.T) {
-		// t.Parallel()
+		t.Parallel()
 
 		rec := httptest.NewRecorder()
 		middleware := middleware.Recovery(okHandler)
@@ -33,7 +33,7 @@ func TestRecovery(t *testing.T) {
 	})
 
 	t.Run("panicking handler returns error", func(t *testing.T) {
-		// t.Parallel()
+		t.Parallel()
 
 		rec := httptest.NewRecorder()
 		middleware := middleware.Recovery(panickingHandler)
