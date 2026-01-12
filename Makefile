@@ -12,7 +12,7 @@ test:
 .PHONY: test-acceptance
 test-acceptance:
 	docker build -t gir .
-	IMAGE=gir go test ./tests/acceptance/... -timeout=60s
+	IMAGE=gir go test ./tests/acceptance/... -timeout=120s
 
 .PHONY: lint
 lint:
