@@ -221,7 +221,10 @@ func WithLandscape(landscape bool) RenderingOption {
 
 func WithEmptyResponseOnNoQueries(emptyResponseOnNoQueries bool) RenderingOption {
 	return func(cfg config.BrowserConfig) (config.BrowserConfig, error) {
-		cfg.DefaultRequestConfig.EmptyResponseOnNoQueries = emptyResponseOnNoQueries
+		cfg.ApplyAll(func(rc *config.RequestConfig) {
+			rc.EmptyResponseOnNoQueries = emptyResponseOnNoQueries
+		})
+
 		return cfg, nil
 	}
 }
