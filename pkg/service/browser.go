@@ -435,6 +435,14 @@ func (s *BrowserService) createAllocatorOptions(ctx context.Context, cfg config.
 		opts = append(opts, chromedp.ExecPath(cfg.Path))
 		opts = append(opts, chromedp.UserDataDir(cwd))
 	}
+
+	if _, exists := os.LookupEnv("XDG_CONFIG_HOME"); !exists {
+		opts = append(opts, chromedp.Env("XDG_CONFIG_HOME="+cwd))
+	}
+	if _, exists = os.LookupEnv("XDG_CACHE_HOME"); !exists {
+		opts = append(opts, chromedp.Env("XDG_CACHE_HOME="+cwd))
+	}
+
 	requestConfig := cfg.LookupRequestConfig(span, url)
 	opts = append(opts, chromedp.WindowSize(requestConfig.MinWidth, requestConfig.MinHeight))
 	opts = append(opts, chromedp.Env("TZ="+cfg.TimeZone.String()))
