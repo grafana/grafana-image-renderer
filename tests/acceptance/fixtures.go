@@ -2,6 +2,7 @@ package acceptance
 
 import (
 	"bytes"
+	"errors"
 	"image"
 	"image/draw"
 	"image/png"
@@ -36,6 +37,10 @@ func ReadFixture(tb testing.TB, name string) []byte {
 	tb.Helper()
 
 	data, err := os.ReadFile(filepath.Join("fixtures", name))
+	if errors.Is(err, os.ErrNotExist) && ShouldUpdateFixtures() {
+		return nil
+	}
+
 	require.NoError(tb, err, "could not read fixture %q", name)
 	return data
 }
@@ -44,6 +49,10 @@ func ReadFixtureRGBA(tb testing.TB, name string) *image.RGBA {
 	tb.Helper()
 
 	data := ReadFixture(tb, name)
+	if data == nil && ShouldUpdateFixtures() {
+		return &image.RGBA{}
+	}
+
 	img, err := png.Decode(bytes.NewReader(data))
 	require.NoError(tb, err, "could not decode fixture image %q", name)
 	if nrgba, ok := img.(*image.NRGBA); ok {

@@ -169,31 +169,32 @@ func TestRenderingGrafana(t *testing.T) {
 		t.Run("with d-solo link and scaling", func(t *testing.T) {
 			t.Parallel()
 
-			const scaleFactor = 5
-			req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, svc.HTTPEndpoint+"/render", nil)
-			require.NoError(t, err, "could not construct HTTP request to Grafana")
-			req.Header.Set("Accept", "image/png")
-			req.Header.Set("X-Auth-Token", "-")
-			query := req.URL.Query()
-			query.Set("url", "http://grafana:3000/d-solo/provisioned-prom-testing?render=1&from=1699333200000&to=1699344000000&kiosk=true&panelId=1")
-			query.Set("encoding", "png")
-			query.Set("width", "2000")
-			query.Set("height", "800")
-			query.Set("renderKey", renderKey)
-			query.Set("domain", "grafana")
-			query.Set("deviceScaleFactor", fmt.Sprintf("%d", scaleFactor))
-			req.URL.RawQuery = query.Encode()
+			for _, scaleFactor := range []float64{0.75 /* 200% zoom */, 5 /* 20% zoom */} {
+				req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, svc.HTTPEndpoint+"/render", nil)
+				require.NoError(t, err, "could not construct HTTP request to Grafana")
+				req.Header.Set("Accept", "image/png")
+				req.Header.Set("X-Auth-Token", "-")
+				query := req.URL.Query()
+				query.Set("url", "http://grafana:3000/d-solo/provisioned-prom-testing?render=1&from=1699333200000&to=1699344000000&kiosk=true&panelId=1")
+				query.Set("encoding", "png")
+				query.Set("width", "2000")
+				query.Set("height", "800")
+				query.Set("renderKey", renderKey)
+				query.Set("domain", "grafana")
+				query.Set("deviceScaleFactor", fmt.Sprintf("%.2f", scaleFactor))
+				req.URL.RawQuery = query.Encode()
 
-			resp, err := http.DefaultClient.Do(req)
-			require.NoError(t, err, "could not send HTTP request to Grafana")
-			require.Equal(t, http.StatusOK, resp.StatusCode, "unexpected HTTP status code from Grafana")
+				resp, err := http.DefaultClient.Do(req)
+				require.NoError(t, err, "could not send HTTP request to Grafana")
+				require.Equal(t, http.StatusOK, resp.StatusCode, "unexpected HTTP status code from Grafana")
 
-			body := ReadBody(t, resp.Body)
-			bodyImg := ReadRGBA(t, body)
-			const fixture = "render-prometheus-dsolo-scaled-5.png"
-			fixtureImg := ReadFixtureRGBA(t, fixture)
-			if !AssertPixelDifference(t, fixtureImg, bodyImg, scaleFactor*350_000) {
-				UpdateFixtureIfEnabled(t, fixture, body)
+				body := ReadBody(t, resp.Body)
+				bodyImg := ReadRGBA(t, body)
+				fixture := fmt.Sprintf("render-prometheus-dsolo-scaled-%.2f.png", scaleFactor)
+				fixtureImg := ReadFixtureRGBA(t, fixture)
+				if !AssertPixelDifference(t, fixtureImg, bodyImg, uint64(max(scaleFactor, 1)*350_000)) {
+					UpdateFixtureIfEnabled(t, fixture, body)
+				}
 			}
 		})
 	})
@@ -292,29 +293,31 @@ func TestRenderingGrafana(t *testing.T) {
 		t.Run("with deviceScaleFactor", func(t *testing.T) {
 			t.Parallel()
 
-			req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, svc.HTTPEndpoint+"/render", nil)
-			require.NoError(t, err, "could not construct HTTP request to Grafana")
-			req.Header.Set("Accept", "application/pdf")
-			req.Header.Set("X-Auth-Token", "-")
-			query := req.URL.Query()
-			query.Set("url", "http://grafana:3000/d/provisioned-prom-testing?render=1&from=1699333200000&to=1699344000000&kiosk=true")
-			query.Set("encoding", "pdf")
-			query.Set("renderKey", renderKey)
-			query.Set("domain", "grafana")
-			query.Set("deviceScaleFactor", "2")
-			req.URL.RawQuery = query.Encode()
+			for _, scaleFactor := range []float64{0.75 /* 200% zoom */, 2 /* 50% zoom */} {
+				req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, svc.HTTPEndpoint+"/render", nil)
+				require.NoError(t, err, "could not construct HTTP request to Grafana")
+				req.Header.Set("Accept", "application/pdf")
+				req.Header.Set("X-Auth-Token", "-")
+				query := req.URL.Query()
+				query.Set("url", "http://grafana:3000/d/provisioned-prom-testing?render=1&from=1699333200000&to=1699344000000&kiosk=true")
+				query.Set("encoding", "pdf")
+				query.Set("renderKey", renderKey)
+				query.Set("domain", "grafana")
+				query.Set("deviceScaleFactor", fmt.Sprintf("%.2f", scaleFactor))
+				req.URL.RawQuery = query.Encode()
 
-			resp, err := http.DefaultClient.Do(req)
-			require.NoError(t, err, "could not send HTTP request to Grafana")
-			require.Equal(t, http.StatusOK, resp.StatusCode, "unexpected HTTP status code from Grafana")
+				resp, err := http.DefaultClient.Do(req)
+				require.NoError(t, err, "could not send HTTP request to Grafana")
+				require.Equal(t, http.StatusOK, resp.StatusCode, "unexpected HTTP status code from Grafana")
 
-			pdfBody := ReadBody(t, resp.Body)
-			image := PDFtoImage(t, pdfBody)
-			const fixture = "render-prometheus-pdf-device-scale-factor-2.png"
-			fixtureImg := ReadFixtureRGBA(t, fixture)
-			if !AssertPixelDifference(t, fixtureImg, image, defaultPixelDiff) {
-				UpdateFixtureIfEnabled(t, fixture+".pdf", pdfBody)
-				UpdateFixtureIfEnabled(t, fixture, EncodePNG(t, image))
+				pdfBody := ReadBody(t, resp.Body)
+				image := PDFtoImage(t, pdfBody)
+				fixture := fmt.Sprintf("render-prometheus-pdf-device-scale-factor-%.2f.png", scaleFactor)
+				fixtureImg := ReadFixtureRGBA(t, fixture)
+				if !AssertPixelDifference(t, fixtureImg, image, uint64(max(scaleFactor, 1)*defaultPixelDiff)) {
+					UpdateFixtureIfEnabled(t, fixture+".pdf", pdfBody)
+					UpdateFixtureIfEnabled(t, fixture, EncodePNG(t, image))
+				}
 			}
 		})
 
