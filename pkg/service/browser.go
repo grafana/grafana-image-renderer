@@ -439,7 +439,7 @@ func (s *BrowserService) createAllocatorOptions(ctx context.Context, cfg config.
 	if _, exists := os.LookupEnv("XDG_CONFIG_HOME"); !exists {
 		opts = append(opts, chromedp.Env("XDG_CONFIG_HOME="+cwd))
 	}
-	if _, exists = os.LookupEnv("XDG_CACHE_HOME"); !exists {
+	if _, exists := os.LookupEnv("XDG_CACHE_HOME"); !exists {
 		opts = append(opts, chromedp.Env("XDG_CACHE_HOME="+cwd))
 	}
 
