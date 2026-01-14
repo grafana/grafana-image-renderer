@@ -314,6 +314,9 @@ type BrowserConfig struct {
 	// This is implemented by the service itself. It requires Linux and some capabilities (CAP_SYS_ADMIN, CAP_SYS_CHROOT) or a privileged user.
 	// Most users don't need this, but it may be interesting for users who care more about security than performance.
 	Namespaced bool
+	// WSURLReadTimeout is the timeout for reading the WebSocket URL when connecting to the browser.
+	// If <= 0, the chromedp default (20 seconds) is used.
+	WSURLReadTimeout time.Duration
 	// TimeZone is the timezone for the browser to use.
 	TimeZone *time.Location // DeepClone: can be copied, because the value should be immutable
 	// Cookies are injected into the browser for every request.
@@ -451,6 +454,12 @@ func BrowserFlags() []cli.Flag {
 				}
 				return nil
 			},
+		},
+		&cli.DurationFlag{
+			Name:    "browser.ws-url-read-timeout",
+			Usage:   "The timeout for reading the WebSocket URL when connecting to the browser. If <= 0, uses chromedp default (20s). [config: browser.ws-url-read-timeout]",
+			Value:   0,
+			Sources: FromConfig("browser.ws-url-read-timeout", "BROWSER_WS_URL_READ_TIMEOUT"),
 		},
 		&cli.StringFlag{
 			Name:    "browser.timezone",
@@ -690,14 +699,15 @@ func BrowserConfigFromCommand(c *cli.Command) (BrowserConfig, error) {
 	}
 
 	return BrowserConfig{
-		Path:       c.String("browser.path"),
-		Flags:      c.StringSlice("browser.flag"),
-		GPU:        c.Bool("browser.gpu"),
-		Sandbox:    c.Bool("browser.sandbox"),
-		Namespaced: c.Bool("browser.namespaced"),
-		TimeZone:   timeZone,
-		Cookies:    nil,
-		Headers:    headers,
+		Path:             c.String("browser.path"),
+		Flags:            c.StringSlice("browser.flag"),
+		GPU:              c.Bool("browser.gpu"),
+		Sandbox:          c.Bool("browser.sandbox"),
+		Namespaced:       c.Bool("browser.namespaced"),
+		WSURLReadTimeout: c.Duration("browser.ws-url-read-timeout"),
+		TimeZone:         timeZone,
+		Cookies:          nil,
+		Headers:          headers,
 
 		DefaultRequestConfig:   defaultRequestConfig,
 		RequestConfigOverrides: requestConfigOverrides,
