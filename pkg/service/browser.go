@@ -10,6 +10,7 @@ import (
 	"log/slog"
 	"maps"
 	"net/http"
+	"net/netip"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -135,6 +136,14 @@ func WithTimeZone(loc *time.Location) RenderingOption {
 
 // WithCookie adds a new cookie to the browser's context.
 func WithCookie(name, value, domain string) RenderingOption {
+	// if it looks like an IPv6 address, but doesn't contain [] we need to add it when saving the Cookie otherwise Chromium will reject it.
+	if strings.Contains(domain, ":") && (!strings.Contains(domain, "[") && !strings.Contains(domain, "]")) {
+		ip, err := netip.ParseAddr(domain)
+		if err == nil && ip.Is6() {
+			domain = "[" + domain + "]"
+		}
+	}
+
 	return func(cfg config.BrowserConfig) (config.BrowserConfig, error) {
 		cfg.Cookies = append(cfg.Cookies, &network.SetCookieParams{
 			Name:   name,
