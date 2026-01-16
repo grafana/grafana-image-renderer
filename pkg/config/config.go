@@ -76,6 +76,35 @@ func (l LogLevel) ToSlog() (slog.Leveler, error) {
 	}
 }
 
+type APIConfig struct {
+	// DefaultEncoding is the encoding to use when the 'encoding' query parameter is not specified. One of: "pdf", "png".
+	DefaultEncoding string
+}
+
+func APIFlags() []cli.Flag {
+	return []cli.Flag{
+		&cli.StringFlag{
+			Name:    "api.default-encoding",
+			Usage:   "The default encoding for render requests when not specified. (values: pdf, png) [config: api.default-encoding]",
+			Value:   "pdf",
+			Sources: FromConfig("api.default-encoding", "API_DEFAULT_ENCODING"),
+			Validator: func(e string) error {
+				if e != "pdf" && e != "png" {
+					return fmt.Errorf("invalid api default-encoding: %s", e)
+				}
+
+				return nil
+			},
+		},
+	}
+}
+
+func APIConfigFromCommand(c *cli.Command) (APIConfig, error) {
+	return APIConfig{
+		DefaultEncoding: c.String("api.default-encoding"),
+	}, nil
+}
+
 type ServerConfig struct {
 	// Addr is the HTTP address to listen on.
 	// This must be a TCP address, e.g. ":8080" or "[::1]:1234".
