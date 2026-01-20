@@ -51,9 +51,9 @@ Open a PR, merge it, and create a new GitHub release. You're done!
 
 For a new minor N, only update to a `.0` patch if there are security vulnerabilities that are fixed and not present in the N-1 minor. Otherwise try to stick with the N-1 minor until the N minor is at least on a `.1` patch.
   
-1- Change the `go` directive to the new version in `go.mod`. 
-2- Update the image at the top of the `Dockerfile` starting with `FROM golang:...` with the new version. Don't forget to pin it with the sha256!
-  - You can find it by going to DockerHub, or pulling the image yourself you can see a `Digest: ...` line with the value. 
+1. Change the `go` directive to the new version in `go.mod`. 
+2. Update the image at the top of the `Dockerfile` starting with `FROM golang:...` with the new version. Don't forget to pin it with the sha256!
+    - You can find it by going to DockerHub, or pulling the image yourself you can see a `Digest: ...` line with the value. 
 
 **Note**: On minor updates, golangci-lint might break. Also update the CI action to use the latest version, once that is available with support for the new minor.
 
@@ -61,6 +61,6 @@ For a new minor N, only update to a `.0` patch if there are security vulnerabili
 
 It is good to update whenever a new image is tagged, as it mainly contains package updates or potential security fixes which are always nice to have.
   
-1- Update the image in the `Dockerfile` starting with `FROM debian:...` with the new version. Don't forget to pin it with the sha256!
-  - You can find it by going to DockerHub, or pulling the image yourself you can see a `Digest: ...` line with the value.
-2- Bust the cache. Changing the base image will invalidate it anyways but for good manners set it to today's date.
+1. Update the image in the `Dockerfile` starting with `FROM debian:...` with the new version. Don't forget to pin it with the sha256!
+    - You can find it by going to DockerHub, or pulling the image yourself you can see a `Digest: ...` line with the value.
+2. Bust the cache. Changing the base image will invalidate it anyways but for good manners set it to today's date.
