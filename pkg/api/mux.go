@@ -18,6 +18,7 @@ func NewHandler(
 		prometheus.Registerer
 	},
 	serverConfig config.ServerConfig,
+	apiConfig config.APIConfig,
 	rateLimitConfig config.RateLimitConfig,
 	processStatService *service.ProcessStatService,
 	browser *service.BrowserService,
@@ -40,7 +41,7 @@ func NewHandler(
 			middleware.TrustedURL(
 				limiter.Limit(
 					middleware.InFlightMetrics(
-						HandleGetRender(browser)))),
+						HandleGetRender(browser, apiConfig)))),
 			serverConfig.AuthTokens...))
 	mux.Handle("GET /render/csv",
 		middleware.RequireAuthToken(

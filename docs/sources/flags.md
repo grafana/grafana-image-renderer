@@ -48,6 +48,8 @@ The following is a complete list of all flags that are currently supported in th
 This is a verbatim copy of the output of the `grafana-image-renderer server --help` command.
 
 ```
+--api.default-encoding=<string> [default: "pdf"] [${API_DEFAULT_ENCODING}]
+    The default encoding for render requests when not specified. (values: pdf, png) [config: api.default-encoding]
 --browser.flag=<string> / --browser.flags=<string> [${BROWSER_FLAG}]
     Flags to pass to the browser. These are syntaxed `${flag}` or `${flag}=${value}`. [config: browser.flag]
 --browser.gpu [default: false] [${BROWSER_GPU}]

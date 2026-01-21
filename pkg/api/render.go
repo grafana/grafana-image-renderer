@@ -14,6 +14,7 @@ import (
 	"time"
 	_ "time/tzdata" // fallback where we have no tzdata on the distro; used in LoadLocation
 
+	"github.com/grafana/grafana-image-renderer/pkg/config"
 	"github.com/grafana/grafana-image-renderer/pkg/service"
 	"github.com/prometheus/client_golang/prometheus"
 	"go.opentelemetry.io/otel/attribute"
@@ -33,7 +34,7 @@ var (
 	regexpOnlyNumbers = regexp.MustCompile(`^[0-9]+$`)
 )
 
-func HandleGetRender(browser *service.BrowserService) http.Handler {
+func HandleGetRender(browser *service.BrowserService, apiConfig config.APIConfig) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		tracer := tracer(r.Context())
 		ctx, span := tracer.Start(r.Context(), "HandleGetRender")
@@ -141,10 +142,13 @@ func HandleGetRender(browser *service.BrowserService) http.Handler {
 			options = append(options, service.WithCookie("renderKey", renderKey, domain))
 			span.AddEvent("added renderKey cookie", trace.WithAttributes(attribute.String("domain", domain)))
 		}
-		encoding := r.URL.Query().Get("encoding")
+		encoding := strings.TrimSpace(strings.ToLower(r.URL.Query().Get("encoding")))
+		if encoding == "" {
+			encoding = string(apiConfig.DefaultEncoding)
+		}
 		var printer service.Printer
-		switch strings.ToLower(encoding) {
-		case "", "pdf":
+		switch encoding {
+		case "pdf":
 			var printerOpts []service.PDFPrinterOption
 
 			paper := r.URL.Query().Get("pdf.format")
