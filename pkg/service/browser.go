@@ -455,6 +455,9 @@ func (s *BrowserService) createAllocatorOptions(ctx context.Context, cfg config.
 	requestConfig := cfg.LookupRequestConfig(span, url)
 	opts = append(opts, chromedp.WindowSize(requestConfig.MinWidth, requestConfig.MinHeight))
 	opts = append(opts, chromedp.Env("TZ="+cfg.TimeZone.String()))
+	if cfg.WSURLReadTimeout > 0 {
+		opts = append(opts, chromedp.WSURLReadTimeout(cfg.WSURLReadTimeout))
+	}
 	for _, arg := range cfg.Flags {
 		arg = strings.TrimPrefix(arg, "--")
 		key, value, hadEquals := strings.Cut(arg, "=")
