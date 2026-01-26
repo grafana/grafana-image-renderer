@@ -179,8 +179,7 @@ jobs:
           TAG: ${{ needs.tag.outputs.tag }}
         run: |
           set -euo pipefail
-          docker manifest create "$TAG" "$TAG"-amd64 "$TAG"-arm64
-          docker manifest push "$TAG"
+          { docker buildx imagetools inspect "$TAG"-amd64 && docker buildx imagetools inspect "$TAG"-arm64 } | jq --arg tag "$TAG" '.manifests[] | select(.mediaType == "application/vnd.oci.image.manifest.v1+json") | $tag+"@"+.digest' | xargs -- docker buildx imagetools create -t "$TAG" --
       - name: Create and push :latest manifest
         if: github.event_name == 'push' && github.ref_type == 'tag'
         env:
@@ -188,8 +187,7 @@ jobs:
           SUBJECT: ${{ needs.tag.outputs.subject }}
         run: |
           set -euo pipefail
-          docker manifest create "$SUBJECT":latest "$TAG"-amd64 "$TAG"-arm64
-          docker manifest push "$SUBJECT":latest
+          { docker buildx imagetools inspect "$TAG"-amd64 && docker buildx imagetools inspect "$TAG"-arm64 } | jq --arg tag "$TAG" '.manifests[] | select(.mediaType == "application/vnd.oci.image.manifest.v1+json") | $tag+"@"+.digest' | xargs -- docker buildx imagetools create -t "$SUBJECT":latest --
 
       - name: Comment on PR
         if: github.event_name == 'pull_request'
