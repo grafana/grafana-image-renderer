@@ -66,7 +66,6 @@ jobs:
     outputs:
       subject: ${{ steps.image_tag.outputs.subject }}
       tag: ${{ steps.image_tag.outputs.tag }}
-      provenance_tag: ${{ steps.image_tag.outputs.provenance_tag }}
       registry: ${{ steps.image_tag.outputs.registry }}
       ref_name: ${{ steps.image_tag.outputs.ref_name }}
     steps:
@@ -107,9 +106,8 @@ jobs:
           set -euo pipefail
           echo "registry=$REGISTRY" >> "$GITHUB_OUTPUT"
           echo "provenance_registry=$PROVENANCE_REGISTRY" >> "$GITHUB_OUTPUT"
-          echo "subject=$REGISTRY/$REPOSITORY" >> "$GITHUB_OUTPUT"
+          echo "subject=$PROVENANCE_REGISTRY/$REPOSITORY" >> "$GITHUB_OUTPUT"
           echo "tag=$REGISTRY/$REPOSITORY:$REF_NAME" >> "$GITHUB_OUTPUT"
-          echo "provenance_tag=$PROVENANCE_REGISTRY/$REPOSITORY" >> "$GITHUB_OUTPUT"
           echo "ref_name=$REF_NAME" >> "$GITHUB_OUTPUT"
 
   build:
@@ -132,8 +130,6 @@ jobs:
       id-token: write # required to create attestations for the built image, and to read secrets
       pull-requests: write # required to comment on the pull request
       artifact-metadata: write # to generate artifact metadata records; action silently skips if this is not given
-    outputs:
-      digest: ${{ steps.build-push.outputs.digest }}
     steps:
       - name: Log into GHCR
         if: needs.tag.outputs.registry == 'ghcr.io'
@@ -148,19 +144,28 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
-
       - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
-      - uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
-        id: build-push
-        with:
-          push: ${{ github.repository == 'grafana/grafana-image-renderer' }}
-          tags: ${{ needs.tag.outputs.tag }}-${{ matrix.arch }}
-          provenance: mode=max
-          sbom: true
+
+      - name: docker buildx build
+        env:
+          DOCKER_BUILDKIT: 1
+          BUILDKIT_STEP_LOG_MAX_SIZE: -1
+          BUILDKIT_STEP_LOG_MAX_SPEED: -1
+          TAG: ${{ needs.tag.outputs.tag }}-${{ matrix.arch }}
+        run: docker buildx build -t "$TAG" .
+      - name: Get digest
+        id: digest
+        env:
+          TAG: ${{ needs.tag.outputs.tag }}-${{ matrix.arch }}
+        run: |
+          set -euo pipefail
+          DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' "$TAG" | cut -d@ -f2)
+          echo "Digest: $DIGEST"
+          echo "digest=$DIGEST" >> "$GITHUB_OUTPUT"
       - uses: actions/attest-build-provenance@00014ed6ed5efc5b1ab7f7f34a39eb55d41aa4f8 # v3.1.0
         with:
-          subject-digest: ${{ steps.build-push.outputs.digest }}
-          subject-name: ${{ needs.tag.outputs.provenance_tag }}-${{ matrix.arch }}
+          subject-digest: ${{ steps.digest.outputs.digest }}
+          subject-name: ${{ needs.tag.outputs.subject }}
           push-to-registry: ${{ github.repository == 'grafana/grafana-image-renderer' }}
 
   manifest:
