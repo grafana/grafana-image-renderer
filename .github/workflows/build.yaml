@@ -126,6 +126,7 @@ jobs:
       attestations: write # required to create attestations for the built image
       id-token: write # required to create attestations for the built image, and to read secrets
       pull-requests: write # required to comment on the pull request
+      artifact-metadata: write # to generate artifact metadata records; action silently skips if this is not given
     steps:
       - name: Log into GHCR
         if: needs.tag.outputs.registry == 'ghcr.io'
