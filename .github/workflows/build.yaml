@@ -77,11 +77,13 @@ jobs:
           set -euo pipefail
           echo "REGISTRY=ghcr.io" >> "$GITHUB_ENV"
           echo "REPOSITORY=$REPOSITORY" >> "$GITHUB_ENV"
+          echo "PROVENANCE_REGISTRY=ghcr.io" >> "$GITHUB_ENV"
       - name: Use docker.io
         if: github.event_name == 'push' && github.ref_type == 'tag'
         run: |
           echo "REGISTRY=docker.io" >> "$GITHUB_ENV"
           echo "REPOSITORY=grafana/grafana-image-renderer" >> "$GITHUB_ENV"
+          echo "PROVENANCE_REGISTRY=index.docker.io" >> "$GITHUB_ENV"
 
       - name: Use Git tag for image tag
         if: github.event_name == 'push' && github.ref_type == 'tag'
@@ -103,8 +105,10 @@ jobs:
         run: |
           set -euo pipefail
           echo "registry=$REGISTRY" >> "$GITHUB_OUTPUT"
+          echo "provenance_registry=$PROVENANCE_REGISTRY" >> "$GITHUB_OUTPUT"
           echo "subject=$REGISTRY/$REPOSITORY" >> "$GITHUB_OUTPUT"
           echo "tag=$REGISTRY/$REPOSITORY:$REF_NAME" >> "$GITHUB_OUTPUT"
+          echo "provenance_tag=$PROVENANCE_REGISTRY/$REPOSITORY:$REF_NAME" >> "$GITHUB_OUTPUT"
           echo "ref_name=$REF_NAME" >> "$GITHUB_OUTPUT"
 
   build:
@@ -152,6 +156,11 @@ jobs:
           tags: ${{ needs.tag.outputs.tag }}-${{ matrix.arch }}
           provenance: mode=max
           sbom: true
+      - uses: actions/attest-build-provenance@00014ed6ed5efc5b1ab7f7f34a39eb55d41aa4f8 # v3.1.0
+        with:
+          subject-digest: ${{ steps.build-push.outputs.digest }}
+          subject-name: ${{ needs.tag.outputs.provenance_tag }}-${{ matrix.arch }}
+          push-to-registry: ${{ github.repository == 'grafana/grafana-image-renderer' }}
 
   manifest:
     needs: [tag, build]
