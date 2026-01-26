@@ -152,7 +152,7 @@ jobs:
           BUILDKIT_STEP_LOG_MAX_SIZE: -1
           BUILDKIT_STEP_LOG_MAX_SPEED: -1
           TAG: ${{ needs.tag.outputs.tag }}-${{ matrix.arch }}
-        run: docker buildx build -t "$TAG" .
+        run: docker buildx build -t "$TAG" --load .
       - name: Get digest
         id: digest
         env:
