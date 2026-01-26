@@ -127,6 +127,8 @@ jobs:
       id-token: write # required to create attestations for the built image, and to read secrets
       pull-requests: write # required to comment on the pull request
       artifact-metadata: write # to generate artifact metadata records; action silently skips if this is not given
+    outputs:
+      digest: ${{ steps.build-push.outputs.digest }}
     steps:
       - name: Log into GHCR
         if: needs.tag.outputs.registry == 'ghcr.io'
@@ -144,20 +146,12 @@ jobs:
 
       - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
       - uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
+        id: build-push
         with:
           push: ${{ github.repository == 'grafana/grafana-image-renderer' }}
           tags: ${{ needs.tag.outputs.tag }}-${{ matrix.arch }}
           provenance: mode=max
           sbom: true
-      - name: Get digest
-        id: digest
-        env:
-          TAG: ${{ needs.tag.outputs.tag }}-${{ matrix.arch }}
-        run: |
-          set -euo pipefail
-          DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' "$TAG" | cut -d@ -f2)
-          echo "Digest: $DIGEST"
-          echo "digest=$DIGEST" >> "$GITHUB_OUTPUT"
 
   manifest:
     needs: [tag, build]
