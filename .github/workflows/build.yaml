@@ -179,7 +179,7 @@ jobs:
           TAG: ${{ needs.tag.outputs.tag }}
         run: |
           set -euo pipefail
-          { docker buildx imagetools inspect "$TAG"-amd64 && docker buildx imagetools inspect "$TAG"-arm64 } | jq --arg tag "$TAG" '.manifests[] | select(.mediaType == "application/vnd.oci.image.manifest.v1+json") | $tag+"@"+.digest' | xargs -- docker buildx imagetools create -t "$TAG" --
+          { docker buildx imagetools inspect "$TAG"-amd64 && docker buildx imagetools inspect "$TAG"-arm64; } | jq --arg tag "$TAG" '.manifests[] | select(.mediaType == "application/vnd.oci.image.manifest.v1+json") | $tag+"@"+.digest' | xargs -- docker buildx imagetools create -t "$TAG" --
       - name: Create and push :latest manifest
         if: github.event_name == 'push' && github.ref_type == 'tag'
         env:
@@ -187,7 +187,7 @@ jobs:
           SUBJECT: ${{ needs.tag.outputs.subject }}
         run: |
           set -euo pipefail
-          { docker buildx imagetools inspect "$TAG"-amd64 && docker buildx imagetools inspect "$TAG"-arm64 } | jq --arg tag "$TAG" '.manifests[] | select(.mediaType == "application/vnd.oci.image.manifest.v1+json") | $tag+"@"+.digest' | xargs -- docker buildx imagetools create -t "$SUBJECT":latest --
+          { docker buildx imagetools inspect "$TAG"-amd64 && docker buildx imagetools inspect "$TAG"-arm64; } | jq --arg tag "$TAG" '.manifests[] | select(.mediaType == "application/vnd.oci.image.manifest.v1+json") | $tag+"@"+.digest' | xargs -- docker buildx imagetools create -t "$SUBJECT":latest --
 
       - name: Comment on PR
         if: github.event_name == 'pull_request'
