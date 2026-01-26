@@ -66,6 +66,7 @@ jobs:
     outputs:
       subject: ${{ steps.image_tag.outputs.subject }}
       tag: ${{ steps.image_tag.outputs.tag }}
+      provenance_tag: ${{ steps.image_tag.outputs.provenance_tag }}
       registry: ${{ steps.image_tag.outputs.registry }}
       ref_name: ${{ steps.image_tag.outputs.ref_name }}
     steps:
