@@ -158,11 +158,6 @@ jobs:
           DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' "$TAG" | cut -d@ -f2)
           echo "Digest: $DIGEST"
           echo "digest=$DIGEST" >> "$GITHUB_OUTPUT"
-      - uses: actions/attest-build-provenance@00014ed6ed5efc5b1ab7f7f34a39eb55d41aa4f8 # v3.1.0
-        with:
-          subject-name: ${{ needs.tag.outputs.subject }}
-          subject-digest: ${{ steps.digest.outputs.digest }}
-          push-to-registry: true
 
   manifest:
     needs: [tag, build]
