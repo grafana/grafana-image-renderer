@@ -142,19 +142,13 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: docker build
-        env:
-          DOCKER_BUILDKIT: 1
-          BUILDKIT_STEP_LOG_MAX_SIZE: -1
-          BUILDKIT_STEP_LOG_MAX_SPEED: -1
-          TAG: ${{ needs.tag.outputs.tag }}-${{ matrix.arch }}
-        run: docker build . -t "$TAG"
-      - name: docker push
-        # Forks cannot push.
-        if: ${{ github.repository == 'grafana/grafana-image-renderer' }}
-        env:
-          TAG: ${{ needs.tag.outputs.tag }}-${{ matrix.arch }}
-        run: docker push "$TAG"
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
+      - uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
+        with:
+          push: ${{ github.repository == 'grafana/grafana-image-renderer' }}
+          tags: ${{ needs.tag.outputs.tag }}-${{ matrix.arch }}
+          provenance: mode=max
+          sbom: true
       - name: Get digest
         id: digest
         env:
