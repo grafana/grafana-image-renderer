@@ -71,7 +71,7 @@ This configuration demonstrates what environment variables to set, but it doesn'
 ```shell
 docker network create grafana
 docker run --network grafana --name renderer --rm --detach grafana/grafana-image-renderer:latest
-docker run --network grafana --name grafana --rm --detach --env GF_RENDERING_SERVER_URL=http://renderer:8081/render --env GF_RENDERING_CALLBACK_URL=http://grafana:3000/ --port 3000:3000 grafana/grafana-enterprise:latest
+docker run --network grafana --name grafana --rm --detach -p 3000:3000 --env GF_RENDERING_SERVER_URL=http://renderer:8081/render --env GF_RENDERING_CALLBACK_URL=http://grafana:3000/ grafana/grafana-enterprise:latest
 ```
 
 Alternatively, if you prefer `docker compose`:
