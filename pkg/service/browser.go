@@ -470,6 +470,10 @@ func (s *BrowserService) createAllocatorOptions(ctx context.Context, cfg config.
 		}
 	}
 
+	if cfg.UserAgent != "" {
+		opts = append(opts, chromedp.UserAgent(cfg.UserAgent))
+	}
+
 	return opts, nil
 }
 
