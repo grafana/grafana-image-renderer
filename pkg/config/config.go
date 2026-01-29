@@ -451,11 +451,11 @@ func BrowserFlags() []cli.Flag {
 			Value:     "chromium",
 			Sources:   FromConfig("browser.path", "BROWSER_PATH"),
 		},
-		&cli.StringSliceFlag{
+		&cli.StringFlag{
 			Name:    "browser.flag",
 			Aliases: []string{"browser.flags"},
-			Usage:   "Flags to pass to the browser. These are syntaxed `${flag}` or `${flag}=${value}`. [config: browser.flag]",
-			Sources: FromConfig("browser.flag", "BROWSER_FLAG"),
+			Usage:   "Flags to pass to the browser. These are syntaxed `--${flag}` or `--${flag}=${value}`. Note the required `--` prefix for each flag. [config: browser.flag]",
+			Sources: FromConfig("browser.flag", "BROWSER_FLAG", "BROWSER_FLAGS"),
 		},
 		&cli.BoolFlag{
 			Name:    "browser.gpu",
@@ -729,7 +729,7 @@ func BrowserConfigFromCommand(c *cli.Command) (BrowserConfig, error) {
 
 	return BrowserConfig{
 		Path:             c.String("browser.path"),
-		Flags:            c.StringSlice("browser.flag"),
+		Flags:            customParseBrowserFlags(c.String("browser.flag")),
 		GPU:              c.Bool("browser.gpu"),
 		Sandbox:          c.Bool("browser.sandbox"),
 		Namespaced:       c.Bool("browser.namespaced"),
