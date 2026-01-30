@@ -102,3 +102,31 @@ func parseOverrideFlags(flagsStr string) []string {
 
 	return flags
 }
+
+// When receiving Browser flags with spaces, commas, quotes or other characters, we need to parse them manually.
+// Parsing these as SliceStringFlag will split them incorrectly at spaces.
+// This naively parses the flags by looking for `--` prefixes and collecting everything until the next `--`.
+func customParseBrowserFlags(flags string) []string {
+	flags = strings.TrimSpace(flags)
+
+	collected := make([]string, 0)
+
+	for i := range flags {
+		if i+1 < len(flags) && flags[i] == '-' && flags[i+1] == '-' {
+			// Assume it is the only flag
+			startOfNextFlag := len(flags)
+
+			// Find the start of the next flag, if any and reset the end position
+			for j := i; j < startOfNextFlag; j++ {
+				if j+1 < len(flags) && flags[j] == '-' && flags[j+1] == '-' && j != i {
+					startOfNextFlag = j
+					break
+				}
+			}
+
+			collected = append(collected, strings.TrimSpace(flags[i:startOfNextFlag]))
+		}
+	}
+
+	return collected
+}

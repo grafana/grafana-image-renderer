@@ -127,11 +127,10 @@ On some environments, such as Docker, Kubernetes, or other container and VM runt
 ## Enable custom flags in the browser
 
 Pass flags to the browser using the `--browser.flag` option.
-The flag is repeatable, meaning you can pass multiple flags by specifying the option many times.
 
-The format is `${flag}=${value}`.
-The `--` prefix is added if it isn't present.
-For example, `--browser.flag --headless=false` enables headful mode.
+The format is `--${flag}=${value}` or `--${flag}`, with the `--` prefix being required. The parser splits each browser flag based on them.
+
+For example, `--browser.flag=--headless=false --host-resolver-rules=MAP * 127.0.0.1, EXCLUDE grafana --no-sandbox` enables headful mode, forces the browser to resolve all network requests to `127.0.0.1` with exception of the `grafana` host, and disables sandbox mode.
 
 ## Enable the browser sandbox
 

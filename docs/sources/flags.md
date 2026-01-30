@@ -50,8 +50,8 @@ This is a verbatim copy of the output of the `grafana-image-renderer server --he
 ```
 --api.default-encoding=<string> [default: "pdf"] [${API_DEFAULT_ENCODING}]
     The default encoding for render requests when not specified. (values: pdf, png) [config: api.default-encoding]
---browser.flag=<string> / --browser.flags=<string> [${BROWSER_FLAG}]
-    Flags to pass to the browser. These are syntaxed `${flag}` or `${flag}=${value}`. [config: browser.flag]
+--browser.flag=<string> / --browser.flags=<string> [${BROWSER_FLAGS}, ${BROWSER_FLAG}]
+    Flags to pass to the browser. These are syntaxed `--${flag}` or `--${flag}=${value}`. Note the required `--` prefix for each flag. [config: browser.flag]
 --browser.gpu [default: false] [${BROWSER_GPU}]
     Enable GPU support in the browser. [config: browser.gpu]
 --browser.header=<string> / --browser.headers=<string> [${BROWSER_HEADER}]
