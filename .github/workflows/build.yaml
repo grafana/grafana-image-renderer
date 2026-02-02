@@ -119,6 +119,7 @@ jobs:
       attestations: write # required to create attestations for the built image
       id-token: write # required to create attestations for the built image, and to read secrets
       pull-requests: write # required to comment on the pull request
+      artifact-metadata: write # to generate artifact metadata records; action silently skips if this is not given
     steps:
       - name: Log into GHCR
         if: needs.tag.outputs.registry == 'ghcr.io'
@@ -130,34 +131,31 @@ jobs:
         if: needs.tag.outputs.registry == 'docker.io'
         uses: grafana/shared-workflows/actions/dockerhub-login@dockerhub-login/v1
 
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
+      - uses: imjasonh/setup-crane@31b88efe9de28ae0ffa220711af4b60be9435f6e # v0.4
+      - uses: sigstore/cosign-installer@faadad0cce49287aee09b3a48701e75088a2c6ad # v4.0.0
+
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
 
-      - name: docker build
-        env:
-          DOCKER_BUILDKIT: 1
-          BUILDKIT_STEP_LOG_MAX_SIZE: -1
-          BUILDKIT_STEP_LOG_MAX_SPEED: -1
-          TAG: ${{ needs.tag.outputs.tag }}-${{ matrix.arch }}
-        run: docker build . -t "$TAG"
-      - name: docker push
-        env:
-          TAG: ${{ needs.tag.outputs.tag }}-${{ matrix.arch }}
-        run: docker push "$TAG"
-      - name: Get digest
-        id: digest
-        env:
-          TAG: ${{ needs.tag.outputs.tag }}-${{ matrix.arch }}
-        run: |
-          set -euo pipefail
-          DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' "$TAG" | cut -d@ -f2)
-          echo "Digest: $DIGEST"
-          echo "digest=$DIGEST" >> "$GITHUB_OUTPUT"
-      - uses: actions/attest-build-provenance@v2
+      - name: docker build and push
+        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
+        id: build-and-push
         with:
+          push: true
+          tags: ${{ needs.tag.outputs.tag }}-${{ matrix.arch }}
+          provenance: mode=max
+
+      - name: Sign image
+        env:
+          IMAGE: ${{ needs.tag.outputs.tag }}-${{ matrix.arch }}@${{ steps.build-and-push.outputs.digest }}
+        run: cosign sign --yes "$IMAGE"
+      - uses: actions/attest-build-provenance@00014ed6ed5efc5b1ab7f7f34a39eb55d41aa4f8 # v3.1.0
+        id: attest
+        with:
+          subject-digest: ${{ steps.build-and-push.outputs.digest }}
           subject-name: ${{ needs.tag.outputs.subject }}
-          subject-digest: ${{ steps.digest.outputs.digest }}
           push-to-registry: true
 
   manifest:
@@ -179,22 +177,43 @@ jobs:
         if: needs.tag.outputs.registry == 'docker.io'
         uses: grafana/shared-workflows/actions/dockerhub-login@dockerhub-login/v1
 
+      - uses: imjasonh/setup-crane@31b88efe9de28ae0ffa220711af4b60be9435f6e # v0.4
+      - uses: sigstore/cosign-installer@faadad0cce49287aee09b3a48701e75088a2c6ad # v4.0.0
+
+      # docker/build-push-action pushes manifests, so we need to merge these properly.
       - name: Create and push manifests
         env:
           TAG: ${{ needs.tag.outputs.tag }}
         run: |
           set -euo pipefail
-          docker manifest create "$TAG" "$TAG"-amd64 "$TAG"-arm64
-          docker manifest push "$TAG"
-      - name: Create and push :latest manifest
+          { docker buildx imagetools inspect "$TAG"-amd64 --raw && docker buildx imagetools inspect "$TAG"-arm64 --raw; } | jq --arg tag "$TAG" '.manifests[] | select(.mediaType == "application/vnd.oci.image.manifest.v1+json") | "\($tag)@\(.digest)"' | xargs -- docker buildx imagetools create -t "$TAG" --
+      - name: Get digest
+        id: digest
+        env:
+          TAG: ${{ needs.tag.outputs.tag }}
+        run: |
+          set -euo pipefail
+          DIGEST=$(crane digest "$TAG")
+          echo "Digest: $DIGEST"
+          echo "digest=$DIGEST" >> "$GITHUB_OUTPUT"
+      - name: Sign manifest
+        env:
+          IMAGE: ${{ needs.tag.outputs.tag }}@${{ steps.digest.outputs.digest }}
+        run: cosign sign --yes "$IMAGE"
+
+      - name: Create and push :latest manifests
         if: github.event_name == 'push' && github.ref_type == 'tag'
         env:
           TAG: ${{ needs.tag.outputs.tag }}
           SUBJECT: ${{ needs.tag.outputs.subject }}
         run: |
           set -euo pipefail
-          docker manifest create "$SUBJECT":latest "$TAG"-amd64 "$TAG"-arm64
-          docker manifest push "$SUBJECT":latest
+          { docker buildx imagetools inspect "$TAG"-amd64 --raw && docker buildx imagetools inspect "$TAG"-arm64 --raw; } | jq --arg tag "$TAG" '.manifests[] | select(.mediaType == "application/vnd.oci.image.manifest.v1+json") | "\($tag)@\(.digest)"' | xargs -- docker buildx imagetools create -t "$SUBJECT":latest --
+      - name: Sign manifest
+        if: github.event_name == 'push' && github.ref_type == 'tag'
+        env:
+          SUBJECT: ${{ needs.tag.outputs.subject }}
+        run: cosign sign --yes "$SUBJECT"@"$(crane digest "$SUBJECT":latest)"
 
       - name: Comment on PR
         if: github.event_name == 'pull_request'
