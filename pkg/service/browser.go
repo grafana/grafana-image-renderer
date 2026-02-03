@@ -283,7 +283,7 @@ func (s *BrowserService) Render(ctx context.Context, url string, printer Printer
 		observingAction("setCookies", setCookies(cfg.Cookies)),
 		observingAction("Navigate", chromedp.Navigate(url)),
 		observingAction("WaitReady(body)", chromedp.WaitReady("body", chromedp.ByQuery)), // wait for a body to exist; this is when the page has started to actually render
-		observingAction("scrollForElements", scrollForElements(requestConfig.TimeBetweenScrolls)),
+		observingAction("scrollForElements", scrollForElements(requestConfig.TimeBetweenScrolls, requestConfig.MaxHeight)),
 		observingAction("waitForDuration", waitForDuration(requestConfig.ReadinessPriorWait)),
 		observingAction("waitForReady", waitForReady(browserCtx, cfg, url)),
 		observingAction("printer.prepare", printer.prepare(cfg, url)),
@@ -937,18 +937,34 @@ func setCookies(cookies []*network.SetCookieParams) chromedp.Action {
 	})
 }
 
-func scrollForElements(timeBetweenScrolls time.Duration) chromedp.Action {
+func scrollForElements(timeBetweenScrolls time.Duration, maxHeight int) chromedp.Action {
 	return chromedp.ActionFunc(func(ctx context.Context) error {
 		tracer := tracer(ctx)
 		ctx, span := tracer.Start(ctx, "scrollForElements")
 		defer span.End()
+
+		var innerHeight int
+		if err := chromedp.Evaluate(`window.innerHeight`, &innerHeight).Do(ctx); err != nil {
+			return fmt.Errorf("failed to get window.innerHeight: %w", err)
+		}
+
+		var scrollHeight int
+		if err := chromedp.Evaluate(`document.body.scrollHeight`, &scrollHeight).Do(ctx); err != nil {
+			return fmt.Errorf("failed to get document.body.scrollHeight: %w", err)
+		}
 
 		var scrolls int
 		err := chromedp.Evaluate(`Math.floor(document.body.scrollHeight / window.innerHeight)`, &scrolls).Do(ctx)
 		if err != nil {
 			return fmt.Errorf("failed to calculate scrolls required: %w", err)
 		}
-		span.AddEvent("calculated scrolls", trace.WithAttributes(attribute.Int("scrolls", scrolls)))
+
+		span.AddEvent("calculated scrolls", trace.WithAttributes(
+			attribute.Int("scrolls", scrolls),
+			attribute.Int("window.innerHeight", innerHeight),
+			attribute.Int("document.body.scrollHeight", scrollHeight),
+			attribute.Int("maxHeight", maxHeight),
+		))
 
 		select {
 		case <-time.After(timeBetweenScrolls):
