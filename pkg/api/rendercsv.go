@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"path"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"time"
 
@@ -53,26 +52,19 @@ func HandleGetRenderCSV(browser *service.BrowserService) http.Handler {
 		}
 
 		if timeout := r.URL.Query().Get("timeout"); timeout != "" {
-			var duration time.Duration
-			var err error
-			if regexpOnlyNumbers.MatchString(timeout) {
-				var seconds int
-				seconds, err = strconv.Atoi(timeout)
-				duration = time.Second * time.Duration(seconds)
-			} else {
-				duration, err = time.ParseDuration(timeout)
-			}
-
+			dur, err := parseTimeout(timeout)
 			if err != nil {
 				span.SetStatus(codes.Error, "invalid timeout query param")
 				span.RecordError(err, trace.WithAttributes(attribute.String("timeout", timeout)))
 				http.Error(w, fmt.Sprintf("invalid 'timeout' query parameter: %v", err), http.StatusBadRequest)
 				return
 			}
-			timeoutCtx, cancelTimeout := context.WithTimeout(ctx, duration)
-			defer cancelTimeout()
-			ctx = timeoutCtx
-			span.SetAttributes(attribute.String("timeout", duration.String()))
+			if dur > 0 {
+				timeoutCtx, cancelTimeout := context.WithTimeout(ctx, dur)
+				defer cancelTimeout()
+				ctx = timeoutCtx
+			}
+			span.SetAttributes(attribute.String("timeout", dur.String()))
 		}
 		renderKey := r.URL.Query().Get("renderKey")
 		domain := r.URL.Query().Get("domain")
