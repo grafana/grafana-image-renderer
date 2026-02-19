@@ -83,25 +83,12 @@ func HandleGetRender(browser *service.BrowserService, apiConfig config.APIConfig
 		}
 		options = append(options, service.WithViewport(width, height))
 		if timeout := r.URL.Query().Get("timeout"); timeout != "" {
-			var dur time.Duration
-			if regexpOnlyNumbers.MatchString(timeout) {
-				seconds, err := strconv.Atoi(timeout)
-				if err != nil {
-					span.SetStatus(codes.Error, "invalid timeout query param (Atoi)")
-					span.RecordError(err, trace.WithAttributes(attribute.String("timeout", timeout)))
-					http.Error(w, fmt.Sprintf("invalid 'timeout' query parameter: %v", err), http.StatusBadRequest)
-					return
-				}
-				dur = time.Duration(seconds) * time.Second
-			} else {
-				var err error
-				dur, err = time.ParseDuration(timeout)
-				if err != nil {
-					span.SetStatus(codes.Error, "invalid timeout query param (ParseDuration)")
-					span.RecordError(err, trace.WithAttributes(attribute.String("timeout", timeout)))
-					http.Error(w, fmt.Sprintf("invalid 'timeout' query parameter: %v", err), http.StatusBadRequest)
-					return
-				}
+			dur, err := parseTimeout(timeout)
+			if err != nil {
+				span.SetStatus(codes.Error, "invalid timeout query param")
+				span.RecordError(err, trace.WithAttributes(attribute.String("timeout", timeout)))
+				http.Error(w, fmt.Sprintf("invalid 'timeout' query parameter: %v", err), http.StatusBadRequest)
+				return
 			}
 			if dur > 0 {
 				span.SetAttributes(attribute.String("timeout", dur.String()))
