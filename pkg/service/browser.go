@@ -1075,7 +1075,8 @@ func waitForReady(browserCtx context.Context, cfg config.BrowserConfig, url stri
 			readinessTimeout = time.After(requestConfig.ReadinessTimeout)
 		}
 
-		var supportsBinding bool
+		var supportsBinding = false // default to legacy polling
+		// Set in core Grafana
 		if err := chromedp.Evaluate(`!!window.__grafanaRenderBindingSupported`, &supportsBinding).Do(ctx); err != nil {
 			span.RecordError(err)
 		}
