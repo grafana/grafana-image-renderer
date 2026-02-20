@@ -3,15 +3,22 @@ package middleware
 import (
 	"log/slog"
 	"net/http"
+	"slices"
 	"sync"
 	"time"
+
+	"github.com/grafana/grafana-image-renderer/pkg/config"
 )
 
-func RequestLogger(h http.Handler) http.Handler {
+func RequestLogger(apiConfig config.APIConfig, h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 		lw := &loggingResponseWriter{w: w}
 		defer func() {
+			if len(apiConfig.APISilenceRequestLogPath) > 0 && slices.Contains(apiConfig.APISilenceRequestLogPath, r.URL.Path) {
+				return
+			}
+
 			slog.InfoContext(r.Context(), "request complete",
 				"method", r.Method,
 				"mux_pattern", r.Pattern,

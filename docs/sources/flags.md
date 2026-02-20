@@ -50,6 +50,8 @@ This is a verbatim copy of the output of the `grafana-image-renderer server --he
 ```
 --api.default-encoding=<string> [default: "pdf"] [${API_DEFAULT_ENCODING}]
     The default encoding for render requests when not specified. (values: pdf, png) [config: api.default-encoding]
+--api.silence-request-log-path=<string> [${API_SILENCE_REQUEST_LOG_PATH}]
+    Allows silencing the HTTP request logs for a certain path. It requires a direct match. Multiple values can be passed separated by comma or multiple flags. Examples: '/healthz', '/render/version'. [config: api.silence-request-log-path]
 --browser.flag=<string> / --browser.flags=<string> [${BROWSER_FLAGS}, ${BROWSER_FLAG}]
     Flags to pass to the browser. These are syntaxed `--${flag}` or `--${flag}=${value}`. Note the required `--` prefix for each flag. [config: browser.flag]
 --browser.gpu [default: false] [${BROWSER_GPU}]

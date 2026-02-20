@@ -79,6 +79,9 @@ func (l LogLevel) ToSlog() (slog.Leveler, error) {
 type APIConfig struct {
 	// DefaultEncoding is the encoding to use when the 'encoding' query parameter is not specified. One of: "pdf", "png".
 	DefaultEncoding string
+
+	// APISilenceRequestLogPath allows silencing the HTTP request logs for a certain path. It requires a direct match.
+	APISilenceRequestLogPath []string
 }
 
 func APIFlags() []cli.Flag {
@@ -96,12 +99,35 @@ func APIFlags() []cli.Flag {
 				return nil
 			},
 		},
+		&cli.StringSliceFlag{
+			Name:    "api.silence-request-log-path",
+			Usage:   "Allows silencing the HTTP request logs for a certain path. It requires a direct match. Multiple values can be passed separated by comma or multiple flags. Examples: '/healthz', '/render/version'. [config: api.silence-request-log-path]",
+			Sources: FromConfig("api.silence-request-log-path", "API_SILENCE_REQUEST_LOG_PATH"),
+			Validator: func(paths []string) error {
+				dup := make(map[string]struct{}, 0)
+
+				for _, path := range paths {
+					if strings.TrimSpace(path) == "" {
+						return fmt.Errorf("path must not be empty")
+					}
+
+					if _, ok := dup[path]; ok {
+						return fmt.Errorf("duplicate path %v not allowed", path)
+					}
+
+					dup[path] = struct{}{}
+				}
+
+				return nil
+			},
+		},
 	}
 }
 
 func APIConfigFromCommand(c *cli.Command) (APIConfig, error) {
 	return APIConfig{
-		DefaultEncoding: c.String("api.default-encoding"),
+		DefaultEncoding:          c.String("api.default-encoding"),
+		APISilenceRequestLogPath: c.StringSlice("api.silence-request-log-path"),
 	}, nil
 }
 
