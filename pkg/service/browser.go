@@ -77,6 +77,10 @@ var (
 		},
 		Buckets: []float64{1, 1024, 4 * 1024, 16 * 1024, 1024 * 1024, 4 * 1024 * 1024, 16 * 1024 * 1024, 64 * 1024 * 1024, 256 * 1024 * 1024},
 	}, []string{"mime_type"})
+	MetricBrowserReadinessMode = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Name: "browser_readiness_mode_total",
+		Help: "Number of render requests by readiness detection mode: binding (chromedp binding) or legacy (polling).",
+	}, []string{"mode"})
 )
 
 var (
@@ -282,7 +286,7 @@ func (s *BrowserService) Render(ctx context.Context, url string, printer Printer
 		observingAction("EmulateViewport", chromedp.EmulateViewport(int64(requestConfig.MinWidth), int64(requestConfig.MinHeight), orientation, chromedp.EmulateScale(requestConfig.PageScaleFactor))),
 		observingAction("setHeaders", setHeaders(browserCtx, cfg.Headers)),
 		observingAction("setCookies", setCookies(cfg.Cookies)),
-		observingAction("addBinding", runtime.AddBinding("__grafanaReportRenderCompleted")),
+		observingAction("addBinding", runtime.AddBinding("__grafanaImageRendererMessageChannel")),
 		observingAction("Navigate", chromedp.Navigate(url)),
 		observingAction("WaitReady(body)", chromedp.WaitReady("body", chromedp.ByQuery)), // wait for a body to exist; this is when the page has started to actually render
 		observingAction("scrollForElements", scrollForElements(requestConfig.TimeBetweenScrolls, requestConfig.MaxHeight)),
@@ -1050,7 +1054,7 @@ func waitForReady(browserCtx context.Context, cfg config.BrowserConfig, url stri
 	renderDone := make(chan struct{})
 	var renderDoneOnce sync.Once
 	chromedp.ListenTarget(browserCtx, func(ev any) {
-		if e, ok := ev.(*runtime.EventBindingCalled); ok && e.Name == "__grafanaReportRenderCompleted" {
+		if e, ok := ev.(*runtime.EventBindingCalled); ok && e.Name == "__grafanaImageRendererMessageChannel" {
 			// Closing emits a signal to the main thread that the render is complete.
 			renderDoneOnce.Do(func() { close(renderDone) })
 		}
@@ -1076,9 +1080,9 @@ func waitForReady(browserCtx context.Context, cfg config.BrowserConfig, url stri
 			span.RecordError(err)
 		}
 
-		slog.InfoContext(ctx, "readiness mode selected", "binding", supportsBinding)
 
 		if supportsBinding {
+			MetricBrowserReadinessMode.WithLabelValues("binding").Inc()
 			span.AddEvent("using binding-based readiness")
 			select {
 			case <-ctx.Done():
@@ -1095,6 +1099,7 @@ func waitForReady(browserCtx context.Context, cfg config.BrowserConfig, url stri
 			}
 		}
 
+		MetricBrowserReadinessMode.WithLabelValues("legacy").Inc()
 		span.AddEvent("using legacy polling readiness")
 
 		hasSeenAnyQuery := false
