@@ -49,6 +49,8 @@ func ListenAndServe(parentCtx context.Context, cfg config.ServerConfig, handler 
 			Certificates: []tls.Certificate{keyPair},
 			MinVersion:   minVersion,
 		}
+
+		listener = tls.NewListener(listener, tlsConfig)
 	}
 
 	server := &http.Server{
