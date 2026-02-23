@@ -38,6 +38,10 @@ jobs:
       GOARCH: ${{ matrix.GOARCH }}
       SUFFIX: ${{ matrix.SUFFIX || '' }}
       CGO_ENABLED: 0
+    permissions:
+      id-token: write # for OIDC token to Sigstore
+      attestations: write # for persisting attestation in GH
+      artifact-metadata: write # to generate artifact metadata records; action silently skips if this is not given
     steps:
       - uses: actions/checkout@v6
         with:
@@ -48,6 +52,9 @@ jobs:
           cache: false
       - name: go build
         run: go build -o grafana-image-renderer-"$GOOS"-"$GOARCH""$SUFFIX" -buildvcs -ldflags '-s -w -extldflags "-static"' .
+      - uses: actions/attest-build-provenance@00014ed6ed5efc5b1ab7f7f34a39eb55d41aa4f8 # v3.1.0
+        with:
+          subject-path: ./grafana-image-renderer-${{ matrix.GOOS }}-${{ matrix.GOARCH }}${{ matrix.SUFFIX || '' }}
       - uses: actions/upload-artifact@v5
         with:
           name: grafana-image-renderer-${{ matrix.GOOS }}-${{ matrix.GOARCH }}${{ matrix.SUFFIX || '' }}
@@ -70,11 +77,13 @@ jobs:
           set -euo pipefail
           echo "REGISTRY=ghcr.io" >> "$GITHUB_ENV"
           echo "REPOSITORY=$REPOSITORY" >> "$GITHUB_ENV"
+          echo "PROVENANCE_REGISTRY=ghcr.io" >> "$GITHUB_ENV"
       - name: Use docker.io
         if: github.event_name == 'push' && github.ref_type == 'tag'
         run: |
           echo "REGISTRY=docker.io" >> "$GITHUB_ENV"
           echo "REPOSITORY=grafana/grafana-image-renderer" >> "$GITHUB_ENV"
+          echo "PROVENANCE_REGISTRY=index.docker.io" >> "$GITHUB_ENV"
 
       - name: Use Git tag for image tag
         if: github.event_name == 'push' && github.ref_type == 'tag'
@@ -96,7 +105,8 @@ jobs:
         run: |
           set -euo pipefail
           echo "registry=$REGISTRY" >> "$GITHUB_OUTPUT"
-          echo "subject=$REGISTRY/$REPOSITORY" >> "$GITHUB_OUTPUT"
+          echo "provenance_registry=$PROVENANCE_REGISTRY" >> "$GITHUB_OUTPUT"
+          echo "subject=$PROVENANCE_REGISTRY/$REPOSITORY" >> "$GITHUB_OUTPUT"
           echo "tag=$REGISTRY/$REPOSITORY:$REF_NAME" >> "$GITHUB_OUTPUT"
           echo "ref_name=$REF_NAME" >> "$GITHUB_OUTPUT"
 
@@ -119,6 +129,7 @@ jobs:
       attestations: write # required to create attestations for the built image
       id-token: write # required to create attestations for the built image, and to read secrets
       pull-requests: write # required to comment on the pull request
+      artifact-metadata: write # to generate artifact metadata records; action silently skips if this is not given
     steps:
       - name: Log into GHCR
         if: needs.tag.outputs.registry == 'ghcr.io'
@@ -133,18 +144,15 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
 
-      - name: docker build
+      - name: docker buildx build
         env:
           DOCKER_BUILDKIT: 1
           BUILDKIT_STEP_LOG_MAX_SIZE: -1
           BUILDKIT_STEP_LOG_MAX_SPEED: -1
           TAG: ${{ needs.tag.outputs.tag }}-${{ matrix.arch }}
-        run: docker build . -t "$TAG"
-      - name: docker push
-        env:
-          TAG: ${{ needs.tag.outputs.tag }}-${{ matrix.arch }}
-        run: docker push "$TAG"
+        run: docker buildx build -t "$TAG" --load .
       - name: Get digest
         id: digest
         env:
@@ -154,11 +162,11 @@ jobs:
           DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' "$TAG" | cut -d@ -f2)
           echo "Digest: $DIGEST"
           echo "digest=$DIGEST" >> "$GITHUB_OUTPUT"
-      - uses: actions/attest-build-provenance@v2
+      - uses: actions/attest-build-provenance@00014ed6ed5efc5b1ab7f7f34a39eb55d41aa4f8 # v3.1.0
         with:
-          subject-name: ${{ needs.tag.outputs.subject }}
           subject-digest: ${{ steps.digest.outputs.digest }}
-          push-to-registry: true
+          subject-name: ${{ needs.tag.outputs.subject }}
+          push-to-registry: ${{ github.repository == 'grafana/grafana-image-renderer' }}
 
   manifest:
     needs: [tag, build]
@@ -168,6 +176,8 @@ jobs:
       packages: write # required to create the manifest list in the package registry
       id-token: write # required to create the manifest list in the package registry
       pull-requests: write # required to comment on the pull request
+    # Forks cannot push.
+    if: ${{ github.repository == 'grafana/grafana-image-renderer' }}
     steps:
       - name: Log into GHCR
         if: needs.tag.outputs.registry == 'ghcr.io'
@@ -184,8 +194,7 @@ jobs:
           TAG: ${{ needs.tag.outputs.tag }}
         run: |
           set -euo pipefail
-          docker manifest create "$TAG" "$TAG"-amd64 "$TAG"-arm64
-          docker manifest push "$TAG"
+          { docker buildx imagetools inspect "$TAG"-amd64 --raw && docker buildx imagetools inspect "$TAG"-arm64 --raw; } | jq --arg tag "$TAG" '.manifests[] | select(.mediaType == "application/vnd.oci.image.manifest.v1+json") | "\($tag)@\(.digest)"' | xargs -- docker buildx imagetools create -t "$TAG" --
       - name: Create and push :latest manifest
         if: github.event_name == 'push' && github.ref_type == 'tag'
         env:
@@ -193,8 +202,7 @@ jobs:
           SUBJECT: ${{ needs.tag.outputs.subject }}
         run: |
           set -euo pipefail
-          docker manifest create "$SUBJECT":latest "$TAG"-amd64 "$TAG"-arm64
-          docker manifest push "$SUBJECT":latest
+          { docker buildx imagetools inspect "$TAG"-amd64 --raw && docker buildx imagetools inspect "$TAG"-arm64 --raw; } | jq --arg tag "$TAG" '.manifests[] | select(.mediaType == "application/vnd.oci.image.manifest.v1+json") | "\($tag)@\(.digest)"' | xargs -- docker buildx imagetools create -t "$SUBJECT":latest --
 
       - name: Comment on PR
         if: github.event_name == 'pull_request'
