@@ -1081,7 +1081,6 @@ func waitForReady(browserCtx context.Context, cfg config.BrowserConfig, url stri
 			span.RecordError(err)
 		}
 
-
 		if supportsBinding {
 			MetricBrowserReadinessMode.WithLabelValues("binding").Inc()
 			span.AddEvent("using binding-based readiness")
