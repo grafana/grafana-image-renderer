@@ -26,6 +26,7 @@ import (
 	"github.com/chromedp/cdproto/fetch"
 	"github.com/chromedp/cdproto/network"
 	"github.com/chromedp/cdproto/page"
+	"github.com/chromedp/cdproto/runtime"
 	"github.com/grafana/chromedp"
 	"github.com/grafana/grafana-image-renderer/pkg/config"
 	"github.com/prometheus/client_golang/prometheus"
@@ -76,6 +77,10 @@ var (
 		},
 		Buckets: []float64{1, 1024, 4 * 1024, 16 * 1024, 1024 * 1024, 4 * 1024 * 1024, 16 * 1024 * 1024, 64 * 1024 * 1024, 256 * 1024 * 1024},
 	}, []string{"mime_type"})
+	MetricBrowserReadinessMode = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Name: "browser_readiness_mode_total",
+		Help: "Number of render requests by readiness detection mode: binding (chromedp binding) or legacy (polling).",
+	}, []string{"mode"})
 )
 
 var (
@@ -281,6 +286,7 @@ func (s *BrowserService) Render(ctx context.Context, url string, printer Printer
 		observingAction("EmulateViewport", chromedp.EmulateViewport(int64(requestConfig.MinWidth), int64(requestConfig.MinHeight), orientation, chromedp.EmulateScale(requestConfig.PageScaleFactor))),
 		observingAction("setHeaders", setHeaders(browserCtx, cfg.Headers)),
 		observingAction("setCookies", setCookies(cfg.Cookies)),
+		observingAction("addBinding", runtime.AddBinding("__grafanaImageRendererMessageChannel")),
 		observingAction("Navigate", chromedp.Navigate(url)),
 		observingAction("WaitReady(body)", chromedp.WaitReady("body", chromedp.ByQuery)), // wait for a body to exist; this is when the page has started to actually render
 		observingAction("scrollForElements", scrollForElements(requestConfig.TimeBetweenScrolls, requestConfig.MaxHeight)),
@@ -1045,6 +1051,15 @@ func waitForReady(browserCtx context.Context, cfg config.BrowserConfig, url stri
 		})
 	}
 
+	renderDone := make(chan struct{})
+	var renderDoneOnce sync.Once
+	chromedp.ListenTarget(browserCtx, func(ev any) {
+		if e, ok := ev.(*runtime.EventBindingCalled); ok && e.Name == "__grafanaImageRendererMessageChannel" {
+			// Closing emits a signal to the main thread that the render is complete.
+			renderDoneOnce.Do(func() { close(renderDone) })
+		}
+	})
+
 	return chromedp.ActionFunc(func(ctx context.Context) error {
 		defer cancelNetworkListener()
 
@@ -1059,6 +1074,33 @@ func waitForReady(browserCtx context.Context, cfg config.BrowserConfig, url stri
 		if requestConfig.ReadinessTimeout > 0 {
 			readinessTimeout = time.After(requestConfig.ReadinessTimeout)
 		}
+
+		var supportsBinding = false // default to legacy polling
+		// Set in core Grafana
+		if err := chromedp.Evaluate(`!!window.__grafanaRenderBindingSupported`, &supportsBinding).Do(ctx); err != nil {
+			span.RecordError(err)
+		}
+
+		if supportsBinding {
+			MetricBrowserReadinessMode.WithLabelValues("binding").Inc()
+			span.AddEvent("using binding-based readiness")
+			select {
+			case <-ctx.Done():
+				span.SetStatus(codes.Error, "context completed before readiness detected")
+				return ctx.Err()
+			case <-readinessTimeout:
+				span.SetStatus(codes.Error, ErrBrowserReadinessTimeout.Error())
+				return ErrBrowserReadinessTimeout
+			case <-renderDone:
+				span.AddEvent("render complete via binding", trace.WithAttributes(
+					attribute.Float64("elapsed_seconds", time.Since(start).Seconds()),
+				))
+				return nil
+			}
+		}
+
+		MetricBrowserReadinessMode.WithLabelValues("legacy").Inc()
+		span.AddEvent("using legacy polling readiness")
 
 		hasSeenAnyQuery := false
 		numSuccessfulCycles := 0
