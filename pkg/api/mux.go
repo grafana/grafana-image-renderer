@@ -53,7 +53,7 @@ func NewHandler(
 	mux.Handle("GET /render/version", HandleGetRenderVersion(versions))
 
 	handler := middleware.RequestMetrics(mux)
-	handler = middleware.RequestLogger(handler)
+	handler = middleware.RequestLogger(apiConfig, handler)
 	handler = middleware.Recovery(handler)
 	handler = middleware.Tracing(handler)
 	return handler, nil
