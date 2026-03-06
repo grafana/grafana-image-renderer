@@ -283,8 +283,8 @@ func (s *BrowserService) Render(ctx context.Context, url string, printer Printer
 		observingAction("setCookies", setCookies(cfg.Cookies)),
 		observingAction("Navigate", chromedp.Navigate(url)),
 		observingAction("WaitReady(body)", chromedp.WaitReady("body", chromedp.ByQuery)), // wait for a body to exist; this is when the page has started to actually render
-		observingAction("scrollForElements", scrollForElements(requestConfig.TimeBetweenScrolls, requestConfig.MaxHeight)),
 		observingAction("waitForDuration", waitForDuration(requestConfig.ReadinessPriorWait)),
+		observingAction("scrollForElements", scrollForElements(requestConfig.TimeBetweenScrolls, requestConfig.MaxHeight)),
 		observingAction("waitForReady", waitForReady(browserCtx, cfg, url)),
 		observingAction("printer.prepare", printer.prepare(cfg, url)),
 		observingAction("printer.action", printer.action(fileChan, cfg, url)),
