@@ -3,6 +3,7 @@ package middleware
 import (
 	"net/http"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -10,10 +11,10 @@ import (
 )
 
 var (
-	MetricRequestsInFlight = prometheus.NewGauge(prometheus.GaugeOpts{
+	MetricRequestsInFlight = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "http_requests_in_flight",
 		Help: "How many expensive requests are in flight?",
-	})
+	}, []string{"encoding"})
 	MetricRequestDurations = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 		Name: "http_request_duration",
 		Help: "How long does a request take?",
@@ -27,7 +28,7 @@ var (
 			125, 305, 605, 905, 1205,
 			1800, 3600,
 		},
-	}, []string{"method", "path", "status_code"})
+	}, []string{"method", "path", "status_code", "encoding"})
 )
 
 // RequestMetrics adds some Prometheus metrics to the HTTP handler, to ensure we know what's going on with it.
@@ -38,10 +39,11 @@ func RequestMetrics(h http.Handler) http.Handler {
 		defer span.End()
 		r = r.WithContext(ctx)
 
+		encoding := strings.TrimSpace(strings.ToLower(r.URL.Query().Get("encoding")))
 		now := time.Now()
 		recorder := &statusRecordingResponseWriter{rw: w}
 		h.ServeHTTP(recorder, r)
-		MetricRequestDurations.WithLabelValues(r.Method, r.Pattern, strconv.Itoa(recorder.status)).Observe(time.Since(now).Seconds())
+		MetricRequestDurations.WithLabelValues(r.Method, r.Pattern, strconv.Itoa(recorder.status), encoding).Observe(time.Since(now).Seconds())
 	})
 }
 
@@ -52,8 +54,9 @@ func InFlightMetrics(h http.Handler) http.Handler {
 		defer span.End()
 		r = r.WithContext(ctx)
 
-		MetricRequestsInFlight.Inc()
-		defer MetricRequestsInFlight.Dec() // defer to run despite panics
+		encoding := strings.TrimSpace(strings.ToLower(r.URL.Query().Get("encoding")))
+		MetricRequestsInFlight.WithLabelValues(encoding).Inc()
+		defer MetricRequestsInFlight.WithLabelValues(encoding).Dec()
 		h.ServeHTTP(w, r)
 	})
 }
