@@ -592,7 +592,7 @@ func TestRenderingGrafana(t *testing.T) {
 	})
 
 	t.Run("render panel dashboards as PNG", func(t *testing.T) {
-		t.Parallel()
+		// t.Parallel()
 
 		net, err := network.New(t.Context())
 		require.NoError(t, err, "could not create Docker network")
