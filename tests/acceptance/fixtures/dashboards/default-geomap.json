@@ -22,10 +22,6 @@
   "links": [],
   "panels": [
     {
-      "datasource": {
-        "type": "grafana-testdata-datasource",
-        "uid": "${testdata}"
-      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -129,15 +125,7 @@
         }
       },
       "pluginVersion": "12.2.0-17567790421",
-      "targets": [
-        {
-          "datasource": {
-            "type": "grafana-testdata-datasource",
-            "uid": "${testdata}"
-          },
-          "refId": "A"
-        }
-      ],
+      "targets": [],
       "title": "Default Geomap",
       "type": "geomap"
     }
@@ -148,21 +136,7 @@
     "geomap"
   ],
   "templating": {
-    "list": [
-      {
-        "current": {
-          "text": "testdata",
-          "value": "testdata"
-        },
-        "description": "",
-        "name": "testdata",
-        "options": [],
-        "query": "grafana-testdata-datasource",
-        "refresh": 1,
-        "regex": "",
-        "type": "datasource"
-      }
-    ]
+    "list": []
   },
   "time": {
     "from": "now-6h",

@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/go-jose/go-jose/v4"
 	"github.com/stretchr/testify/assert"
@@ -43,7 +44,7 @@ func TestRenderingGrafana(t *testing.T) {
 		testcontainers.CleanupNetwork(t, net)
 
 		StartPrometheus(t, WithNetwork(net, "prometheus"))
-		svc := StartImageRenderer(t, WithNetwork(net, "gir"))
+		svc := StartImageRenderer(t, WithNetwork(net, "gir"), WithEnv("BROWSER_READINESS_TIMEOUT", "60s"))
 		_ = StartGrafana(t,
 			WithNetwork(net, "grafana"),
 			WithEnv("GF_RENDERING_SERVER_URL", "http://gir:8081/render"),
@@ -208,7 +209,7 @@ func TestRenderingGrafana(t *testing.T) {
 		testcontainers.CleanupNetwork(t, net)
 
 		StartPrometheus(t, WithNetwork(net, "prometheus"))
-		svc := StartImageRenderer(t, WithNetwork(net, "gir"))
+		svc := StartImageRenderer(t, WithNetwork(net, "gir"), WithEnv("BROWSER_READINESS_TIMEOUT", "60s"))
 		_ = StartGrafana(t,
 			WithNetwork(net, "grafana"),
 			WithEnv("GF_RENDERING_SERVER_URL", "http://gir:8081/render"),
@@ -255,7 +256,7 @@ func TestRenderingGrafana(t *testing.T) {
 		testcontainers.CleanupNetwork(t, net)
 
 		StartPrometheus(t, WithNetwork(net, "prometheus"))
-		svc := StartImageRenderer(t, WithNetwork(net, "gir"))
+		svc := StartImageRenderer(t, WithNetwork(net, "gir"), WithEnv("BROWSER_READINESS_TIMEOUT", "60s"))
 		_ = StartGrafana(t,
 			WithNetwork(net, "grafana"),
 			WithEnv("GF_RENDERING_SERVER_URL", "http://gir:8081/render"),
@@ -451,7 +452,7 @@ func TestRenderingGrafana(t *testing.T) {
 		testcontainers.CleanupNetwork(t, net)
 
 		StartPrometheus(t, WithNetwork(net, "prometheus"))
-		svc := StartImageRenderer(t, WithNetwork(net, "gir"))
+		svc := StartImageRenderer(t, WithNetwork(net, "gir"), WithEnv("BROWSER_READINESS_TIMEOUT", "60s"))
 		_ = StartGrafana(t,
 			WithNetwork(net, "grafana"),
 			WithEnv("GF_RENDERING_SERVER_URL", "http://gir:8081/render"),
@@ -591,19 +592,21 @@ func TestRenderingGrafana(t *testing.T) {
 	})
 
 	t.Run("render panel dashboards as PNG", func(t *testing.T) {
-		t.Parallel()
+		// t.Parallel()
 
 		net, err := network.New(t.Context())
 		require.NoError(t, err, "could not create Docker network")
 		testcontainers.CleanupNetwork(t, net)
 
 		StartPrometheus(t, WithNetwork(net, "prometheus"))
-		svc := StartImageRenderer(t, WithNetwork(net, "gir"))
+		svc := StartImageRenderer(t, WithNetwork(net, "gir"), WithEnv("BROWSER_READINESS_TIMEOUT", "60s"))
 		_ = StartGrafana(t,
 			WithNetwork(net, "grafana"),
 			WithEnv("GF_RENDERING_SERVER_URL", "http://gir:8081/render"),
 			WithEnv("GF_RENDERING_CALLBACK_URL", "http://grafana:3000/"),
 			WithEnv("GF_RENDERING_RENDERER_TOKEN", rendererAuthToken))
+
+		time.Sleep(30 * time.Second)
 
 		requestDashboard := func(tb testing.TB, id string) []byte {
 			req, err := http.NewRequestWithContext(tb.Context(), http.MethodGet, svc.HTTPEndpoint+"/render", nil)
@@ -627,10 +630,8 @@ func TestRenderingGrafana(t *testing.T) {
 		}
 
 		t.Run("geomap", func(t *testing.T) {
-			t.Parallel()
 
 			t.Run("with default settings", func(t *testing.T) {
-				t.Parallel()
 
 				body := requestDashboard(t, "default-geomap")
 				bodyImg := ReadRGBA(t, body)
@@ -699,7 +700,7 @@ func TestRenderingGrafana(t *testing.T) {
 		testcontainers.CleanupNetwork(t, net)
 
 		StartPrometheus(t, WithNetwork(net, "prometheus"))
-		svc := StartImageRenderer(t, WithNetwork(net, "gir"))
+		svc := StartImageRenderer(t, WithNetwork(net, "gir"), WithEnv("BROWSER_READINESS_TIMEOUT", "60s"))
 		_ = StartGrafana(t,
 			WithNetwork(net, "grafana"),
 			WithEnv("GF_RENDERING_SERVER_URL", "http://gir:8081/render"),
@@ -739,7 +740,7 @@ func TestRenderingGrafana(t *testing.T) {
 		require.NoError(t, err, "could not create Docker network")
 		testcontainers.CleanupNetwork(t, net)
 
-		svc := StartImageRenderer(t, WithNetwork(net, "gir"), WithEnv("API_DEFAULT_ENCODING", "png"))
+		svc := StartImageRenderer(t, WithNetwork(net, "gir"), WithEnv("API_DEFAULT_ENCODING", "png"), WithEnv("BROWSER_READINESS_TIMEOUT", "60s"))
 		_ = StartGrafana(t,
 			WithNetwork(net, "grafana"),
 			WithEnv("GF_RENDERING_SERVER_URL", "http://gir:8081/render"),
