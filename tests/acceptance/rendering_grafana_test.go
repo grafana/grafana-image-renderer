@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/go-jose/go-jose/v4"
 	"github.com/stretchr/testify/assert"
@@ -604,6 +605,8 @@ func TestRenderingGrafana(t *testing.T) {
 			WithEnv("GF_RENDERING_SERVER_URL", "http://gir:8081/render"),
 			WithEnv("GF_RENDERING_CALLBACK_URL", "http://grafana:3000/"),
 			WithEnv("GF_RENDERING_RENDERER_TOKEN", rendererAuthToken))
+
+		time.Sleep(30 * time.Second)
 
 		requestDashboard := func(tb testing.TB, id string) []byte {
 			req, err := http.NewRequestWithContext(tb.Context(), http.MethodGet, svc.HTTPEndpoint+"/render", nil)
