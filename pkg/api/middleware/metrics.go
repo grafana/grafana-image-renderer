@@ -11,10 +11,10 @@ import (
 )
 
 var (
-	MetricRequestsInFlight = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+	MetricRequestsInFlight = prometheus.NewGauge(prometheus.GaugeOpts{
 		Name: "http_requests_in_flight",
 		Help: "How many expensive requests are in flight?",
-	}, []string{"encoding"})
+	})
 	MetricRequestDurations = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 		Name: "http_request_duration",
 		Help: "How long does a request take?",
@@ -54,9 +54,8 @@ func InFlightMetrics(h http.Handler) http.Handler {
 		defer span.End()
 		r = r.WithContext(ctx)
 
-		encoding := strings.TrimSpace(strings.ToLower(r.URL.Query().Get("encoding")))
-		MetricRequestsInFlight.WithLabelValues(encoding).Inc()
-		defer MetricRequestsInFlight.WithLabelValues(encoding).Dec()
+		MetricRequestsInFlight.Inc()
+		defer MetricRequestsInFlight.Dec()
 		h.ServeHTTP(w, r)
 	})
 }
