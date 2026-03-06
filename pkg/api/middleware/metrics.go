@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 var (
@@ -40,6 +42,10 @@ func RequestMetrics(h http.Handler) http.Handler {
 		r = r.WithContext(ctx)
 
 		encoding := strings.TrimSpace(strings.ToLower(r.URL.Query().Get("encoding")))
+		if encoding != "pdf" && encoding != "png" {
+			span.AddEvent("unknown encoding", trace.WithAttributes(attribute.String("encoding", encoding)))
+			encoding = "unknown"
+		}
 		now := time.Now()
 		recorder := &statusRecordingResponseWriter{rw: w}
 		h.ServeHTTP(recorder, r)
