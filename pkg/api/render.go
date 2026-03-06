@@ -108,7 +108,14 @@ func HandleGetRender(browser *service.BrowserService, apiConfig config.APIConfig
 			options = append(options, service.WithPageScaleFactor(pageScaleFactor))
 			span.SetAttributes(attribute.Float64("deviceScaleFactor", pageScaleFactor))
 		}
-		if timeZone := r.URL.Query().Get("timeZone"); timeZone != "" {
+		timeZone := r.URL.Query().Get("timezone")
+		if timeZone == "" {
+			timeZone = r.URL.Query().Get("timeZone")
+		}
+		if timeZone == "" {
+			timeZone = r.URL.Query().Get("tz")
+		}
+		if timeZone != "" {
 			timeLocation, err := time.LoadLocation(timeZone)
 			if err != nil {
 				span.SetStatus(codes.Error, "invalid timeZone query param")
