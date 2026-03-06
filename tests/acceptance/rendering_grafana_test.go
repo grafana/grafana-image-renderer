@@ -630,10 +630,8 @@ func TestRenderingGrafana(t *testing.T) {
 		}
 
 		t.Run("geomap", func(t *testing.T) {
-			t.Parallel()
 
 			t.Run("with default settings", func(t *testing.T) {
-				t.Parallel()
 
 				body := requestDashboard(t, "default-geomap")
 				bodyImg := ReadRGBA(t, body)
