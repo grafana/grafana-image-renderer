@@ -43,7 +43,7 @@ func TestRenderingGrafana(t *testing.T) {
 		testcontainers.CleanupNetwork(t, net)
 
 		StartPrometheus(t, WithNetwork(net, "prometheus"))
-		svc := StartImageRenderer(t, WithNetwork(net, "gir"))
+		svc := StartImageRenderer(t, WithNetwork(net, "gir"), WithEnv("BROWSER_READINESS_TIMEOUT", "60s"))
 		_ = StartGrafana(t,
 			WithNetwork(net, "grafana"),
 			WithEnv("GF_RENDERING_SERVER_URL", "http://gir:8081/render"),
@@ -208,7 +208,7 @@ func TestRenderingGrafana(t *testing.T) {
 		testcontainers.CleanupNetwork(t, net)
 
 		StartPrometheus(t, WithNetwork(net, "prometheus"))
-		svc := StartImageRenderer(t, WithNetwork(net, "gir"))
+		svc := StartImageRenderer(t, WithNetwork(net, "gir"), WithEnv("BROWSER_READINESS_TIMEOUT", "60s"))
 		_ = StartGrafana(t,
 			WithNetwork(net, "grafana"),
 			WithEnv("GF_RENDERING_SERVER_URL", "http://gir:8081/render"),
@@ -255,7 +255,7 @@ func TestRenderingGrafana(t *testing.T) {
 		testcontainers.CleanupNetwork(t, net)
 
 		StartPrometheus(t, WithNetwork(net, "prometheus"))
-		svc := StartImageRenderer(t, WithNetwork(net, "gir"))
+		svc := StartImageRenderer(t, WithNetwork(net, "gir"), WithEnv("BROWSER_READINESS_TIMEOUT", "60s"))
 		_ = StartGrafana(t,
 			WithNetwork(net, "grafana"),
 			WithEnv("GF_RENDERING_SERVER_URL", "http://gir:8081/render"),
@@ -451,7 +451,7 @@ func TestRenderingGrafana(t *testing.T) {
 		testcontainers.CleanupNetwork(t, net)
 
 		StartPrometheus(t, WithNetwork(net, "prometheus"))
-		svc := StartImageRenderer(t, WithNetwork(net, "gir"))
+		svc := StartImageRenderer(t, WithNetwork(net, "gir"), WithEnv("BROWSER_READINESS_TIMEOUT", "60s"))
 		_ = StartGrafana(t,
 			WithNetwork(net, "grafana"),
 			WithEnv("GF_RENDERING_SERVER_URL", "http://gir:8081/render"),
@@ -598,7 +598,7 @@ func TestRenderingGrafana(t *testing.T) {
 		testcontainers.CleanupNetwork(t, net)
 
 		StartPrometheus(t, WithNetwork(net, "prometheus"))
-		svc := StartImageRenderer(t, WithNetwork(net, "gir"))
+		svc := StartImageRenderer(t, WithNetwork(net, "gir"), WithEnv("BROWSER_READINESS_TIMEOUT", "60s"))
 		_ = StartGrafana(t,
 			WithNetwork(net, "grafana"),
 			WithEnv("GF_RENDERING_SERVER_URL", "http://gir:8081/render"),
@@ -699,7 +699,7 @@ func TestRenderingGrafana(t *testing.T) {
 		testcontainers.CleanupNetwork(t, net)
 
 		StartPrometheus(t, WithNetwork(net, "prometheus"))
-		svc := StartImageRenderer(t, WithNetwork(net, "gir"))
+		svc := StartImageRenderer(t, WithNetwork(net, "gir"), WithEnv("BROWSER_READINESS_TIMEOUT", "60s"))
 		_ = StartGrafana(t,
 			WithNetwork(net, "grafana"),
 			WithEnv("GF_RENDERING_SERVER_URL", "http://gir:8081/render"),
@@ -739,7 +739,7 @@ func TestRenderingGrafana(t *testing.T) {
 		require.NoError(t, err, "could not create Docker network")
 		testcontainers.CleanupNetwork(t, net)
 
-		svc := StartImageRenderer(t, WithNetwork(net, "gir"), WithEnv("API_DEFAULT_ENCODING", "png"))
+		svc := StartImageRenderer(t, WithNetwork(net, "gir"), WithEnv("API_DEFAULT_ENCODING", "png"), WithEnv("BROWSER_READINESS_TIMEOUT", "60s"))
 		_ = StartGrafana(t,
 			WithNetwork(net, "grafana"),
 			WithEnv("GF_RENDERING_SERVER_URL", "http://gir:8081/render"),
