@@ -40,6 +40,10 @@ func RequestMetrics(h http.Handler) http.Handler {
 		r = r.WithContext(ctx)
 
 		encoding := strings.TrimSpace(strings.ToLower(r.URL.Query().Get("encoding")))
+		if encoding != "png" && encoding != "pdf" {
+			encoding = "unknown"
+		}
+
 		now := time.Now()
 		recorder := &statusRecordingResponseWriter{rw: w}
 		h.ServeHTTP(recorder, r)
