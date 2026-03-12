@@ -232,6 +232,16 @@ func WithLandscape(landscape bool) RenderingOption {
 	}
 }
 
+func WithForcePolling(forcePollingMode bool) RenderingOption {
+	return func(cfg config.BrowserConfig) (config.BrowserConfig, error) {
+		cfg.ApplyAll(func(rc *config.RequestConfig) {
+			rc.ForcePollingMode = forcePollingMode
+		})
+
+		return cfg, nil
+	}
+}
+
 func (s *BrowserService) Render(ctx context.Context, url string, printer Printer, optionFuncs ...RenderingOption) ([]byte, string, error) {
 	tracer := tracer(ctx)
 	ctx, span := tracer.Start(ctx, "BrowserService.Render")
@@ -1081,7 +1091,7 @@ func waitForReady(browserCtx context.Context, cfg config.BrowserConfig, url stri
 			span.RecordError(err)
 		}
 
-		if supportsBinding {
+		if supportsBinding && !requestConfig.ForcePollingMode {
 			MetricBrowserReadinessMode.WithLabelValues("binding").Inc()
 			span.AddEvent("using binding-based readiness")
 			select {

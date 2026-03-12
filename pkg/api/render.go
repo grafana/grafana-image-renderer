@@ -221,6 +221,11 @@ func HandleGetRender(browser *service.BrowserService, apiConfig config.APIConfig
 			options = append(options, service.WithHeader("Accept-Language", acceptLanguage))
 			span.SetAttributes(attribute.String("Accept-Language", acceptLanguage))
 		}
+		// FIXME: temporary flag while we roll out the new event-based mode, for fallback and debugging.
+		if forcePollingMode := targetURL.Query().Get("forcePollingMode"); forcePollingMode != "" {
+			options = append(options, service.WithForcePolling(forcePollingMode == "true"))
+			span.SetAttributes(attribute.Bool("forcePollingMode", forcePollingMode == "true"))
+		}
 
 		start := time.Now()
 		body, contentType, err := browser.Render(ctx, rawTargetURL, printer, options...)
