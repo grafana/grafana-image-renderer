@@ -433,6 +433,9 @@ type RequestConfig struct {
 	ReadinessNetworkIdleTimeout     time.Duration
 	ReadinessDisableDOMHashCodeWait bool
 	ReadinessDOMHashCodeTimeout     time.Duration
+
+	// ForcePollingMode forces the renderer to poll for scenes' query running count variable to detect when rendering is done, rather than use an event-based approach.
+	ForcePollingMode bool
 }
 
 func (c BrowserConfig) DeepClone() BrowserConfig {
