@@ -1,0 +1,68 @@
+name: macOS Docker Tests
+
+on:
+  push:
+    branches:
+      - master
+    tags:
+      - 'v*'
+  pull_request:
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  acceptance:
+    name: acceptance tests (macos)
+    runs-on: macos-15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: false
+
+      - name: Setup Docker
+        uses: douglascamata/setup-docker-macos-action@v1.1.0
+
+      - name: docker build
+        env:
+          DOCKER_BUILDKIT: 1
+          BUILDKIT_STEP_LOG_MAX_SIZE: -1
+          BUILDKIT_STEP_LOG_MAX_SPEED: -1
+        run: docker build . -t image-renderer
+
+      - name: go test ./tests/acceptance/...
+        run: go test ./tests/acceptance/... -count=1
+        env:
+          TERM: xterm
+          IMAGE: image-renderer
+          UPDATE_FIXTURES: 'true'
+          REQUIRE_ACCEPTANCE: 'true'
+          REQUIRE_ENTERPRISE: 'false'
+
+      - name: Tar changed files
+        if: failure()
+        id: tar
+        run: |
+          set -euo pipefail
+          changed="$(git diff --name-only)"
+          if [ -n "$changed" ]; then
+            echo "$changed" | tr '\n' '\0' | xargs -0 tar cJf changed-files.tar.xz
+            echo 'upload=true' >> "$GITHUB_OUTPUT"
+          else
+            echo "No files changed :)"
+          fi
+      - name: Upload changed files
+        if: ${{ steps.tar.outputs.upload == 'true' && (success() || failure()) }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: changed-files-macos
+          path: changed-files.tar.xz

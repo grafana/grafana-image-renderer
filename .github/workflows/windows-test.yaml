@@ -1,0 +1,79 @@
+name: Windows Docker Tests
+
+on:
+  push:
+    branches:
+      - master
+    tags:
+      - 'v*'
+  pull_request:
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  acceptance:
+    name: acceptance tests (windows)
+    runs-on: windows-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: false
+
+      - name: Install docker-buildx plugin
+        shell: bash
+        run: |
+          set -euo pipefail
+          BUILDX_VERSION="v0.22.0"
+          PLUGINS_DIR="${PROGRAMFILES}/Docker/cli-plugins"
+          mkdir -p "$PLUGINS_DIR"
+          curl -fsSL "https://github.com/docker/buildx/releases/download/${BUILDX_VERSION}/buildx-${BUILDX_VERSION}.windows-amd64.exe" \
+            -o "$PLUGINS_DIR/docker-buildx.exe"
+          docker buildx version
+
+      - name: docker build
+        shell: bash
+        env:
+          DOCKER_BUILDKIT: 1
+          BUILDKIT_STEP_LOG_MAX_SIZE: -1
+          BUILDKIT_STEP_LOG_MAX_SPEED: -1
+        run: docker build . -t image-renderer
+
+      - name: go test ./tests/acceptance/...
+        shell: bash
+        run: go test ./tests/acceptance/... -count=1
+        env:
+          TERM: xterm
+          IMAGE: image-renderer
+          UPDATE_FIXTURES: 'true'
+          REQUIRE_ACCEPTANCE: 'true'
+          REQUIRE_ENTERPRISE: 'false'
+
+      - name: Tar changed files
+        if: failure()
+        shell: bash
+        id: tar
+        run: |
+          set -euo pipefail
+          changed="$(git diff --name-only)"
+          if [ -n "$changed" ]; then
+            echo "$changed" | tr '\n' '\0' | xargs -0 tar cJf changed-files.tar.xz
+            echo 'upload=true' >> "$GITHUB_OUTPUT"
+          else
+            echo "No files changed :)"
+          fi
+      - name: Upload changed files
+        if: ${{ steps.tar.outputs.upload == 'true' && (success() || failure()) }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: changed-files-windows
+          path: changed-files.tar.xz
