@@ -54,6 +54,8 @@ This is a verbatim copy of the output of the `grafana-image-renderer server --he
     Allows silencing the HTTP request logs for a certain path. It requires a direct match. Multiple values can be passed separated by comma or multiple flags. Examples: '/healthz', '/render/version'. [config: api.silence-request-log-path]
 --browser.flag=<string> / --browser.flags=<string> [${BROWSER_FLAGS}, ${BROWSER_FLAG}]
     Flags to pass to the browser. These are syntaxed `--${flag}` or `--${flag}=${value}`. Note the required `--` prefix for each flag. [config: browser.flag]
+--browser.force-polling-mode [default: false] [${BROWSER_FORCE_POLLING_MODE}]
+    Forces the renderer to poll for scenes' query running count variable to detect when rendering is done, rather than use an event-based approach even when that is available. [config: browser.force-polling-mode]
 --browser.gpu [default: false] [${BROWSER_GPU}]
     Enable GPU support in the browser. [config: browser.gpu]
 --browser.header=<string> / --browser.headers=<string> [${BROWSER_HEADER}]
