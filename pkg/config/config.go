@@ -434,7 +434,7 @@ type RequestConfig struct {
 	ReadinessDisableDOMHashCodeWait bool
 	ReadinessDOMHashCodeTimeout     time.Duration
 
-	// ForcePollingMode forces the renderer to poll for scenes' query running count variable to detect when rendering is done, rather than use an event-based approach.
+	// ForcePollingMode forces the renderer to poll for scenes' query running count variable to detect when rendering is done, rather than use an event-based approach even when that is available.
 	ForcePollingMode bool
 }
 
@@ -693,6 +693,11 @@ func BrowserFlags() []cli.Flag {
 			Usage:   "URL pattern override in format: 'pattern=--flag=value --flag2=value2'. Pattern is a regex. May be repeated. Example: --browser.override='^https://slow\\.example\\.com/.*=--browser.readiness.timeout=60s' [config: browser.override]",
 			Sources: FromConfig("browser.override", "BROWSER_OVERRIDE"),
 		},
+		&cli.BoolFlag{
+			Name:    "browser.force-polling-mode",
+			Usage:   "Forces the renderer to poll for scenes' query running count variable to detect when rendering is done, rather than use an event-based approach even when that is available. [config: browser.force-polling-mode]",
+			Sources: FromConfig("browser.force-polling-mode", "BROWSER_FORCE_POLLING_MODE"),
+		},
 	}
 }
 
@@ -730,6 +735,7 @@ func requestConfigFromCommand(c *cli.Command) (RequestConfig, error) {
 		ReadinessNetworkIdleTimeout:     c.Duration("browser.readiness.network-idle-timeout"),
 		ReadinessDisableDOMHashCodeWait: c.Bool("browser.readiness.disable-dom-hashcode-wait"),
 		ReadinessDOMHashCodeTimeout:     c.Duration("browser.readiness.dom-hashcode-timeout"),
+		ForcePollingMode:                c.Bool("browser.force-polling-mode"),
 	}, nil
 }
 
