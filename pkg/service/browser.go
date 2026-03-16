@@ -1045,18 +1045,21 @@ func waitForReady(browserCtx context.Context, cfg config.BrowserConfig, url stri
 		return hashCode, err
 	}
 
-	requests := &atomic.Int64{}
+	requests := newReadinessNetworkObserver()
 	lastRequest := &atomicTime{} // TODO: use this to wait for network stabilisation.
 	lastRequest.Store(time.Now())
 	networkListenerCtx, cancelNetworkListener := context.WithCancel(browserCtx)
 	if !requestConfig.ReadinessDisableNetworkWait {
 		chromedp.ListenTarget(networkListenerCtx, func(ev any) {
-			switch ev.(type) {
+			switch e := ev.(type) {
 			case *network.EventRequestWillBeSent:
-				requests.Add(1)
-				lastRequest.Store(time.Now())
-			case *network.EventLoadingFinished, *network.EventLoadingFailed:
-				requests.Add(-1)
+				if requests.onRequestWillBeSent(e) {
+					lastRequest.Store(time.Now())
+				}
+			case *network.EventLoadingFinished:
+				requests.onRequestCompleted(e.RequestID)
+			case *network.EventLoadingFailed:
+				requests.onRequestCompleted(e.RequestID)
 			}
 		})
 	}
@@ -1131,11 +1134,12 @@ func waitForReady(browserCtx context.Context, cfg config.BrowserConfig, url stri
 				// Continue with the rest of the code; this is waiting for the next time we can do work.
 			}
 
+			inflightRequests := requests.inflight()
 			if !requestConfig.ReadinessDisableNetworkWait &&
 				(requestConfig.ReadinessNetworkIdleTimeout <= 0 || time.Since(start) < requestConfig.ReadinessNetworkIdleTimeout) &&
-				requests.Load() > 0 {
+				inflightRequests > 0 {
 				initialDOMPass = true
-				span.AddEvent("network requests still ongoing", trace.WithAttributes(attribute.Int64("inflight_requests", requests.Load())))
+				span.AddEvent("network requests still ongoing", trace.WithAttributes(attribute.Int64("inflight_requests", inflightRequests)))
 				continue // still waiting on network requests to complete
 			}
 
@@ -1240,6 +1244,65 @@ func observingAction(name string, action chromedp.Action) chromedp.Action {
 		MetricBrowserActionDuration.WithLabelValues(name).Observe(time.Since(start).Seconds())
 		return nil
 	})
+}
+
+type readinessNetworkObserver struct {
+	inflightRequests atomic.Int64
+	requestIDs       map[network.RequestID]struct{}
+	mu               sync.Mutex
+}
+
+func newReadinessNetworkObserver() *readinessNetworkObserver {
+	return &readinessNetworkObserver{
+		requestIDs: make(map[network.RequestID]struct{}),
+	}
+}
+
+func (r *readinessNetworkObserver) onRequestWillBeSent(e *network.EventRequestWillBeSent) bool {
+	if !shouldTrackReadinessNetworkRequest(e) {
+		return false
+	}
+
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	// Redirect chains re-use the same RequestID and emit extra request events.
+	// Treat each RequestID as one inflight unit to avoid over-counting.
+	if _, exists := r.requestIDs[e.RequestID]; exists {
+		return false
+	}
+	r.requestIDs[e.RequestID] = struct{}{}
+	r.inflightRequests.Add(1)
+	return true
+}
+
+func (r *readinessNetworkObserver) onRequestCompleted(requestID network.RequestID) {
+	r.mu.Lock()
+	if _, exists := r.requestIDs[requestID]; !exists {
+		r.mu.Unlock()
+		return
+	}
+	delete(r.requestIDs, requestID)
+	r.mu.Unlock()
+
+	r.inflightRequests.Add(-1)
+}
+
+func (r *readinessNetworkObserver) inflight() int64 {
+	return r.inflightRequests.Load()
+}
+
+func shouldTrackReadinessNetworkRequest(e *network.EventRequestWillBeSent) bool {
+	if e == nil || e.Request == nil {
+		return false
+	}
+	switch e.Type {
+	case network.ResourceTypeEventSource, network.ResourceTypeWebSocket:
+		return false
+	}
+
+	rawURL := strings.ToLower(e.Request.URL)
+	return strings.HasPrefix(rawURL, "http://") || strings.HasPrefix(rawURL, "https://")
 }
 
 type networkHeadersCarrier network.Headers
