@@ -5,32 +5,75 @@ import (
 	"image"
 	"image/draw"
 	"image/png"
+	"math"
+	"runtime"
+	"sync"
 	"testing"
+	"time"
 
-	"github.com/gen2brain/go-fitz"
+	"github.com/klippa-app/go-pdfium"
+	"github.com/klippa-app/go-pdfium/requests"
+	"github.com/klippa-app/go-pdfium/webassembly"
 	"github.com/stretchr/testify/require"
 )
 
-func PDFtoImage(tb testing.TB, pdf []byte) *image.RGBA {
+var pdfiumPoolOnce = sync.OnceValues(func() (pdfium.Pool, error) {
+	workers := max(1, runtime.NumCPU())
+	return webassembly.Init(webassembly.Config{
+		MinIdle:      1,
+		MaxIdle:      workers,
+		MaxTotal:     workers,
+		ReuseWorkers: true,
+	})
+})
+
+func PDFtoImage(tb testing.TB, data []byte) *image.RGBA {
 	tb.Helper()
 
-	doc, err := fitz.NewFromMemory(pdf)
-	require.NoError(tb, err, "failed to open PDF from memory")
-	defer func() {
-		if err := doc.Close(); err != nil {
-			tb.Logf("failed to close PDF document: %v", err)
-		}
-	}()
+	pool, err := pdfiumPoolOnce()
+	require.NoError(tb, err)
+
+	instance, err := pool.GetInstance(30 * time.Second)
+	require.NoError(tb, err)
+
+	tb.Cleanup(func() { require.NoError(tb, instance.Close()) })
+
+	doc, err := instance.OpenDocument(&requests.OpenDocument{File: &data})
+	require.NoError(tb, err)
+
+	tb.Cleanup(func() {
+		_, err := instance.FPDF_CloseDocument(&requests.FPDF_CloseDocument{
+			Document: doc.Document,
+		})
+		require.NoError(tb, err)
+	})
+
+	pageCount, err := instance.FPDF_GetPageCount(&requests.FPDF_GetPageCount{Document: doc.Document})
+	require.NoError(tb, err)
 
 	var imgs []*image.RGBA
-	for page := range doc.NumPage() {
-		img, err := doc.Image(page)
-		require.NoError(tb, err, "failed to render page %d of PDF", page)
-		imgs = append(imgs, img)
-	}
-	merged := mergeImages(imgs...)
+	for i := range pageCount.PageCount {
+		page := requests.Page{
+			ByIndex: &requests.PageByIndex{
+				Document: doc.Document,
+				Index:    i,
+			},
+		}
 
-	return merged
+		pageSize, err := instance.GetPageSize(&requests.GetPageSize{Page: page})
+		require.NoError(tb, err)
+
+		rendered, err := instance.RenderPageInPixels(&requests.RenderPageInPixels{
+			Width:  pointsToPixels(pageSize.Width),
+			Height: pointsToPixels(pageSize.Height),
+			Page:   page,
+		})
+		require.NoError(tb, err)
+
+		imgs = append(imgs, rendered.Result.Image)
+	}
+
+	return mergeImages(imgs...)
 }
 
 func EncodePNG(tb testing.TB, img *image.RGBA) []byte {
@@ -56,4 +99,10 @@ func mergeImages(imgs ...*image.RGBA) *image.RGBA {
 		y += img.Bounds().Dy()
 	}
 	return merged
+}
+
+func pointsToPixels(points float64) int {
+	const dpi = 300.
+	normalizedPoints := math.Round(points*100) / 100
+	return max(1, int(math.Round(normalizedPoints*dpi/72.0)))
 }
