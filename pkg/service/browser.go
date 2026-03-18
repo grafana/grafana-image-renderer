@@ -292,6 +292,7 @@ func (s *BrowserService) Render(ctx context.Context, url string, printer Printer
 		observingAction("trackProcess", trackProcess(browserCtx, s.processes)),
 		observingAction("network.Enable", network.Enable()), // required by waitForReady
 		observingAction("fetch.Enable", fetch.Enable()),     // required by handleNetworkEvents
+		observingAction("SetTimezoneOverride", emulation.SetTimezoneOverride(cfg.TimeZone.String())),
 		observingAction("SetPageScaleFactor", emulation.SetPageScaleFactor(requestConfig.PageScaleFactor)),
 		observingAction("EmulateViewport", chromedp.EmulateViewport(int64(requestConfig.MinWidth), int64(requestConfig.MinHeight), orientation, chromedp.EmulateScale(requestConfig.PageScaleFactor))),
 		observingAction("setHeaders", setHeaders(browserCtx, cfg.Headers)),

@@ -108,16 +108,16 @@ func HandleGetRender(browser *service.BrowserService, apiConfig config.APIConfig
 			options = append(options, service.WithPageScaleFactor(pageScaleFactor))
 			span.SetAttributes(attribute.Float64("deviceScaleFactor", pageScaleFactor))
 		}
-		if timeZone := r.URL.Query().Get("timeZone"); timeZone != "" {
+		if timeZone := r.URL.Query().Get("timezone"); timeZone != "" {
 			timeLocation, err := time.LoadLocation(timeZone)
 			if err != nil {
-				span.SetStatus(codes.Error, "invalid timeZone query param")
-				span.RecordError(err, trace.WithAttributes(attribute.String("timeZone", timeZone)))
-				http.Error(w, fmt.Sprintf("invalid 'timeZone' query parameter: %v", err), http.StatusBadRequest)
+				span.SetStatus(codes.Error, "invalid timezone query param")
+				span.RecordError(err, trace.WithAttributes(attribute.String("timezone", timeZone)))
+				http.Error(w, fmt.Sprintf("invalid 'timezone' query parameter: %v", err), http.StatusBadRequest)
 				return
 			}
 			options = append(options, service.WithTimeZone(timeLocation))
-			span.SetAttributes(attribute.String("timeZone", timeZone))
+			span.SetAttributes(attribute.String("timezone", timeZone))
 		}
 		if landscape := r.URL.Query().Get("landscape"); landscape != "" {
 			options = append(options, service.WithLandscape(landscape == "true"))
