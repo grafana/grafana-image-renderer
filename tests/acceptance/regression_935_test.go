@@ -66,6 +66,5 @@ func TestRegression935(t *testing.T) {
 		if !AssertPixelDifference(t, fixtureImg, bodyImg, 15_000) {
 			UpdateFixtureIfEnabled(t, fixture, body)
 		}
-		UpdateFixture(t, fixture, body)
 	})
 }
