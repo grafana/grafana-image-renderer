@@ -27,7 +27,7 @@ require (
 	go.opentelemetry.io/otel/trace v1.40.0
 	go.uber.org/automaxprocs v1.6.0
 	golang.org/x/sync v0.20.0
-	google.golang.org/grpc v1.77.0
+	google.golang.org/grpc v1.79.3
 	kernel.org/pub/linux/libs/security/libcap/cap v1.2.77
 )
 
