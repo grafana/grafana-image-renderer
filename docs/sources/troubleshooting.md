@@ -362,3 +362,14 @@ docker run --rm -v ./config.json:/home/nonroot/config.json grafana/grafana-image
 
 The command takes the exact same flags and configuration files as the `server`
 command does.
+
+## Limiting accessible domains
+
+It is possible to limit which domains the browser can access by using [Chrome policies](https://support.google.com/chrome/a/answer/9027408?hl=en). To limit this, mount a Chrome policy JSON file into `/etc/chromium/policies/managed/`, with contents such as:
+
+```json
+{
+  "URLBlocklist": ["*"],
+  "URLAllowlist": ["https://*", "chrome://*"]
+}
+```
