@@ -1,14 +1,14 @@
 package acceptance
 
 import (
-	"bytes"
 	"image/png"
 	"io"
 	"net/http"
 	"testing"
+	"time"
 
+	"github.com/klippa-app/go-pdfium/requests"
 	"github.com/stretchr/testify/require"
-	pdfcore "github.com/unidoc/unipdf/v4/core"
 )
 
 func TestBasicRenders(t *testing.T) {
@@ -31,9 +31,27 @@ func TestBasicRenders(t *testing.T) {
 		body, err := io.ReadAll(resp.Body)
 		require.NoError(t, err, "could not read HTTP response body")
 
-		parser, err := pdfcore.NewParser(bytes.NewReader(body))
-		require.NoError(t, err, "could not parse PDF response body")
-		require.NotPanics(t, func() { parser.PdfVersion() }, "could not read PDF version, not a valid PDF")
+		pool, err := pdfiumPoolOnce()
+		require.NoError(t, err)
+
+		instance, err := pool.GetInstance(30 * time.Second)
+		require.NoError(t, err)
+
+		t.Cleanup(func() { require.NoError(t, instance.Close()) })
+
+		doc, err := instance.OpenDocument(&requests.OpenDocument{File: &body})
+		require.NoError(t, err)
+
+		t.Cleanup(func() {
+			_, err := instance.FPDF_CloseDocument(&requests.FPDF_CloseDocument{
+				Document: doc.Document,
+			})
+			require.NoError(t, err)
+		})
+
+		pageCount, err := instance.FPDF_GetPageCount(&requests.FPDF_GetPageCount{Document: doc.Document})
+		require.NoError(t, err)
+		require.Greater(t, pageCount.PageCount, 0)
 	})
 
 	t.Run("render PNG of service's root route", func(t *testing.T) {
