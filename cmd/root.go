@@ -30,9 +30,17 @@ func NewRootCmd() *cli.Command {
 			if err != nil {
 				return ctx, fmt.Errorf("failed to parse log level: %w", err)
 			}
+			handlerOpts := &slog.HandlerOptions{AddSource: true, Level: leveler}
+			var handler slog.Handler
+			switch loggingConfig.Format {
+			case config.LogFormatJSON:
+				handler = slog.NewJSONHandler(c.Writer, handlerOpts)
+			default:
+				handler = slog.NewTextHandler(c.Writer, handlerOpts)
+			}
 			slog.SetDefault(slog.New(
 				&traceLogger{
-					underlying: slog.NewTextHandler(c.Writer, &slog.HandlerOptions{AddSource: true, Level: leveler}),
+					underlying: handler,
 				},
 			))
 
