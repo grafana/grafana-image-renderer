@@ -8,7 +8,7 @@ require (
 	github.com/davecgh/go-spew v1.1.1
 	github.com/docker/docker v28.3.3+incompatible
 	github.com/docker/go-connections v0.6.0
-	github.com/go-jose/go-jose/v4 v4.1.3
+	github.com/go-jose/go-jose/v4 v4.1.4
 	github.com/grafana/chromedp v0.1.0
 	github.com/klippa-app/go-pdfium v1.18.0
 	github.com/pbnjay/memory v0.0.0-20210728143218-7b4eea64cf58
