@@ -112,6 +112,8 @@ This is a verbatim copy of the output of the `grafana-image-renderer server --he
     The timeout for reading the WebSocket URL when connecting to the browser. If <= 0, uses chromedp default (20s). [config: browser.ws-url-read-timeout]
 --help / -h
     show help
+--log.format=<string> [default: "text"] [${LOG_FORMAT}]
+    The log output format (enum: text, json) [config: log.format]
 --log.level=<string> [default: "info"] [${LOG_LEVEL}]
     The minimum level to log at (enum: debug, info, warn, error) [config: log.level]
 --rate-limit.disabled [default: false] [${RATE_LIMIT_DISABLED}]

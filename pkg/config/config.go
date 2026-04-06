@@ -23,6 +23,8 @@ import (
 type LoggingConfig struct {
 	// Level is the minimum level to log.
 	Level LogLevel
+	// Format is the log output format.
+	Format LogFormat
 }
 
 func LoggingFlags() []cli.Flag {
@@ -39,12 +41,27 @@ func LoggingFlags() []cli.Flag {
 				return nil
 			},
 		},
+		&cli.StringFlag{
+			Name:    "log.format",
+			Usage:   fmt.Sprintf("The log output format (enum: %s, %s) [config: log.format]", LogFormatText, LogFormatJSON),
+			Value:   LogFormatText.String(),
+			Sources: FromConfig("log.format", "LOG_FORMAT"),
+			Validator: func(s string) error {
+				switch LogFormat(strings.ToLower(s)) {
+				case LogFormatText, LogFormatJSON:
+					return nil
+				default:
+					return fmt.Errorf("unknown log format: %s", s)
+				}
+			},
+		},
 	}
 }
 
 func LoggingConfigFromCommand(c *cli.Command) (LoggingConfig, error) {
 	return LoggingConfig{
-		Level: LogLevel(c.String("log.level")),
+		Level:  LogLevel(c.String("log.level")),
+		Format: LogFormat(c.String("log.format")),
 	}, nil
 }
 
@@ -59,6 +76,17 @@ const (
 
 func (l LogLevel) String() string {
 	return string(l)
+}
+
+type LogFormat string
+
+const (
+	LogFormatText LogFormat = "text"
+	LogFormatJSON LogFormat = "json"
+)
+
+func (f LogFormat) String() string {
+	return string(f)
 }
 
 func (l LogLevel) ToSlog() (slog.Leveler, error) {
