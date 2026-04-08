@@ -3,7 +3,7 @@
 #        -> Why static linking? We want to ensure we can switch base-image with little to no effort.
 #   2. It builds a running environment. This is the environment that exists for the Go binary, and should have all necessary pieces to run the application.
 
-FROM golang:1.26.1-alpine@sha256:2389ebfa5b7f43eeafbd6be0c3700cc46690ef842ad962f6c5bd6be49ed82039 AS app
+FROM golang:1.26.2-alpine@sha256:c2a1f7b2095d046ae14b286b18413a05bb82c9bca9b25fe7ff5efef0f0826166 AS app
 
 RUN apk add --no-cache git
 
