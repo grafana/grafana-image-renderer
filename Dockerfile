@@ -16,13 +16,13 @@ RUN --mount=type=cache,target=/go/pkg/mod CGO_ENABLED=0 go build \
   -ldflags '-s -w -extldflags "-static"' \
   .
 
-FROM debian:13@sha256:55a15a112b42be10bfc8092fcc40b6748dc236f7ef46a358d9392b339e9d60e8 AS output_image
+FROM debian:13@sha256:3352c2e13876c8a5c5873ef20870e1939e73cb9a3c1aeba5e3e72172a85ce9ed AS output_image
 
 LABEL maintainer="Grafana team <hello@grafana.com>"
 LABEL org.opencontainers.image.source="https://github.com/grafana/grafana-image-renderer/tree/master/Dockerfile"
 
 # If we ever need to bust the cache, just change the date here.
-RUN echo 'cachebuster 2026-04-06' && apt-get update && apt-get upgrade -y --no-install-recommends --no-install-suggests
+RUN echo 'cachebuster 2026-04-13' && apt-get update && apt-get upgrade -y --no-install-recommends --no-install-suggests
 
 RUN apt-get install -y --no-install-recommends --no-install-suggests \
   fonts-ipaexfont-gothic fonts-wqy-zenhei fonts-thai-tlwg fonts-khmeros fonts-kacst-one fonts-freefont-ttf \
@@ -30,7 +30,7 @@ RUN apt-get install -y --no-install-recommends --no-install-suggests \
   bash util-linux openssl tini ca-certificates locales libnss3-tools ca-certificates
 
 # renovate: depName=chromium
-ARG CHROMIUM_VERSION=146.0.7680.177
+ARG CHROMIUM_VERSION=147.0.7727.55
 RUN apt-get satisfy -y --no-install-recommends --no-install-suggests \
   "chromium (>=${CHROMIUM_VERSION}), chromium-driver (>=${CHROMIUM_VERSION}), chromium-shell (>=${CHROMIUM_VERSION}), chromium-sandbox (>=${CHROMIUM_VERSION})"
 
