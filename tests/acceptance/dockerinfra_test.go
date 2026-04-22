@@ -11,8 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/docker/docker/api/types/container"
-	"github.com/docker/go-connections/nat"
+	"github.com/moby/moby/api/types/container"
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/log"
@@ -133,8 +132,7 @@ type ImageRenderer struct {
 func StartImageRenderer(tb testing.TB, options ...ContainerOption) *ImageRenderer {
 	tb.Helper()
 
-	httpPort, err := nat.NewPort("tcp", "8081")
-	require.NoError(tb, err, "could not construct a TCP port for 8081")
+	httpPort := "8081/tcp"
 
 	req := testcontainers.GenericContainerRequest{
 		Logger:  log.TestLogger(tb),
@@ -143,7 +141,7 @@ func StartImageRenderer(tb testing.TB, options ...ContainerOption) *ImageRendere
 			// TODO: Use Dockerfile instead?
 			Image:        GetDockerImage(tb),
 			WaitingFor:   wait.ForHealthCheck().WithPollInterval(time.Millisecond * 50),
-			ExposedPorts: []string{"8081/tcp"},
+			ExposedPorts: []string{httpPort},
 			ConfigModifier: func(c *container.Config) {
 				if c.Healthcheck == nil {
 					c.Healthcheck = &container.HealthConfig{}
@@ -225,8 +223,7 @@ var fixturesFS embed.FS
 func StartGrafana(tb testing.TB, options ...ContainerOption) *Grafana {
 	tb.Helper()
 
-	httpPort, err := nat.NewPort("tcp", "3000")
-	require.NoError(tb, err, "could not construct a TCP port for 3000")
+	httpPort := "3000/tcp"
 
 	req := testcontainers.GenericContainerRequest{
 		Logger:  log.TestLogger(tb),
@@ -243,7 +240,7 @@ func StartGrafana(tb testing.TB, options ...ContainerOption) *Grafana {
 				wait.ForLog("inserting datasource from configuration"), // from the provisioning files we add
 				wait.ForLog("finished to provision dashboards"),        // from the provisioning files we add
 			),
-			ExposedPorts:   []string{"3000/tcp"},
+			ExposedPorts:   []string{httpPort},
 			Files:          createGrafanaProvisioningFiles(tb),
 			LogConsumerCfg: containerLogs(tb, "grafana"),
 		},
