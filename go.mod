@@ -7,7 +7,7 @@ require (
 	github.com/chromedp/cdproto v0.0.0-20260427013145-5737772c319b
 	github.com/davecgh/go-spew v1.1.1
 	github.com/go-jose/go-jose/v4 v4.1.4
-	github.com/grafana/chromedp v0.1.0
+	github.com/grafana/chromedp v0.2.0
 	github.com/klippa-app/go-pdfium v1.19.2
 	github.com/moby/moby/api v1.54.2
 	github.com/pbnjay/memory v0.0.0-20210728143218-7b4eea64cf58
