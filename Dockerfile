@@ -2,6 +2,16 @@
 #   1. It builds a statically linked Go binary. This is fine to use in Debian, Alpine, RHEL, etc. base-images.
 #        -> Why static linking? We want to ensure we can switch base-image with little to no effort.
 #   2. It builds a running environment. This is the environment that exists for the Go binary, and should have all necessary pieces to run the application.
+#
+# Two runtime variants are produced from this file:
+#   - output_debian        (Debian Trixie, default) -> built with `docker build --target=output_debian .`
+#   - output_alpine (Alpine stable)          -> built with `docker build --target=output_alpine .`
+# Always pass `--target` explicitly: the LAST stage is Alpine, so omitting `--target` builds the Alpine variant.
+
+# renovate: depName=chromium
+ARG CHROMIUM_VERSION=147.0.7727.137
+# If we ever need to bust the cache, just change the date here.
+ARG CACHE_BUSTER_DATE=2026-05-15
 
 FROM golang:1.26.3-alpine@sha256:91eda9776261207ea25fd06b5b7fed8d397dd2c0a283e77f2ab6e91bfa71079d AS app
 
@@ -16,21 +26,21 @@ RUN --mount=type=cache,target=/go/pkg/mod CGO_ENABLED=0 go build \
   -ldflags '-s -w -extldflags "-static"' \
   .
 
-FROM debian:trixie-20260505@sha256:e2d08da6f42ef4b09b165d55528a12727aeed8240dc9edf888e3ec07e10ef9da AS output_image
+FROM debian:trixie-20260505@sha256:e2d08da6f42ef4b09b165d55528a12727aeed8240dc9edf888e3ec07e10ef9da AS output_debian
+
+ARG CHROMIUM_VERSION
+ARG CACHE_BUSTER_DATE
 
 LABEL maintainer="Grafana team <hello@grafana.com>"
 LABEL org.opencontainers.image.source="https://github.com/grafana/grafana-image-renderer/tree/master/Dockerfile"
 
-# If we ever need to bust the cache, just change the date here.
-RUN echo 'cachebuster 2026-05-04' && apt-get update && apt-get upgrade -y --no-install-recommends --no-install-suggests
+RUN echo "cachebuster ${CACHE_BUSTER_DATE}" && apt-get update && apt-get upgrade -y --no-install-recommends --no-install-suggests
 
 RUN apt-get install -y --no-install-recommends --no-install-suggests \
   fonts-ipaexfont-gothic fonts-wqy-zenhei fonts-thai-tlwg fonts-khmeros fonts-kacst-one fonts-freefont-ttf \
   libxss1 unifont fonts-open-sans fonts-roboto fonts-inter fonts-recommended \
   bash util-linux openssl tini ca-certificates locales libnss3-tools ca-certificates
 
-# renovate: depName=chromium
-ARG CHROMIUM_VERSION=147.0.7727.137
 RUN apt-get satisfy -y --no-install-recommends --no-install-suggests \
   "chromium (>=${CHROMIUM_VERSION}), chromium-driver (>=${CHROMIUM_VERSION}), chromium-shell (>=${CHROMIUM_VERSION}), chromium-sandbox (>=${CHROMIUM_VERSION})"
 
@@ -47,6 +57,39 @@ RUN fc-cache -fr
 RUN update-ca-certificates --fresh
 
 RUN useradd --create-home --system --uid 65532 --user-group nonroot
+RUN chgrp -R 0 /home/nonroot && chmod -R g=u /home/nonroot
+WORKDIR /home/nonroot
+USER 65532
+
+COPY --from=app /src/grafana-image-renderer /usr/bin/grafana-image-renderer
+
+EXPOSE 8081
+
+ENV CHROME_BIN="/usr/bin/chromium"
+ENV LANG=en_US.UTF-8
+ENV LC_ALL=en_US.UTF-8
+ENTRYPOINT ["tini", "--", "/usr/bin/grafana-image-renderer"]
+CMD ["server"]
+HEALTHCHECK --interval=10s --retries=3 --timeout=3s --start-interval=250ms --start-period=30s \
+  CMD ["/usr/bin/grafana-image-renderer", "healthcheck"]
+
+FROM alpine:3.23@sha256:5b10f432ef3da1b8d4c7eb6c487f2f5a8f096bc91145e68878dd4a5019afde11 AS output_alpine
+
+ARG CHROMIUM_VERSION
+ARG CACHE_BUSTER_DATE
+
+LABEL maintainer="Grafana team <hello@grafana.com>"
+LABEL org.opencontainers.image.source="https://github.com/grafana/grafana-image-renderer/tree/master/Dockerfile"
+
+RUN echo "cachebuster ${CACHE_BUSTER_DATE}" && apk update && apk upgrade --no-cache
+
+RUN apk add --no-cache chromium>=${CHROMIUM_VERSION} chromium-swiftshader>=${CHROMIUM_VERSION}
+RUN apk add --no-cache tini ca-certificates openssl nss-tools udev ttf-opensans unifont font-inter font-urw-base35 font-dejavu
+
+RUN fc-cache -fr
+RUN update-ca-certificates --fresh
+
+RUN addgroup -g 65532 -S nonroot && adduser -u 65532 -S -G nonroot -h /home/nonroot nonroot
 RUN chgrp -R 0 /home/nonroot && chmod -R g=u /home/nonroot
 WORKDIR /home/nonroot
 USER 65532
