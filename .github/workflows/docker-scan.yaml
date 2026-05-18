@@ -20,8 +20,11 @@ jobs:
       fail-fast: false
       matrix:
         runs-on: [ubuntu-x64, ubuntu-arm64]
+        variant:
+          - { name: debian, target: output_debian,        image: image-renderer }
+          - { name: alpine, target: output_alpine, image: image-renderer-alpine }
 
-    name: grype scanning (${{ matrix.runs-on }})
+    name: grype scanning (${{ matrix.runs-on }}, ${{ matrix.variant.name }})
     runs-on: ${{ matrix.runs-on }}
     permissions:
       contents: read # clone the repository
@@ -40,27 +43,30 @@ jobs:
           DOCKER_BUILDKIT: 1
           BUILDKIT_STEP_LOG_MAX_SIZE: -1
           BUILDKIT_STEP_LOG_MAX_SPEED: -1
-        run: docker build . -t image-renderer
+        run: docker build . --target=${{ matrix.variant.target }} -t ${{ matrix.variant.image }}
 
       - name: Scan with Grype
         id: scan
         uses: anchore/scan-action@1638637db639e0ade3258b51db49a9a137574c3e # v6
         with:
-          image: image-renderer
+          image: ${{ matrix.variant.image }}
           fail-build: true
       - uses: github/codeql-action/upload-sarif@86b04fb0e47484f7282357688f21d5d0e32175fe # v3
         if: success() || failure()
         with:
           sarif_file: ${{ steps.scan.outputs.sarif }}
-          category: Grype
+          category: Grype-${{ matrix.variant.name }}
 
   trivy:
     strategy:
       fail-fast: false
       matrix:
         runs-on: [ubuntu-x64, ubuntu-arm64]
+        variant:
+          - { name: debian, target: output_debian,        image: image-renderer }
+          - { name: alpine, target: output_alpine, image: image-renderer-alpine }
 
-    name: trivy scanning (${{ matrix.runs-on }})
+    name: trivy scanning (${{ matrix.runs-on }}, ${{ matrix.variant.name }})
     runs-on: ${{ matrix.runs-on }}
     permissions:
       contents: read # clone the repository
@@ -79,12 +85,12 @@ jobs:
           DOCKER_BUILDKIT: 1
           BUILDKIT_STEP_LOG_MAX_SIZE: -1
           BUILDKIT_STEP_LOG_MAX_SPEED: -1
-        run: docker build . -t image-renderer
+        run: docker build . --target=${{ matrix.variant.target }} -t ${{ matrix.variant.image }}
 
       - name: Scan with Trivy
         uses: aquasecurity/trivy-action@b6643a29fecd7f34b3597bc6acb0a98b03d33ff8 # 0.33.1
         with:
-          image-ref: image-renderer
+          image-ref: ${{ matrix.variant.image }}
           format: sarif
           output: trivy-results.sarif
           exit-code: 1
@@ -92,4 +98,4 @@ jobs:
         if: success() || failure()
         with:
           sarif_file: trivy-results.sarif
-          category: Trivy
+          category: Trivy-${{ matrix.variant.name }}

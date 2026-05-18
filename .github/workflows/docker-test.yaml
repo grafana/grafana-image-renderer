@@ -20,8 +20,11 @@ jobs:
       fail-fast: false
       matrix:
         runs-on: [ubuntu-x64-xlarge, ubuntu-arm64-xlarge]
+        variant:
+          - { name: debian, target: output_debian,        image: image-renderer }
+          - { name: alpine, target: output_alpine, image: image-renderer-alpine }
 
-    name: acceptance tests (${{ matrix.runs-on }})
+    name: acceptance tests (${{ matrix.runs-on }}, ${{ matrix.variant.name }})
     runs-on: ${{ matrix.runs-on }}
     permissions:
       contents: read # clone the repository
@@ -40,7 +43,7 @@ jobs:
           DOCKER_BUILDKIT: 1
           BUILDKIT_STEP_LOG_MAX_SIZE: -1
           BUILDKIT_STEP_LOG_MAX_SPEED: -1
-        run: docker build . -t image-renderer
+        run: docker build . --target=${{ matrix.variant.target }} -t ${{ matrix.variant.image }}
 
       - name: Read license
         if: ((github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork == false) || (github.event_name == 'push' && github.repository == 'grafana/grafana-image-renderer'))
@@ -68,7 +71,7 @@ jobs:
         run: go test ./tests/acceptance/... -count=1
         env:
           TERM: linux
-          IMAGE: image-renderer
+          IMAGE: ${{ matrix.variant.image }}
           UPDATE_FIXTURES: 'true' # this will make changes, so we can see them
           REQUIRE_ACCEPTANCE: 'true' # fail if no image can be found
           REQUIRE_ENTERPRISE: ${{ ((github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork == false) || (github.event_name == 'push' && github.repository == 'grafana/grafana-image-renderer')) }}
@@ -89,7 +92,7 @@ jobs:
         if: ${{ steps.tar.outputs.upload == 'true' && (success() || failure()) }}
         uses: actions/upload-artifact@v4
         with:
-          name: changed-files-${{ matrix.runs-on }}
+          name: changed-files-${{ matrix.runs-on }}-${{ matrix.variant.name }}
           path: changed-files.tar.xz
 
   # This is the job that is actually required by rulesets.
