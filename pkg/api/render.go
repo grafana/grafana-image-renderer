@@ -110,14 +110,17 @@ func HandleGetRender(browser *service.BrowserService, apiConfig config.APIConfig
 		}
 		if timeZone := r.URL.Query().Get("timezone"); timeZone != "" {
 			timeLocation, err := time.LoadLocation(timeZone)
-			if err != nil {
-				span.SetStatus(codes.Error, "invalid timezone query param")
-				span.RecordError(err, trace.WithAttributes(attribute.String("timezone", timeZone)))
-				http.Error(w, fmt.Sprintf("invalid 'timezone' query parameter: %v", err), http.StatusBadRequest)
-				return
+			if err == nil && timeLocation != nil {
+				options = append(options, service.WithTimeZone(timeLocation))
+				span.SetAttributes(attribute.String("timezone", timeZone))
+			} else {
+				span.AddEvent("using browser default timezone due to invalid timezone query param",
+					trace.WithAttributes(
+						attribute.String("timezone", timeZone),
+						attribute.String("error", err.Error()),
+					),
+				)
 			}
-			options = append(options, service.WithTimeZone(timeLocation))
-			span.SetAttributes(attribute.String("timezone", timeZone))
 		}
 		if landscape := r.URL.Query().Get("landscape"); landscape != "" {
 			options = append(options, service.WithLandscape(landscape == "true"))

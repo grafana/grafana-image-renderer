@@ -9,9 +9,9 @@
 # Always pass `--target` explicitly: the LAST stage is Alpine, so omitting `--target` builds the Alpine variant.
 
 # renovate: depName=chromium
-ARG CHROMIUM_VERSION=147.0.7727.137
+ARG CHROMIUM_VERSION=148.0.7778.167
 # If we ever need to bust the cache, just change the date here.
-ARG CACHE_BUSTER_DATE=2026-05-15
+ARG CACHE_BUSTER_DATE=2026-05-18
 
 FROM golang:1.26.3-alpine@sha256:91eda9776261207ea25fd06b5b7fed8d397dd2c0a283e77f2ab6e91bfa71079d AS app
 
