@@ -206,7 +206,7 @@ jobs:
         continue-on-error: true # just check the actions log if ratelimits or whatever
         with:
           message: |
-            :whale: Docker image built and pushed to Google Artifact Registry.
+            :whale: Docker image built and pushed to GitHub Container Registry.
 
             You can pull it using:
 
@@ -216,7 +216,7 @@ jobs:
 
             > [!WARNING]
             > This is a development image and should not be used in production.
-            > It will be automatically removed after 1 week.
+            > It will be automatically removed after 2 weeks.
 
   release:
     name: Create GitHub Release
