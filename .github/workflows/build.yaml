@@ -62,17 +62,19 @@ jobs:
       registry: ${{ steps.image_tag.outputs.registry }}
       ref_name: ${{ steps.image_tag.outputs.ref_name }}
     steps:
-      - name: Use GAR dev
+      - name: Use ghcr.io
         if: github.event_name != 'push' || github.ref_type != 'tag'
+        env:
+          REPOSITORY: ${{ github.repository }}
         run: |
           set -euo pipefail
-          echo "REGISTRY=us-docker.pkg.dev" >> "$GITHUB_ENV"
-          echo "REPOSITORY=grafanalabs-dev/docker-grafana-image-renderer-dev/grafana-image-renderer" >> "$GITHUB_ENV"
-      - name: Use GAR prod
+          echo "REGISTRY=ghcr.io" >> "$GITHUB_ENV"
+          echo "REPOSITORY=$REPOSITORY" >> "$GITHUB_ENV"
+      - name: Use GAR
         if: github.event_name == 'push' && github.ref_type == 'tag'
         run: |
           echo "REGISTRY=us-docker.pkg.dev" >> "$GITHUB_ENV"
-          echo "REPOSITORY=grafanalabs-global/docker-grafana-image-renderer-prod/grafana-image-renderer" >> "$GITHUB_ENV"
+          echo "REPOSITORY=grafanalabs-global/dockerhub-grafana-image-renderer-prod-mirror/grafana-image-renderer" >> "$GITHUB_ENV"
 
       - name: Use Git tag for image tag
         if: github.event_name == 'push' && github.ref_type == 'tag'
@@ -113,12 +115,22 @@ jobs:
     runs-on: ${{ matrix.runs-on }}
     permissions:
       contents: read # required to read the repository contents
+      packages: write # required to push the built image to the package registry
       attestations: write # required to create attestations for the built image
-      id-token: write # required to authenticate to GAR and create attestations
+      id-token: write # required to create attestations for the built image, and to read secrets
       pull-requests: write # required to comment on the pull request
     steps:
+      - name: Log into GHCR
+        if: needs.tag.outputs.registry == 'ghcr.io'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ACTOR: ${{ github.actor }}
+        run: echo "$GITHUB_TOKEN" | docker login ghcr.io -u "$ACTOR" --password-stdin
       - name: Log into GAR
-        uses: grafana/shared-workflows/actions/login-to-gar@c7ad5f57693ac858c698d95783685a9cbfd91223
+        if: needs.tag.outputs.registry == 'us-docker.pkg.dev'
+        uses: grafana/shared-workflows/actions/login-to-gar@c7ad5f57693ac858c698d95783685a9cbfd91223 # login-to-gar/v1.0.1
+        with:
+          registry: us-docker.pkg.dev
 
       - uses: actions/checkout@v6
         with:
@@ -155,11 +167,21 @@ jobs:
     name: Create manifests
     runs-on: ubuntu-latest
     permissions:
-      id-token: write # required to authenticate to GAR
+      packages: write # required to create the manifest list in the package registry
+      id-token: write # required to create the manifest list in the package registry
       pull-requests: write # required to comment on the pull request
     steps:
+      - name: Log into GHCR
+        if: needs.tag.outputs.registry == 'ghcr.io'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ACTOR: ${{ github.actor }}
+        run: echo "$GITHUB_TOKEN" | docker login ghcr.io -u "$ACTOR" --password-stdin
       - name: Log into GAR
-        uses: grafana/shared-workflows/actions/login-to-gar@c7ad5f57693ac858c698d95783685a9cbfd91223
+        if: needs.tag.outputs.registry == 'us-docker.pkg.dev'
+        uses: grafana/shared-workflows/actions/login-to-gar@c7ad5f57693ac858c698d95783685a9cbfd91223 # login-to-gar/v1.0.1
+        with:
+          registry: us-docker.pkg.dev
 
       - name: Create and push manifests
         env:
@@ -194,6 +216,7 @@ jobs:
 
             > [!WARNING]
             > This is a development image and should not be used in production.
+            > It will be automatically removed after 1 week.
 
   release:
     name: Create GitHub Release
@@ -202,6 +225,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write # to create the release
+      packages: read # to read the package information
     steps:
       - uses: actions/download-artifact@v5
         with:
