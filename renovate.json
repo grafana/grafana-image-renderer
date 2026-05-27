@@ -1,4 +1,5 @@
 {
+  "minimumReleaseAge": "7 days",
   "ignorePresets": [
     "github>grafana/grafana-renovate-config//presets/automerge",
     "github>grafana/grafana-renovate-config//presets/docker",
