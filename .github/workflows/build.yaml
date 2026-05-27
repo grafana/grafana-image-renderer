@@ -70,11 +70,11 @@ jobs:
           set -euo pipefail
           echo "REGISTRY=ghcr.io" >> "$GITHUB_ENV"
           echo "REPOSITORY=$REPOSITORY" >> "$GITHUB_ENV"
-      - name: Use docker.io
+      - name: Use GAR
         if: github.event_name == 'push' && github.ref_type == 'tag'
         run: |
-          echo "REGISTRY=docker.io" >> "$GITHUB_ENV"
-          echo "REPOSITORY=grafana/grafana-image-renderer" >> "$GITHUB_ENV"
+          echo "REGISTRY=us-docker.pkg.dev" >> "$GITHUB_ENV"
+          echo "REPOSITORY=grafanalabs-global/dockerhub-grafana-image-renderer-prod-mirror/grafana-image-renderer" >> "$GITHUB_ENV"
 
       - name: Use Git tag for image tag
         if: github.event_name == 'push' && github.ref_type == 'tag'
@@ -126,9 +126,11 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ACTOR: ${{ github.actor }}
         run: echo "$GITHUB_TOKEN" | docker login ghcr.io -u "$ACTOR" --password-stdin
-      - name: Log into DockerHub
-        if: needs.tag.outputs.registry == 'docker.io'
-        uses: grafana/shared-workflows/actions/dockerhub-login@dockerhub-login/v1
+      - name: Log into GAR
+        if: needs.tag.outputs.registry == 'us-docker.pkg.dev'
+        uses: grafana/shared-workflows/actions/login-to-gar@c7ad5f57693ac858c698d95783685a9cbfd91223 # login-to-gar/v1.0.1
+        with:
+          registry: us-docker.pkg.dev
 
       - uses: actions/checkout@v6
         with:
@@ -175,9 +177,11 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ACTOR: ${{ github.actor }}
         run: echo "$GITHUB_TOKEN" | docker login ghcr.io -u "$ACTOR" --password-stdin
-      - name: Log into DockerHub
-        if: needs.tag.outputs.registry == 'docker.io'
-        uses: grafana/shared-workflows/actions/dockerhub-login@dockerhub-login/v1
+      - name: Log into GAR
+        if: needs.tag.outputs.registry == 'us-docker.pkg.dev'
+        uses: grafana/shared-workflows/actions/login-to-gar@c7ad5f57693ac858c698d95783685a9cbfd91223 # login-to-gar/v1.0.1
+        with:
+          registry: us-docker.pkg.dev
 
       - name: Create and push manifests
         env:
