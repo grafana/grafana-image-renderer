@@ -117,6 +117,7 @@ jobs:
       contents: read # required to read the repository contents
       packages: write # required to push the built image to the package registry
       attestations: write # required to create attestations for the built image
+      artifact-metadata: write # required to create the artifact storage record
       id-token: write # required to create attestations for the built image, and to read secrets
       pull-requests: write # required to comment on the pull request
     steps:
@@ -130,21 +131,25 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ACTOR: ${{ github.actor }}
         run: echo "$GITHUB_TOKEN" | docker login ghcr.io -u "$ACTOR" --password-stdin
+
+      # We can't use grafana/shared-workflows/login-to-gar directly,
+      # because attestation does not work with credHelpers that this shared action sets.
+      # Instead we can login directly copying the WIF information from that same action.
       - name: Log into GAR
         if: needs.tag.outputs.registry == 'us-docker.pkg.dev'
-        uses: grafana/shared-workflows/actions/login-to-gar@c7ad5f57693ac858c698d95783685a9cbfd91223 # login-to-gar/v1.0.1
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
+        id: gar_auth
         with:
-          registry: us-docker.pkg.dev
-          workspace_credentials: true # Needed for the action below
-
-      # actions/attest-build-provenance reads credentials from `auths` in
-      # ~/.docker/config.json and does not invoke credential helpers, so
-      # `gcloud auth configure-docker` alone is not enough for push-to-registry.
-      # See https://github.com/actions/attest-build-provenance/issues/80.
-      - name: Write GAR docker auth for attestation
+          project_id: "grafanalabs-workload-identity"
+          workload_identity_provider: "projects/304398677251/locations/global/workloadIdentityPools/github/providers/github-provider"
+          create_credentials_file: false # must never be set to true!
+      - name: Docker Auth
         if: needs.tag.outputs.registry == 'us-docker.pkg.dev'
-        shell: bash
-        run: gcloud auth print-access-token | docker login -u oauth2accesstoken --password-stdin us-docker.pkg.dev
+        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # docker/login-action@v4.2.0
+        with:
+          username: "oauth2accesstoken"
+          password: "${{ steps.gar_auth.outputs.auth_token }}"
+          registry: "us-docker.pkg.dev"
 
       - name: docker build
         env:
@@ -166,7 +171,7 @@ jobs:
           DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' "$TAG" | cut -d@ -f2)
           echo "Digest: $DIGEST"
           echo "digest=$DIGEST" >> "$GITHUB_OUTPUT"
-      - uses: actions/attest-build-provenance@v2
+      - uses: actions/attest-build-provenance@v4.1.0
         with:
           subject-name: ${{ needs.tag.outputs.subject }}
           subject-digest: ${{ steps.digest.outputs.digest }}
