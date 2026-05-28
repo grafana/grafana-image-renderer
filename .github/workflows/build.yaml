@@ -62,15 +62,12 @@ jobs:
       registry: ${{ steps.image_tag.outputs.registry }}
       ref_name: ${{ steps.image_tag.outputs.ref_name }}
     steps:
-      - name: Use ghcr.io
+      - name: Use GAR dev
         if: github.event_name != 'push' || github.ref_type != 'tag'
-        env:
-          REPOSITORY: ${{ github.repository }}
         run: |
-          set -euo pipefail
-          echo "REGISTRY=ghcr.io" >> "$GITHUB_ENV"
-          echo "REPOSITORY=$REPOSITORY" >> "$GITHUB_ENV"
-      - name: Use GAR
+          echo "REGISTRY=us-docker.pkg.dev" >> "$GITHUB_ENV"
+          echo "REPOSITORY=grafanalabs-dev/dockerhub-grafana-image-renderer-dev-mirror/grafana-image-renderer" >> "$GITHUB_ENV"
+      - name: Use GAR prod
         if: github.event_name == 'push' && github.ref_type == 'tag'
         run: |
           echo "REGISTRY=us-docker.pkg.dev" >> "$GITHUB_ENV"
@@ -124,14 +121,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Log into GHCR
-        if: needs.tag.outputs.registry == 'ghcr.io'
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          ACTOR: ${{ github.actor }}
-        run: echo "$GITHUB_TOKEN" | docker login ghcr.io -u "$ACTOR" --password-stdin
       - name: Log into GAR
-        if: needs.tag.outputs.registry == 'us-docker.pkg.dev'
         uses: grafana/shared-workflows/actions/login-to-gar@c7ad5f57693ac858c698d95783685a9cbfd91223 # login-to-gar/v1.0.1
         with:
           registry: us-docker.pkg.dev
@@ -142,7 +132,6 @@ jobs:
       # `gcloud auth configure-docker` alone is not enough for push-to-registry.
       # See https://github.com/actions/attest-build-provenance/issues/80.
       - name: Write GAR docker auth for attestation
-        if: needs.tag.outputs.registry == 'us-docker.pkg.dev'
         shell: bash
         run: gcloud auth print-access-token | docker login -u oauth2accesstoken --password-stdin us-docker.pkg.dev
 
@@ -181,14 +170,7 @@ jobs:
       id-token: write # required to create the manifest list in the package registry
       pull-requests: write # required to comment on the pull request
     steps:
-      - name: Log into GHCR
-        if: needs.tag.outputs.registry == 'ghcr.io'
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          ACTOR: ${{ github.actor }}
-        run: echo "$GITHUB_TOKEN" | docker login ghcr.io -u "$ACTOR" --password-stdin
       - name: Log into GAR
-        if: needs.tag.outputs.registry == 'us-docker.pkg.dev'
         uses: grafana/shared-workflows/actions/login-to-gar@c7ad5f57693ac858c698d95783685a9cbfd91223 # login-to-gar/v1.0.1
         with:
           registry: us-docker.pkg.dev
@@ -216,7 +198,7 @@ jobs:
         continue-on-error: true # just check the actions log if ratelimits or whatever
         with:
           message: |
-            :whale: Docker image built and pushed to GitHub Container Registry.
+            :whale: Docker image built and pushed to Google Artifact Registry.
 
             You can pull it using:
 
