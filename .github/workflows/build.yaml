@@ -131,6 +131,16 @@ jobs:
         uses: grafana/shared-workflows/actions/login-to-gar@c7ad5f57693ac858c698d95783685a9cbfd91223 # login-to-gar/v1.0.1
         with:
           registry: us-docker.pkg.dev
+          workspace_credentials: true # Needed for the action below
+
+      # actions/attest-build-provenance reads credentials from `auths` in
+      # ~/.docker/config.json and does not invoke credential helpers, so
+      # `gcloud auth configure-docker` alone is not enough for push-to-registry.
+      # See https://github.com/actions/attest-build-provenance/issues/80.
+      - name: Write GAR docker auth for attestation
+        if: needs.tag.outputs.registry == 'us-docker.pkg.dev'
+        shell: bash
+        run: gcloud auth print-access-token | docker login -u oauth2accesstoken --password-stdin us-docker.pkg.dev
 
       - uses: actions/checkout@v6
         with:
