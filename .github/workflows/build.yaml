@@ -114,6 +114,7 @@ jobs:
       contents: read # required to read the repository contents
       packages: write # required to push the built image to the package registry
       attestations: write # required to create attestations for the built image
+      artifact-metadata: write # required to create the artifact storage record
       id-token: write # required to create attestations for the built image, and to read secrets
       pull-requests: write # required to comment on the pull request
     steps:
@@ -155,7 +156,7 @@ jobs:
           DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' "$TAG" | cut -d@ -f2)
           echo "Digest: $DIGEST"
           echo "digest=$DIGEST" >> "$GITHUB_OUTPUT"
-      - uses: actions/attest-build-provenance@v2
+      - uses: actions/attest-build-provenance@v4.1.0
         with:
           subject-name: ${{ needs.tag.outputs.subject }}
           subject-digest: ${{ steps.digest.outputs.digest }}
