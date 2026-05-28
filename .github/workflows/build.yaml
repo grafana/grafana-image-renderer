@@ -121,19 +121,19 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Log into GAR
-        uses: grafana/shared-workflows/actions/login-to-gar@c7ad5f57693ac858c698d95783685a9cbfd91223 # login-to-gar/v1.0.1
+      - name: Authenticate with Google Cloud
+        id: gcp_auth
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
         with:
-          registry: us-docker.pkg.dev
-          workspace_credentials: true # Needed for the action below
+          project_id: grafanalabs-workload-identity
+          workload_identity_provider: projects/304398677251/locations/global/workloadIdentityPools/github/providers/github-provider
 
-      # actions/attest-build-provenance reads credentials from `auths` in
-      # ~/.docker/config.json and does not invoke credential helpers, so
-      # `gcloud auth configure-docker` alone is not enough for push-to-registry.
-      # See https://github.com/actions/attest-build-provenance/issues/80.
-      - name: Write GAR docker auth for attestation
-        shell: bash
-        run: gcloud auth print-access-token | docker login -u oauth2accesstoken --password-stdin us-docker.pkg.dev
+      - name: "Docker Auth"
+        uses: "docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567" # docker/login-action@v3
+        with:
+          username: "oauth2accesstoken"
+          password: "${{ steps.gcp_auth.outputs.auth_token }}"
+          registry: "us-docker.pkg.dev"
 
       - name: docker build
         env:
@@ -155,15 +155,6 @@ jobs:
           DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' "$TAG" | cut -d@ -f2)
           echo "Digest: $DIGEST"
           echo "digest=$DIGEST" >> "$GITHUB_OUTPUT"
-
-      - name: Remove credHelpers
-        run: |
-          # credHelpers takes precedence over auths and actions/attest-build-provenance does not
-          # support credential helpers — remove it so the action reads the token from auths directly.
-          # See https://github.com/actions/attest-build-provenance/issues/666
-          jq 'del(.credHelpers["us-docker.pkg.dev"])' ~/.docker/config.json > /tmp/docker_config.json
-          mv /tmp/docker_config.json ~/.docker/config.json
-
       - uses: actions/attest-build-provenance@v2
         with:
           subject-name: ${{ needs.tag.outputs.subject }}
