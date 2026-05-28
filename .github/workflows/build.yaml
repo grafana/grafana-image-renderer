@@ -120,6 +120,10 @@ jobs:
       id-token: write # required to create attestations for the built image, and to read secrets
       pull-requests: write # required to comment on the pull request
     steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
       - name: Log into GHCR
         if: needs.tag.outputs.registry == 'ghcr.io'
         env:
@@ -141,10 +145,6 @@ jobs:
         if: needs.tag.outputs.registry == 'us-docker.pkg.dev'
         shell: bash
         run: gcloud auth print-access-token | docker login -u oauth2accesstoken --password-stdin us-docker.pkg.dev
-
-      - uses: actions/checkout@v6
-        with:
-          persist-credentials: false
 
       - name: docker build
         env:
