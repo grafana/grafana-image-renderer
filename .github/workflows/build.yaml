@@ -122,18 +122,17 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Authenticate with Google Cloud
-        id: gcp_auth
-        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
+      - name: Log into GAR
+        id: gar_auth
+        uses: grafana/shared-workflows/actions/login-to-gar@9895a4eb0ef8d4d208f584028042d9d440677e70
         with:
-          project_id: grafanalabs-workload-identity
-          workload_identity_provider: projects/304398677251/locations/global/workloadIdentityPools/github/providers/github-provider
+          registry: us-docker.pkg.dev
 
       - name: "Docker Auth"
         uses: "docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567" # docker/login-action@v3
         with:
           username: "oauth2accesstoken"
-          password: "${{ steps.gcp_auth.outputs.auth_token }}"
+          password: "${{ steps.gar_auth.outputs.auth_token }}"
           registry: "us-docker.pkg.dev"
 
       - name: docker build
