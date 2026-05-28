@@ -127,6 +127,7 @@ jobs:
         uses: grafana/shared-workflows/actions/login-to-gar@9895a4eb0ef8d4d208f584028042d9d440677e70
         with:
           registry: us-docker.pkg.dev
+          output_auth_token: true
 
       - name: "Docker Auth"
         uses: "docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567" # docker/login-action@v3
