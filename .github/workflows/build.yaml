@@ -122,11 +122,13 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Log into GAR
+      - uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
+        name: Auth with direct WIF
         id: gar_auth
-        uses: grafana/shared-workflows/actions/login-to-gar@11f0974e9084c03b88ebaa62b66c4a1a0056b1d9
         with:
-          registry: us-docker.pkg.dev
+          project_id: "grafanalabs-workload-identity"
+          workload_identity_provider: "projects/304398677251/locations/global/workloadIdentityPools/github/providers/github-provider"
+          create_credentials_file: false
 
       - name: "Docker Auth"
         uses: "docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567" # docker/login-action@v3
