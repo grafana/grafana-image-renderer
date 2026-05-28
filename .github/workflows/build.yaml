@@ -155,6 +155,15 @@ jobs:
           DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' "$TAG" | cut -d@ -f2)
           echo "Digest: $DIGEST"
           echo "digest=$DIGEST" >> "$GITHUB_OUTPUT"
+
+      - name: Remove credHelpers
+        run: |
+          # credHelpers takes precedence over auths and actions/attest-build-provenance does not
+          # support credential helpers — remove it so the action reads the token from auths directly.
+          # See https://github.com/actions/attest-build-provenance/issues/666
+          jq 'del(.credHelpers["us-docker.pkg.dev"])' ~/.docker/config.json > /tmp/docker_config.json
+          mv /tmp/docker_config.json ~/.docker/config.json
+
       - uses: actions/attest-build-provenance@v2
         with:
           subject-name: ${{ needs.tag.outputs.subject }}
