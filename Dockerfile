@@ -3,7 +3,7 @@
 #        -> Why static linking? We want to ensure we can switch base-image with little to no effort.
 #   2. It builds a running environment. This is the environment that exists for the Go binary, and should have all necessary pieces to run the application.
 
-FROM golang:1.26.3-alpine@sha256:91eda9776261207ea25fd06b5b7fed8d397dd2c0a283e77f2ab6e91bfa71079d AS app
+FROM golang:1.26.4-alpine@sha256:f23e8b227fb4493eabe03bede4d5a32d04092da71962f1fb79b5f7d1e6c2a17f AS app
 
 RUN apk add --no-cache git
 
@@ -16,7 +16,7 @@ RUN --mount=type=cache,target=/go/pkg/mod CGO_ENABLED=0 go build \
   -ldflags '-s -w -extldflags "-static"' \
   .
 
-FROM debian:trixie-20260505@sha256:e2d08da6f42ef4b09b165d55528a12727aeed8240dc9edf888e3ec07e10ef9da AS output_image
+FROM debian:trixie-20260518@sha256:4ae67669760b807c19f23902a3fd7c121a6a70cf2ae709035674b23e712e4d62 AS output_image
 
 LABEL maintainer="Grafana team <hello@grafana.com>"
 LABEL org.opencontainers.image.source="https://github.com/grafana/grafana-image-renderer/tree/master/Dockerfile"
