@@ -25,16 +25,18 @@ func RequestLogger(apiConfig config.APIConfig, h http.Handler) http.Handler {
 				"uri", r.URL,
 				"status", lw.statusCode,
 				"status_text", http.StatusText(lw.statusCode),
-				"duration", time.Since(start))
+				"duration", time.Since(start),
+				"response_size_bytes", lw.bytesWritten)
 		}()
 		h.ServeHTTP(lw, r)
 	})
 }
 
 type loggingResponseWriter struct {
-	w          http.ResponseWriter
-	once       sync.Once
-	statusCode int
+	w            http.ResponseWriter
+	once         sync.Once
+	statusCode   int
+	bytesWritten int
 }
 
 var (
@@ -57,7 +59,9 @@ func (l *loggingResponseWriter) Write(b []byte) (int, error) {
 	l.once.Do(func() {
 		l.statusCode = http.StatusOK
 	})
-	return l.w.Write(b)
+	n, err := l.w.Write(b)
+	l.bytesWritten += n
+	return n, err
 }
 
 func (l *loggingResponseWriter) Flush() {

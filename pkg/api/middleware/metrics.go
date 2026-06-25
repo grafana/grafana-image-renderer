@@ -29,6 +29,16 @@ var (
 			1800, 3600,
 		},
 	}, []string{"method", "path", "status_code", "encoding"})
+	MetricResponseSize = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Name: "http_response_size",
+		Help: "How large is the rendered response (e.g. PNG/PDF/CSV) returned to the client?",
+		ConstLabels: prometheus.Labels{
+			"unit": "bytes",
+		},
+		//   2.0KB   3.1KB    4.8KB    7.4KB  11.5KB 17.9KB  27.7KB  42.8KB  66.4KB  102.8KB
+		// 159.3KB 246.8KB  382.4KB  592.4KB 917.8KB 1.39MB  2.15MB  3.33MB  5.16MB  8.00MB
+		Buckets: prometheus.ExponentialBucketsRange(2*1024, 8*1024*1024, 20),
+	}, []string{"method", "path", "status_code", "encoding"})
 )
 
 // RequestMetrics adds some Prometheus metrics to the HTTP handler, to ensure we know what's going on with it.
@@ -47,7 +57,9 @@ func RequestMetrics(h http.Handler) http.Handler {
 		now := time.Now()
 		recorder := &statusRecordingResponseWriter{rw: w}
 		h.ServeHTTP(recorder, r)
-		MetricRequestDurations.WithLabelValues(r.Method, r.Pattern, strconv.Itoa(recorder.status), encoding).Observe(time.Since(now).Seconds())
+		statusCode := strconv.Itoa(recorder.status)
+		MetricRequestDurations.WithLabelValues(r.Method, r.Pattern, statusCode, encoding).Observe(time.Since(now).Seconds())
+		MetricResponseSize.WithLabelValues(r.Method, r.Pattern, statusCode, encoding).Observe(float64(recorder.bytesWritten))
 	})
 }
 
@@ -70,9 +82,10 @@ var (
 )
 
 type statusRecordingResponseWriter struct {
-	rw     http.ResponseWriter
-	once   sync.Once
-	status int
+	rw           http.ResponseWriter
+	once         sync.Once
+	status       int
+	bytesWritten int
 }
 
 func (s *statusRecordingResponseWriter) Header() http.Header {
@@ -83,7 +96,9 @@ func (s *statusRecordingResponseWriter) Write(b []byte) (int, error) {
 	s.once.Do(func() {
 		s.status = http.StatusOK
 	})
-	return s.rw.Write(b)
+	n, err := s.rw.Write(b)
+	s.bytesWritten += n
+	return n, err
 }
 
 func (s *statusRecordingResponseWriter) WriteHeader(statusCode int) {

@@ -21,6 +21,7 @@ func NewRegistry() *prometheus.Registry {
 		middleware.MetricRateLimiterRequests,
 		middleware.MetricRequestsInFlight,
 		middleware.MetricRequestDurations,
+		middleware.MetricResponseSize,
 		middleware.MetricRecoveredRequests,
 		middleware.MetricTrustedURLRequests,
 
