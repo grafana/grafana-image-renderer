@@ -598,7 +598,13 @@ func TestRenderingGrafana(t *testing.T) {
 		testcontainers.CleanupNetwork(t, net)
 
 		StartPrometheus(t, WithNetwork(net, "prometheus"))
-		svc := StartImageRenderer(t, WithNetwork(net, "gir"), WithEnv("BROWSER_READINESS_TIMEOUT", "60s"))
+		svc := StartImageRenderer(t,
+			WithNetwork(net, "gir"),
+			WithEnv("BROWSER_READINESS_TIMEOUT", "60s"),
+			WithEnv("BROWSER_READINESS_NETWORK_IDLE_TIMEOUT", "60s"),
+			WithEnv("BROWSER_READINESS_ITERATION_INTERVAL", "200ms"),
+			WithEnv("BROWSER_READINESS_WAIT_FOR_N_QUERY_CYCLES", "5"),
+		)
 		_ = StartGrafana(t,
 			WithNetwork(net, "grafana"),
 			WithEnv("GF_RENDERING_SERVER_URL", "http://gir:8081/render"),
