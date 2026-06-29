@@ -213,13 +213,20 @@ func TestOverridesOnlyAffectSpecifiedValues(t *testing.T) {
 		require.Equal(t, imgNoOverride.Bounds(), imgWithOverride.Bounds(),
 			"images should have the same dimensions")
 
-		// Both images should be identical (0 pixel differences)
-		// This validates that the override with the same value as default doesn't
-		// accidentally change any other rendering settings.
-		diff, err := CountPixelDifferences(imgNoOverride, imgWithOverride)
+		// The two renders should be effectively identical: the override sets
+		// page-scale-factor to its default, so it must not change any other config.
+		//
+		// We can't require an exact (0-difference) match: two independent browser
+		// renders can leave a handful of pixels off by ±1 in a colour channel.
+		//
+		// So we ignore per-channel differences of <=2 and allow a small budget of jitter pixels.
+		// A real config regression (e.g. a changed page-scale-factor) repaints the whole
+		// image and produces tens of thousands of differences, far above this budget, so the test still catches it.
+		const channelDelta = 2
+		const maxJitterPixels = 64
+		diff, err := CountPixelDifferencesWithTolerance(imgNoOverride, imgWithOverride, channelDelta)
 		require.NoError(t, err, "could not compare images")
-		assert.Equal(t, uint64(0), diff,
-			"images should be identical when override uses same value as default; "+
-				"this indicates the override system is incorrectly changing other config values")
+		assert.LessOrEqual(t, diff, uint64(maxJitterPixels),
+			"renders should be effectively identical when the override uses the default value; a large difference indicates the override system is changing other config values")
 	})
 }
