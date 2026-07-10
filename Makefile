@@ -14,6 +14,11 @@ test-acceptance:
 	docker build -t gir .
 	IMAGE=gir go test ./tests/acceptance/... -timeout=120s
 
+.PHONY: test-acceptance-distroless
+test-acceptance-distroless:
+	docker build --target distroless_output_image -t gir-distroless .
+	IMAGE=gir-distroless go test ./tests/acceptance/... -timeout=120s
+
 .PHONY: lint
 lint:
 	go tool goimports -l .
@@ -50,7 +55,7 @@ docs:
 	make -C docs update vale
 
 .PHONY: all
-all: lint build-all test test-acceptance
+all: lint build-all test test-acceptance test-acceptance-distroless
 
 $(OUT_DIR):
 	mkdir -p "$(OUT_DIR)"

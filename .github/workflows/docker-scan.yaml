@@ -20,8 +20,13 @@ jobs:
       fail-fast: false
       matrix:
         runs-on: [ubuntu-x64, ubuntu-arm64]
+        variant:
+          - suffix: ""
+            target: output_image
+          - suffix: "-distroless"
+            target: distroless_output_image
 
-    name: grype scanning (${{ matrix.runs-on }})
+    name: grype scanning (${{ matrix.runs-on }}${{ matrix.variant.suffix }})
     runs-on: ${{ matrix.runs-on }}
     permissions:
       contents: read # clone the repository
@@ -40,7 +45,8 @@ jobs:
           DOCKER_BUILDKIT: 1
           BUILDKIT_STEP_LOG_MAX_SIZE: -1
           BUILDKIT_STEP_LOG_MAX_SPEED: -1
-        run: docker build . -t image-renderer
+          TARGET: ${{ matrix.variant.target }}
+        run: docker build . --target "$TARGET" -t image-renderer
 
       - name: Scan with Grype
         id: scan
@@ -52,15 +58,20 @@ jobs:
         if: success() || failure()
         with:
           sarif_file: ${{ steps.scan.outputs.sarif }}
-          category: Grype
+          category: Grype-${{ matrix.runs-on }}${{ matrix.variant.suffix }}
 
   trivy:
     strategy:
       fail-fast: false
       matrix:
         runs-on: [ubuntu-x64, ubuntu-arm64]
+        variant:
+          - suffix: ""
+            target: output_image
+          - suffix: "-distroless"
+            target: distroless_output_image
 
-    name: trivy scanning (${{ matrix.runs-on }})
+    name: trivy scanning (${{ matrix.runs-on }}${{ matrix.variant.suffix }})
     runs-on: ${{ matrix.runs-on }}
     permissions:
       contents: read # clone the repository
@@ -79,7 +90,8 @@ jobs:
           DOCKER_BUILDKIT: 1
           BUILDKIT_STEP_LOG_MAX_SIZE: -1
           BUILDKIT_STEP_LOG_MAX_SPEED: -1
-        run: docker build . -t image-renderer
+          TARGET: ${{ matrix.variant.target }}
+        run: docker build . --target "$TARGET" -t image-renderer
 
       - name: Scan with Trivy
         uses: aquasecurity/trivy-action@b6643a29fecd7f34b3597bc6acb0a98b03d33ff8 # 0.33.1
@@ -92,4 +104,4 @@ jobs:
         if: success() || failure()
         with:
           sarif_file: trivy-results.sarif
-          category: Trivy
+          category: Trivy-${{ matrix.runs-on }}${{ matrix.variant.suffix }}

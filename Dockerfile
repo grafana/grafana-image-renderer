@@ -1,7 +1,10 @@
-# This Dockerfile does two things in parallel:
-#   1. It builds a statically linked Go binary. This is fine to use in Debian, Alpine, RHEL, etc. base-images.
+# This Dockerfile builds two things in parallel, sharing as many layers as possible:
+#   1. A statically linked Go binary. This is fine to use in Debian, Alpine, RHEL, etc. base-images.
 #        -> Why static linking? We want to ensure we can switch base-image with little to no effort.
-#   2. It builds a running environment. This is the environment that exists for the Go binary, and should have all necessary pieces to run the application.
+#   2. A running environment for that Go binary, produced in two variants that share a common Debian layer
+#      (`runtime_base`) so the expensive Chromium install happens exactly once:
+#        - `output_image`            -> the regular Debian-based image (default `docker build .` target).
+#        - `distroless_output_image` -> a distroless (base-debian13) image.
 
 FROM golang:1.26.4-alpine@sha256:3ad57304ad93bbec8548a0437ad9e06a455660655d9af011d58b993f6f615648 AS app
 
@@ -16,7 +19,10 @@ RUN --mount=type=cache,target=/go/pkg/mod CGO_ENABLED=0 go build \
   -ldflags '-s -w -extldflags "-static"' \
   .
 
-FROM debian:trixie-20260623@sha256:d07d1b51c39f51188e60be9b64e6bf769fa94e187f092bc32b91305cfa34ba5a AS output_image
+# runtime_base holds the shared Debian runtime environment: Chromium, its dependencies, fonts and the
+# handful of tools the acceptance tests exercise, with all the package post-install steps (locale, font
+# cache, CA certificates, the nonroot user) already applied.
+FROM debian:trixie-20260623@sha256:d07d1b51c39f51188e60be9b64e6bf769fa94e187f092bc32b91305cfa34ba5a AS runtime_base
 
 LABEL maintainer="Grafana team <hello@grafana.com>"
 LABEL org.opencontainers.image.source="https://github.com/grafana/grafana-image-renderer/tree/master/Dockerfile"
@@ -48,6 +54,65 @@ RUN update-ca-certificates --fresh
 
 RUN useradd --create-home --system --uid 65532 --user-group nonroot
 RUN chgrp -R 0 /home/nonroot && chmod -R g=u /home/nonroot
+
+# busybox provides a static shell + coreutils for the distroless variant, which ships no shell of its own.
+FROM debian:trixie-20260623@sha256:d07d1b51c39f51188e60be9b64e6bf769fa94e187f092bc32b91305cfa34ba5a AS busybox
+
+RUN apt-get update && apt-get install -y --no-install-recommends --no-install-suggests busybox-static
+
+# distroless_output_image is the "distroless" variant. It is deliberately NOT the last stage.
+FROM gcr.io/distroless/base-debian13:nonroot AS distroless_output_image
+
+LABEL maintainer="Grafana team <hello@grafana.com>"
+LABEL org.opencontainers.image.source="https://github.com/grafana/grafana-image-renderer/tree/master/Dockerfile"
+
+COPY --from=busybox /bin/busybox /usr/bin/busybox
+
+# Copy everything from the base to run Chromium properly.
+# - Shared libraries: glibc, Chromium's own libs (/usr/lib/chromium), NSS, fontconfig, OpenSSL and the generated locale archive.
+# - The binaries the application and the acceptance tests invoke by name (findmnt is used by the chromium launcher's /etc/chromium.d/dev-shm hook).
+# - Configuration + data the tools above need at runtime: chromium launcher config, fonts + fontconfig cache, CA certificates, and the time-zone database.
+# - Home directory, pre-configured for arbitrary (e.g. OpenShift) UIDs via the root group.
+COPY --from=runtime_base /usr/lib/ /usr/lib/
+COPY --from=runtime_base /usr/bin/chromium /usr/bin/openssl /usr/bin/certutil /usr/bin/tini /usr/bin/findmnt /usr/bin/
+COPY --from=runtime_base /usr/bin/fc-match /usr/bin/fc-cache /usr/bin/fc-list /usr/bin/
+COPY --from=runtime_base /usr/sbin/update-ca-certificates /usr/sbin/update-ca-certificates
+COPY --from=runtime_base /etc/chromium.d/ /etc/chromium.d/
+COPY --from=runtime_base /etc/fonts/ /etc/fonts/
+COPY --from=runtime_base /usr/share/fonts/ /usr/share/fonts/
+COPY --from=runtime_base /usr/share/fontconfig/ /usr/share/fontconfig/
+COPY --from=runtime_base /var/cache/fontconfig/ /var/cache/fontconfig/
+COPY --from=runtime_base /etc/ssl/ /etc/ssl/
+COPY --from=runtime_base /usr/share/ca-certificates/ /usr/share/ca-certificates/
+COPY --from=runtime_base /usr/share/zoneinfo/ /usr/share/zoneinfo/
+COPY --from=runtime_base /home/nonroot/ /home/nonroot/
+
+COPY --from=app /src/grafana-image-renderer /usr/bin/grafana-image-renderer
+
+# Create the busybox applet symlinks. It also needs to run as root to write into the bin directories.
+USER root
+SHELL ["/usr/bin/busybox", "sh", "-c"]
+RUN /usr/bin/busybox --install
+
+WORKDIR /home/nonroot
+# The base image already ships `nonroot` (uid 65532) in /etc/passwd, but we set the UID numerically so
+# tooling that reads the image config (e.g. Kubernetes runAsNonRoot) sees a numeric user.
+USER 65532
+
+EXPOSE 8081
+
+ENV CHROME_BIN="/usr/bin/chromium"
+ENV LANG=en_US.UTF-8
+ENV LC_ALL=en_US.UTF-8
+ENTRYPOINT ["tini", "--", "/usr/bin/grafana-image-renderer"]
+CMD ["server"]
+HEALTHCHECK --interval=10s --retries=3 --timeout=3s --start-interval=250ms --start-period=30s \
+  CMD ["/usr/bin/grafana-image-renderer", "healthcheck"]
+
+# output_image is the regular Debian-based image. It is the LAST stage on purpose, so that a plain
+# `docker build .` (used by CI and by most consumers) keeps producing it by default.
+FROM runtime_base AS output_image
+
 WORKDIR /home/nonroot
 USER 65532
 
