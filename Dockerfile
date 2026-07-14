@@ -16,7 +16,7 @@ RUN --mount=type=cache,target=/go/pkg/mod CGO_ENABLED=0 go build \
   -ldflags '-s -w -extldflags "-static"' \
   .
 
-FROM debian:trixie-20260623@sha256:d07d1b51c39f51188e60be9b64e6bf769fa94e187f092bc32b91305cfa34ba5a AS output_image
+FROM debian:trixie-20260713@sha256:fac46bff2e02f51425b6e33b0e1169f55dfb053d83511ca28aa50c09fd5ed7a4 AS output_image
 
 LABEL maintainer="Grafana team <hello@grafana.com>"
 LABEL org.opencontainers.image.source="https://github.com/grafana/grafana-image-renderer/tree/master/Dockerfile"
