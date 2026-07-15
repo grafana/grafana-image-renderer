@@ -55,13 +55,29 @@ RUN update-ca-certificates --fresh
 RUN useradd --create-home --system --uid 65532 --user-group nonroot
 RUN chgrp -R 0 /home/nonroot && chmod -R g=u /home/nonroot
 
+# Keep package metadata for the Debian-owned files copied into the distroless image.
+# Vulnerability scanners use this metadata to identify the Chromium and runtime package versions.
+FROM runtime_base AS runtime_package_metadata
+
+RUN set -eu; \
+  mkdir -p /runtime-package-metadata; \
+  for package_files in /var/lib/dpkg/info/*.list; do \
+    if grep -Eq '^(/usr/lib/|/usr/bin/(chromium|openssl|certutil|tini|findmnt|fc-(match|cache|list))$|/usr/sbin/update-ca-certificates$|/etc/(chromium\.d|fonts|ssl)(/|$)|/usr/share/(fonts|fontconfig|ca-certificates|zoneinfo)(/|$)|/var/cache/fontconfig(/|$))' "$package_files"; then \
+      basename "$package_files" .list; \
+    fi; \
+  done | sort -u > /tmp/runtime-packages; \
+  while read -r package; do \
+    dpkg-query --status "$package" > "/runtime-package-metadata/${package%%:*}"; \
+  done < /tmp/runtime-packages
+
 # busybox provides a static shell + coreutils for the distroless variant, which ships no shell of its own.
 FROM debian:trixie-20260713@sha256:fac46bff2e02f51425b6e33b0e1169f55dfb053d83511ca28aa50c09fd5ed7a4 AS busybox
 
-RUN apt-get update && apt-get install -y --no-install-recommends --no-install-suggests busybox-static
+RUN apt-get update && apt-get install -y --no-install-recommends --no-install-suggests busybox-static \
+  && dpkg-query --status busybox-static > /busybox-package-metadata
 
 # distroless_output_image is the "distroless" variant. It is deliberately NOT the last stage.
-FROM gcr.io/distroless/base-debian13:nonroot AS distroless_output_image
+FROM gcr.io/distroless/base-debian13:nonroot@sha256:97b9d04bed1c754b756c3c4b6a04915c22fb0b5d96a59944eb3bf78c26e6e157 AS distroless_output_image
 
 LABEL maintainer="Grafana team <hello@grafana.com>"
 LABEL org.opencontainers.image.source="https://github.com/grafana/grafana-image-renderer/tree/master/Dockerfile"
@@ -86,6 +102,10 @@ COPY --from=runtime_base /etc/ssl/ /etc/ssl/
 COPY --from=runtime_base /usr/share/ca-certificates/ /usr/share/ca-certificates/
 COPY --from=runtime_base /usr/share/zoneinfo/ /usr/share/zoneinfo/
 COPY --from=runtime_base /home/nonroot/ /home/nonroot/
+
+# Copy package metadata so vulnerability scanners can identify it.
+COPY --from=runtime_package_metadata /runtime-package-metadata/ /var/lib/dpkg/status.d/
+COPY --from=busybox /busybox-package-metadata /var/lib/dpkg/status.d/busybox-static
 
 COPY --from=app /src/grafana-image-renderer /usr/bin/grafana-image-renderer
 
