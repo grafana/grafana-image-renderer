@@ -6,7 +6,7 @@
 #        - `output_image`            -> the regular Debian-based image (default `docker build .` target).
 #        - `distroless_output_image` -> a distroless (base-debian13) image.
 
-FROM golang:1.26.4-alpine@sha256:3ad57304ad93bbec8548a0437ad9e06a455660655d9af011d58b993f6f615648 AS app
+FROM golang:1.26.5-alpine@sha256:0178a641fbb4858c5f1b48e34bdaabe0350a330a1b1149aabd498d0699ff5fb2 AS app
 
 RUN apk add --no-cache git
 
@@ -22,13 +22,13 @@ RUN --mount=type=cache,target=/go/pkg/mod CGO_ENABLED=0 go build \
 # runtime_base holds the shared Debian runtime environment: Chromium, its dependencies, fonts and the
 # handful of tools the acceptance tests exercise, with all the package post-install steps (locale, font
 # cache, CA certificates, the nonroot user) already applied.
-FROM debian:trixie-20260623@sha256:d07d1b51c39f51188e60be9b64e6bf769fa94e187f092bc32b91305cfa34ba5a AS runtime_base
+FROM debian:trixie-20260713@sha256:fac46bff2e02f51425b6e33b0e1169f55dfb053d83511ca28aa50c09fd5ed7a4 AS runtime_base
 
 LABEL maintainer="Grafana team <hello@grafana.com>"
 LABEL org.opencontainers.image.source="https://github.com/grafana/grafana-image-renderer/tree/master/Dockerfile"
 
 # If we ever need to bust the cache, just change the date here.
-RUN echo 'cachebuster 2026-07-09' && apt-get update && apt-get upgrade -y --no-install-recommends --no-install-suggests
+RUN echo 'cachebuster 2026-07-14' && apt-get update && apt-get upgrade -y --no-install-recommends --no-install-suggests
 
 RUN apt-get install -y --no-install-recommends --no-install-suggests \
   fonts-ipaexfont-gothic fonts-wqy-zenhei fonts-thai-tlwg fonts-khmeros fonts-kacst-one fonts-freefont-ttf \
@@ -36,7 +36,7 @@ RUN apt-get install -y --no-install-recommends --no-install-suggests \
   bash util-linux openssl tini ca-certificates locales libnss3-tools ca-certificates
 
 # renovate: depName=chromium
-ARG CHROMIUM_VERSION=150.0.7871.100
+ARG CHROMIUM_VERSION=150.0.7871.114
 RUN apt-get satisfy -y --no-install-recommends --no-install-suggests \
   "chromium (>=${CHROMIUM_VERSION}), chromium-driver (>=${CHROMIUM_VERSION}), chromium-shell (>=${CHROMIUM_VERSION}), chromium-sandbox (>=${CHROMIUM_VERSION})"
 
@@ -56,7 +56,7 @@ RUN useradd --create-home --system --uid 65532 --user-group nonroot
 RUN chgrp -R 0 /home/nonroot && chmod -R g=u /home/nonroot
 
 # busybox provides a static shell + coreutils for the distroless variant, which ships no shell of its own.
-FROM debian:trixie-20260623@sha256:d07d1b51c39f51188e60be9b64e6bf769fa94e187f092bc32b91305cfa34ba5a AS busybox
+FROM debian:trixie-20260713@sha256:fac46bff2e02f51425b6e33b0e1169f55dfb053d83511ca28aa50c09fd5ed7a4 AS busybox
 
 RUN apt-get update && apt-get install -y --no-install-recommends --no-install-suggests busybox-static
 
