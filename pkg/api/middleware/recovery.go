@@ -3,6 +3,7 @@ package middleware
 import (
 	"log/slog"
 	"net/http"
+	"net/url"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"go.opentelemetry.io/otel/codes"
@@ -26,7 +27,7 @@ func Recovery(h http.Handler) http.Handler {
 			if err := recover(); err != nil {
 				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 				MetricRecoveredRequests.Inc()
-				slog.ErrorContext(ctx, "Request panicked", "panic", err, "url", r.URL, "method", r.Method)
+				slog.ErrorContext(ctx, "Request panicked", "panic", err, "url", redactedURL(r.URL), "method", r.Method)
 				span.SetStatus(codes.Error, "panic in HTTP handler")
 			}
 		}()
@@ -34,4 +35,17 @@ func Recovery(h http.Handler) http.Handler {
 		h.ServeHTTP(w, r)
 		span.SetStatus(codes.Ok, "no panic")
 	})
+}
+
+// redactedURL returns the URL as a string with the renderKey query parameter
+// value masked, so panic logs never contain the Grafana auth token.
+func redactedURL(u *url.URL) string {
+	q := u.Query()
+	if q.Has("renderKey") {
+		q.Set("renderKey", "-redacted-")
+		redacted := *u
+		redacted.RawQuery = q.Encode()
+		return redacted.String()
+	}
+	return u.String()
 }
