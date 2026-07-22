@@ -124,7 +124,14 @@ func customParseBrowserFlags(flags string) []string {
 				}
 			}
 
-			collected = append(collected, strings.TrimSpace(flags[i:startOfNextFlag]))
+			// cli-altsrc joins configuration-file lists with commas.
+			// Remove only the comma directly adjoining the next flag, preserving commas in values.
+			endOfCurrentFlag := startOfNextFlag
+			if endOfCurrentFlag > i && flags[endOfCurrentFlag-1] == ',' {
+				endOfCurrentFlag--
+			}
+
+			collected = append(collected, strings.TrimSpace(flags[i:endOfCurrentFlag]))
 		}
 	}
 

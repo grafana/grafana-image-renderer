@@ -20,6 +20,79 @@ func noopSpan() trace.Span {
 	return span
 }
 
+func TestBrowserFlagsFromConfigFile(t *testing.T) {
+	tests := []struct {
+		filename string
+		content  string
+	}{
+		{
+			filename: "config.yaml",
+			content: `
+browser:
+  flag:
+    - '--dummy-test-for-trailing-comma,'
+    - '--user-data-dir=/Users/test'
+    - '--window-size=1920,1080'
+    - '--ignore-certificate-errors'
+`,
+		},
+		{
+			filename: "config.json",
+			content: `{
+  "browser": {
+    "flag": [
+      "--dummy-test-for-trailing-comma,",
+      "--user-data-dir=/Users/test",
+      "--window-size=1920,1080",
+      "--ignore-certificate-errors"
+    ]
+  }
+}`,
+		},
+	}
+
+	want := []string{
+		"--dummy-test-for-trailing-comma,",
+		"--user-data-dir=/Users/test",
+		"--window-size=1920,1080",
+		"--ignore-certificate-errors",
+	}
+
+	parseBrowserConfig := func(t *testing.T) BrowserConfig {
+		t.Helper()
+
+		var browserConfig BrowserConfig
+		cmd := &cli.Command{
+			Flags: BrowserFlags(),
+			Action: func(_ context.Context, c *cli.Command) error {
+				var err error
+				browserConfig, err = BrowserConfigFromCommand(c)
+				return err
+			},
+		}
+
+		require.NoError(t, cmd.Run(t.Context(), []string{""}))
+		return browserConfig
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.filename, func(t *testing.T) {
+			t.Chdir(t.TempDir())
+			require.NoError(t, os.WriteFile(tt.filename, []byte(tt.content), 0o600))
+
+			browserConfig := parseBrowserConfig(t)
+			require.Equal(t, want, browserConfig.Flags)
+		})
+	}
+
+	t.Run("using env vars", func(t *testing.T) {
+		t.Setenv("BROWSER_FLAG", "--dummy-test-for-trailing-comma, --user-data-dir=/Users/test --window-size=1920,1080 --ignore-certificate-errors")
+
+		browserConfig := parseBrowserConfig(t)
+		require.Equal(t, want, browserConfig.Flags)
+	})
+}
+
 func TestRenderRequestConfig(t *testing.T) {
 	defaultConfig := RequestConfig{
 		TimeBetweenScrolls:              50 * time.Millisecond,
