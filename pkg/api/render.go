@@ -126,11 +126,19 @@ func HandleGetRender(browser *service.BrowserService, apiConfig config.APIConfig
 			options = append(options, service.WithLandscape(landscape == "true"))
 			span.SetAttributes(attribute.Bool("landscape", landscape == "true"))
 		}
-		renderKey := r.URL.Query().Get("renderKey")
-		domain := r.URL.Query().Get("domain")
-		if renderKey != "" && domain != "" {
-			options = append(options, service.WithCookie("renderKey", renderKey, domain))
-			span.AddEvent("added renderKey cookie", trace.WithAttributes(attribute.String("domain", domain)))
+		if domain := r.URL.Query().Get("domain"); domain != "" {
+			if renderKey := r.URL.Query().Get("renderKey"); renderKey != "" {
+				options = append(options, service.WithCookie("renderKey", renderKey, domain))
+				span.AddEvent("added renderKey cookie", trace.WithAttributes(attribute.String("domain", domain)))
+			}
+			if headerXGrafanaID := r.Header.Get("X-Grafana-Id"); headerXGrafanaID != "" {
+				options = append(options, service.WithCookie("X-Grafana-Id", headerXGrafanaID, domain))
+				span.AddEvent("added X-Grafana-Id cookie", trace.WithAttributes(attribute.String("domain", domain)))
+			}
+			if headerXAccessToken := r.Header.Get("X-Access-Token"); headerXAccessToken != "" {
+				options = append(options, service.WithCookie("X-Access-Token", headerXAccessToken, domain))
+				span.AddEvent("added X-Access-Token cookie", trace.WithAttributes(attribute.String("domain", domain)))
+			}
 		}
 		encoding := strings.TrimSpace(strings.ToLower(r.URL.Query().Get("encoding")))
 		if encoding == "" {
