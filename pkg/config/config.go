@@ -410,6 +410,9 @@ type BrowserConfig struct {
 	// Headers are set on every request the browser makes, not only to a specific domain.
 	// This is useful to pass around trace IDs and similar, but should be avoided for sensitive data (e.g. authentication).
 	Headers network.Headers // DeepClone: can't just be copied (is a map)
+	// HeadersByDomain are set only on HTTP(S) requests whose hostname exactly matches the map key.
+	// Ports are ignored. This is intended for sensitive, request-scoped headers.
+	HeadersByDomain map[string]network.Headers // DeepClone: the outer and inner maps must be copied
 	// DefaultRequestConfig contains default settings for handling rendering requests. Overrides for specific URL patterns can be configured separately.
 	DefaultRequestConfig RequestConfig
 	// RequestConfigOverrides contains pre-parsed request configurations for specific URL regex patterns.
@@ -473,6 +476,10 @@ func (c BrowserConfig) DeepClone() BrowserConfig {
 		cpy.Cookies[i] = &cloned
 	}
 	cpy.Headers = network.Headers(maps.Clone(c.Headers))
+	cpy.HeadersByDomain = maps.Clone(c.HeadersByDomain)
+	for domain, headers := range c.HeadersByDomain {
+		cpy.HeadersByDomain[domain] = network.Headers(maps.Clone(headers))
+	}
 	cpy.RequestConfigOverrides = slices.Clone(c.RequestConfigOverrides)
 	return cpy
 }
