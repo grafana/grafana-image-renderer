@@ -77,6 +77,7 @@ var (
 		},
 		Buckets: []float64{1, 1024, 4 * 1024, 16 * 1024, 1024 * 1024, 4 * 1024 * 1024, 16 * 1024 * 1024, 64 * 1024 * 1024, 256 * 1024 * 1024},
 	}, []string{"mime_type"})
+	// TODO: Remove this metric (and mode labels on HTTP/render metrics) once a default readiness mode has been decided.
 	MetricBrowserReadinessMode = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Name: "browser_readiness_mode_total",
 		Help: "Number of render requests by readiness detection mode: binding (chromedp binding) or legacy (polling).",
@@ -1096,7 +1097,9 @@ func waitForReady(browserCtx context.Context, cfg config.BrowserConfig, url stri
 		}
 
 		if supportsBinding && !requestConfig.ForcePollingMode {
-			MetricBrowserReadinessMode.WithLabelValues("binding").Inc()
+			// TODO: Remove mode labeling once a default readiness mode has been decided.
+			MetricBrowserReadinessMode.WithLabelValues(ReadinessModeBinding).Inc()
+			SetReadinessMode(ctx, ReadinessModeBinding)
 			span.AddEvent("using binding-based readiness")
 			select {
 			case <-ctx.Done():
@@ -1113,7 +1116,9 @@ func waitForReady(browserCtx context.Context, cfg config.BrowserConfig, url stri
 			}
 		}
 
-		MetricBrowserReadinessMode.WithLabelValues("legacy").Inc()
+		// TODO: Remove mode labeling once a default readiness mode has been decided.
+		MetricBrowserReadinessMode.WithLabelValues(ReadinessModeLegacy).Inc()
+		SetReadinessMode(ctx, ReadinessModeLegacy)
 		span.AddEvent("using legacy polling readiness")
 
 		hasSeenAnyQuery := false
