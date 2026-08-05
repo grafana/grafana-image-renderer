@@ -744,7 +744,18 @@ func TestMaxPageScaleFactorConfig(t *testing.T) {
 		assert.Contains(t, err.Error(), "max-page-scale-factor")
 	})
 
-	t.Run("allows disabling max with negative value", func(t *testing.T) {
+	t.Run("rejects non-positive max", func(t *testing.T) {
+		t.Parallel()
+
+		err := newCmd().Run(t.Context(), []string{
+			"",
+			"--browser.max-page-scale-factor=-1",
+		})
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "max-page-scale-factor")
+	})
+
+	t.Run("allows raising max above default", func(t *testing.T) {
 		t.Parallel()
 
 		var browserConfig BrowserConfig
@@ -762,12 +773,12 @@ func TestMaxPageScaleFactorConfig(t *testing.T) {
 
 		err := cmd.Run(t.Context(), []string{
 			"",
-			"--browser.page-scale-factor=10",
-			"--browser.max-page-scale-factor=-1",
+			"--browser.page-scale-factor=5",
+			"--browser.max-page-scale-factor=5",
 		})
 		require.NoError(t, err)
-		assert.Equal(t, 10.0, browserConfig.DefaultRequestConfig.PageScaleFactor)
-		assert.Equal(t, -1.0, browserConfig.DefaultRequestConfig.MaxPageScaleFactor)
+		assert.Equal(t, 5.0, browserConfig.DefaultRequestConfig.PageScaleFactor)
+		assert.Equal(t, 5.0, browserConfig.DefaultRequestConfig.MaxPageScaleFactor)
 	})
 }
 

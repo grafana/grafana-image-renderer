@@ -446,7 +446,7 @@ type RequestConfig struct {
 	PageScaleFactor float64
 	// MaxPageScaleFactor is the maximum page/device scale factor a request may use.
 	// Requests that ask for a larger scale are clamped to this value.
-	// If negative, it is ignored.
+	// Must be positive.
 	MaxPageScaleFactor float64
 	Landscape          bool
 
@@ -723,12 +723,12 @@ func BrowserFlags() []cli.Flag {
 		},
 		&cli.Float64Flag{
 			Name:    "browser.max-page-scale-factor",
-			Usage:   "The maximum page scale factor of the browser. Requests cannot request a larger scale than this. Negative means ignored. [config: browser.max-page-scale-factor]",
+			Usage:   "The maximum page scale factor of the browser. Requests cannot request a larger scale than this. [config: browser.max-page-scale-factor]",
 			Value:   4.0,
 			Sources: FromConfig("browser.max-page-scale-factor", "BROWSER_MAX_PAGE_SCALE_FACTOR"),
 			Validator: func(f float64) error {
-				if f >= 0 && f < 0.1 {
-					return fmt.Errorf("browser max-page-scale-factor must be at least 0.1, or negative to be ignored")
+				if f <= 0 {
+					return fmt.Errorf("browser max-page-scale-factor must be positive")
 				}
 				return nil
 			},
@@ -768,7 +768,7 @@ func requestConfigFromCommand(c *cli.Command) (RequestConfig, error) {
 	if maxHeight >= 0 && minHeight > maxHeight {
 		return RequestConfig{}, fmt.Errorf("browser min-height (%d) cannot be larger than max-height (%d)", minHeight, maxHeight)
 	}
-	if maxPageScaleFactor > 0 && pageScaleFactor > maxPageScaleFactor {
+	if pageScaleFactor > maxPageScaleFactor {
 		return RequestConfig{}, fmt.Errorf("browser page-scale-factor (%g) cannot be larger than max-page-scale-factor (%g)", pageScaleFactor, maxPageScaleFactor)
 	}
 

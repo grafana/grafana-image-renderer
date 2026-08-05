@@ -211,7 +211,6 @@ func WithViewport(width, height int) RenderingOption {
 // WithPageScaleFactor uses the given scale for all webpages visited by the browser.
 //
 // If the factor is larger than MaxPageScaleFactor (from the config), it is clamped to that maximum.
-// A negative MaxPageScaleFactor means no maximum is applied.
 func WithPageScaleFactor(factor float64) RenderingOption {
 	return func(cfg config.BrowserConfig) (config.BrowserConfig, error) {
 		if factor <= 0 {
@@ -219,7 +218,7 @@ func WithPageScaleFactor(factor float64) RenderingOption {
 		}
 
 		cfg.ApplyAll(func(rc *config.RequestConfig) {
-			if rc.MaxPageScaleFactor > 0 && factor > rc.MaxPageScaleFactor {
+			if factor > rc.MaxPageScaleFactor {
 				rc.PageScaleFactor = rc.MaxPageScaleFactor
 			} else {
 				rc.PageScaleFactor = factor

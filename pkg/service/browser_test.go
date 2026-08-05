@@ -147,19 +147,19 @@ func TestWithPageScaleFactorClampsToMax(t *testing.T) {
 		assert.Equal(t, 2.0, updated.DefaultRequestConfig.PageScaleFactor)
 	})
 
-	t.Run("ignores max when negative", func(t *testing.T) {
+	t.Run("clamps to a raised max", func(t *testing.T) {
 		t.Parallel()
 
 		cfg := config.BrowserConfig{
 			DefaultRequestConfig: config.RequestConfig{
 				PageScaleFactor:    1.0,
-				MaxPageScaleFactor: -1,
+				MaxPageScaleFactor: 5.0,
 			},
 		}
 
 		updated, err := WithPageScaleFactor(10)(cfg)
 		require.NoError(t, err)
-		assert.Equal(t, 10.0, updated.DefaultRequestConfig.PageScaleFactor)
+		assert.Equal(t, 5.0, updated.DefaultRequestConfig.PageScaleFactor)
 	})
 
 	t.Run("rejects non-positive factor", func(t *testing.T) {
