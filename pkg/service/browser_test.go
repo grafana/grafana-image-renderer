@@ -4,7 +4,9 @@ import (
 	"testing"
 
 	"github.com/chromedp/cdproto/network"
+	"github.com/grafana/grafana-image-renderer/pkg/config"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestShouldTrackReadinessNetworkRequest(t *testing.T) {
@@ -110,4 +112,68 @@ func TestReadinessNetworkObserverIgnoresUntrackedRequests(t *testing.T) {
 
 	observer.onRequestCompleted(network.RequestID("blob-1"))
 	assert.Equal(t, int64(0), observer.inflight())
+}
+
+func TestWithPageScaleFactorClampsToMax(t *testing.T) {
+	t.Parallel()
+
+	t.Run("clamps when above max", func(t *testing.T) {
+		t.Parallel()
+
+		cfg := config.BrowserConfig{
+			DefaultRequestConfig: config.RequestConfig{
+				PageScaleFactor:    1.0,
+				MaxPageScaleFactor: 4.0,
+			},
+		}
+
+		updated, err := WithPageScaleFactor(10)(cfg)
+		require.NoError(t, err)
+		assert.Equal(t, 4.0, updated.DefaultRequestConfig.PageScaleFactor)
+	})
+
+	t.Run("keeps requested value when within max", func(t *testing.T) {
+		t.Parallel()
+
+		cfg := config.BrowserConfig{
+			DefaultRequestConfig: config.RequestConfig{
+				PageScaleFactor:    1.0,
+				MaxPageScaleFactor: 4.0,
+			},
+		}
+
+		updated, err := WithPageScaleFactor(2)(cfg)
+		require.NoError(t, err)
+		assert.Equal(t, 2.0, updated.DefaultRequestConfig.PageScaleFactor)
+	})
+
+	t.Run("ignores max when negative", func(t *testing.T) {
+		t.Parallel()
+
+		cfg := config.BrowserConfig{
+			DefaultRequestConfig: config.RequestConfig{
+				PageScaleFactor:    1.0,
+				MaxPageScaleFactor: -1,
+			},
+		}
+
+		updated, err := WithPageScaleFactor(10)(cfg)
+		require.NoError(t, err)
+		assert.Equal(t, 10.0, updated.DefaultRequestConfig.PageScaleFactor)
+	})
+
+	t.Run("rejects non-positive factor", func(t *testing.T) {
+		t.Parallel()
+
+		cfg := config.BrowserConfig{
+			DefaultRequestConfig: config.RequestConfig{
+				PageScaleFactor:    1.0,
+				MaxPageScaleFactor: 4.0,
+			},
+		}
+
+		_, err := WithPageScaleFactor(0)(cfg)
+		require.Error(t, err)
+		assert.ErrorIs(t, err, ErrInvalidBrowserOption)
+	})
 }

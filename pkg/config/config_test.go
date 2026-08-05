@@ -101,6 +101,7 @@ func TestRenderRequestConfig(t *testing.T) {
 		MaxWidth:                        3000,
 		MaxHeight:                       3000,
 		PageScaleFactor:                 1.0,
+		MaxPageScaleFactor:              4.0,
 		Landscape:                       true,
 		ReadinessTimeout:                30 * time.Second,
 		ReadinessIterationInterval:      100 * time.Millisecond,
@@ -165,6 +166,7 @@ func TestRenderRequestConfig(t *testing.T) {
 			MaxWidth:                        4000,
 			MaxHeight:                       4000,
 			PageScaleFactor:                 2.0,
+			MaxPageScaleFactor:              4.0,
 			Landscape:                       false,
 			ReadinessTimeout:                60 * time.Second,
 			ReadinessIterationInterval:      200 * time.Millisecond,
@@ -194,6 +196,7 @@ func TestRenderRequestConfig(t *testing.T) {
 		assert.Equal(t, 4000, result.MaxWidth)
 		assert.Equal(t, 4000, result.MaxHeight)
 		assert.Equal(t, 2.0, result.PageScaleFactor)
+		assert.Equal(t, 4.0, result.MaxPageScaleFactor)
 		assert.Equal(t, false, result.Landscape)
 		assert.Equal(t, 60*time.Second, result.ReadinessTimeout)
 		assert.Equal(t, 200*time.Millisecond, result.ReadinessIterationInterval)
@@ -574,6 +577,8 @@ browser:
 			"override should inherit max-height from base")
 		assert.Equal(t, defaultCfg.PageScaleFactor, overrideCfg.PageScaleFactor,
 			"override should inherit page-scale-factor from base (even though it's a default)")
+		assert.Equal(t, defaultCfg.MaxPageScaleFactor, overrideCfg.MaxPageScaleFactor,
+			"override should inherit max-page-scale-factor from base")
 		assert.Equal(t, defaultCfg.Landscape, overrideCfg.Landscape,
 			"override should inherit landscape from base")
 		assert.Equal(t, defaultCfg.TimeBetweenScrolls, overrideCfg.TimeBetweenScrolls,
@@ -633,6 +638,7 @@ func TestOverrideWithOnlyPageScaleFactor(t *testing.T) {
 	assert.Equal(t, 3000, browserConfig.DefaultRequestConfig.MaxWidth, "default MaxWidth")
 	assert.Equal(t, 3000, browserConfig.DefaultRequestConfig.MaxHeight, "default MaxHeight")
 	assert.Equal(t, 1.0, browserConfig.DefaultRequestConfig.PageScaleFactor, "default PageScaleFactor")
+	assert.Equal(t, 4.0, browserConfig.DefaultRequestConfig.MaxPageScaleFactor, "default MaxPageScaleFactor")
 
 	// Override config should also have the SAME default values
 	require.Len(t, browserConfig.RequestConfigOverrides, 1, "expected one override")
@@ -648,6 +654,8 @@ func TestOverrideWithOnlyPageScaleFactor(t *testing.T) {
 		"override should have same MaxHeight as default")
 	assert.Equal(t, browserConfig.DefaultRequestConfig.PageScaleFactor, override.Config.PageScaleFactor,
 		"override should have same PageScaleFactor as default")
+	assert.Equal(t, browserConfig.DefaultRequestConfig.MaxPageScaleFactor, override.Config.MaxPageScaleFactor,
+		"override should have same MaxPageScaleFactor as default")
 	assert.Equal(t, browserConfig.DefaultRequestConfig.TimeBetweenScrolls, override.Config.TimeBetweenScrolls,
 		"override should have same TimeBetweenScrolls as default")
 	assert.Equal(t, browserConfig.DefaultRequestConfig.Landscape, override.Config.Landscape,
@@ -684,6 +692,83 @@ func TestEagerConfigValidation(t *testing.T) {
 		"--browser.override=^https://example\\.com/.*=--browser.readiness.timeout=60s",
 	})
 	require.NoError(t, err)
+}
+
+func TestMaxPageScaleFactorConfig(t *testing.T) {
+	t.Parallel()
+
+	newCmd := func() *cli.Command {
+		return &cli.Command{
+			Flags: BrowserFlags(),
+			Action: func(ctx context.Context, c *cli.Command) error {
+				_, err := BrowserConfigFromCommand(c)
+				return err
+			},
+			Reader:    nopReader{},
+			Writer:    nopWriter{},
+			ErrWriter: nopWriter{},
+		}
+	}
+
+	t.Run("default max is 4", func(t *testing.T) {
+		t.Parallel()
+
+		var browserConfig BrowserConfig
+		cmd := &cli.Command{
+			Flags: BrowserFlags(),
+			Action: func(ctx context.Context, c *cli.Command) error {
+				var err error
+				browserConfig, err = BrowserConfigFromCommand(c)
+				return err
+			},
+			Reader:    nopReader{},
+			Writer:    nopWriter{},
+			ErrWriter: nopWriter{},
+		}
+
+		err := cmd.Run(t.Context(), []string{""})
+		require.NoError(t, err)
+		assert.Equal(t, 4.0, browserConfig.DefaultRequestConfig.MaxPageScaleFactor)
+	})
+
+	t.Run("rejects page-scale-factor above max", func(t *testing.T) {
+		t.Parallel()
+
+		err := newCmd().Run(t.Context(), []string{
+			"",
+			"--browser.page-scale-factor=5",
+			"--browser.max-page-scale-factor=4",
+		})
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "page-scale-factor")
+		assert.Contains(t, err.Error(), "max-page-scale-factor")
+	})
+
+	t.Run("allows disabling max with negative value", func(t *testing.T) {
+		t.Parallel()
+
+		var browserConfig BrowserConfig
+		cmd := &cli.Command{
+			Flags: BrowserFlags(),
+			Action: func(ctx context.Context, c *cli.Command) error {
+				var err error
+				browserConfig, err = BrowserConfigFromCommand(c)
+				return err
+			},
+			Reader:    nopReader{},
+			Writer:    nopWriter{},
+			ErrWriter: nopWriter{},
+		}
+
+		err := cmd.Run(t.Context(), []string{
+			"",
+			"--browser.page-scale-factor=10",
+			"--browser.max-page-scale-factor=-1",
+		})
+		require.NoError(t, err)
+		assert.Equal(t, 10.0, browserConfig.DefaultRequestConfig.PageScaleFactor)
+		assert.Equal(t, -1.0, browserConfig.DefaultRequestConfig.MaxPageScaleFactor)
+	})
 }
 
 func TestParseOverrideFlags(t *testing.T) {

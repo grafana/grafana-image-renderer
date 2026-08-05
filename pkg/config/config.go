@@ -441,9 +441,14 @@ type RequestConfig struct {
 	// MaxHeight is the maximum height of the browser viewport.
 	// A request cannot request a larger browser viewport than this, except for when capturing full-page screenshots.
 	// If negative, it is ignored.
-	MaxHeight       int
+	MaxHeight int
+	// PageScaleFactor is the default page/device scale factor used for rendering.
 	PageScaleFactor float64
-	Landscape       bool
+	// MaxPageScaleFactor is the maximum page/device scale factor a request may use.
+	// Requests that ask for a larger scale are clamped to this value.
+	// If negative, it is ignored.
+	MaxPageScaleFactor float64
+	Landscape          bool
 
 	// Readiness properties are a "best guess" configuration for waiting for the page to be ready for capture
 	// ReadinessTimeout is the maximum time to wait for the web-page to become ready (i.e. no longer loading anything).
@@ -709,6 +714,24 @@ func BrowserFlags() []cli.Flag {
 			Usage:   "The page scale factor of the browser. [config: browser.page-scale-factor]",
 			Value:   1.0,
 			Sources: FromConfig("browser.page-scale-factor", "BROWSER_PAGE_SCALE_FACTOR"),
+			Validator: func(f float64) error {
+				if f <= 0 {
+					return fmt.Errorf("browser page-scale-factor must be positive")
+				}
+				return nil
+			},
+		},
+		&cli.Float64Flag{
+			Name:    "browser.max-page-scale-factor",
+			Usage:   "The maximum page scale factor of the browser. Requests cannot request a larger scale than this. Negative means ignored. [config: browser.max-page-scale-factor]",
+			Value:   4.0,
+			Sources: FromConfig("browser.max-page-scale-factor", "BROWSER_MAX_PAGE_SCALE_FACTOR"),
+			Validator: func(f float64) error {
+				if f >= 0 && f < 0.1 {
+					return fmt.Errorf("browser max-page-scale-factor must be at least 0.1, or negative to be ignored")
+				}
+				return nil
+			},
 		},
 		&cli.BoolFlag{
 			Name:    "browser.portrait",
@@ -736,12 +759,17 @@ func requestConfigFromCommand(c *cli.Command) (RequestConfig, error) {
 	minHeight := c.Int("browser.min-height")
 	maxWidth := c.Int("browser.max-width")
 	maxHeight := c.Int("browser.max-height")
+	pageScaleFactor := c.Float64("browser.page-scale-factor")
+	maxPageScaleFactor := c.Float64("browser.max-page-scale-factor")
 
 	if maxWidth >= 0 && minWidth > maxWidth {
 		return RequestConfig{}, fmt.Errorf("browser min-width (%d) cannot be larger than max-width (%d)", minWidth, maxWidth)
 	}
 	if maxHeight >= 0 && minHeight > maxHeight {
 		return RequestConfig{}, fmt.Errorf("browser min-height (%d) cannot be larger than max-height (%d)", minHeight, maxHeight)
+	}
+	if maxPageScaleFactor > 0 && pageScaleFactor > maxPageScaleFactor {
+		return RequestConfig{}, fmt.Errorf("browser page-scale-factor (%g) cannot be larger than max-page-scale-factor (%g)", pageScaleFactor, maxPageScaleFactor)
 	}
 
 	return RequestConfig{
@@ -750,7 +778,8 @@ func requestConfigFromCommand(c *cli.Command) (RequestConfig, error) {
 		MinHeight:                       minHeight,
 		MaxWidth:                        maxWidth,
 		MaxHeight:                       maxHeight,
-		PageScaleFactor:                 c.Float64("browser.page-scale-factor"),
+		PageScaleFactor:                 pageScaleFactor,
+		MaxPageScaleFactor:              maxPageScaleFactor,
 		Landscape:                       !c.Bool("browser.portrait"),
 		ReadinessTimeout:                c.Duration("browser.readiness.timeout"),
 		ReadinessIterationInterval:      c.Duration("browser.readiness.iteration-interval"),

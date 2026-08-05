@@ -62,6 +62,8 @@ This is a verbatim copy of the output of the `grafana-image-renderer server --he
     Headers to add to every request the browser makes. Syntax is `${key}=${value}`. May be repeated. [config: browser.header]
 --browser.max-height=<int> [default: 3000] [${BROWSER_MAX_HEIGHT}]
     The maximum height of the browser viewport. Requests cannot request a larger height than this, except for when capturing full-page screenshots. Negative means ignored. [config: browser.max-height]
+--browser.max-page-scale-factor=<float> [default: 4] [${BROWSER_MAX_PAGE_SCALE_FACTOR}]
+    The maximum page scale factor of the browser. Requests cannot request a larger scale than this. Negative means ignored. [config: browser.max-page-scale-factor]
 --browser.max-width=<int> [default: 3000] [${BROWSER_MAX_WIDTH}]
     The maximum width of the browser viewport. Requests cannot request a larger width than this. Negative means ignored. [config: browser.max-width]
 --browser.min-height=<int> [default: 500] [${BROWSER_MIN_HEIGHT}]
