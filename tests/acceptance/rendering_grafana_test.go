@@ -43,7 +43,10 @@ func TestRenderingGrafana(t *testing.T) {
 		testcontainers.CleanupNetwork(t, net)
 
 		StartPrometheus(t, WithNetwork(net, "prometheus"))
-		svc := StartImageRenderer(t, WithNetwork(net, "gir"), WithEnv("BROWSER_READINESS_TIMEOUT", "60s"))
+		// Allow deviceScaleFactor=5 used by the d-solo scaling subtest (default max is 4).
+		svc := StartImageRenderer(t, WithNetwork(net, "gir"),
+			WithEnv("BROWSER_READINESS_TIMEOUT", "60s"),
+			WithEnv("BROWSER_MAX_PAGE_SCALE_FACTOR", "5"))
 		_ = StartGrafana(t,
 			WithNetwork(net, "grafana"),
 			WithEnv("GF_RENDERING_SERVER_URL", "http://gir:8081/render"),
@@ -705,7 +708,10 @@ func TestRenderingGrafana(t *testing.T) {
 		testcontainers.CleanupNetwork(t, net)
 
 		StartPrometheus(t, WithNetwork(net, "prometheus"))
-		svc := StartImageRenderer(t, WithNetwork(net, "gir"), WithEnv("BROWSER_READINESS_TIMEOUT", "60s"))
+		// Allow deviceScaleFactor=5 used by this test (default max is 4).
+		svc := StartImageRenderer(t, WithNetwork(net, "gir"),
+			WithEnv("BROWSER_READINESS_TIMEOUT", "60s"),
+			WithEnv("BROWSER_MAX_PAGE_SCALE_FACTOR", "5"))
 		_ = StartGrafana(t,
 			WithNetwork(net, "grafana"),
 			WithEnv("GF_RENDERING_SERVER_URL", "http://gir:8081/render"),
