@@ -1,6 +1,9 @@
 package api
 
-import "net/http"
+import (
+	"log/slog"
+	"net/http"
+)
 
 func HandleGetHealthz() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -9,6 +12,9 @@ func HandleGetHealthz() http.Handler {
 		defer span.End()
 
 		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte("OK"))
+		if _, err := w.Write([]byte("OK")); err != nil {
+			slog.Error("failed to write health response", "error", err)
+			span.RecordError(err)
+		}
 	})
 }
