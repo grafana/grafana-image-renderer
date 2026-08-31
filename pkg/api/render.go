@@ -35,6 +35,18 @@ var (
 	regexpOnlyNumbers = regexp.MustCompile(`^[0-9]+$`)
 )
 
+func domainScopedHeaderOptions(r *http.Request, domain string) []service.RenderingOption {
+	if domain == "" {
+		return nil
+	}
+
+	if value := r.Header.Get("X-Access-Token"); value != "" {
+		return []service.RenderingOption{service.WithHeaderForDomain("X-Access-Token", value, domain)}
+	}
+
+	return nil
+}
+
 func HandleGetRender(browser *service.BrowserService, apiConfig config.APIConfig) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		tracer := tracer(r.Context())
@@ -129,6 +141,14 @@ func HandleGetRender(browser *service.BrowserService, apiConfig config.APIConfig
 		}
 		renderKey := r.URL.Query().Get("renderKey")
 		domain := r.URL.Query().Get("domain")
+		domainHeaderOptions := domainScopedHeaderOptions(r, domain)
+		options = append(options, domainHeaderOptions...)
+		if len(domainHeaderOptions) > 0 {
+			span.AddEvent("added domain-scoped headers", trace.WithAttributes(
+				attribute.String("domain", domain),
+				attribute.Int("headers", len(domainHeaderOptions)),
+			))
+		}
 		if renderKey != "" && domain != "" {
 			options = append(options, service.WithCookie("renderKey", renderKey, domain))
 			span.AddEvent("added renderKey cookie", trace.WithAttributes(attribute.String("domain", domain)))

@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/chromedp/cdproto/network"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/urfave/cli/v3"
@@ -18,6 +19,25 @@ func noopSpan() trace.Span {
 	tracer := noop.NewTracerProvider().Tracer("")
 	_, span := tracer.Start(context.Background(), "test")
 	return span
+}
+
+func TestBrowserConfigDeepCloneCopiesHeadersByDomain(t *testing.T) {
+	t.Parallel()
+
+	original := BrowserConfig{
+		HeadersByDomain: map[string]network.Headers{
+			"grafana.example.com": {
+				"X-Access-Token": "original",
+			},
+		},
+	}
+
+	cloned := original.DeepClone()
+	cloned.HeadersByDomain["grafana.example.com"]["X-Access-Token"] = "changed"
+	cloned.HeadersByDomain["other.example.com"] = network.Headers{"X-Access-Token": "other"}
+
+	assert.Equal(t, "original", original.HeadersByDomain["grafana.example.com"]["X-Access-Token"])
+	assert.NotContains(t, original.HeadersByDomain, "other.example.com")
 }
 
 func TestBrowserFlagsFromConfigFile(t *testing.T) {
