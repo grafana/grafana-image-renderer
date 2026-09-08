@@ -9,6 +9,131 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestWithHeaderForDomain(t *testing.T) {
+	t.Parallel()
+
+	cfg := config.BrowserConfig{}
+	var err error
+	cfg, err = WithHeaderForDomain("X-Access-Token", "access-token", "grafana.example.com")(cfg)
+	require.NoError(t, err)
+
+	require.Contains(t, cfg.HeadersByDomain, "grafana.example.com")
+	assert.Equal(t, network.Headers{
+		"X-Access-Token": "access-token",
+	}, cfg.HeadersByDomain["grafana.example.com"])
+}
+
+func TestWithHeaderForDomainRejectsInvalidOptions(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name   string
+		header string
+		domain string
+	}{
+		{name: "empty header", domain: "grafana.example.com"},
+		{name: "empty domain", header: "X-Access-Token"},
+		{name: "domain normalizes to empty", header: "X-Access-Token", domain: "."},
+		{name: "domain with scheme", header: "X-Access-Token", domain: "https://grafana.example.com"},
+		{name: "domain with path", header: "X-Access-Token", domain: "grafana.example.com/path"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			_, err := WithHeaderForDomain(tt.header, "token", tt.domain)(config.BrowserConfig{})
+			require.ErrorIs(t, err, ErrInvalidBrowserOption)
+		})
+	}
+}
+
+func TestHeadersForRequest(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name             string
+		configuredDomain string
+		requestURL       string
+		wantForwarded    bool
+	}{
+		{
+			name:             "exact HTTP host",
+			configuredDomain: "grafana.example.com",
+			requestURL:       "http://grafana.example.com/d/dashboard",
+			wantForwarded:    true,
+		},
+		{
+			name:             "port is ignored",
+			configuredDomain: "grafana.example.com:3000",
+			requestURL:       "https://grafana.example.com:8443/api/ds/query",
+			wantForwarded:    true,
+		},
+		{
+			name:             "hostname is case insensitive and ignores trailing dot",
+			configuredDomain: "Grafana.Example.Com.",
+			requestURL:       "https://GRAFANA.EXAMPLE.COM./public/build/app.js",
+			wantForwarded:    true,
+		},
+		{
+			name:             "IPv6 host",
+			configuredDomain: "[2001:db8::1]:3000",
+			requestURL:       "http://[2001:db8::1]:8080/d/dashboard",
+			wantForwarded:    true,
+		},
+		{
+			name:             "subdomain does not match",
+			configuredDomain: "grafana.example.com",
+			requestURL:       "https://assets.grafana.example.com/app.js",
+		},
+		{
+			name:             "lookalike domain does not match",
+			configuredDomain: "grafana.example.com",
+			requestURL:       "https://grafana.example.com.attacker.test/",
+		},
+		{
+			name:             "redirect destination is checked independently",
+			configuredDomain: "grafana.example.com",
+			requestURL:       "https://attacker.test/redirect-target",
+		},
+		{
+			name:             "userinfo cannot disguise destination",
+			configuredDomain: "grafana.example.com",
+			requestURL:       "https://grafana.example.com@attacker.test/",
+		},
+		{
+			name:             "non-HTTP scheme does not match",
+			configuredDomain: "grafana.example.com",
+			requestURL:       "file://grafana.example.com/etc/passwd",
+		},
+		{
+			name:             "malformed URL does not match",
+			configuredDomain: "grafana.example.com",
+			requestURL:       "://grafana.example.com",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			cfg, err := WithHeaderForDomain("X-Access-Token", "secret", tt.configuredDomain)(config.BrowserConfig{})
+			require.NoError(t, err)
+
+			base := network.Headers{"Accept-Language": "en-US"}
+			got := headersForRequest(tt.requestURL, base, cfg.HeadersByDomain)
+
+			assert.Equal(t, "en-US", got["Accept-Language"])
+			if tt.wantForwarded {
+				assert.Equal(t, "secret", got["X-Access-Token"])
+			} else {
+				assert.NotContains(t, got, "X-Access-Token")
+			}
+			assert.NotContains(t, base, "X-Access-Token", "input headers must not be mutated")
+		})
+	}
+}
+
 func TestShouldTrackReadinessNetworkRequest(t *testing.T) {
 	t.Parallel()
 
