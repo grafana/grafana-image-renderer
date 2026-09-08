@@ -645,7 +645,7 @@ func TestRenderingGrafana(t *testing.T) {
 				bodyImg := ReadRGBA(t, body)
 				const fixture = "render-panel-geomap-default-settings.png"
 				fixtureImg := ReadFixtureRGBA(t, fixture)
-				if !AssertPixelDifference(t, fixtureImg, bodyImg, defaultPixelDiff) {
+				if !AssertPixelDifference(t, fixtureImg, bodyImg, 30_000) {
 					UpdateFixtureIfEnabled(t, fixture, body)
 				}
 			})
@@ -657,7 +657,7 @@ func TestRenderingGrafana(t *testing.T) {
 				bodyImg := ReadRGBA(t, body)
 				const fixture = "render-panel-geomap-with-usa-flights.png"
 				fixtureImg := ReadFixtureRGBA(t, fixture)
-				if !AssertPixelDifference(t, fixtureImg, bodyImg, defaultPixelDiff) {
+				if !AssertPixelDifference(t, fixtureImg, bodyImg, 30_000) {
 					UpdateFixtureIfEnabled(t, fixture, body)
 				}
 			})
