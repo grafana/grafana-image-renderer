@@ -1,0 +1,59 @@
+log:
+  level: info
+
+server:
+  addr: ":8081"
+  auth-token: "-"
+  certificate-file: ""
+  key-file: ""
+  min-tls-version: "1.2"
+
+tracing:
+  endpoint: ""
+  insecure: false
+  headers: {}
+  compressor: none
+  timeout: 10s
+  trusted-certificate: ""
+  client-certificate: ""
+  client-key: ""
+  service-name: grafana-image-renderer
+
+browser:
+  path: chromium
+  flags: []
+  gpu: false
+  sandbox: false
+  namespaced: false
+  timezone: Etc/UTC
+  headers: {}
+  time-between-scrolls: 50ms
+  readiness:
+    timeout: 30s
+    iteration-interval: 100ms
+    wait-for-n-query-cycles: 1
+    prior-wait: 1s
+    disable-query-wait: false
+    give-up-on-first-query: 3s
+    give-up-on-all-queries: 0s
+    disable-network-wait: false
+    network-idle-timeout: 0s
+    disable-dom-hashcode-wait: false
+    dom-hashcode-timeout: 0s
+  min-width: 1000
+  min-height: 500
+  max-width: 3000
+  max-height: 3000
+  page-scale-factor: 1
+  portrait: false
+
+rate-limit:
+  disabled: false
+  process-tracker:
+    decay: 5
+    interval: 50ms
+  min-limit: 3
+  max-limit: 0
+  max-available: 0
+  min-memory-per-browser: 67108864
+  headroom: 33554432
