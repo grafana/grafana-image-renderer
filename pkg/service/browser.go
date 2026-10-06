@@ -34,6 +34,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
+	"golang.org/x/text/language"
 )
 
 var (
@@ -300,6 +301,7 @@ func (s *BrowserService) Render(ctx context.Context, url string, printer Printer
 		observingAction("network.Enable", network.Enable()), // required by waitForReady
 		observingAction("fetch.Enable", fetch.Enable()),     // required by handleNetworkEvents
 		observingAction("SetTimezoneOverride", emulation.SetTimezoneOverride(cfg.TimeZone.String())),
+		observingAction("SetLocaleOverride", setLocaleOverride(requestConfig.Locale)),
 		observingAction("SetPageScaleFactor", emulation.SetPageScaleFactor(requestConfig.PageScaleFactor)),
 		observingAction("EmulateViewport", chromedp.EmulateViewport(int64(requestConfig.MinWidth), int64(requestConfig.MinHeight), orientation, chromedp.EmulateScale(requestConfig.PageScaleFactor))),
 		observingAction("setHeaders", setHeaders(browserCtx, cfg.Headers)),
@@ -936,6 +938,18 @@ func setHeaders(browserCtx context.Context, headers network.Headers) chromedp.Ac
 			return nil
 		}
 		return network.SetExtraHTTPHeaders(headers).Do(ctx)
+	})
+}
+
+// setLocaleOverride overrides the page's default locale for locale-aware formatting.
+// It does nothing when no locale is configured.
+func setLocaleOverride(locale language.Tag) chromedp.Action {
+	return chromedp.ActionFunc(func(ctx context.Context) error {
+		if locale == language.Und {
+			return nil
+		}
+		trace.SpanFromContext(ctx).SetAttributes(attribute.String("locale", locale.String()))
+		return emulation.SetLocaleOverride().WithLocale(locale.String()).Do(ctx)
 	})
 }
 

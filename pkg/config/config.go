@@ -3,6 +3,7 @@ package config
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -18,6 +19,7 @@ import (
 	"github.com/urfave/cli/v3"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
+	"golang.org/x/text/language"
 )
 
 type LoggingConfig struct {
@@ -469,6 +471,10 @@ type RequestConfig struct {
 
 	// ForcePollingMode forces the renderer to poll for scenes' query running count variable to detect when rendering is done, rather than use an event-based approach even when that is available.
 	ForcePollingMode bool
+
+	// Locale is the locale the browser uses for locale-aware formatting (Intl, toLocaleString).
+	// language.Und (the zero value) means no override: the browser's default locale is used.
+	Locale language.Tag
 }
 
 func (c BrowserConfig) DeepClone() BrowserConfig {
@@ -565,6 +571,11 @@ func BrowserFlags() []cli.Flag {
 			Usage:   "The timezone for the browser to use, e.g. 'America/New_York'. [config: browser.timezone]",
 			Value:   "Etc/UTC",
 			Sources: FromConfig("browser.timezone", "BROWSER_TIMEZONE", "TZ" /* standard practice in containers */),
+		},
+		&cli.StringFlag{
+			Name:    "browser.locale",
+			Usage:   "The locale the browser uses for locale-aware formatting of numbers and dates, e.g. 'fr-FR'. If not set, the browser default (en-US) is used. Does not change the UI language. [config: browser.locale]",
+			Sources: FromConfig("browser.locale", "BROWSER_LOCALE"),
 		},
 		&cli.StringSliceFlag{
 			Name:    "browser.header",
@@ -771,6 +782,11 @@ func requestConfigFromCommand(c *cli.Command) (RequestConfig, error) {
 	if pageScaleFactor > maxPageScaleFactor {
 		return RequestConfig{}, fmt.Errorf("browser page-scale-factor (%g) cannot be larger than max-page-scale-factor (%g)", pageScaleFactor, maxPageScaleFactor)
 	}
+	rawLocale := c.String("browser.locale")
+	locale, err := ParseLocale(rawLocale)
+	if err != nil {
+		return RequestConfig{}, fmt.Errorf("invalid browser locale %q: %w", rawLocale, err)
+	}
 
 	return RequestConfig{
 		TimeBetweenScrolls:              c.Duration("browser.time-between-scrolls"),
@@ -793,7 +809,25 @@ func requestConfigFromCommand(c *cli.Command) (RequestConfig, error) {
 		ReadinessDisableDOMHashCodeWait: c.Bool("browser.readiness.disable-dom-hashcode-wait"),
 		ReadinessDOMHashCodeTimeout:     c.Duration("browser.readiness.dom-hashcode-timeout"),
 		ForcePollingMode:                c.Bool("browser.force-polling-mode"),
+		Locale:                          locale,
 	}, nil
+}
+
+// ParseLocale parses a BCP 47 locale for the browser, e.g. "fr-FR" or "fr_FR".
+// An empty string means no override and returns language.Und.
+func ParseLocale(s string) (language.Tag, error) {
+	s = strings.TrimSpace(s)
+	if s == "" {
+		return language.Und, nil
+	}
+	tag, err := language.Parse(s)
+	if err != nil {
+		return language.Und, err
+	}
+	if tag == language.Und {
+		return language.Und, errors.New("locale must not be undetermined (und)")
+	}
+	return tag, nil
 }
 
 func BrowserConfigFromCommand(c *cli.Command) (BrowserConfig, error) {

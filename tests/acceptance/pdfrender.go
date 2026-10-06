@@ -7,6 +7,7 @@ import (
 	"image/png"
 	"math"
 	"runtime"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -74,6 +75,50 @@ func PDFtoImage(tb testing.TB, data []byte) *image.RGBA {
 	}
 
 	return mergeImages(imgs...)
+}
+
+// PDFText returns the plain text of every page of the PDF, concatenated in page order.
+func PDFText(tb testing.TB, data []byte) string {
+	tb.Helper()
+
+	pool, err := pdfiumPoolOnce()
+	require.NoError(tb, err)
+
+	instance, err := pool.GetInstance(30 * time.Second)
+	require.NoError(tb, err)
+
+	tb.Cleanup(func() { require.NoError(tb, instance.Close()) })
+
+	doc, err := instance.OpenDocument(&requests.OpenDocument{File: &data})
+	require.NoError(tb, err)
+
+	tb.Cleanup(func() {
+		_, err := instance.FPDF_CloseDocument(&requests.FPDF_CloseDocument{
+			Document: doc.Document,
+		})
+		require.NoError(tb, err)
+	})
+
+	pageCount, err := instance.FPDF_GetPageCount(&requests.FPDF_GetPageCount{Document: doc.Document})
+	require.NoError(tb, err)
+
+	var text strings.Builder
+	for i := range pageCount.PageCount {
+		pageText, err := instance.GetPageText(&requests.GetPageText{
+			Page: requests.Page{
+				ByIndex: &requests.PageByIndex{
+					Document: doc.Document,
+					Index:    i,
+				},
+			},
+		})
+		require.NoError(tb, err)
+
+		text.WriteString(pageText.Text)
+		text.WriteString("\n")
+	}
+
+	return text.String()
 }
 
 func EncodePNG(tb testing.TB, img *image.RGBA) []byte {
