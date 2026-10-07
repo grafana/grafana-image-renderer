@@ -60,6 +60,8 @@ This is a verbatim copy of the output of the `grafana-image-renderer server --he
     Enable GPU support in the browser. [config: browser.gpu]
 --browser.header=<string> / --browser.headers=<string> [${BROWSER_HEADER}]
     Headers to add to every request the browser makes. Syntax is `${key}=${value}`. May be repeated. [config: browser.header]
+--browser.locale=<string> [${BROWSER_LOCALE}]
+    The locale the browser uses for locale-aware number formatting (Intl and toLocaleString), e.g. 'fr-FR'. If not set, the browser's default locale is used (en-US in the Docker image). Does not change the UI language or Grafana's date formats. [config: browser.locale]
 --browser.max-height=<int> [default: 3000] [${BROWSER_MAX_HEIGHT}]
     The maximum height of the browser viewport. Requests cannot request a larger height than this, except for when capturing full-page screenshots. Negative means ignored. [config: browser.max-height]
 --browser.max-page-scale-factor=<float> [default: 4] [${BROWSER_MAX_PAGE_SCALE_FACTOR}]

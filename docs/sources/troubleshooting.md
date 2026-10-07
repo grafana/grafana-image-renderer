@@ -162,6 +162,37 @@ For example, `America/Los_Angeles` or `Europe/Berlin`.
 Many containers automatically set a `TZ` environment variable.
 This is used by default.
 
+## Numbers in images and PDFs use US formatting
+
+By default, the browser in the Docker image formats numbers in US English, for example `1,234,567.89`.
+This doesn't depend on the Grafana language or on the `Accept-Language` header.
+
+To use a different locale, set the `--browser.locale` option or the `BROWSER_LOCALE` environment variable to a language tag, such as `fr-FR` or `de-CH`.
+For example, with `BROWSER_LOCALE=fr-FR`, the same value renders as `1 234 567,89`.
+The option doesn't change the language of the Grafana user interface.
+If the value isn't a valid language tag, the service doesn't start.
+
+To use a different locale for some URLs only, combine it with the `--browser.override` option.
+The pattern is a regular expression matched against the rendered URL.
+For example, the following renders everything with French formatting, except the dashboard with the UID `abc123`, which keeps US formatting.
+The pattern matches both the full dashboard at `/d/abc123` and its single panels at `/d-solo/abc123`, which alert notifications and panel image shares use:
+
+```shell
+docker run -e BROWSER_LOCALE=fr-FR -e BROWSER_OVERRIDE='/d(-solo)?/abc123\b=--browser.locale=en-US' grafana/grafana-image-renderer:latest
+```
+
+You can also add Unicode extensions to the tag.
+For example, `fr-FR-u-nu-arab` uses French formatting with Arabic-Indic digits.
+
+The option only affects units that use the browser's locale:
+
+- The **Locale format** unit.
+- Custom currency units in the format `currency:financial:<symbol>`, or `currency:financial:<symbol>:suffix` to place the symbol after the number.
+  For example, with `fr-FR` and 2 decimals, `currency:financial:€:suffix` renders `1234.5` as `1 234,50€`.
+
+It doesn't affect other units, including the built-in currency units such as **Euro (€)**.
+It also doesn't affect CSV exports from the image renderer.
+
 ## Add a header to every request from the browser
 
 {{< admonition type="note" >}}
