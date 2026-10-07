@@ -175,10 +175,11 @@ If the value isn't a valid language tag, the service doesn't start.
 To use a different locale for some URLs only, combine it with the `--browser.override` option.
 The pattern is a regular expression matched against the rendered URL.
 For example, the following renders everything with French formatting, except the dashboard with the UID `abc123`, which keeps US formatting.
-The pattern matches both the full dashboard at `/d/abc123` and its single panels at `/d-solo/abc123`, which alert notifications and panel image shares use:
+The pattern matches both the full dashboard at `/d/abc123` and its single panels at `/d-solo/abc123`, which alert notifications and panel image shares use.
+It doesn't match other dashboards whose UID starts with `abc123`, or `abc123` in a query string:
 
 ```shell
-docker run -e BROWSER_LOCALE=fr-FR -e BROWSER_OVERRIDE='/d(-solo)?/abc123\b=--browser.locale=en-US' grafana/grafana-image-renderer:latest
+docker run -e BROWSER_LOCALE=fr-FR -e BROWSER_OVERRIDE='^[^?#]*/d(-solo)?/abc123([/?#]|$)=--browser.locale=en-US' grafana/grafana-image-renderer:latest
 ```
 
 You can also add Unicode extensions to the tag.

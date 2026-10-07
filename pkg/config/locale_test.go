@@ -30,6 +30,13 @@ func TestParseLocale(t *testing.T) {
 		{in: "es-419", want: "es-419"},
 		{in: "zh-Hant-TW", want: "zh-Hant-TW"},
 		{in: "en-US-x-foo", want: "en-US-x-foo"},
+		{in: "qu-PE", want: "qu-PE"},
+		{in: "quz-PE", want: "quz-PE"},
+		{in: "zxx", wantErr: true},
+		{in: "mis", wantErr: true},
+		{in: "mul", wantErr: true},
+		{in: "qaa", wantErr: true},
+		{in: "qtz-FR", wantErr: true},
 		{in: "und", wantErr: true},
 		{in: "root", wantErr: true},
 		{in: "und-FR", wantErr: true},
@@ -105,21 +112,26 @@ func TestBrowserLocaleFlag(t *testing.T) {
 
 	t.Run("override pattern sets a different locale", func(t *testing.T) {
 		t.Parallel()
-		// The pattern documented in troubleshooting.md: it matches both dashboard and single-panel URLs.
+		// The pattern documented in troubleshooting.md: it matches the dashboard and its single-panel URLs,
+		// but not other UIDs that start with the same characters, or the UID in a query string.
 		cfg, err := parse(t,
 			"--browser.locale=fr-FR",
-			`--browser.override=/d(-solo)?/abc123\b=--browser.locale=en-US`,
+			`--browser.override=^[^?#]*/d(-solo)?/abc123([/?#]|$)=--browser.locale=en-US`,
 		)
 		require.NoError(t, err)
 		assert.Equal(t, "fr-FR", cfg.DefaultRequestConfig.Locale.String())
 		require.Len(t, cfg.RequestConfigOverrides, 1)
 		assert.Equal(t, "en-US", cfg.RequestConfigOverrides[0].Config.Locale.String())
 		for url, want := range map[string]string{
-			"http://grafana/d/abc123/sales":                "en-US",
-			"http://grafana/d/abc123?render=1":             "en-US",
-			"http://grafana/d-solo/abc123/sales?panelId=2": "en-US",
-			"http://grafana/d/abc1234/other":               "fr-FR",
-			"http://grafana/d/xyz/other":                   "fr-FR",
+			"http://grafana/d/abc123/sales":                 "en-US",
+			"http://grafana/d/abc123?render=1":              "en-US",
+			"http://grafana/d-solo/abc123/sales?panelId=2":  "en-US",
+			"http://grafana/grafana/d/abc123/sales":         "en-US",
+			"http://grafana/d/abc1234/other":                "fr-FR",
+			"http://grafana/d/abc123-staging/other":         "fr-FR",
+			"http://grafana/d/abc123_foo/other":             "fr-FR",
+			"http://grafana/d/xyz/other?returnTo=/d/abc123": "fr-FR",
+			"http://grafana/d/xyz/other":                    "fr-FR",
 		} {
 			assert.Equal(t, want, cfg.LookupRequestConfig(noopSpan(), url).Locale.String(), url)
 		}

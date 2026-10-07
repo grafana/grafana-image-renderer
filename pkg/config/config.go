@@ -825,8 +825,12 @@ func ParseLocale(s string) (language.Tag, error) {
 		return language.Und, err
 	}
 	// Chromium rejects private-use tags (x-...) on every render, and silently uses root-locale formatting
-	// for undetermined ones (und, und-FR), so require an explicit language.
-	if _, confidence := tag.Base(); confidence != language.Exact {
+	// for undetermined ones (und, und-FR). The special codes zxx, mis, mul and qaa-qtz name no particular
+	// language and have no locale data either, so require a real language.
+	base, confidence := tag.Base()
+	code := base.String()
+	special := code == "zxx" || code == "mis" || code == "mul" || (len(code) == 3 && code >= "qaa" && code <= "qtz")
+	if confidence != language.Exact || special {
 		return language.Und, errors.New("locale must name a language, e.g. 'fr' in 'fr-FR'")
 	}
 	return tag, nil
