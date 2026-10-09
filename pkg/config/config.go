@@ -3,6 +3,7 @@ package config
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -18,6 +19,7 @@ import (
 	"github.com/urfave/cli/v3"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
+	"golang.org/x/text/language"
 )
 
 type LoggingConfig struct {
@@ -469,6 +471,10 @@ type RequestConfig struct {
 
 	// ForcePollingMode forces the renderer to poll for scenes' query running count variable to detect when rendering is done, rather than use an event-based approach even when that is available.
 	ForcePollingMode bool
+
+	// Locale is the locale the browser uses for locale-aware formatting (Intl, toLocaleString).
+	// language.Und (the zero value) means no override: the browser's default locale is used.
+	Locale language.Tag
 }
 
 func (c BrowserConfig) DeepClone() BrowserConfig {
@@ -565,6 +571,11 @@ func BrowserFlags() []cli.Flag {
 			Usage:   "The timezone for the browser to use, e.g. 'America/New_York'. [config: browser.timezone]",
 			Value:   "Etc/UTC",
 			Sources: FromConfig("browser.timezone", "BROWSER_TIMEZONE", "TZ" /* standard practice in containers */),
+		},
+		&cli.StringFlag{
+			Name:    "browser.locale",
+			Usage:   "The locale the browser uses for locale-aware number formatting (Intl and toLocaleString), e.g. 'fr-FR'. If not set, the browser's default locale is used (en-US in the Docker image). Does not change the UI language or Grafana's date formats. [config: browser.locale]",
+			Sources: FromConfig("browser.locale", "BROWSER_LOCALE"),
 		},
 		&cli.StringSliceFlag{
 			Name:    "browser.header",
@@ -771,6 +782,11 @@ func requestConfigFromCommand(c *cli.Command) (RequestConfig, error) {
 	if pageScaleFactor > maxPageScaleFactor {
 		return RequestConfig{}, fmt.Errorf("browser page-scale-factor (%g) cannot be larger than max-page-scale-factor (%g)", pageScaleFactor, maxPageScaleFactor)
 	}
+	rawLocale := c.String("browser.locale")
+	locale, err := ParseLocale(rawLocale)
+	if err != nil {
+		return RequestConfig{}, fmt.Errorf("invalid browser locale %q: %w", rawLocale, err)
+	}
 
 	return RequestConfig{
 		TimeBetweenScrolls:              c.Duration("browser.time-between-scrolls"),
@@ -793,7 +809,31 @@ func requestConfigFromCommand(c *cli.Command) (RequestConfig, error) {
 		ReadinessDisableDOMHashCodeWait: c.Bool("browser.readiness.disable-dom-hashcode-wait"),
 		ReadinessDOMHashCodeTimeout:     c.Duration("browser.readiness.dom-hashcode-timeout"),
 		ForcePollingMode:                c.Bool("browser.force-polling-mode"),
+		Locale:                          locale,
 	}, nil
+}
+
+// ParseLocale parses a BCP 47 locale for the browser, e.g. "fr-FR" or "fr_FR".
+// An empty string means no override and returns language.Und.
+func ParseLocale(s string) (language.Tag, error) {
+	s = strings.TrimSpace(s)
+	if s == "" {
+		return language.Und, nil
+	}
+	tag, err := language.Parse(s)
+	if err != nil {
+		return language.Und, err
+	}
+	// Chromium rejects private-use tags (x-...) on every render, and silently uses root-locale formatting
+	// for undetermined ones (und, und-FR). The special codes zxx, mis, mul and qaa-qtz name no particular
+	// language and have no locale data either, so require a real language.
+	base, confidence := tag.Base()
+	code := base.String()
+	special := code == "zxx" || code == "mis" || code == "mul" || (len(code) == 3 && code >= "qaa" && code <= "qtz")
+	if confidence != language.Exact || special {
+		return language.Und, errors.New("locale must name a language, e.g. 'fr' in 'fr-FR'")
+	}
+	return tag, nil
 }
 
 func BrowserConfigFromCommand(c *cli.Command) (BrowserConfig, error) {
