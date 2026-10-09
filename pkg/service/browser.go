@@ -11,6 +11,7 @@ import (
 	"maps"
 	"net/http"
 	"net/netip"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -177,6 +178,86 @@ func WithHeader(name, value string) RenderingOption {
 	}
 }
 
+// WithHeaderForDomain adds a header only to HTTP(S) requests whose hostname
+// exactly matches domain. Ports are ignored and subdomains do not match.
+func WithHeaderForDomain(name, value, domain string) RenderingOption {
+	return func(cfg config.BrowserConfig) (config.BrowserConfig, error) {
+		if name == "" {
+			return config.BrowserConfig{}, fmt.Errorf("%w: header name was empty", ErrInvalidBrowserOption)
+		}
+
+		normalizedDomain, err := normalizeHeaderDomain(domain)
+		if err != nil {
+			return config.BrowserConfig{}, err
+		}
+
+		if cfg.HeadersByDomain == nil {
+			cfg.HeadersByDomain = make(map[string]network.Headers)
+		}
+		if cfg.HeadersByDomain[normalizedDomain] == nil {
+			cfg.HeadersByDomain[normalizedDomain] = make(network.Headers)
+		}
+		cfg.HeadersByDomain[normalizedDomain][name] = value
+		return cfg, nil
+	}
+}
+
+func normalizeHeaderDomain(domain string) (string, error) {
+	domain = strings.TrimSpace(domain)
+	if domain == "" {
+		return "", fmt.Errorf("%w: header domain was empty", ErrInvalidBrowserOption)
+	}
+
+	// Accept unbracketed IPv6 addresses, matching WithCookie's existing input behavior.
+	if addr, err := netip.ParseAddr(domain); err == nil {
+		return addr.String(), nil
+	}
+
+	parsed, err := url.Parse("http://" + domain)
+	if err != nil ||
+		parsed.User != nil ||
+		parsed.Hostname() == "" ||
+		parsed.Path != "" ||
+		parsed.RawPath != "" ||
+		parsed.RawQuery != "" ||
+		parsed.Fragment != "" {
+		return "", fmt.Errorf("%w: invalid header domain %q", ErrInvalidBrowserOption, domain)
+	}
+
+	hostname := normalizeHeaderHostname(parsed.Hostname())
+	if hostname == "" {
+		return "", fmt.Errorf("%w: invalid header domain %q", ErrInvalidBrowserOption, domain)
+	}
+	return hostname, nil
+}
+
+func normalizeHeaderHostname(hostname string) string {
+	hostname = strings.TrimSuffix(strings.ToLower(hostname), ".")
+	if addr, err := netip.ParseAddr(hostname); err == nil {
+		return addr.String()
+	}
+	return hostname
+}
+
+func headersForRequest(rawURL string, headers network.Headers, headersByDomain map[string]network.Headers) network.Headers {
+	parsed, err := url.Parse(rawURL)
+	if err != nil || (!strings.EqualFold(parsed.Scheme, "http") && !strings.EqualFold(parsed.Scheme, "https")) {
+		return headers
+	}
+
+	domainHeaders, ok := headersByDomain[normalizeHeaderHostname(parsed.Hostname())]
+	if !ok || len(domainHeaders) == 0 {
+		return headers
+	}
+
+	merged := network.Headers(maps.Clone(headers))
+	if merged == nil {
+		merged = make(network.Headers, len(domainHeaders))
+	}
+	maps.Copy(merged, domainHeaders)
+	return merged
+}
+
 // WithViewport sets the view of the browser: this is the size used by the actual webpage, not the browser window.
 //
 // A value of -1 is ignored.
@@ -285,7 +366,7 @@ func (s *BrowserService) Render(ctx context.Context, url string, printer Printer
 	defer cancelBrowser()
 	span.AddEvent("browser allocated")
 
-	s.handleNetworkEvents(browserCtx)
+	s.handleNetworkEvents(browserCtx, cfg.HeadersByDomain)
 
 	orientation := chromedp.EmulatePortrait
 
@@ -336,7 +417,7 @@ func (s *BrowserService) Render(ctx context.Context, url string, printer Printer
 // You may be thinking: what the hell are we doing? Why are we using a browser for this?
 // The CSV endpoint just returns HTML. The actual query is done by the browser, and then a script _in the webpage_ downloads it as a CSV file.
 // This SHOULD be replaced at some point, such that the Grafana server does all the work; this is just not acceptable behaviour...
-func (s *BrowserService) RenderCSV(ctx context.Context, url, renderKey, domain, acceptLanguage string) ([]byte, string, error) {
+func (s *BrowserService) RenderCSV(ctx context.Context, url, renderKey, domain, acceptLanguage string, optionFuncs ...RenderingOption) ([]byte, string, error) {
 	tracer := tracer(ctx)
 	ctx, span := tracer.Start(ctx, "BrowserService.RenderCSV")
 	defer span.End()
@@ -346,6 +427,16 @@ func (s *BrowserService) RenderCSV(ctx context.Context, url, renderKey, domain, 
 		return nil, "", fmt.Errorf("url must not be empty")
 	}
 
+	cfg := s.cfg.DeepClone()
+	for _, f := range optionFuncs {
+		var err error
+		cfg, err = f(cfg)
+		if err != nil {
+			return nil, "text/plain", fmt.Errorf("failed to apply rendering option: %w", err)
+		}
+	}
+	span.AddEvent("options applied")
+
 	chromiumCwd, err := os.MkdirTemp("", "")
 	if err != nil {
 		return nil, "text/plain", fmt.Errorf("failed to create temporary directory for browser CWD: %w", err)
@@ -354,14 +445,14 @@ func (s *BrowserService) RenderCSV(ctx context.Context, url, renderKey, domain, 
 
 	chromiumDownloadDir := filepath.Join(chromiumCwd, "_gir_downloads")
 	realDownloadDir := filepath.Join(chromiumCwd, "_gir_downloads")
-	if s.cfg.Namespaced {
+	if cfg.Namespaced {
 		chromiumDownloadDir = "/tmp/_gir_downloads"
 	}
 	if err := os.MkdirAll(realDownloadDir, 0o755); err != nil {
 		return nil, "", fmt.Errorf("failed to create download directory at %q: %w", realDownloadDir, err)
 	}
 
-	allocatorOptions, err := s.createAllocatorOptions(ctx, s.cfg, url, chromiumCwd)
+	allocatorOptions, err := s.createAllocatorOptions(ctx, cfg, url, chromiumCwd)
 	if err != nil {
 		return nil, "", fmt.Errorf("failed to create allocator options: %w", err)
 	}
@@ -371,18 +462,20 @@ func (s *BrowserService) RenderCSV(ctx context.Context, url, renderKey, domain, 
 	defer cancelBrowser()
 	span.AddEvent("browser allocated")
 
-	var headers network.Headers
+	headers := network.Headers(maps.Clone(cfg.Headers))
 	if acceptLanguage != "" {
-		headers = network.Headers{
-			"Accept-Language": acceptLanguage,
+		if headers == nil {
+			headers = make(network.Headers)
 		}
+		headers["Accept-Language"] = acceptLanguage
 	}
 
-	s.handleNetworkEvents(browserCtx)
+	s.handleNetworkEvents(browserCtx, cfg.HeadersByDomain)
 
 	actions := []chromedp.Action{
 		observingAction("trackProcess", trackProcess(browserCtx, s.processes)),
 		observingAction("network.Enable", network.Enable()),
+		observingAction("fetch.Enable", fetch.Enable()), // required by handleNetworkEvents
 		observingAction("setHeaders", setHeaders(browserCtx, headers)),
 		observingAction("setCookies", setCookies([]*network.SetCookieParams{
 			{
@@ -501,7 +594,7 @@ func (s *BrowserService) createAllocatorOptions(ctx context.Context, cfg config.
 	return opts, nil
 }
 
-func (s *BrowserService) handleNetworkEvents(browserCtx context.Context) {
+func (s *BrowserService) handleNetworkEvents(browserCtx context.Context, headersByDomain map[string]network.Headers) {
 	requests := make(map[network.RequestID]trace.Span)
 	requestsMutex := &sync.Mutex{}
 
@@ -521,8 +614,9 @@ func (s *BrowserService) handleNetworkEvents(browserCtx context.Context) {
 					otel.GetTextMapPropagator().Inject(browserCtx, networkHeadersCarrier(e.Request.Headers))
 				}
 
-				hdrs := make([]*fetch.HeaderEntry, 0, len(e.Request.Headers))
-				for k, v := range e.Request.Headers {
+				requestHeaders := headersForRequest(e.Request.URL, e.Request.Headers, headersByDomain)
+				hdrs := make([]*fetch.HeaderEntry, 0, len(requestHeaders))
+				for k, v := range requestHeaders {
 					hdrs = append(hdrs, &fetch.HeaderEntry{Name: k, Value: fmt.Sprintf("%v", v)})
 				}
 
@@ -531,7 +625,7 @@ func (s *BrowserService) handleNetworkEvents(browserCtx context.Context) {
 						attribute.String("requestID", string(e.RequestID)),
 						attribute.String("url", e.Request.URL),
 						attribute.String("method", e.Request.Method),
-						attribute.Int("headers", len(e.Request.Headers)),
+						attribute.Int("headers", len(requestHeaders)),
 					))
 				defer span.End()
 				cdpCtx := chromedp.FromContext(browserCtx)
