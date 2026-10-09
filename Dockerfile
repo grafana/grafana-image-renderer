@@ -73,7 +73,7 @@ HEALTHCHECK --interval=10s --retries=3 --timeout=3s --start-interval=250ms --sta
   CMD ["/usr/bin/grafana-image-renderer", "healthcheck"]
 
 # renovate: datasource=docker depName=alpine
-FROM alpine:3.24.2@sha256:294b683cb724975bec92580e1e685676bd4b50bda910ddb8c51d4cabeaec77e6 AS output_alpine
+FROM alpine:edge@sha256:020dfcbaaf4cc1078bf2d9c7ba31a8466e334061dcd2f248001d68f79e52c000 AS output_alpine
 
 ARG CHROMIUM_VERSION
 ARG CACHE_BUSTER_DATE
@@ -83,10 +83,10 @@ LABEL org.opencontainers.image.source="https://github.com/grafana/grafana-image-
 
 RUN echo "cachebuster ${CACHE_BUSTER_DATE}" && apk upgrade --no-cache
 
-RUN apk add --no-cache "chromium>=${CHROMIUM_VERSION}" "chromium-swiftshader>=${CHROMIUM_VERSION}" --repository=https://dl-cdn.alpinelinux.org/alpine/edge/community &&\
-    apk add --no-cache tini ca-certificates openssl nss-tools \
-      font-noto-cjk font-noto-thai font-noto-khmer font-noto-arabic font-noto-emoji \
-      font-opensans font-roboto font-inter font-urw-base35 font-dejavu font-unifont
+RUN apk add --no-cache "chromium>=${CHROMIUM_VERSION}" "chromium-swiftshader>=${CHROMIUM_VERSION}" \
+  tini ca-certificates openssl nss-tools \
+  font-noto-cjk font-noto-thai font-noto-khmer font-noto-arabic font-noto-emoji \
+  font-opensans font-roboto font-inter font-urw-base35 font-dejavu font-unifont
 
 # Alpine packages the URW fontconfig aliases without enabling them. Enable the
 # packaged rules so Helvetica resolves to Nimbus Sans, as it does on Debian.
