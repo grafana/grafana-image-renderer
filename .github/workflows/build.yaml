@@ -107,11 +107,27 @@ jobs:
         include:
           - runs-on: ubuntu-x64
             arch: amd64
+            variant: debian
+            target: output_debian
+            tag_suffix: ""
           - runs-on: ubuntu-arm64
             arch: arm64
+            variant: debian
+            target: output_debian
+            tag_suffix: ""
+          - runs-on: ubuntu-x64
+            arch: amd64
+            variant: alpine
+            target: output_alpine
+            tag_suffix: "-alpine"
+          - runs-on: ubuntu-arm64
+            arch: arm64
+            variant: alpine
+            target: output_alpine
+            tag_suffix: "-alpine"
 
     needs: tag
-    name: Build image for ${{ matrix.arch }}
+    name: Build ${{ matrix.variant }} image for ${{ matrix.arch }}
     runs-on: ${{ matrix.runs-on }}
     permissions:
       contents: read # required to read the repository contents
@@ -156,16 +172,16 @@ jobs:
           DOCKER_BUILDKIT: 1
           BUILDKIT_STEP_LOG_MAX_SIZE: -1
           BUILDKIT_STEP_LOG_MAX_SPEED: -1
-          TAG: ${{ needs.tag.outputs.tag }}-${{ matrix.arch }}
-        run: docker build . -t "$TAG"
+          TAG: ${{ needs.tag.outputs.tag }}${{ matrix.tag_suffix }}-${{ matrix.arch }}
+        run: docker build . --target=${{ matrix.target }} -t "$TAG"
       - name: docker push
         env:
-          TAG: ${{ needs.tag.outputs.tag }}-${{ matrix.arch }}
+          TAG: ${{ needs.tag.outputs.tag }}${{ matrix.tag_suffix }}-${{ matrix.arch }}
         run: docker push "$TAG"
       - name: Get digest
         id: digest
         env:
-          TAG: ${{ needs.tag.outputs.tag }}-${{ matrix.arch }}
+          TAG: ${{ needs.tag.outputs.tag }}${{ matrix.tag_suffix }}-${{ matrix.arch }}
         run: |
           set -euo pipefail
           DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' "$TAG" | cut -d@ -f2)
@@ -198,14 +214,21 @@ jobs:
         with:
           registry: us-docker.pkg.dev
 
-      - name: Create and push manifests
+      - name: Create and push Debian manifest
         env:
           TAG: ${{ needs.tag.outputs.tag }}
         run: |
           set -euo pipefail
           docker manifest create "$TAG" "$TAG"-amd64 "$TAG"-arm64
           docker manifest push "$TAG"
-      - name: Create and push :latest manifest
+      - name: Create and push Alpine manifest
+        env:
+          TAG: ${{ needs.tag.outputs.tag }}
+        run: |
+          set -euo pipefail
+          docker manifest create "$TAG"-alpine "$TAG"-alpine-amd64 "$TAG"-alpine-arm64
+          docker manifest push "$TAG"-alpine
+      - name: Create and push :latest and :latest-alpine manifests
         if: github.event_name == 'push' && github.ref_type == 'tag'
         env:
           TAG: ${{ needs.tag.outputs.tag }}
@@ -214,6 +237,8 @@ jobs:
           set -euo pipefail
           docker manifest create "$SUBJECT":latest "$TAG"-amd64 "$TAG"-arm64
           docker manifest push "$SUBJECT":latest
+          docker manifest create "$SUBJECT":latest-alpine "$TAG"-alpine-amd64 "$TAG"-alpine-arm64
+          docker manifest push "$SUBJECT":latest-alpine
 
       - name: Comment on PR
         if: github.event_name == 'pull_request'
@@ -221,17 +246,20 @@ jobs:
         continue-on-error: true # just check the actions log if ratelimits or whatever
         with:
           message: |
-            :whale: Docker image built and pushed to GitHub Container Registry.
+            :whale: Docker images built and pushed to GitHub Container Registry.
 
-            You can pull it using:
+            You can pull them using:
 
             ```bash
+            # Debian (default)
             docker pull ${{ needs.tag.outputs.tag }}
+            # Alpine
+            docker pull ${{ needs.tag.outputs.tag }}-alpine
             ```
 
             > [!WARNING]
-            > This is a development image and should not be used in production.
-            > It will be automatically removed after 2 weeks.
+            > These are development images and should not be used in production.
+            > They will be automatically removed after 2 weeks.
 
   release:
     name: Create GitHub Release

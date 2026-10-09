@@ -12,12 +12,14 @@ func TestRegression817(t *testing.T) {
 	LongTest(t)
 	t.Parallel()
 
-	for font, fileName := range map[string]string{
-		"Inter":      "Inter-Regular.otf",
-		"Helvetica":  "NimbusSans-Regular.otf",
-		"sans-serif": "DejaVuSans.ttf",
+	for font, fileNames := range map[string][]string{
+		// Debian packages Inter as individual OpenType files, while Alpine's
+		// package uses a TrueType Collection containing the same font family.
+		"Inter":      {"Inter-Regular.otf", "Inter.ttc"},
+		"Helvetica":  {"NimbusSans-Regular.otf"},
+		"sans-serif": {"DejaVuSans.ttf"},
 	} {
-		t.Run(fmt.Sprintf("font %q is provided by %q", font, fileName), func(t *testing.T) {
+		t.Run(fmt.Sprintf("font %q is provided by one of %v", font, fileNames), func(t *testing.T) {
 			t.Parallel()
 
 			// use fc-match ${font}
@@ -27,7 +29,7 @@ func TestRegression817(t *testing.T) {
 			require.Zero(t, strings.Count(logs, "\n"), "should only contain 1 line")
 			actual, _, ok := strings.Cut(logs, ":")
 			require.True(t, ok, "fc-match output format unexpected for font %q: %s", font, logs)
-			require.Equal(t, fileName, actual, "file-name mismatched")
+			require.Contains(t, fileNames, actual, "file-name not in the accepted set for font %q", font)
 		})
 	}
 }
