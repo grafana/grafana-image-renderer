@@ -128,9 +128,9 @@ On some environments, such as Docker, Kubernetes, or other container and VM runt
 
 Pass flags to the browser using the `--browser.flag` option.
 
-The format is `--${flag}=${value}` or `--${flag}`, with the `--` prefix being required. The parser splits each browser flag based on them.
+The format is `--${flag}=${value}` or `--${flag}`, with the `--` prefix being required. The parser splits each browser flag based on them, with a whitespace required between flags. When passing more than one browser flag, you should also quote the `--browser.flag` option as seen in the example below.
 
-For example, `--browser.flag=--headless=false --host-resolver-rules=MAP * 127.0.0.1, EXCLUDE grafana --no-sandbox` enables headful mode, forces the browser to resolve all network requests to `127.0.0.1` with exception of the `grafana` host, and disables sandbox mode.
+For example, `--browser.flag="--headless=false --host-resolver-rules=MAP * 127.0.0.1, EXCLUDE grafana --no-sandbox"` enables headful mode, forces the browser to resolve all network requests to `127.0.0.1` with exception of the `grafana` host, and disables sandbox mode.
 
 ## Enable the browser sandbox
 

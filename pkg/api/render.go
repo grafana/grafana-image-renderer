@@ -24,12 +24,13 @@ import (
 
 var (
 	// This also implicitly gives us a count for each result type, so we can calculate success rate.
+	// TODO: Remove the mode label once a default readiness mode has been decided.
 	MetricRenderDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 		Name:        "http_render_browser_request_duration",
 		Help:        "How long does a single render take, limited to the browser?",
 		ConstLabels: prometheus.Labels{"unit": "seconds"},
 		Buckets:     []float64{0.5, 1, 3, 4, 5, 7, 9, 10, 11, 15, 19, 20, 21, 24, 27, 29, 30, 31, 35, 55, 95, 125, 305, 605},
-	}, []string{"result", "encoding"})
+	}, []string{"result", "encoding", "mode"})
 
 	regexpOnlyNumbers = regexp.MustCompile(`^[0-9]+$`)
 )
@@ -232,8 +233,9 @@ func HandleGetRender(browser *service.BrowserService, apiConfig config.APIConfig
 
 		start := time.Now()
 		body, contentType, err := browser.Render(ctx, rawTargetURL, printer, options...)
+		mode := service.ReadinessModeFromContext(ctx)
 		if err != nil {
-			MetricRenderDuration.WithLabelValues("error", encoding).Observe(time.Since(start).Seconds())
+			MetricRenderDuration.WithLabelValues("error", encoding, mode).Observe(time.Since(start).Seconds())
 			span.SetStatus(codes.Error, "rendering failed")
 			span.RecordError(err)
 			if errors.Is(err, context.DeadlineExceeded) ||
@@ -249,7 +251,7 @@ func HandleGetRender(browser *service.BrowserService, apiConfig config.APIConfig
 			http.Error(w, "Failed to render", http.StatusInternalServerError)
 			return
 		}
-		MetricRenderDuration.WithLabelValues("success", encoding).Observe(time.Since(start).Seconds())
+		MetricRenderDuration.WithLabelValues("success", encoding, mode).Observe(time.Since(start).Seconds())
 		span.SetStatus(codes.Ok, "rendered successfully")
 
 		w.Header().Set("Content-Type", contentType)

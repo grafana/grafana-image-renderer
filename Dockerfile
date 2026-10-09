@@ -8,11 +8,11 @@
 #   - output_alpine
 
 # renovate: depName=chromium
-ARG CHROMIUM_VERSION=150.0.7871.114
+ARG CHROMIUM_VERSION=154.0.8037.92
 # If we ever need to bust the package cache, just change the date here.
-ARG CACHE_BUSTER_DATE=2026-07-15
+ARG CACHE_BUSTER_DATE=2026-10-09
 
-FROM golang:1.26.5-alpine@sha256:0178a641fbb4858c5f1b48e34bdaabe0350a330a1b1149aabd498d0699ff5fb2 AS app
+FROM golang:1.26.9-alpine@sha256:cdfd4fe2da6b225d8b40c6b7a105736e548e83ff56d5d8f9394446eeb5eb84e0 AS app
 
 RUN apk add --no-cache git
 
@@ -25,7 +25,7 @@ RUN --mount=type=cache,target=/go/pkg/mod CGO_ENABLED=0 go build \
   -ldflags '-s -w -extldflags "-static"' \
   .
 
-FROM debian:trixie-20260713@sha256:fac46bff2e02f51425b6e33b0e1169f55dfb053d83511ca28aa50c09fd5ed7a4 AS output_debian
+FROM debian:trixie-20261005@sha256:913f6706df59a68922d1dd08f78c2476560a8d367897200a6005b00e5f67c2d5 AS output_debian
 
 ARG CHROMIUM_VERSION
 ARG CACHE_BUSTER_DATE
