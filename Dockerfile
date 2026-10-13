@@ -21,7 +21,10 @@ FROM debian:trixie-20261005@sha256:913f6706df59a68922d1dd08f78c2476560a8d3678972
 LABEL maintainer="Grafana team <hello@grafana.com>"
 LABEL org.opencontainers.image.source="https://github.com/grafana/grafana-image-renderer/tree/master/Dockerfile"
 
-# If we ever need to bust the cache, just change the date here.
+# renovate: depName=chromium
+ARG CHROMIUM_VERSION=155.0.8059.39
+
+# Chromium updates bust the cache; change the date for a manual package refresh.
 RUN echo 'cachebuster 2026-10-13' && apt-get update && apt-get upgrade -y --no-install-recommends --no-install-suggests
 
 RUN apt-get install -y --no-install-recommends --no-install-suggests \
@@ -29,8 +32,6 @@ RUN apt-get install -y --no-install-recommends --no-install-suggests \
   libxss1 unifont fonts-open-sans fonts-roboto fonts-inter fonts-recommended \
   bash util-linux openssl tini ca-certificates locales libnss3-tools ca-certificates
 
-# renovate: depName=chromium
-ARG CHROMIUM_VERSION=155.0.8059.39
 RUN apt-get satisfy -y --no-install-recommends --no-install-suggests \
   "chromium (>=${CHROMIUM_VERSION}), chromium-driver (>=${CHROMIUM_VERSION}), chromium-shell (>=${CHROMIUM_VERSION}), chromium-sandbox (>=${CHROMIUM_VERSION})"
 

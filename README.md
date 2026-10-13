@@ -43,7 +43,7 @@ One of the quick ways you can check the latest version available is by going to 
     
 Make sure that the build for amd64 and arm64 are both available first (scroll down to the bottom of the page and check that there are no red backgrounds), and ignore anything after the `-` in the version, this is what we'll use.
   
-In the `Dockerfile`, update the cachebuster date to today's date. Then find `CHROMIUM_VERSION=` and update that to the version found in the website.
+In the `Dockerfile`, update `CHROMIUM_VERSION=` to the version found on the website. Changing this argument also reruns the package update and upgrade step. Use the cachebuster date for manual package refreshes.
   
 Open a PR, merge it, and create a new GitHub release. You're done!
 
