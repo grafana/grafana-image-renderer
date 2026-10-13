@@ -32,6 +32,28 @@ $ golangci-lint run # our linter of choice
 $ IMAGE=tag-here go test ./tests/acceptance/... -count=1 # run acceptance tests
 ```
 
+## Runtime packages
+
+The default Docker target, `output_image`, prunes packages after generating the
+UTF-8 locale, caching fonts, setting up CA certificates, and creating the runtime
+user. Chromium driver and Chromium shell are not installed.
+
+Pruning uses dpkg's dependency, Essential, and Protected overrides. The resulting
+image has an incomplete Debian package dependency graph. To install additional
+Debian packages, build the `runtime_dependencies` target instead:
+
+```shell
+$ docker build --target runtime_dependencies -t image-renderer-with-apt .
+```
+
+When changing the removal list, try one package at a time and run the acceptance
+suite with `-count=1`. Keep any package whose removal fails acceptance checks,
+then test all successful removals together. The suite checks rendering, WebGL, custom CA
+trust setup, and CSV downloads with non-ASCII filenames. Preserve `locales`: it
+owns the generated locale archive needed for those downloads.
+These checks cover software rendering; hardware GPU paths require separate
+validation.
+
 ## Release
 
 When you are ready to make a release, tag it in Git (`git tag vX.Y.Z`; remember the `v` prefix), then push it.
