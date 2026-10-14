@@ -16,7 +16,7 @@ RUN --mount=type=cache,target=/go/pkg/mod CGO_ENABLED=0 go build \
   -ldflags '-s -w -extldflags "-static"' \
   .
 
-FROM debian:trixie-20261005@sha256:913f6706df59a68922d1dd08f78c2476560a8d367897200a6005b00e5f67c2d5 AS output_image
+FROM debian:trixie-20261005@sha256:913f6706df59a68922d1dd08f78c2476560a8d367897200a6005b00e5f67c2d5 AS runtime_dependencies
 
 LABEL maintainer="Grafana team <hello@grafana.com>"
 LABEL org.opencontainers.image.source="https://github.com/grafana/grafana-image-renderer/tree/master/Dockerfile"
@@ -30,10 +30,10 @@ RUN echo 'cachebuster 2026-10-13' && apt-get update && apt-get upgrade -y --no-i
 RUN apt-get install -y --no-install-recommends --no-install-suggests \
   fonts-ipaexfont-gothic fonts-wqy-zenhei fonts-thai-tlwg fonts-khmeros fonts-kacst-one fonts-freefont-ttf \
   libxss1 unifont fonts-open-sans fonts-roboto fonts-inter fonts-recommended \
-  bash util-linux openssl tini ca-certificates locales libnss3-tools ca-certificates
+  util-linux openssl tini ca-certificates locales libnss3-tools
 
 RUN apt-get satisfy -y --no-install-recommends --no-install-suggests \
-  "chromium (>=${CHROMIUM_VERSION}), chromium-driver (>=${CHROMIUM_VERSION}), chromium-shell (>=${CHROMIUM_VERSION}), chromium-sandbox (>=${CHROMIUM_VERSION})"
+  "chromium (>=${CHROMIUM_VERSION}), chromium-sandbox (>=${CHROMIUM_VERSION})"
 
 # There is no point to us shipping headers.
 RUN dpkg -l | grep -E -- '-dev|-headers' | awk '{ print $2; }' | xargs apt-get remove -y
@@ -63,3 +63,22 @@ ENTRYPOINT ["tini", "--", "/usr/bin/grafana-image-renderer"]
 CMD ["server"]
 HEALTHCHECK --interval=10s --retries=3 --timeout=3s --start-interval=250ms --start-period=30s \
   CMD ["/usr/bin/grafana-image-renderer", "healthcheck"]
+
+FROM runtime_dependencies AS output_image
+
+USER 0
+# Prune only after locale generation, font caching, CA setup, and user creation.
+# Debian's dependency declarations cover more than our headless workload.
+# Remove dependants first, one at a time; package-manager helpers go last.
+# Keep libxml2 until all MIME-cache triggers have finished.
+RUN set -eu; for package in \
+  gcc-14-base libasound2-data libavahi-common-data libc-l10n libgdk-pixbuf2.0-common \
+  liblastlog2-2 libncursesw6 libpam-systemd libtiff6 libuuid1 \
+  libx11-data libxtst6 login libpam-runtime \
+  libpam-modules libpam-modules-bin systemd-sysv systemd libsystemd-shared \
+  libpam0g mount xdg-utils bash bsdutils \
+  ncurses-base ncurses-bin libtinfo6 libxml2; do \
+    dpkg --remove --force-depends --force-remove-essential --force-remove-protected "$package"; \
+  done; \
+  dpkg --remove --force-depends --force-remove-essential perl-base tar libc-bin
+USER 65532
