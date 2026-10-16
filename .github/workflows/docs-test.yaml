@@ -19,7 +19,7 @@ jobs:
       checks: write # write CI checkmarks
       pull-requests: write # write/comment on PRs
       security-events: write # write new SARIF events
-    uses: grafana/writers-toolkit/.github/workflows/docs-ci.yml@main
+    uses: grafana/writers-toolkit/.github/workflows/docs-ci.yml@40b4493c4c71724f8adb7afce5efdbceea788936 # main
     with:
       build: true
       build-website-directory: content/docs/grafana-image-renderer
@@ -34,10 +34,10 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           persist-credentials: false
-      - uses: actions/setup-go@v6
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
         with:
           go-version-file: go.mod
           cache: false
