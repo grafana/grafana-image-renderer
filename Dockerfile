@@ -75,14 +75,6 @@ HEALTHCHECK --interval=10s --retries=3 --timeout=3s --start-interval=250ms --sta
 # renovate: datasource=docker depName=alpine
 FROM alpine:edge@sha256:020dfcbaaf4cc1078bf2d9c7ba31a8466e334061dcd2f248001d68f79e52c000 AS alpine_base
 
-FROM alpine_base AS ffmpeg_stub
-
-RUN apk add --no-cache build-base ffmpeg-dev
-COPY packaging/ffmpeg-stub /src/ffmpeg-stub
-RUN sh /src/ffmpeg-stub/build.sh /out
-
-FROM alpine_base AS output_alpine
-
 ARG CHROMIUM_VERSION
 ARG CACHE_BUSTER_DATE
 
@@ -91,19 +83,10 @@ LABEL org.opencontainers.image.source="https://github.com/grafana/grafana-image-
 
 RUN echo "cachebuster ${CACHE_BUSTER_DATE}" && apk upgrade --no-cache
 
-# Install our local provider first, so Chromium's shared-library dependencies
-# resolve without installing FFmpeg's media parsers and codecs.
-RUN --mount=type=bind,from=ffmpeg_stub,source=/out,target=/stubs \
-  apk add --no-cache --allow-untrusted /stubs/renderer-ffmpeg-stub.apk
-
 RUN apk add --no-cache "chromium>=${CHROMIUM_VERSION}" "chromium-swiftshader>=${CHROMIUM_VERSION}" \
   tini ca-certificates openssl nss-tools \
   font-noto-cjk font-noto-thai font-noto-khmer font-noto-arabic font-noto-emoji \
   font-opensans font-roboto font-inter font-urw-base35 font-dejavu font-unifont
-
-# A Chromium/FFmpeg ABI change must fail the build instead of shipping an image
-# that cannot start the browser. Also catch the resolver selecting real FFmpeg.
-RUN chromium --version && ! apk info | grep -q '^ffmpeg-'
 
 # Alpine packages the URW fontconfig aliases without enabling them. Enable the
 # packaged rules so Helvetica resolves to Nimbus Sans, as it does on Debian.
