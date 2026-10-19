@@ -73,7 +73,7 @@ HEALTHCHECK --interval=10s --retries=3 --timeout=3s --start-interval=250ms --sta
   CMD ["/usr/bin/grafana-image-renderer", "healthcheck"]
 
 # renovate: datasource=docker depName=alpine
-FROM alpine:edge@sha256:020dfcbaaf4cc1078bf2d9c7ba31a8466e334061dcd2f248001d68f79e52c000 AS alpine_base
+FROM alpine:edge@sha256:020dfcbaaf4cc1078bf2d9c7ba31a8466e334061dcd2f248001d68f79e52c000 AS output_alpine
 
 ARG CHROMIUM_VERSION
 ARG CACHE_BUSTER_DATE
