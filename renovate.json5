@@ -3,5 +3,31 @@
   "extends": [
     "security:only-security-updates",
     "security:gomodIndirectSecurityUpdates",
-  ]
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["/^Dockerfile$/"],
+      "matchStrings": [
+        "# renovate: depName=(?<depName>chromium)\\s+ARG CHROMIUM_VERSION=(?<currentValue>\\S+)",
+      ],
+      "datasourceTemplate": "custom.debian-chromium",
+      "versioningTemplate": "deb",
+      "registryUrlTemplate": "https://packages.debian.org/trixie/amd64/chromium/download",
+      "extractVersionTemplate": "chromium_(?<version>[0-9.]+)-[^/]+_amd64\\.deb$",
+    },
+  ],
+  "customDatasources": {
+    // Debian Security only provides Packages.xz; the deb datasource requires Packages.gz.
+    "debian-chromium": {
+      "format": "html",
+    },
+  },
+  "packageRules": [
+    {
+      "matchDatasources": ["custom.debian-chromium"],
+      "matchPackageNames": ["chromium"],
+      "enabled": true,
+    },
+  ],
 }
