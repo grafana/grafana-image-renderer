@@ -22,10 +22,10 @@ LABEL maintainer="Grafana team <hello@grafana.com>"
 LABEL org.opencontainers.image.source="https://github.com/grafana/grafana-image-renderer/tree/master/Dockerfile"
 
 # renovate: depName=chromium
-ARG CHROMIUM_VERSION=155.0.8059.39
+ARG CHROMIUM_VERSION=155.0.8059.79
 
 # Chromium updates bust the cache; change the date for a manual package refresh.
-RUN echo 'cachebuster 2026-10-13' && apt-get update && apt-get upgrade -y --no-install-recommends --no-install-suggests
+RUN echo 'cachebuster 2026-10-21' && apt-get update && apt-get upgrade -y --no-install-recommends --no-install-suggests
 
 RUN apt-get install -y --no-install-recommends --no-install-suggests \
   fonts-ipaexfont-gothic fonts-wqy-zenhei fonts-thai-tlwg fonts-khmeros fonts-kacst-one fonts-freefont-ttf \
