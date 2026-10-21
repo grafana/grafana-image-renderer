@@ -3,7 +3,7 @@
 #        -> Why static linking? We want to ensure we can switch base-image with little to no effort.
 #   2. It builds a running environment. This is the environment that exists for the Go binary, and should have all necessary pieces to run the application.
 
-FROM golang:1.26.9-alpine@sha256:cdfd4fe2da6b225d8b40c6b7a105736e548e83ff56d5d8f9394446eeb5eb84e0 AS app
+FROM golang:1.26.10-alpine@sha256:9ce231b28998b32e116927c61aa5c406183061d4f3f2d61b292c88e7f6bdf7ca AS app
 
 RUN apk add --no-cache git
 
@@ -16,16 +16,16 @@ RUN --mount=type=cache,target=/go/pkg/mod CGO_ENABLED=0 go build \
   -ldflags '-s -w -extldflags "-static"' \
   .
 
-FROM debian:trixie-20261005@sha256:913f6706df59a68922d1dd08f78c2476560a8d367897200a6005b00e5f67c2d5 AS output_image
+FROM debian:trixie-20261020@sha256:4c25275446ca371766b8b093c696782eabce06263fccacb8d5d813b3dc44b308 AS output_image
 
 LABEL maintainer="Grafana team <hello@grafana.com>"
 LABEL org.opencontainers.image.source="https://github.com/grafana/grafana-image-renderer/tree/master/Dockerfile"
 
 # renovate: depName=chromium
-ARG CHROMIUM_VERSION=155.0.8059.39
+ARG CHROMIUM_VERSION=155.0.8059.79
 
 # Chromium updates bust the cache; change the date for a manual package refresh.
-RUN echo 'cachebuster 2026-10-13' && apt-get update && apt-get upgrade -y --no-install-recommends --no-install-suggests
+RUN echo 'cachebuster 2026-10-21' && apt-get update && apt-get upgrade -y --no-install-recommends --no-install-suggests
 
 RUN apt-get install -y --no-install-recommends --no-install-suggests \
   fonts-ipaexfont-gothic fonts-wqy-zenhei fonts-thai-tlwg fonts-khmeros fonts-kacst-one fonts-freefont-ttf \
