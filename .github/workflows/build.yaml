@@ -194,7 +194,7 @@ jobs:
         run: echo "$GITHUB_TOKEN" | docker login ghcr.io -u "$ACTOR" --password-stdin
       - name: Log into GAR
         if: needs.tag.outputs.registry == 'us-docker.pkg.dev'
-        uses: grafana/shared-workflows/actions/login-to-gar@c7ad5f57693ac858c698d95783685a9cbfd91223 # login-to-gar/v1.0.1
+        uses: grafana/shared-workflows/actions/login-to-gar@afad5c7621e788905e6417f05b492972685ab1eb # login-to-gar/v1.0.4
         with:
           registry: us-docker.pkg.dev
 
