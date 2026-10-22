@@ -247,7 +247,7 @@ jobs:
           merge-multiple: true
           path: bins/
           pattern: grafana-image-renderer-*
-      - uses: softprops/action-gh-release@6da8fa9354ddfdc4aeace5fc48d7f679b5214090 # v2
+      - uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
         with:
           files: bins/*
           fail_on_unmatched_files: true
