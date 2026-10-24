@@ -2,7 +2,7 @@ services:
   # Tempo runs as user 10001, and docker compose creates the volume as root.
   # As such, we need to chown the volume in order for Tempo to start correctly.
   tempo-chown:
-    image: busybox
+    image: busybox@sha256:fd7dc98638c8e305f4dc34e979f1c0fdfdcaeb0fbf8fcff77ae834b6da3d7e6e
     user: root
     entrypoint:
       - "chown"
@@ -12,11 +12,11 @@ services:
       - tempo-data:/var/tempo
 
   memcached:
-    image: memcached
+    image: memcached@sha256:ab65f39bfa5b1e31bff3bdccfd48af85fee6fdcbf0eb877175fcb170a4e1bd2f
     restart: unless-stopped
 
   tempo:
-    image: grafana/tempo:latest
+    image: grafana/tempo:latest@sha256:1ce31d6d7ffab62189685e8c47881d4a561c5d38bd0dbd66e40ca83cef07923d
     depends_on:
       - tempo-chown
       - memcached
@@ -28,7 +28,7 @@ services:
     restart: unless-stopped
 
   prometheus:
-    image: prom/prometheus:latest
+    image: prom/prometheus:latest@sha256:fa3302279710be2f21a8301ec17a8b4f2301fd829bd113839b3b6b02b6f191a2
     command:
       - --config.file=/etc/prometheus.yaml
       - --web.enable-remote-write-receiver
@@ -62,7 +62,7 @@ services:
       - prometheus
 
   alloy:
-    image: grafana/alloy:latest
+    image: grafana/alloy:latest@sha256:89a5a320168387336b9ac3c850609c3ba7757eadd4ae5f1d819deb35e9854b18
     privileged: true
     command:
       - run
@@ -78,7 +78,7 @@ services:
     restart: unless-stopped
 
   loki:
-    image: grafana/loki:latest
+    image: grafana/loki:latest@sha256:0db216b630ae1f348a1584c67f3cead8b4c1fc839169a39501db664744158e28
     command:
       - -config.file=/etc/loki/local-config.yaml
     volumes:
@@ -86,7 +86,7 @@ services:
     restart: unless-stopped
 
   grafana:
-    image: grafana/grafana-enterprise:nightly
+    image: grafana/grafana-enterprise:nightly@sha256:184dfb3137aab22c3fdfbd60e622ba4f71ed56ad059c813b15d018ccd59102e1
     ports:
       - 3000:3000
     environment:
