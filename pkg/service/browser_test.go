@@ -3,10 +3,12 @@ package service
 import (
 	"testing"
 
+	"github.com/chromedp/cdproto/cdp"
 	"github.com/chromedp/cdproto/network"
 	"github.com/grafana/grafana-image-renderer/pkg/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/text/language"
 )
 
 func TestShouldTrackReadinessNetworkRequest(t *testing.T) {
@@ -175,5 +177,20 @@ func TestWithPageScaleFactorClampsToMax(t *testing.T) {
 		_, err := WithPageScaleFactor(0)(cfg)
 		require.Error(t, err)
 		assert.ErrorIs(t, err, ErrInvalidBrowserOption)
+	})
+}
+
+func TestSetLocaleOverride(t *testing.T) {
+	t.Parallel()
+
+	// There's no browser in this context, so sending any DevTools command fails with ErrInvalidContext.
+	t.Run("sends nothing when no locale is configured", func(t *testing.T) {
+		t.Parallel()
+		require.NoError(t, setLocaleOverride(language.Und).Do(t.Context()))
+	})
+
+	t.Run("sends the override when a locale is configured", func(t *testing.T) {
+		t.Parallel()
+		require.ErrorIs(t, setLocaleOverride(language.MustParse("fr-FR")).Do(t.Context()), cdp.ErrInvalidContext)
 	})
 }

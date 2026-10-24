@@ -527,6 +527,7 @@ func TestReconstructFlags(t *testing.T) {
 		configContent := `
 browser:
   min-width: 1200
+  locale: fr-FR
   override:
     - "^https://custom\\.example\\.com/.*=--browser.readiness.timeout=60s"
 `
@@ -579,6 +580,9 @@ browser:
 			"override should inherit page-scale-factor from base (even though it's a default)")
 		assert.Equal(t, defaultCfg.MaxPageScaleFactor, overrideCfg.MaxPageScaleFactor,
 			"override should inherit max-page-scale-factor from base")
+		assert.Equal(t, "fr-FR", defaultCfg.Locale.String(), "default locale should come from the config file")
+		assert.Equal(t, defaultCfg.Locale, overrideCfg.Locale,
+			"override should inherit locale from base")
 		assert.Equal(t, defaultCfg.Landscape, overrideCfg.Landscape,
 			"override should inherit landscape from base")
 		assert.Equal(t, defaultCfg.TimeBetweenScrolls, overrideCfg.TimeBetweenScrolls,
