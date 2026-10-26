@@ -25,7 +25,7 @@ LABEL org.opencontainers.image.source="https://github.com/grafana/grafana-image-
 ARG CHROMIUM_VERSION=156.0.8078.47
 
 # Chromium updates bust the cache; change the date for a manual package refresh.
-RUN echo 'cachebuster 2026-10-23' && apt-get update && apt-get upgrade -y --no-install-recommends --no-install-suggests
+RUN echo 'cachebuster 2026-10-25' && apt-get update && apt-get upgrade -y --no-install-recommends --no-install-suggests
 
 RUN apt-get install -y --no-install-recommends --no-install-suggests \
   fonts-ipaexfont-gothic fonts-wqy-zenhei fonts-thai-tlwg fonts-khmeros fonts-kacst-one fonts-freefont-ttf \
