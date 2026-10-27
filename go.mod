@@ -6,7 +6,7 @@ require (
 	github.com/Masterminds/semver/v3 v3.4.0
 	github.com/chromedp/cdproto v0.0.0-20260427013145-5737772c319b
 	github.com/davecgh/go-spew v1.1.1
-	github.com/go-jose/go-jose/v4 v4.1.4
+	github.com/go-jose/go-jose/v4 v4.1.6
 	github.com/grafana/chromedp v0.2.0
 	github.com/klippa-app/go-pdfium v1.19.2
 	github.com/moby/moby/api v1.54.2
