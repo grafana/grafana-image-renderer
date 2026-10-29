@@ -68,13 +68,15 @@ func HandleGetRenderCSV(browser *service.BrowserService) http.Handler {
 		}
 		renderKey := r.URL.Query().Get("renderKey")
 		domain := r.URL.Query().Get("domain")
+		domainHeaderOptions := domainScopedHeaderOptions(r, domain)
 		acceptLanguage := r.Header.Get("Accept-Language") // if empty, we just don't set it
 		span.SetAttributes(
 			attribute.String("acceptLanguage", acceptLanguage),
-			attribute.String("renderKeyDomain", domain))
+			attribute.String("renderKeyDomain", domain),
+			attribute.Int("domainScopedHeaders", len(domainHeaderOptions)))
 
 		start := time.Now()
-		contents, fileName, err := browser.RenderCSV(ctx, url, renderKey, domain, acceptLanguage)
+		contents, fileName, err := browser.RenderCSV(ctx, url, renderKey, domain, acceptLanguage, domainHeaderOptions...)
 		if err != nil {
 			MetricRenderCSVDuration.WithLabelValues("error").Observe(time.Since(start).Seconds())
 			span.SetStatus(codes.Error, "csv rendering failed")
