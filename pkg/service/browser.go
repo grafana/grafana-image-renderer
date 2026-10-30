@@ -477,6 +477,9 @@ func (s *BrowserService) createAllocatorOptions(ctx context.Context, cfg config.
 	}
 
 	requestConfig := cfg.LookupRequestConfig(span, url)
+	// Main-target device emulation does not reach out-of-process iframes.
+	// Set their initial density before Chromium creates them.
+	opts = append(opts, chromedp.Flag("force-device-scale-factor", fmt.Sprint(requestConfig.PageScaleFactor)))
 	opts = append(opts, chromedp.WindowSize(requestConfig.MinWidth, requestConfig.MinHeight))
 	opts = append(opts, chromedp.Env("TZ="+cfg.TimeZone.String()))
 	if cfg.WSURLReadTimeout > 0 {
