@@ -27,10 +27,10 @@ jobs:
       contents: read # clone the repository
       id-token: write # required to read secrets
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           persist-credentials: false
-      - uses: actions/setup-go@v6
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
         with:
           go-version-file: go.mod
           cache: false
@@ -87,7 +87,7 @@ jobs:
           fi
       - name: Upload changed files
         if: ${{ steps.tar.outputs.upload == 'true' && (success() || failure()) }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: changed-files-${{ matrix.runs-on }}
           path: changed-files.tar.xz
