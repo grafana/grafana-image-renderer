@@ -47,6 +47,16 @@ In the `Dockerfile`, update `CHROMIUM_VERSION=` to the version found on the webs
   
 Open a PR, merge it, and create a new GitHub release. You're done!
 
+## Updating chromedp
+
+The renderer uses upstream `github.com/chromedp/chromedp` v0.21.0 and its typed CDP API.
+Follow the [upstream migration guide](https://github.com/chromedp/chromedp/blob/main/docs/MIGRATION.md) when upgrading.
+The allocator uses chromedp's default pipe transport. Chrome's debugging file
+descriptors are inherited through both Linux sandbox subprocesses, so no debugging port
+or WebSocket URL discovery is needed.
+Explicit `remote-debugging-port` or `remote-debugging-address` browser flags select
+WebSocket transport. `browser.ws-url-read-timeout` applies only in that mode.
+
 ## Updating Go
 
 For a new minor N, only update to a `.0` patch if there are security vulnerabilities that are fixed and not present in the N-1 minor. Otherwise try to stick with the N-1 minor until the N minor is at least on a `.1` patch.

@@ -4,10 +4,10 @@ go 1.26.10
 
 require (
 	github.com/Masterminds/semver/v3 v3.4.0
-	github.com/chromedp/cdproto v0.0.0-20260427013145-5737772c319b
+	github.com/chromedp/cdproto v0.157.8
+	github.com/chromedp/chromedp v0.21.0
 	github.com/davecgh/go-spew v1.1.1
 	github.com/go-jose/go-jose/v4 v4.1.4
-	github.com/grafana/chromedp v0.2.0
 	github.com/klippa-app/go-pdfium v1.19.2
 	github.com/moby/moby/api v1.54.2
 	github.com/pbnjay/memory v0.0.0-20210728143218-7b4eea64cf58
@@ -38,7 +38,6 @@ require (
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
 	github.com/cenkalti/backoff/v5 v5.0.3 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
-	github.com/chromedp/sysutil v1.1.0 // indirect
 	github.com/containerd/errdefs v1.0.0 // indirect
 	github.com/containerd/errdefs/pkg v0.3.0 // indirect
 	github.com/containerd/log v0.1.0 // indirect
@@ -53,9 +52,6 @@ require (
 	github.com/go-logr/logr v1.4.4 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-ole/go-ole v1.3.0 // indirect
-	github.com/gobwas/httphead v0.1.0 // indirect
-	github.com/gobwas/pool v0.2.1 // indirect
-	github.com/gobwas/ws v1.4.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.29.0 // indirect
 	github.com/jolestar/go-commons-pool/v2 v2.1.2 // indirect

@@ -16,6 +16,14 @@ import (
 	"syscall"
 )
 
+// SetParentDeathSignal ensures the command is killed if its parent exits.
+func SetParentDeathSignal(cmd *exec.Cmd) {
+	if cmd.SysProcAttr == nil {
+		cmd.SysProcAttr = &syscall.SysProcAttr{}
+	}
+	cmd.SysProcAttr.Pdeathsig = syscall.SIGKILL
+}
+
 // Supported attempts to determine if the current file-system will permit using our sandboxing.
 //
 // Upon any error, it returns false.

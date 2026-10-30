@@ -2,7 +2,13 @@
 
 package sandbox
 
-import "context"
+import (
+	"context"
+	"os/exec"
+)
+
+// SetParentDeathSignal has no effect on platforms other than Linux.
+func SetParentDeathSignal(_ *exec.Cmd) {}
 
 // Supported attempts to determine if the current file-system will permit using our sandboxing.
 //

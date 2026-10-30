@@ -397,8 +397,8 @@ type BrowserConfig struct {
 	// This is implemented by the service itself. It requires Linux and some capabilities (CAP_SYS_ADMIN, CAP_SYS_CHROOT) or a privileged user.
 	// Most users don't need this, but it may be interesting for users who care more about security than performance.
 	Namespaced bool
-	// WSURLReadTimeout is the timeout for reading the WebSocket URL when connecting to the browser.
-	// If <= 0, the chromedp default (20 seconds) is used.
+	// WSURLReadTimeout applies only when browser flags request a WebSocket debugging endpoint.
+	// The default pipe transport ignores it. If <= 0, chromedp uses 20 seconds.
 	WSURLReadTimeout time.Duration
 	// Sets the default User-Agent header for browser requests. If not set, Chromium's default will be used instead.
 	UserAgent string
@@ -550,7 +550,7 @@ func BrowserFlags() []cli.Flag {
 		},
 		&cli.DurationFlag{
 			Name:    "browser.ws-url-read-timeout",
-			Usage:   "The timeout for reading the WebSocket URL when connecting to the browser. If <= 0, uses chromedp default (20s). [config: browser.ws-url-read-timeout]",
+			Usage:   "The timeout for reading the WebSocket URL when browser flags enable a debugging port or address. Ignored with the default pipe transport. If <= 0, uses chromedp default (20s). [config: browser.ws-url-read-timeout]",
 			Value:   0,
 			Sources: FromConfig("browser.ws-url-read-timeout", "BROWSER_WS_URL_READ_TIMEOUT"),
 		},

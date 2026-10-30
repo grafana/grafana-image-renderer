@@ -111,7 +111,7 @@ This is a verbatim copy of the output of the `grafana-image-renderer server --he
 --browser.user-agent=<string> [${BROWSER_USER_AGENT}]
     Sets the default User-Agent header for browser requests. If not set, Chromium's default will be used instead. [config: browser.user-agent]
 --browser.ws-url-read-timeout=<duration> [default: 0s] [${BROWSER_WS_URL_READ_TIMEOUT}]
-    The timeout for reading the WebSocket URL when connecting to the browser. If <= 0, uses chromedp default (20s). [config: browser.ws-url-read-timeout]
+    The timeout for reading the WebSocket URL when browser flags enable a debugging port or address. Ignored with the default pipe transport. If <= 0, uses chromedp default (20s). [config: browser.ws-url-read-timeout]
 --help / -h
     show help
 --log.format=<string> [default: "text"] [${LOG_FORMAT}]
