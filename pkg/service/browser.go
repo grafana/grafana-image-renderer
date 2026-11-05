@@ -1312,6 +1312,11 @@ func shouldTrackReadinessNetworkRequest(e *network.EventRequestWillBeSent) bool 
 	case network.ResourceTypeEventSource, network.ResourceTypeWebSocket:
 		return false
 	}
+	// Requests fetched by a worker have an empty loader ID and may never report completion,
+	// which would block readiness until it times out.
+	if e.LoaderID == "" {
+		return false
+	}
 
 	rawURL := strings.ToLower(e.Request.URL)
 	return strings.HasPrefix(rawURL, "http://") || strings.HasPrefix(rawURL, "https://")

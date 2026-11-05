@@ -30,16 +30,26 @@ func TestShouldTrackReadinessNetworkRequest(t *testing.T) {
 		{
 			name: "http URL",
 			event: &network.EventRequestWillBeSent{
-				Request: &network.Request{URL: "http://example.com/path"},
+				LoaderID: "loader-1",
+				Request:  &network.Request{URL: "http://example.com/path"},
 			},
 			expected: true,
 		},
 		{
 			name: "https URL uppercase scheme",
 			event: &network.EventRequestWillBeSent{
-				Request: &network.Request{URL: "HTTPS://example.com/path"},
+				LoaderID: "loader-1",
+				Request:  &network.Request{URL: "HTTPS://example.com/path"},
 			},
 			expected: true,
+		},
+		{
+			name: "worker request without loader ID",
+			event: &network.EventRequestWillBeSent{
+				Type:    network.ResourceTypeScript,
+				Request: &network.Request{URL: "https://example.com/worker.mjs"},
+			},
+			expected: false,
 		},
 		{
 			name: "blob URL",
@@ -82,6 +92,7 @@ func TestReadinessNetworkObserverTracksUniqueRequestIDs(t *testing.T) {
 
 	first := &network.EventRequestWillBeSent{
 		RequestID: network.RequestID("req-1"),
+		LoaderID:  "loader-1",
 		Request:   &network.Request{URL: "https://example.com/main.js"},
 	}
 	assert.True(t, observer.onRequestWillBeSent(first))
