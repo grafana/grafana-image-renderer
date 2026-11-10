@@ -54,6 +54,7 @@ jobs:
           path: grafana-image-renderer-${{ matrix.GOOS }}-${{ matrix.GOARCH }}${{ matrix.SUFFIX || '' }}
 
   tag:
+    if: ((github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork == false) || (github.event_name == 'push' && github.repository == 'grafana/grafana-image-renderer'))
     name: Create image tag
     runs-on: ubuntu-latest
     outputs:
