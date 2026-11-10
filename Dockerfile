@@ -16,16 +16,16 @@ RUN --mount=type=cache,target=/go/pkg/mod CGO_ENABLED=0 go build \
   -ldflags '-s -w -extldflags "-static"' \
   .
 
-FROM debian:trixie-20261027@sha256:f61f274a579884f5e460bcf53422121be57388ac21f0df16e4e460df7b691e3b AS output_image
+FROM debian:trixie-20261104@sha256:9c6e381421d0f48d1b8133e573f33c185ee16cbf505eda9c4a8a4791b25ea8a6 AS output_image
 
 LABEL maintainer="Grafana team <hello@grafana.com>"
 LABEL org.opencontainers.image.source="https://github.com/grafana/grafana-image-renderer/tree/master/Dockerfile"
 
 # renovate: depName=chromium
-ARG CHROMIUM_VERSION=156.0.8078.47
+ARG CHROMIUM_VERSION=156.0.8078.79
 
 # Chromium updates bust the cache; change the date for a manual package refresh.
-RUN echo 'cachebuster 2026-10-28' && apt-get update && apt-get upgrade -y --no-install-recommends --no-install-suggests
+RUN echo 'cachebuster 2026-11-10' && apt-get update && apt-get upgrade -y --no-install-recommends --no-install-suggests
 
 RUN apt-get install -y --no-install-recommends --no-install-suggests \
   fonts-ipaexfont-gothic fonts-wqy-zenhei fonts-thai-tlwg fonts-khmeros fonts-kacst-one fonts-freefont-ttf \
