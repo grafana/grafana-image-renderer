@@ -52,6 +52,8 @@ To install the service, we recommend using Docker or other containerization soft
 This isn't strictly required, so you can adapt to your specific environment as needed.
 
 We [ship images][image] for `linux/amd64` and `linux/arm64`.
+The default image is based on Debian. An Alpine-based variant is available by
+adding `-alpine` to the tag, for example `latest-alpine`.
 Windows and macOS can run these images with Docker Desktop.
 Additionally, we ship binaries for Windows and Linux on our [GitHub Releases page][releases].
 

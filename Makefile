@@ -11,8 +11,13 @@ test:
 
 .PHONY: test-acceptance
 test-acceptance:
-	docker build -t gir .
+	docker build --target=output_debian -t gir .
 	IMAGE=gir go test ./tests/acceptance/... -timeout=120s
+
+.PHONY: test-acceptance-alpine
+test-acceptance-alpine:
+	docker build --target=output_alpine -t gir-alpine .
+	IMAGE=gir-alpine go test ./tests/acceptance/... -timeout=120s
 
 .PHONY: lint
 lint:
@@ -50,7 +55,7 @@ docs:
 	make -C docs update vale
 
 .PHONY: all
-all: lint build-all test test-acceptance
+all: lint build-all test test-acceptance test-acceptance-alpine
 
 $(OUT_DIR):
 	mkdir -p "$(OUT_DIR)"
