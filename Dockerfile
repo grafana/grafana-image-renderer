@@ -8,9 +8,9 @@
 #   - output_alpine
 
 # renovate: depName=chromium
-ARG CHROMIUM_VERSION=155.0.8059.39
+ARG CHROMIUM_VERSION=156.0.8078.79
 # If we ever need to bust the package cache, just change the date here.
-ARG CACHE_BUSTER_DATE=2026-10-13
+ARG CACHE_BUSTER_DATE=2026-11-12
 
 FROM golang:1.26.11-alpine@sha256:ae52b5bc6ed045a9ed26ab03dc19327a802a9cc9aa8b27ed57f5c6b60579b0bb AS app
 
