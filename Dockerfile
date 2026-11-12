@@ -12,7 +12,7 @@ ARG CHROMIUM_VERSION=155.0.8059.39
 # If we ever need to bust the package cache, just change the date here.
 ARG CACHE_BUSTER_DATE=2026-10-13
 
-FROM golang:1.26.9-alpine@sha256:cdfd4fe2da6b225d8b40c6b7a105736e548e83ff56d5d8f9394446eeb5eb84e0 AS app
+FROM golang:1.26.11-alpine@sha256:ae52b5bc6ed045a9ed26ab03dc19327a802a9cc9aa8b27ed57f5c6b60579b0bb AS app
 
 RUN apk add --no-cache git
 
@@ -25,7 +25,7 @@ RUN --mount=type=cache,target=/go/pkg/mod CGO_ENABLED=0 go build \
   -ldflags '-s -w -extldflags "-static"' \
   .
 
-FROM debian:trixie-20261005@sha256:913f6706df59a68922d1dd08f78c2476560a8d367897200a6005b00e5f67c2d5 AS output_debian
+FROM debian:trixie-20261104@sha256:9c6e381421d0f48d1b8133e573f33c185ee16cbf505eda9c4a8a4791b25ea8a6 AS output_image
 
 ARG CHROMIUM_VERSION
 ARG CACHE_BUSTER_DATE
