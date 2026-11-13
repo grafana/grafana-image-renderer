@@ -108,6 +108,18 @@ func WithEnv(k, v string) ContainerOption {
 	}
 }
 
+func WithEnterpriseLicense() ContainerOption {
+	return func(tb testing.TB, gcr *testcontainers.GenericContainerRequest) {
+		tb.Helper()
+		OnlyEnterprise(tb)
+		gcr.Files = append(gcr.Files, testcontainers.ContainerFile{
+			HostFilePath:      licensePath(),
+			ContainerFilePath: "/license.jwt",
+			FileMode:          0o777,
+		})
+	}
+}
+
 func WithNetwork(net *testcontainers.DockerNetwork, netAlias string) ContainerOption {
 	return func(tb testing.TB, gcr *testcontainers.GenericContainerRequest) {
 		tb.Helper()
@@ -244,13 +256,6 @@ func StartGrafana(tb testing.TB, options ...ContainerOption) *Grafana {
 			Files:          createGrafanaProvisioningFiles(tb),
 			LogConsumerCfg: containerLogs(tb, "grafana"),
 		},
-	}
-	if _, err := os.Stat(licensePath()); err == nil {
-		req.Files = append(req.Files, testcontainers.ContainerFile{
-			HostFilePath:      licensePath(),
-			ContainerFilePath: "/license.jwt",
-			FileMode:          0o777,
-		})
 	}
 	for _, f := range options {
 		f(tb, &req)
