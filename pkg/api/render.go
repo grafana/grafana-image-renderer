@@ -243,6 +243,10 @@ func HandleGetRender(browser *service.BrowserService, apiConfig config.APIConfig
 				errors.Is(err, service.ErrBrowserReadinessTimeout) {
 				http.Error(w, "Request timed out", http.StatusRequestTimeout)
 				return
+			} else if failure := (*service.RenderFailedError)(nil); errors.As(err, &failure) {
+				// The page itself said it could not load, so there is nothing worth capturing.
+				http.Error(w, failure.Message, http.StatusFailedDependency)
+				return
 			} else if errors.Is(err, service.ErrInvalidBrowserOption) {
 				http.Error(w, fmt.Sprintf("invalid request: %v", err), http.StatusBadRequest)
 				return
