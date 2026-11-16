@@ -207,6 +207,14 @@ This is done by waiting for all of the following to complete or time out:
     - If the web page doesn't stabilise within the duration declared by the `--browser.readiness.dom-hashcode-timeout` option, the check is silently skipped.
       By default, this timeout is disabled.
 
+## Understand `424 Failed Dependency` responses
+
+When Grafana can't load the page, for example because the dashboard doesn't exist or the user isn't allowed to view it, it tells the service so instead of waiting for the page to become ready.
+The service then responds with `424 Failed Dependency` and the reason in the response body, such as `Dashboard not found`, instead of an image of the error page.
+This requires a Grafana version that sends the reason, and the `reportRenderBinding` feature toggle enabled.
+
+Messages that the service doesn't understand, or that carry no failure reason, are treated as "the page is ready", and the page is captured as usual.
+
 ## The service eats up all the memory in the container
 
 Set the `GOMEMLIMIT` environment variable to a lower value than the container's memory limit, such as `1GiB`.
