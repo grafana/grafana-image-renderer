@@ -269,6 +269,13 @@ func (s *BrowserService) Render(ctx context.Context, url string, printer Printer
 	}
 	span.AddEvent("options applied")
 
+	requestConfig := cfg.LookupRequestConfig(span, url)
+	if printer.contentType() == "image/png" {
+		// Main-target device emulation does not reach out-of-process iframes.
+		// Set PNG density at launch; doing this for PDFs changes fractional-scale output.
+		cfg.Flags = append([]string{"force-device-scale-factor=" + fmt.Sprint(requestConfig.PageScaleFactor)}, cfg.Flags...)
+	}
+
 	chromiumCwd, err := os.MkdirTemp("", "")
 	if err != nil {
 		return nil, "text/plain", fmt.Errorf("failed to create temporary directory for browser CWD: %w", err)
@@ -289,7 +296,6 @@ func (s *BrowserService) Render(ctx context.Context, url string, printer Printer
 
 	orientation := chromedp.EmulatePortrait
 
-	requestConfig := cfg.LookupRequestConfig(span, url)
 	if requestConfig.Landscape {
 		orientation = chromedp.EmulateLandscape
 	}
