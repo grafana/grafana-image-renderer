@@ -24,6 +24,33 @@ To compile the Docker image, run:
 $ docker build .
 ```
 
+An additional Nix image uses Nixpkgs Chromium and builds the Go service with
+`buildGoModule`. It launches the unwrapped browser with the renderer's font,
+locale and sandbox configuration, keeping desktop integration tools out of the
+runtime closure. Both `x86_64-linux` and `aarch64-linux` are supported:
+
+```shell
+$ make image-nix # loads image-renderer-nix into Docker
+$ IMAGE=image-renderer-nix go test ./tests/acceptance/... -count=1
+```
+
+This requires Nix with flakes enabled and a Linux builder for the selected
+architecture. On macOS, configure a [remote Linux builder](https://nix.dev/manual/nix/2.35/advanced-topics/distributed-builds).
+Override `NIX_SYSTEM` to select the other architecture, and `NIX_IMAGE` to change
+the local tag. CI builds both architectures natively and publishes the additional
+`<version>-nix` and `latest-nix` tags.
+
+`flake.lock` pins Nixpkgs, including Chromium and Go. Update it with
+`nix flake update nixpkgs`, then test both architectures. Keep the versioned Go
+builder in `nix/renderer.nix` aligned with `go.mod`. When Go dependencies change,
+set `vendorHash` to `pkgs.lib.fakeHash`, build once, and replace it with the hash
+reported by Nix. Build from the Git flake (`.#image`); new source files must be
+added to Git to be included.
+
+The image uses an immutable CA bundle from `dockerTools.caCertificates`.
+See [custom CA certificates](docs/sources/troubleshooting.md#nix-container) for
+Nix-specific configuration.
+
 The following tools are also useful for engineers:
 
 ```shell

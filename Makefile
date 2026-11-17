@@ -1,6 +1,13 @@
 OUT_DIR = dist
 BINARY ?= $(OUT_DIR)/grafana-image-renderer
 GO_BUILD_FLAGS = -buildvcs -ldflags '-s -w -extldflags "-static"'
+NIX_SYSTEM ?= $(shell uname -m | sed 's/arm64/aarch64/')-linux
+NIX_IMAGE ?= image-renderer-nix
+
+.PHONY: image-nix
+image-nix:
+	docker load --input "$$(nix build '.#packages.$(NIX_SYSTEM).image' --no-update-lock-file --no-link --print-out-paths)"
+	docker tag grafana-image-renderer:nix "$(NIX_IMAGE)"
 
 .PHONY: check
 check: lint test

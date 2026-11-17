@@ -12,9 +12,9 @@ func TestRegression676(t *testing.T) {
 	t.Parallel()
 
 	for tool, cmd := range map[string]string{
-		"openssl tools":          "openssl version",
-		"update-ca-certificates": "command -v update-ca-certificates",
-		"certutil":               "command -v certutil",
+		"openssl tools":   "openssl version",
+		"CA certificates": "openssl crl2pkcs7 -nocrl -certfile /etc/ssl/certs/ca-certificates.crt | openssl pkcs7 -print_certs -noout",
+		"certutil":        "command -v certutil",
 	} {
 		t.Run("image contains: "+tool, func(t *testing.T) {
 			t.Parallel()

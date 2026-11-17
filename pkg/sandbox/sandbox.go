@@ -59,7 +59,7 @@ func SetupFS(ctx context.Context, newRoot string, bindMounts []BindMount) error 
 			mountedProc = true
 		}
 	}
-	defaultMounts := []string{"bin", "usr", "lib", "lib64", "var", "home", "opt", "etc", "dev"}
+	defaultMounts := []string{"bin", "usr", "lib", "lib64", "var", "home", "opt", "etc", "dev", "nix/store"}
 	if !mountedProc {
 		defaultMounts = append(defaultMounts, "proc")
 	}

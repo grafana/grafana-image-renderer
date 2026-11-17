@@ -334,6 +334,19 @@ RUN mkdir -p /home/nonroot/.pki/nssdb
 RUN certutil -d sql:/home/nonroot/.pki/nssdb -A -n internal-root-ca -t C -i /usr/local/share/ca-certificates/rootCA.crt
 ```
 
+### Nix container
+
+The `-nix` image uses an immutable CA bundle and does not include
+`update-ca-certificates`. To extend the system trust bundle at build time,
+override `cacert` in the Nixpkgs package set with `extraCertificateFiles` or
+`extraCertificateStrings`, as in [NixOS's CA configuration](https://github.com/NixOS/nixpkgs/blob/master/nixos/modules/security/ca.nix).
+For the Go service, you can also mount a complete PEM bundle and set
+`SSL_CERT_FILE` to its path.
+
+Chromium's custom trust configuration still uses the user's NSS database.
+The Nix image includes `certutil`; use the Linux instructions above with
+`HOME=/home/nonroot`.
+
 ## Distorted panels in the PDF export
 
 This is most commonly caused by using the old PDF rendering engine in Grafana.

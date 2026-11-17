@@ -20,8 +20,9 @@ jobs:
       fail-fast: false
       matrix:
         runs-on: [ubuntu-x64-xlarge, ubuntu-arm64-xlarge]
+        variant: [default, nix]
 
-    name: acceptance tests (${{ matrix.runs-on }})
+    name: acceptance tests (${{ matrix.runs-on }}, ${{ matrix.variant }})
     runs-on: ${{ matrix.runs-on }}
     permissions:
       contents: read # clone the repository
@@ -36,11 +37,19 @@ jobs:
           cache: false
 
       - name: docker build
+        if: matrix.variant == 'default'
         env:
           DOCKER_BUILDKIT: 1
           BUILDKIT_STEP_LOG_MAX_SIZE: -1
           BUILDKIT_STEP_LOG_MAX_SPEED: -1
         run: docker build . -t image-renderer
+
+      - name: Install Nix
+        if: matrix.variant == 'nix'
+        uses: cachix/install-nix-action@3dc140bfc76c49fbd4dd958429132e3746bcb086 # v31.11.5
+      - name: Build Nix image
+        if: matrix.variant == 'nix'
+        run: make image-nix NIX_IMAGE=image-renderer
 
       - name: Read license
         if: ((github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork == false) || (github.event_name == 'push' && github.repository == 'grafana/grafana-image-renderer'))
@@ -90,7 +99,7 @@ jobs:
         if: ${{ steps.tar.outputs.upload == 'true' && (success() || failure()) }}
         uses: actions/upload-artifact@v4
         with:
-          name: changed-files-${{ matrix.runs-on }}
+          name: changed-files-${{ matrix.runs-on }}-${{ matrix.variant }}
           path: changed-files.tar.xz
 
   # This is the job that is actually required by rulesets.
