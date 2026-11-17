@@ -1,0 +1,33 @@
+package:
+  name: grafana-image-renderer-browser
+  # renovate: depName=chromium
+  version: 156.0.8078.79
+  epoch: 0
+  description: Debian Chromium and fonts for Grafana Image Renderer
+  copyright:
+    - license: BSD-3-Clause
+  dependencies:
+    runtime:
+      # NSS loads additional libraries at runtime, outside the ELF dependency list.
+      - libnss
+      - mesa-gbm
+
+vars:
+  debian-revision: 1~deb13u1
+
+environment:
+  contents:
+    repositories:
+      - https://packages.wolfi.dev/os
+    keyring:
+      - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
+    packages:
+      - busybox
+
+pipeline:
+  - runs: |
+      mkdir -p "${{targets.destdir}}/usr/share/licenses/grafana-image-renderer-browser"
+      cp -a usr/. "${{targets.destdir}}/usr/"
+      # Source staging strips setuid bits; restore Debian's sandbox permissions.
+      chmod 4755 "${{targets.destdir}}/usr/lib/chromium/chrome-sandbox"
+      cp -a licenses/. "${{targets.destdir}}/usr/share/licenses/grafana-image-renderer-browser/"

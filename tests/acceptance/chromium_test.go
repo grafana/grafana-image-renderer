@@ -10,7 +10,7 @@ func TestChromiumInstalled(t *testing.T) {
 	LongTest(t)
 	t.Parallel()
 
-	exitCode, logs := RunImageRendererWithCommand(t, []string{"chromium", "--version"}, nil)
-	require.Zero(t, exitCode, "chromium did not exist in the container (--version failed)")
-	require.Regexp(t, `^Chromium [0-9]+`, logs, "chromium --version did not return expected output")
+	exitCode, logs := RunImageRendererWithCommand(t, []string{"/usr/lib/chromium/chromium", "--version"}, nil)
+	require.Zero(t, exitCode, "Chromium did not exist in the container (--version failed)")
+	require.Regexp(t, `(?m)^Chromium [0-9]+(?:\.[0-9]+)+(?:\s|$)`, logs, "chromium --version did not return expected output")
 }

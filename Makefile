@@ -11,8 +11,16 @@ test:
 
 .PHONY: test-acceptance
 test-acceptance:
-	docker build -t gir .
+	sh packaging/build gir
 	IMAGE=gir go test ./tests/acceptance/... -timeout=120s
+
+.PHONY: image
+image:
+	sh packaging/build $(or $(IMAGE),gir)
+
+.PHONY: scan-image
+scan-image:
+	sh packaging/scan $(or $(IMAGE),gir)
 
 .PHONY: lint
 lint:

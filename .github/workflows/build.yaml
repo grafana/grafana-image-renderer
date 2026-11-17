@@ -158,7 +158,14 @@ jobs:
           BUILDKIT_STEP_LOG_MAX_SIZE: -1
           BUILDKIT_STEP_LOG_MAX_SPEED: -1
           TAG: ${{ needs.tag.outputs.tag }}-${{ matrix.arch }}
-        run: docker build . -t "$TAG"
+          BUILD_DIR: ${{ runner.temp }}/image-renderer-browser-${{ matrix.arch }}
+        run: sh packaging/build "$TAG"
+      - name: Upload browser SBOMs
+        uses: actions/upload-artifact@v5
+        with:
+          name: browser-sboms-${{ matrix.arch }}
+          path: ${{ runner.temp }}/image-renderer-browser-${{ matrix.arch }}/*.spdx.json
+          if-no-files-found: error
       - name: docker push
         env:
           TAG: ${{ needs.tag.outputs.tag }}-${{ matrix.arch }}

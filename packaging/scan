@@ -1,0 +1,49 @@
+#!/bin/sh
+set -eu
+
+image=${1:?Usage: sh packaging/scan IMAGE [grype options]}
+shift
+catalog=$(mktemp "${TMPDIR:-/tmp}/image-renderer-catalog.XXXXXXXX")
+combined=$(mktemp "${TMPDIR:-/tmp}/image-renderer-packages.XXXXXXXX")
+sbom=${SBOM_FILE:-$(mktemp "${TMPDIR:-/tmp}/image-renderer-sbom.XXXXXXXX")}
+
+# Grype's image cataloger does not read the embedded Debian package identities.
+syft scan "$image" --select-catalogers +sbom-cataloger -o "syft-json=$catalog"
+
+# Keep the installed package inventory and the Debian runtime components.
+# Other embedded SBOMs can describe build inputs that are absent at runtime.
+jq '
+  def debian_runtime:
+    any(.locations[]?; .path == "/usr/share/grafana-image-renderer/debian.spdx.json");
+  [.artifacts[] | select(.foundBy == "sbom-cataloger" and (debian_runtime | not)) | .id] as $excluded
+  | .artifacts |= map(select(.id as $id | $excluded | index($id) | not))
+  | .artifactRelationships |= map(select(
+      (.parent as $id | $excluded | index($id) | not) and
+      (.child as $id | $excluded | index($id) | not)
+    ))
+' "$catalog" > "$combined"
+
+# Refuse missing Debian identities or a browser version inconsistent with the APK.
+if ! jq -e '
+  ([.artifacts[] | select(.name == "grafana-image-renderer-browser") | .version] | unique) as $installed
+  | [.artifacts[] | select(.foundBy == "sbom-cataloger")] as $debian
+  | ($installed | length == 1) and
+    ([$debian[].name] | sort == ["chromium", "chromium-common", "chromium-sandbox", "libjpeg62-turbo", "libxnvctrl0"]) and
+    all($debian[];
+      .type == "deb" and (.version | length > 0) and
+      (.purl | startswith("pkg:deb/debian/") and contains("distro=debian-13"))
+    ) and
+    ([$debian[] | select(.name | startswith("chromium")) | .version] | unique | length == 1) and
+    all($debian[] | select(.name | startswith("chromium"));
+      (.version | sub("-[^-]+$"; "")) == ($installed[0] | sub("-r[0-9]+$"; ""))
+    )
+' "$combined" > /dev/null; then
+  echo "Missing or inconsistent Debian Chromium runtime identities; refusing incomplete scan" >&2
+  exit 1
+fi
+
+# Grype derives each package's distro from its PURL when reading SPDX. With
+# Syft JSON it applies the image-wide Wolfi distro to the Debian packages too.
+syft convert "$combined" -o "spdx-json=$sbom"
+printf 'Image SBOM: %s\n' "$sbom" >&2
+exec grype "sbom:$sbom" "$@"

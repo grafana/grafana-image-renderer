@@ -1,9 +1,11 @@
 package acceptance
 
 import (
+	"slices"
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"github.com/testcontainers/testcontainers-go"
 )
 
 // Regression test for: https://github.com/grafana/grafana-image-renderer/issues/680
@@ -16,14 +18,13 @@ func TestRegression680(t *testing.T) {
 
 		// The LANG environment variable should be set to en_US.UTF-8, which makes Chromium able to deal with non-ASCII characters properly.
 
-		for _, cmd := range []string{"echo $LANG", "echo $LC_ALL"} {
-			t.Run(cmd, func(t *testing.T) {
-				t.Parallel()
-
-				exitCode, logs := RunImageRendererWithCommand(t, []string{"sh", "-c"}, []string{cmd})
-				require.Zero(t, exitCode, "command %q did not run successfully", cmd)
-				require.Equal(t, "en_US.UTF-8", logs, "command %q did not return expected output", cmd)
-			})
+		client, err := testcontainers.NewDockerClientWithOpts(t.Context())
+		require.NoError(t, err)
+		t.Cleanup(func() { require.NoError(t, client.Close()) })
+		image, err := client.ImageInspect(t.Context(), GetDockerImage(t))
+		require.NoError(t, err)
+		for _, variable := range []string{"LANG=en_US.UTF-8", "LC_ALL=en_US.UTF-8"} {
+			require.True(t, slices.Contains(image.Config.Env, variable), "image must configure %s", variable)
 		}
 	})
 

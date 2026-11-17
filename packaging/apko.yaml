@@ -1,0 +1,60 @@
+contents:
+  repositories:
+    - https://packages.wolfi.dev/os
+  keyring:
+    - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
+  packages:
+    - grafana-image-renderer-browser
+    - ca-certificates
+    - ca-certificates-bundle
+    # update-ca-certificates calls run-parts even when no hooks are installed.
+    - debianutils
+    # The namespace support probe uses true; existing diagnostic commands use id.
+    - coreutils
+    - fontconfig
+    - glibc-locale-en
+    - libnss-tools
+    - openssl
+    - tini
+
+archs:
+  - amd64
+  - arm64
+
+accounts:
+  groups:
+    - groupname: nonroot
+      gid: 65532
+  users:
+    - username: nonroot
+      uid: 65532
+      gid: 65532
+      homedir: /home/nonroot
+  run-as: 65532
+
+paths:
+  # Wolfi's hook is a shell wrapper around this native tool. With no arguments,
+  # c_rehash uses /etc/ssl/certs, so the wrapper is unnecessary.
+  - path: /etc/ca-certificates/update.d/certhash
+    type: permissions
+    permissions: 0o644
+  - path: /etc/ca-certificates/update.d/certhash-native
+    type: symlink
+    source: /usr/bin/c_rehash
+    permissions: 0o755
+  - path: /home/nonroot
+    type: directory
+    uid: 65532
+    gid: 0
+    permissions: 0o775
+  - path: /tmp
+    type: directory
+    permissions: 0o1777
+
+work-dir: /home/nonroot
+environment:
+  BROWSER_PATH: /usr/lib/chromium/chromium
+  HOME: /home/nonroot
+  LANG: en_US.UTF-8
+  LC_ALL: en_US.UTF-8
+  PATH: /usr/local/sbin:/usr/local/bin:/usr/bin:/usr/sbin:/sbin:/bin

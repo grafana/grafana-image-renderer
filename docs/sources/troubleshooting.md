@@ -311,6 +311,8 @@ certutil –addstore "Root" <path>/internal-root-ca-here.crt.pem
 
 The easiest way is to integrate the CA certificate directly into your own Docker image, based on the official one:
 
+The image has no shell, so use JSON arrays for `RUN` commands.
+
 ```dockerfile
 # Consider using a pinned version.
 FROM grafana/grafana-image-renderer:latest
@@ -318,20 +320,22 @@ FROM grafana/grafana-image-renderer:latest
 # Elevate our permissions to access system resources.
 USER root
 
-RUN mkdir -p /usr/local/share/ca-certificates/
+COPY rootCA.pem /tmp/rootCA.pem
+RUN ["mkdir", "-p", "/usr/local/share/ca-certificates/"]
 # Convert from .pem to .crt
-RUN openssl x509 -inform PEM -in rootCA.pem -out /usr/local/share/ca-certificates/rootCA.crt
+RUN ["openssl", "x509", "-inform", "PEM", "-in", "/tmp/rootCA.pem", "-out", "/usr/local/share/ca-certificates/rootCA.crt"]
 
 # Regenerate the CA certificates in the container.
-RUN update-ca-certificates --fresh
+RUN ["update-ca-certificates"]
 
 # Reassume the nonroot user for the service execution.
-USER nonroot
+USER 65532
 # Note: for Kubernetes, OpenShift, and other setups, this may need a numeric ID. See the upstream Dockerfile for which UID to use.
 
 # Some CA certificates also need to explicitly be included in the user's network security services database.
-RUN mkdir -p /home/nonroot/.pki/nssdb
-RUN certutil -d sql:/home/nonroot/.pki/nssdb -A -n internal-root-ca -t C -i /usr/local/share/ca-certificates/rootCA.crt
+RUN ["mkdir", "-p", "/home/nonroot/.pki/nssdb"]
+RUN ["certutil", "-N", "--empty-password", "-d", "sql:/home/nonroot/.pki/nssdb"]
+RUN ["certutil", "-d", "sql:/home/nonroot/.pki/nssdb", "-A", "-n", "internal-root-ca", "-t", "C", "-i", "/usr/local/share/ca-certificates/rootCA.crt"]
 ```
 
 ## Distorted panels in the PDF export

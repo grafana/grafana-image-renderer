@@ -7,25 +7,28 @@
   "customManagers": [
     {
       "customType": "regex",
-      "managerFilePatterns": ["/^Dockerfile$/"],
+      "managerFilePatterns": ["/^packaging/browser\\.yaml$/"],
       "matchStrings": [
-        "# renovate: depName=(?<depName>chromium)\\s+ARG CHROMIUM_VERSION=(?<currentValue>\\S+)",
+        "# renovate: depName=(?<depName>chromium)\\s+version: (?<upstreamVersion>\\S+)(?<packaging>[\\s\\S]*?debian-revision: )(?<debianRevision>\\S+)",
       ],
-      "datasourceTemplate": "custom.debian-chromium",
+      "datasourceTemplate": "deb",
       "versioningTemplate": "deb",
-      "registryUrlTemplate": "https://packages.debian.org/trixie/amd64/chromium/download",
-      "extractVersionTemplate": "chromium_(?<version>[0-9.]+)-[^/]+_amd64\\.deb$",
+      "registryUrlTemplate": "https://deb.debian.org/debian-security?suite=trixie-security&components=main&binaryArch=amd64",
+      "currentValueTemplate": "{{{upstreamVersion}}}-{{{debianRevision}}}",
+      "autoReplaceStringTemplate": "# renovate: depName={{{depName}}}\n  version: {{{replace '-[^-]+$' '' newValue}}}{{{packaging}}}{{{replace '^.*-' '' newValue}}}",
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["/^packaging/build$/"],
+      "matchStrings": [
+        "(?<depName>cgr\\.dev/chainguard/[^:]+):(?<currentValue>[^@\\s]+)@(?<currentDigest>sha256:[a-f0-9]+)",
+      ],
+      "datasourceTemplate": "docker",
     },
   ],
-  "customDatasources": {
-    // Debian Security only provides Packages.xz; the deb datasource requires Packages.gz.
-    "debian-chromium": {
-      "format": "html",
-    },
-  },
   "packageRules": [
     {
-      "matchDatasources": ["custom.debian-chromium"],
+      "matchDatasources": ["deb"],
       "matchPackageNames": ["chromium"],
       "enabled": true,
     },

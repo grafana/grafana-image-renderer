@@ -14,7 +14,7 @@ func TestRegression817(t *testing.T) {
 
 	for font, fileName := range map[string]string{
 		"Inter":      "Inter-Regular.otf",
-		"Helvetica":  "NimbusSans-Regular.otf",
+		"Helvetica":  "LiberationSans-Regular.ttf",
 		"sans-serif": "DejaVuSans.ttf",
 	} {
 		t.Run(fmt.Sprintf("font %q is provided by %q", font, fileName), func(t *testing.T) {

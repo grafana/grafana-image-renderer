@@ -1,0 +1,59 @@
+#!/bin/sh
+set -eu
+
+cd "$(dirname "$0")/.."
+image=${1:-gir}
+arch=${ARCH:-$(docker version --format '{{.Server.Arch}}')}
+case "$arch" in
+  amd64|arm64) ;;
+  *) echo "unsupported architecture: $arch" >&2; exit 1 ;;
+esac
+
+melange=cgr.dev/chainguard/melange:latest@sha256:b547cc8763e41fe265cca9fab18c89e6d84351685d9c72a0c6fa72c874bd7938
+apko=cgr.dev/chainguard/apko:latest@sha256:4adeae1b18261171fca695c97accfe96d33bcbce55325315d3fbb3ffe440ad37
+version=$(awk '
+  $1 == "version:" { version = $2 }
+  $1 == "debian-revision:" { revision = $2 }
+  END { print version "-" revision }
+' packaging/browser.yaml)
+build_dir=${BUILD_DIR:-$(mktemp -d "${TMPDIR:-/tmp}/grafana-image-renderer.XXXXXXXX")}
+mkdir -p "$build_dir"
+build_dir=$(cd "$build_dir" && pwd -P)
+# Reusing BUILD_DIR must not retain assets or APKs from a previous build.
+source_dir=$(mktemp -d "$build_dir/source.XXXXXXXX")
+package_dir=$(mktemp -d "$build_dir/packages.XXXXXXXX")
+runtime=grafana-image-renderer-browser:$(basename "$build_dir")
+
+docker build --platform "linux/$arch" -f packaging/Dockerfile \
+  --build-arg "CHROMIUM_VERSION=$version" \
+  --output "type=local,dest=$source_dir" .
+cp "$source_dir/usr/share/grafana-image-renderer/debian.spdx.json" "$build_dir/debian-runtime.spdx.json"
+
+if [ ! -f "$build_dir/melange.rsa" ]; then
+  docker run \
+    --mount "type=bind,src=$build_dir,dst=/work" --workdir /work \
+    "$melange" keygen melange.rsa
+fi
+
+# Bubblewrap needs namespaces and mounts. The builder sees only public browser
+# assets and our packaging definitions, not the source checkout or host Docker socket.
+# Preserve Chromium's upstream setuid sandbox helper, which is intentional here.
+docker run --privileged \
+  --mount "type=bind,src=$PWD/packaging,dst=/src,readonly" \
+  --mount "type=bind,src=$build_dir,dst=/work" --workdir /work \
+  "$melange" build /src/browser.yaml --arch "$arch" \
+  --source-dir "/work/$(basename "$source_dir")" --out-dir "/work/$(basename "$package_dir")" \
+  --signing-key /work/melange.rsa \
+  --git-repo-url https://github.com/grafana/grafana-image-renderer \
+  --git-commit "$(git rev-parse HEAD)" --namespace grafana \
+  --lint-require dev,infodir,libtool/la-files,tempdir,usrmerge,varempty,worldwrite
+
+docker run \
+  --mount "type=bind,src=$PWD/packaging,dst=/src,readonly" \
+  --mount "type=bind,src=$build_dir,dst=/work" --workdir /work \
+  "$apko" build /src/apko.yaml "$runtime" /work/browser.tar --arch "$arch" \
+  --repository-append "/work/$(basename "$package_dir")" --keyring-append /work/melange.rsa.pub
+
+docker load --input "$build_dir/browser.tar"
+docker build --platform "linux/$arch" --build-arg "BROWSER_IMAGE=$runtime-$arch" -t "$image" .
+printf 'Image: %s\nPackages, signing key and SBOMs: %s\n' "$image" "$build_dir"

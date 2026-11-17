@@ -65,6 +65,9 @@ You may need to adapt this to your specific use case if your load is significant
 While we ship a `latest` tag, prefer pinning a specific version in production environments.
 We commit to keeping the `latest` tag the latest stable release.
 
+The image uses a minimal Wolfi runtime without a shell or package manager.
+For custom images, use the Dockerfile exec form for commands, as shown in [Custom CA certificates in Chromium](./troubleshooting/#custom-ca-certificates-in-chromium).
+
 The following example creates a Docker network and starts both the renderer and Grafana services.
 This configuration demonstrates what environment variables to set, but it doesn't use a production-ready Grafana instance:
 
