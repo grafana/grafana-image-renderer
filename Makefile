@@ -18,6 +18,11 @@ image-nix: | $(OUT_DIR)
 	docker load --input "$(OUT_DIR)/nix/$(NIX_SYSTEM)/image.tar.gz"
 	docker tag grafana-image-renderer:nix "$(NIX_IMAGE)"
 
+.PHONY: update-nix-chromium
+update-nix-chromium:
+	docker build --file Dockerfile.nix --target chromium-info \
+		--output type=local,dest=nix .
+
 .PHONY: check
 check: lint test
 

@@ -20,7 +20,8 @@
             in
             {
               image = image pkgs.chromium.browser;
-              image-custom = image (pkgs.chromium.override { cupsSupport = false; }).browser;
+              image-custom = image (import ./nix/chromium.nix { inherit pkgs; });
+              update-chromium = import ./nix/update-chromium.nix { inherit pkgs; };
             }
           );
     };

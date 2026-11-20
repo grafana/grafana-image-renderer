@@ -47,6 +47,25 @@ jobs. When invoking Nix directly, select `.#packages.<system>.image-custom`.
 [Chromium's build requirements](https://chromium.googlesource.com/chromium/src/+/main/docs/linux/build_instructions.md)
 call for at least 100 GB of free disk space.
 
+To select an upstream release before Nixpkgs packages it, first generate its
+source metadata, then build the custom variant:
+
+```shell
+$ make update-nix-chromium # latest stable Linux release
+$ make image-nix NIX_CHROMIUM=custom
+```
+
+The update target runs the unmodified Nixpkgs Chromium updater inside Docker.
+It uses its Linux stable-channel release selection and updates only when a
+newer release is available. It resolves dependency revisions and source hashes into
+`nix/chromium-info.json`; it fetches sources without compiling Chromium. That
+file is committed to pin the custom version independently of `flake.lock`.
+Upstream mode always uses the unmodified Nixpkgs browser. Unchanged metadata
+preserves the Chromium derivation and reuses its result when available in the
+local Nix store or a binary cache. The existing Nixpkgs build recipe and patch
+rules apply to custom releases too; newer releases can require patch or
+toolchain updates.
+
 This requires Docker with BuildKit; Nix runs inside the Docker build. On macOS,
 start Docker Desktop or OrbStack first. No host Nix installation, FlakeHub
 account, or remote Nix builder is needed. Docker keeps the Nix store in a build
@@ -100,7 +119,15 @@ One of the quick ways you can check the latest version available is by going to 
 Make sure that the build for amd64 and arm64 are both available first (scroll down to the bottom of the page and check that there are no red backgrounds), and ignore anything after the `-` in the version, this is what we'll use.
   
 In the `Dockerfile`, update `CHROMIUM_VERSION=` to the version found on the website. Changing this argument also reruns the package update and upgrade step. Use the cachebuster date for manual package refreshes.
-  
+
+For the custom Nix variant, refresh the upstream release metadata with
+`make update-nix-chromium` and include the generated `nix/chromium-info.json` in
+the update PR. This can select a newer Linux stable release ahead of Nixpkgs
+without changing `flake.lock`. If no newer release is available, the metadata
+stays unchanged. Build with `NIX_CHROMIUM=custom` and run the
+acceptance tests when validating the update. The default Nix variant gets its
+Chromium version through `nix flake update nixpkgs`.
+
 Open a PR, merge it, and create a new GitHub release. You're done!
 
 ## Updating Go
