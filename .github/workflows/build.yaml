@@ -166,9 +166,6 @@ jobs:
           BUILDKIT_STEP_LOG_MAX_SPEED: -1
           TAG: ${{ needs.tag.outputs.tag }}-${{ matrix.arch }}
         run: docker build . -t "$TAG"
-      - name: Install Nix
-        if: matrix.suffix == '-nix'
-        uses: cachix/install-nix-action@3dc140bfc76c49fbd4dd958429132e3746bcb086 # v31.11.5
       - name: Build Nix image
         if: matrix.suffix == '-nix'
         env:

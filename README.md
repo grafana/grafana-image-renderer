@@ -34,18 +34,39 @@ $ make image-nix # loads image-renderer-nix into Docker
 $ IMAGE=image-renderer-nix go test ./tests/acceptance/... -count=1
 ```
 
-This requires Nix with flakes enabled and a Linux builder for the selected
-architecture. On macOS, configure a [remote Linux builder](https://nix.dev/manual/nix/2.35/advanced-topics/distributed-builds).
+Chromium is built with CUPS support disabled. This changes the Nixpkgs build,
+so the first build for each architecture compiles Chromium from source.
+[Chromium's build requirements](https://chromium.googlesource.com/chromium/src/+/main/docs/linux/build_instructions.md)
+call for at least 100 GB of free disk space.
+
+This requires Docker with BuildKit; Nix runs inside the Docker build. On macOS,
+start Docker Desktop or OrbStack first. No host Nix installation, FlakeHub
+account, or remote Nix builder is needed. Docker keeps the Nix store in a build
+cache per architecture and exports the image archive to
+`dist/nix/<system>/image.tar.gz` before loading it.
+
 Override `NIX_SYSTEM` to select the other architecture, and `NIX_IMAGE` to change
-the local tag. CI builds both architectures natively and publishes the additional
+the local tag:
+
+```shell
+$ make image-nix NIX_SYSTEM=x86_64-linux NIX_IMAGE=image-renderer-nix-amd64
+```
+
+Cross-architecture builds require Docker's emulation support. The build
+container uses Docker's isolation with Nix's nested sandbox and syscall filter
+disabled, including for emulated builds.
+
+CI builds both architectures natively and publishes the additional
 `<version>-nix` and `latest-nix` tags.
 
 `flake.lock` pins Nixpkgs, including Chromium and Go. Update it with
 `nix flake update nixpkgs`, then test both architectures. Keep the versioned Go
 builder in `nix/renderer.nix` aligned with `go.mod`. When Go dependencies change,
 set `vendorHash` to `pkgs.lib.fakeHash`, build once, and replace it with the hash
-reported by Nix. Build from the Git flake (`.#image`); new source files must be
-added to Git to be included.
+reported by Nix. Docker builds the working tree, filtered by
+`Dockerfile.nix.dockerignore`. When invoking Nix directly, build from the Git
+flake (`.#packages.aarch64-linux.image`); new source files must be added to Git
+to be included.
 
 The image uses an immutable CA bundle from `dockerTools.caCertificates`.
 See [custom CA certificates](docs/sources/troubleshooting.md#nix-container) for

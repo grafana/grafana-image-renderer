@@ -44,9 +44,6 @@ jobs:
           BUILDKIT_STEP_LOG_MAX_SPEED: -1
         run: docker build . -t image-renderer
 
-      - name: Install Nix
-        if: matrix.variant == 'nix'
-        uses: cachix/install-nix-action@3dc140bfc76c49fbd4dd958429132e3746bcb086 # v31.11.5
       - name: Build Nix image
         if: matrix.variant == 'nix'
         run: make image-nix NIX_IMAGE=image-renderer
