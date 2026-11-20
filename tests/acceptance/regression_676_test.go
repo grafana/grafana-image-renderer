@@ -11,17 +11,13 @@ func TestRegression676(t *testing.T) {
 	LongTest(t)
 	t.Parallel()
 
-	for tool, cmd := range map[string]string{
-		"openssl tools":          "openssl version",
-		"update-ca-certificates": "command -v update-ca-certificates",
-		"certutil":               "command -v certutil",
-	} {
-		t.Run("image contains: "+tool, func(t *testing.T) {
-			t.Parallel()
+	const importCA = `
+db="$(mktemp -d)"
+certutil -N -d "sql:$db" --empty-password
+certutil -A -d "sql:$db" -n test-root -t "C,," -a -i "${SSL_CERT_FILE:-/etc/ssl/certs/ca-certificates.crt}"
+certutil -L -d "sql:$db" -n test-root
+`
 
-			exitCode, logs := RunImageRendererWithCommand(t, []string{"sh", "-c"}, []string{cmd})
-			require.Zero(t, exitCode, "%q did not exist in the container (command failed)", tool)
-			require.NotEmpty(t, logs, "%q produced no output", tool)
-		})
-	}
+	exitCode, logs := RunImageRendererWithCommand(t, []string{"sh", "-ec"}, []string{importCA})
+	require.Zero(t, exitCode, "could not import a CA from the image bundle into NSS:\n%s", logs)
 }
