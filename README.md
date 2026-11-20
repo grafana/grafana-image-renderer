@@ -34,8 +34,16 @@ $ make image-nix # loads image-renderer-nix into Docker
 $ IMAGE=image-renderer-nix go test ./tests/acceptance/... -count=1
 ```
 
-Chromium is built with CUPS support disabled. This changes the Nixpkgs build,
-so the first build for each architecture compiles Chromium from source.
+By default, the image uses upstream Nixpkgs Chromium, allowing Nix to reuse its
+binary cache. To build Chromium with CUPS support disabled instead:
+
+```shell
+$ make image-nix NIX_CHROMIUM=custom
+```
+
+The custom variant compiles Chromium from source on the first build for each
+architecture. The measured ARM64 build took almost six hours with eight compiler
+jobs. When invoking Nix directly, select `.#packages.<system>.image-custom`.
 [Chromium's build requirements](https://chromium.googlesource.com/chromium/src/+/main/docs/linux/build_instructions.md)
 call for at least 100 GB of free disk space.
 

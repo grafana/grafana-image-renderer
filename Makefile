@@ -3,6 +3,7 @@ BINARY ?= $(OUT_DIR)/grafana-image-renderer
 GO_BUILD_FLAGS = -buildvcs -ldflags '-s -w -extldflags "-static"'
 NIX_SYSTEM ?= $(shell uname -m | sed 's/arm64/aarch64/')-linux
 NIX_IMAGE ?= image-renderer-nix
+NIX_CHROMIUM ?= upstream
 
 .PHONY: image-nix
 image-nix: | $(OUT_DIR)
@@ -12,6 +13,7 @@ image-nix: | $(OUT_DIR)
 		*) printf 'Unsupported NIX_SYSTEM: %s\n' "$(NIX_SYSTEM)" >&2; exit 1 ;; \
 	esac; \
 	docker build --platform "$$platform" --file Dockerfile.nix \
+		--build-arg "NIX_CHROMIUM=$(NIX_CHROMIUM)" \
 		--output "type=local,dest=$(OUT_DIR)/nix/$(NIX_SYSTEM)" .
 	docker load --input "$(OUT_DIR)/nix/$(NIX_SYSTEM)/image.tar.gz"
 	docker tag grafana-image-renderer:nix "$(NIX_IMAGE)"

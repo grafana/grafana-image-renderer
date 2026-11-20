@@ -1,4 +1,7 @@
-{ pkgs }:
+{
+  pkgs,
+  chromium ? pkgs.chromium.browser,
+}:
 
 let
   renderer = import ./renderer.nix { inherit pkgs; };
@@ -47,7 +50,7 @@ pkgs.dockerTools.buildLayeredImage {
         "/share/licenses"
       ];
       postBuild = ''
-        ln -s ${pkgs.chromium.browser}/libexec/chromium/chromium $out/bin/chromium
+        ln -s ${chromium}/libexec/chromium/chromium $out/bin/chromium
       '';
     })
   ];
@@ -56,9 +59,9 @@ pkgs.dockerTools.buildLayeredImage {
     chmod 1777 ./tmp
     chown 65532:0 ./home/nonroot
     chmod 0775 ./home/nonroot
-    cp ${pkgs.chromium.browser.sandbox}/bin/${pkgs.chromium.sandboxExecutableName} ./run/wrappers/bin/
-    chown 0:0 ./run/wrappers/bin/${pkgs.chromium.sandboxExecutableName}
-    chmod 4755 ./run/wrappers/bin/${pkgs.chromium.sandboxExecutableName}
+    cp ${chromium.sandbox}/bin/${chromium.sandboxExecutableName} ./run/wrappers/bin/
+    chown 0:0 ./run/wrappers/bin/${chromium.sandboxExecutableName}
+    chmod 4755 ./run/wrappers/bin/${chromium.sandboxExecutableName}
   '';
   config = {
     User = "65532";
@@ -74,7 +77,7 @@ pkgs.dockerTools.buildLayeredImage {
       "PATH=/bin"
       "HOME=/home/nonroot"
       "BROWSER_PATH=/bin/chromium"
-      "CHROME_DEVEL_SANDBOX=/run/wrappers/bin/${pkgs.chromium.sandboxExecutableName}"
+      "CHROME_DEVEL_SANDBOX=/run/wrappers/bin/${chromium.sandboxExecutableName}"
       "LANG=en_US.UTF-8"
       "LC_ALL=en_US.UTF-8"
       "LOCALE_ARCHIVE=${locale}/lib/locale/locale-archive"

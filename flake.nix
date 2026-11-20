@@ -12,10 +12,16 @@
             "x86_64-linux"
             "aarch64-linux"
           ]
-          (system: {
-            image = import ./nix/image.nix {
+          (
+            system:
+            let
               pkgs = import nixpkgs { inherit system; };
-            };
-          });
+              image = chromium: import ./nix/image.nix { inherit pkgs chromium; };
+            in
+            {
+              image = image pkgs.chromium.browser;
+              image-custom = image (pkgs.chromium.override { cupsSupport = false; }).browser;
+            }
+          );
     };
 }
