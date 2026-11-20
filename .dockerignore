@@ -10,6 +10,8 @@ scripts
 .prettierignore
 .prettierrc.json
 dev.json
+docker-compose.yaml
+**/*.jwt
 Dockerfile
 Makefile
 plugin_start*
