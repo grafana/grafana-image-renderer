@@ -66,6 +66,24 @@ local Nix store or a binary cache. The existing Nixpkgs build recipe and patch
 rules apply to custom releases too; newer releases can require patch or
 toolchain updates.
 
+Local recipe fixes can be listed, in application order, in
+`nix/chromium-recipe-patches.nix`:
+
+```nix
+[
+  ./chromium-next-major.patch
+]
+```
+
+Patch paths are relative to Nixpkgs' Chromium recipe directory: use headers such
+as `a/common.nix`, `b/common.nix` or `a/update.mjs`, `b/update.mjs`. The shared
+`nix/chromium-recipe.nix` prepares that patched directory for both the custom
+browser and metadata updater. Keep release data in `nix/chromium-info.json`.
+With no recipe patches, the existing custom Chromium derivation is preserved.
+A nonempty list requires a small source-preparation derivation before the
+patched recipe is evaluated; it does not compile Chromium itself. Recipe changes can invalidate the browser
+cache. The upstream image variant continues to use the unmodified package.
+
 This requires Docker with BuildKit; Nix runs inside the Docker build. On macOS,
 start Docker Desktop or OrbStack first. No host Nix installation, FlakeHub
 account, or remote Nix builder is needed. Docker keeps the Nix store in a build
