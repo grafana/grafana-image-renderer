@@ -39,7 +39,6 @@ pkgs.dockerTools.buildLayeredImage {
         renderer
         pkgs.tini
         pkgs.coreutils
-        pkgs.openssl
         pkgs.nssTools
         pkgs.fontconfig
         pkgs.fontconfig.out
