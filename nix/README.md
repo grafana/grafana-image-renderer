@@ -40,7 +40,15 @@ target architecture. A source build can take several hours.
 
 ## Update Chromium
 
-For the default image, update the Nixpkgs pin with `nix flake update nixpkgs`.
+The [daily workflow](../.github/workflows/update-nix-chromium.yaml) opens a pull
+request to update `flake.lock` when the Nixpkgs channel has the newer stable
+Linux release for both architectures. The repository must allow GitHub Actions
+to create pull requests. GitHub can require approval to run CI on these pull
+requests. To update the pin manually, run `nix flake update nixpkgs`.
+
+Renovate also checks `flake.lock` weekly and opens a pull request when it can
+update the Nixpkgs pin.
+
 For the custom image, run `make update-nix-chromium`. This command checks for a
 newer Linux stable release and fetches the sources it needs to calculate hashes.
 It generates metadata without compiling the browser.

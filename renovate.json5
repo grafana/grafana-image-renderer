@@ -4,6 +4,12 @@
     "security:only-security-updates",
     "security:gomodIndirectSecurityUpdates",
   ],
+  "nix": {
+    "enabled": true,
+    "lockFileMaintenance": {
+      "enabled": true,
+    },
+  },
   "customManagers": [
     {
       "customType": "regex",
