@@ -53,6 +53,11 @@ jobs:
           name: grafana-image-renderer-${{ matrix.GOOS }}-${{ matrix.GOARCH }}${{ matrix.SUFFIX || '' }}
           path: grafana-image-renderer-${{ matrix.GOOS }}-${{ matrix.GOARCH }}${{ matrix.SUFFIX || '' }}
 
+  chromium-override:
+    uses: ./.github/workflows/chromium-override.yaml
+    permissions:
+      contents: read
+
   tag:
     if: ((github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork == false) || (github.event_name == 'push' && github.repository == 'grafana/grafana-image-renderer'))
     name: Create image tag
@@ -110,12 +115,14 @@ jobs:
         include:
           - arch: amd64
             runs-on: ubuntu-x64
+            source-runner: ubuntu-x64-6xlarge-io
           - arch: arm64
             runs-on: ubuntu-arm64
+            source-runner: ubuntu-x64-6xlarge-io
 
-    needs: tag
+    needs: [tag, chromium-override]
     name: Publish image${{ matrix.suffix }} for ${{ matrix.arch }}
-    runs-on: ${{ matrix.runs-on }}
+    runs-on: ${{ matrix.suffix == '-nix' && needs.chromium-override.outputs.active == 'true' && matrix.source-runner || matrix.runs-on }}
     env:
       TAG: ${{ needs.tag.outputs.tag }}${{ matrix.suffix }}-${{ matrix.arch }}
     permissions:

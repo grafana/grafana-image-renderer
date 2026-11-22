@@ -15,12 +15,18 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  chromium-override:
+    uses: ./.github/workflows/chromium-override.yaml
+    permissions:
+      contents: read
+
   acceptance:
+    needs: chromium-override
     strategy:
       fail-fast: false
       matrix:
         runs-on: [ubuntu-x64-xlarge, ubuntu-arm64-xlarge]
-        variant: [default, nix]
+        variant: ${{ fromJSON(needs.chromium-override.outputs.active == 'true' && '["default"]' || '["default","nix"]') }}
 
     name: acceptance tests (${{ matrix.runs-on }}, ${{ matrix.variant }})
     runs-on: ${{ matrix.runs-on }}

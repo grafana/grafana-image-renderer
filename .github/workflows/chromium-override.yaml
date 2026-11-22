@@ -1,0 +1,36 @@
+name: Check Chromium override
+
+on:
+  workflow_call:
+    outputs:
+      active:
+        value: ${{ jobs.check.outputs.active }}
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    outputs:
+      active: ${{ steps.override.outputs.active }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Compare the override with the pinned Chromium
+        id: override
+        shell: bash
+        run: |
+          set -euo pipefail
+          active=false
+          candidate=$(jq -er 'if .chromium == null then "" else .chromium.version | strings | select(length > 0) end' nix/chromium-info.json)
+          if [[ -n "$candidate" ]]; then
+            rev=$(jq -er '.nodes.nixpkgs.locked.rev' flake.lock)
+            url="https://raw.githubusercontent.com/NixOS/nixpkgs/$rev/pkgs/applications/networking/browsers/chromium/info.json"
+            active=$(curl --fail --silent --show-error --retry 3 "$url" | jq -er --arg candidate "$candidate" '
+              def version: split(".") | map(tonumber);
+              ((.chromium.version | version) < ($candidate | version)) | tostring
+            ')
+          fi
+          echo "active=$active" >> "$GITHUB_OUTPUT"
