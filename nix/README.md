@@ -16,6 +16,7 @@ tools and packages.
 | [image.nix](image.nix) | Puts the renderer and Chromium in a Docker image. It includes fonts and CA certificates. It also sets the runtime user, Chromium sandbox, and health check. |
 | [chromium.nix](chromium.nix) | Selects Chromium for the custom image. It uses the Nixpkgs recipe with the release data from `chromium-info.json`. |
 | [chromium-info.json](chromium-info.json) | Pins the Chromium release for the custom image. It records the source revisions and hashes for Chromium and its dependencies. |
+| [chromium-ci.sh](chromium-ci.sh) | Reads and compares Chromium versions for the GitHub workflows. |
 | [chromium-recipe.nix](chromium-recipe.nix) | Selects the upstream Chromium recipe and applies any local recipe patches. The custom browser and the updater use the same recipe. |
 | [update-chromium.nix](update-chromium.nix) | Runs the Chromium updater in a temporary copy of Nixpkgs. The updater checks the Linux stable channel and writes the release data to `chromium-info.json`. |
 
@@ -42,12 +43,18 @@ target architecture. A source build can take several hours.
 
 The [daily workflow](../.github/workflows/update-nix-chromium.yaml) opens a pull
 request to update `flake.lock` when the Nixpkgs channel has the newer stable
-Linux release for both architectures. The repository must allow GitHub Actions
-to create pull requests. GitHub can require approval to run CI on these pull
-requests. To update the pin manually, run `nix flake update nixpkgs`.
+Linux release for both architectures. If the channel is behind, the workflow
+updates `chromium-info.json` instead. It can update the Nixpkgs pin when the
+channel catches up. The repository must allow GitHub Actions to create pull
+requests. GitHub can require approval to run CI on these pull requests.
+
+On pushes to the default branch, the [build workflow](../.github/workflows/build.yaml)
+uses custom Chromium if it is newer than the pinned Chromium on both
+architectures. Custom builds use `ubuntu-amd64-6xlarge` for `amd64` and
+`ubuntu-arm64-xlarge` for `arm64`.
 
 Renovate also checks `flake.lock` weekly and opens a pull request when it can
-update the Nixpkgs pin.
+update the Nixpkgs pin. To update the pin manually, run `nix flake update nixpkgs`.
 
 For the custom image, run `make update-nix-chromium`. This command checks for a
 newer Linux stable release and fetches the sources it needs to calculate hashes.
