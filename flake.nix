@@ -26,7 +26,6 @@
             inherit pkgs;
             chromium = chromium.browser;
           };
-          update-chromium = import ./nix/update-chromium.nix { inherit pkgs; };
         }
       );
 

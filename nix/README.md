@@ -16,6 +16,7 @@ change the tag or `NIX_SYSTEM=x86_64-linux` or `aarch64-linux` to select the
 platform. Building for a different architecture requires Docker emulation.
 The Docker builder uses Docker's isolation with Nix's nested sandbox and
 syscall filtering disabled. On native Linux, use `nix build .#image` directly.
+For private CAs, see the [container configuration](../docs/sources/troubleshooting.md#nix-container).
 
 [flake.lock](../flake.lock) pins Nixpkgs, including Go and Chromium. The image
 uses the upstream browser when the override is empty, equal, or older. A newer
@@ -31,18 +32,47 @@ archive. Publication loads that archive to produce the `<version>-nix` and
 
 ## Update Chromium
 
-The [daily workflow](../.github/workflows/update-nix-chromium.yaml) checks the
-Linux stable release. It updates the Nixpkgs lock when the channel already
-packages the release. Otherwise it runs the pinned Nixpkgs updater to record
-the newer Chromium sources. Once the pin catches up, the workflow clears the
-override to `{}`. Pull requests and release tags use the same selection.
+Renovate owns routine updates to `flake.lock`. Each lock-file PR builds and tests
+the renderer with the Chromium selected by that revision.
 
-To refresh source metadata locally, run `make update-nix-chromium`. This checks
-the live release even on an unchanged checkout and fetches the required sources
-without compiling the browser. Review changes to `chromium-info.json` before
-committing. Run `nix flake update nixpkgs` to refresh the whole package set.
+If a Linux stable fix is needed before Nixpkgs packages it, generate its source
+revisions and hashes with the updater from the **pinned Nixpkgs revision**.
+From the renderer repository root on Linux with Nix, Git, and jq, run:
+
+```sh
+nix eval --raw .#browser.version  # currently selected version
+rev=$(jq -r '.nodes.nixpkgs.locked.rev' flake.lock)
+work=$(mktemp -d)
+(
+  set -e
+  cd "$work"
+  git init -q
+  git fetch --quiet --depth=1 https://github.com/NixOS/nixpkgs.git "$rev"
+  git checkout --quiet --detach FETCH_HEAD
+  recipe=pkgs/applications/networking/browsers/chromium
+  NIX_PATH="nixpkgs=$PWD" "$recipe/update.mjs" --chromium
+  jq -S '{chromium}' "$recipe/info.json" > candidate.json
+)
+jq -r '.chromium.version' "$work/candidate.json"
+```
+
+If the candidate contains the newer release you need, copy the complete entry
+and verify selection before opening a PR:
+
+```sh
+cp "$work/candidate.json" nix/chromium-info.json
+nix eval --raw .#browser.version
+nix flake check --all-systems --no-build
+git diff -- nix/chromium-info.json
+```
+
+Commit only `nix/chromium-info.json` for the override. CI builds and tests it
+on both architectures. When a Renovate pin catches up, selection automatically
+returns to Nixpkgs. Reset `nix/chromium-info.json` to `{}` in that PR to drop
+the stale metadata.
+
+## Update the Go builder
 
 Keep the Go builder in [renderer.nix](renderer.nix) aligned with `go.mod`.
 After Go dependency changes, use `pkgs.lib.fakeHash` for `vendorHash`, build
-once, and replace it with the hash reported by Nix. For private CAs, see the
-[container configuration](../docs/sources/troubleshooting.md#nix-container).
+once, and replace it with the hash reported by Nix.
