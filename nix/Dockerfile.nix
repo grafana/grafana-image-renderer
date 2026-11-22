@@ -4,7 +4,7 @@ FROM nix AS build
 RUN printf 'experimental-features = nix-command flakes\nsandbox = false\nfilter-syscalls = false\n' > /etc/renderer-nix.conf
 ENV NIX_USER_CONF_FILES=/etc/renderer-nix.conf
 WORKDIR /src
-COPY --exclude=.git . .
+COPY . .
 
 RUN --mount=type=cache,id=image-renderer-nix,target=/nix,from=nix,source=/nix,sharing=locked \
     set -eu; \
