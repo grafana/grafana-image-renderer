@@ -31,9 +31,8 @@ $ make image-nix
 $ IMAGE=image-renderer-nix go test ./tests/acceptance/... -count=1
 ```
 
-The Nix image supports Linux amd64 and arm64. Local builds, pull requests, and
-releases use the pinned Nixpkgs Chromium unless the repository pins a newer
-Chromium release. See the [Nix build and update instructions](nix/README.md).
+The Nix image supports Linux amd64 and arm64. Local builds, pull requests, and releases use the pinned Nixpkgs Chromium unless the repository pins a newer Chromium release. See the [Nix build and update instructions](nix/README.md).
+
 
 The following tools are also useful for engineers:
 

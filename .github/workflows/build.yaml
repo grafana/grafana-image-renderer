@@ -96,12 +96,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          {
-            echo "registry=$REGISTRY"
-            echo "subject=$REGISTRY/$REPOSITORY"
-            echo "tag=$REGISTRY/$REPOSITORY:$REF_NAME"
-            echo "ref_name=$REF_NAME"
-          } >> "$GITHUB_OUTPUT"
+          echo "registry=$REGISTRY" >> "$GITHUB_OUTPUT"
+          echo "subject=$REGISTRY/$REPOSITORY" >> "$GITHUB_OUTPUT"
+          echo "tag=$REGISTRY/$REPOSITORY:$REF_NAME" >> "$GITHUB_OUTPUT"
+          echo "ref_name=$REF_NAME" >> "$GITHUB_OUTPUT"
 
   build:
     strategy:

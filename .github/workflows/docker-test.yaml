@@ -105,14 +105,19 @@ jobs:
           name: changed-files-${{ matrix.runs-on }}-${{ matrix.variant }}
           path: changed-files.tar.xz
 
-  # Branch protection requires this exact check name, including on fork PRs.
+  # This is the job that is actually required by rulesets.
   required-acceptance-tests:
-    name: All acceptance tests complete
-    needs: acceptance
+    needs:
+      - acceptance
+    # always() is the best function here.
+    # success() || failure() will skip this function if any need is also skipped.
+    # That means conditional test suites will fail the entire requirement check.
     if: always()
+
+    name: All acceptance tests complete
     runs-on: ubuntu-latest
     steps:
-      - name: Require all acceptance jobs to pass
+      - name: Assert no failures
         env:
-          RESULT: ${{ needs.acceptance.result }}
-        run: test "$RESULT" = success
+          NEEDS: ${{ toJson(needs) }}
+        run: exit $(echo "$NEEDS" | jq 'with_entries(select(.value.result == "failure")) | length')
