@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1.19@sha256:b6afd42430b15f2d2a4c5a02b919e98a525b785b1aaff16747d2f623364e39b6
 ARG NIX_BUILDER_IMAGE=nixos/nix:2.35.3@sha256:ff480dbb23511aa1c10710aa068ceea5b93fed9bfce5f5379f3a6b07282cbc7b
 FROM ${NIX_BUILDER_IMAGE} AS nix
 
@@ -5,7 +6,7 @@ FROM nix AS build
 RUN printf 'experimental-features = nix-command flakes\nsandbox = false\nfilter-syscalls = false\n' > /etc/renderer-nix.conf
 ENV NIX_USER_CONF_FILES=/etc/renderer-nix.conf
 WORKDIR /src
-COPY . .
+COPY --exclude=.git . .
 
 ARG TARGETARCH
 ARG NIX_BUILDER_IMAGE
