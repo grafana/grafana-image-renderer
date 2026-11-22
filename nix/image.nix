@@ -1,9 +1,7 @@
-{
-  pkgs,
-  chromium,
-}:
+{ pkgs }:
 
 let
+  chromium = (import ./chromium.nix { inherit pkgs; }).browser;
   renderer = import ./renderer.nix { inherit pkgs; };
   fonts = [
     pkgs.dejavu_fonts

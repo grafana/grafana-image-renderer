@@ -5,23 +5,14 @@
 
   outputs =
     { nixpkgs, ... }:
-    let
-      forLinux = nixpkgs.lib.genAttrs [
+    {
+      packages = nixpkgs.lib.genAttrs [
         "x86_64-linux"
         "aarch64-linux"
-      ];
-    in
-    {
-      packages = forLinux (
-        system:
-        let
+      ] (system: {
+        image = import ./nix/image.nix {
           pkgs = nixpkgs.legacyPackages.${system};
-          chromium = (import ./nix/chromium.nix { inherit pkgs; }).browser;
-        in
-        {
-          browser = chromium;
-          image = import ./nix/image.nix { inherit pkgs chromium; };
-        }
-      );
+        };
+      });
     };
 }
