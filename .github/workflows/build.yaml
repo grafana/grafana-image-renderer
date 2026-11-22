@@ -116,6 +116,8 @@ jobs:
     needs: tag
     name: Publish image${{ matrix.suffix }} for ${{ matrix.arch }}
     runs-on: ${{ matrix.runs-on }}
+    env:
+      TAG: ${{ needs.tag.outputs.tag }}${{ matrix.suffix }}-${{ matrix.arch }}
     permissions:
       contents: read # required to read the repository contents
       packages: write # required to push the built image to the package registry
@@ -159,21 +161,14 @@ jobs:
           DOCKER_BUILDKIT: 1
           BUILDKIT_STEP_LOG_MAX_SIZE: -1
           BUILDKIT_STEP_LOG_MAX_SPEED: -1
-          TAG: ${{ needs.tag.outputs.tag }}-${{ matrix.arch }}
         run: docker build . -t "$TAG"
       - name: Build Nix image
         if: matrix.suffix == '-nix'
-        env:
-          NIX_IMAGE: ${{ needs.tag.outputs.tag }}-nix-${{ matrix.arch }}
-        run: make image-nix
+        run: make image-nix NIX_IMAGE="$TAG"
       - name: docker push
-        env:
-          TAG: ${{ needs.tag.outputs.tag }}${{ matrix.suffix }}-${{ matrix.arch }}
         run: docker push "$TAG"
       - name: Get digest
         id: digest
-        env:
-          TAG: ${{ needs.tag.outputs.tag }}${{ matrix.suffix }}-${{ matrix.arch }}
         run: |
           set -euo pipefail
           DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' "$TAG" | cut -d@ -f2)
