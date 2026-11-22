@@ -1,29 +1,46 @@
 name: Docker Tests
 
 on:
-  push:
-    branches:
-      - master
-    tags:
-      - 'v*'
-  pull_request:
+  workflow_call:
 
 permissions: {}
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
+  chromium:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      custom: ${{ steps.select.outputs.custom }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: cachix/install-nix-action@75c75c31ebece974e48ebc36b4ad125bd97bd97b # v31.11.3
+      - name: Check browser selection and size the build runners
+        id: select
+        run: |
+          nix flake check --no-build --all-systems --no-update-lock-file
+          custom=$(nix eval --json .#browser.isCustom)
+          echo "custom=$custom" >> "$GITHUB_OUTPUT"
+
   acceptance:
+    needs: chromium
     strategy:
       fail-fast: false
       matrix:
-        runs-on: [ubuntu-x64-xlarge, ubuntu-arm64-xlarge]
+        arch: [amd64, arm64]
         variant: [default, nix]
+        include:
+          - arch: amd64
+            runs-on: ubuntu-x64-xlarge
+            custom-runs-on: ubuntu-amd64-6xlarge
+          - arch: arm64
+            runs-on: ubuntu-arm64-xlarge
+            custom-runs-on: ubuntu-arm64-xlarge
 
-    name: acceptance tests (${{ matrix.runs-on }}, ${{ matrix.variant }})
-    runs-on: ${{ matrix.runs-on }}
+    name: acceptance tests (${{ matrix.arch }}, ${{ matrix.variant }})
+    runs-on: ${{ matrix.variant == 'nix' && needs.chromium.outputs.custom == 'true' && matrix.custom-runs-on || matrix.runs-on }}
     permissions:
       contents: read # clone the repository
       id-token: write # required to read secrets
@@ -44,9 +61,45 @@ jobs:
           BUILDKIT_STEP_LOG_MAX_SPEED: -1
         run: docker build . -t image-renderer
 
-      - name: Build Nix image
+      - uses: cachix/install-nix-action@75c75c31ebece974e48ebc36b4ad125bd97bd97b # v31.11.3
         if: matrix.variant == 'nix'
-        run: make image-nix NIX_IMAGE=image-renderer
+
+      - name: Identify the custom Chromium derivation
+        if: matrix.variant == 'nix' && needs.chromium.outputs.custom == 'true'
+        id: browser
+        run: |
+          drv=$(nix eval --raw .#browser.drvPath)
+          echo "key=${drv##*/}" >> "$GITHUB_OUTPUT"
+
+      - name: Restore custom Chromium
+        if: steps.browser.outputs.key != ''
+        id: cache
+        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
+        with:
+          key: nix-browser-${{ matrix.arch }}-${{ steps.browser.outputs.key }}
+          path: ${{ runner.temp }}/chromium-cache
+
+      - name: Import cached browser outputs
+        if: steps.cache.outputs.cache-hit == 'true'
+        run: |
+          browser=$(nix eval --raw .#browser.outPath)
+          sandbox=$(nix eval --raw .#browser.sandbox.outPath)
+          nix copy --from "file://$RUNNER_TEMP/chromium-cache" --no-check-sigs "$browser" "$sandbox"
+
+      - name: Build and cache custom Chromium
+        if: steps.browser.outputs.key != '' && steps.cache.outputs.cache-hit != 'true'
+        run: |
+          nix build --no-link '.#browser^out,sandbox'
+          nix copy --to "file://$RUNNER_TEMP/chromium-cache?compression=zstd" '.#browser^out,sandbox'
+
+      - name: Load Nix image for acceptance
+        if: matrix.variant == 'nix'
+        run: |
+          nix build .#image --no-update-lock-file --out-link "$RUNNER_TEMP/image.tar.gz"
+          docker load --input "$RUNNER_TEMP/image.tar.gz"
+          docker tag grafana-image-renderer:nix image-renderer
+          version=$(nix eval --raw .#browser.version)
+          echo "EXPECTED_CHROMIUM_VERSION=$version" >> "$GITHUB_ENV"
 
       - name: Read license
         if: ((github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork == false) || (github.event_name == 'push' && github.repository == 'grafana/grafana-image-renderer'))
@@ -80,6 +133,16 @@ jobs:
           REQUIRE_ACCEPTANCE: 'true' # fail if no image can be found
           REQUIRE_ENTERPRISE: ${{ ((github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork == false) || (github.event_name == 'push' && github.repository == 'grafana/grafana-image-renderer')) }}
 
+      - name: Upload tested Nix image
+        if: matrix.variant == 'nix' && ((github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork == false) || (github.event_name == 'push' && github.repository == 'grafana/grafana-image-renderer'))
+        uses: actions/upload-artifact@v5
+        with:
+          name: nix-image-${{ matrix.arch }}
+          path: ${{ runner.temp }}/image.tar.gz
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 3
+
       - name: Tar changed files
         if: failure()
         id: tar
@@ -98,20 +161,3 @@ jobs:
         with:
           name: changed-files-${{ matrix.runs-on }}-${{ matrix.variant }}
           path: changed-files.tar.xz
-
-  # This is the job that is actually required by rulesets.
-  required-acceptance-tests:
-    needs:
-      - acceptance
-    # always() is the best function here.
-    # success() || failure() will skip this function if any need is also skipped.
-    # That means conditional test suites will fail the entire requirement check.
-    if: always()
-
-    name: All acceptance tests complete
-    runs-on: ubuntu-latest
-    steps:
-      - name: Assert no failures
-        env:
-          NEEDS: ${{ toJson(needs) }}
-        run: exit $(echo "$NEEDS" | jq 'with_entries(select(.value.result == "failure")) | length')

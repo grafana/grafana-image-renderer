@@ -1,13 +1,15 @@
 { pkgs }:
 
 let
-  recipe = import ./chromium-recipe.nix { inherit pkgs; };
+  chromium = import ./chromium.nix { inherit pkgs; };
+  seed = pkgs.writeText "chromium-info.json" (builtins.toJSON { chromium = chromium.upstream-info; });
 in
 pkgs.writeShellApplication {
   name = "update-chromium";
   runtimeInputs = [
     pkgs.coreutils
     pkgs.git
+    pkgs.jq
     pkgs.nix
     pkgs.python3
     pkgs.zx
@@ -24,16 +26,14 @@ pkgs.writeShellApplication {
     work="$(mktemp -d)"
     cp -R ${pkgs.path}/. "$work/nixpkgs"
     chromium_dir=pkgs/applications/networking/browsers/chromium
-    chmod u+w "$work/nixpkgs/$(dirname "$chromium_dir")" "$work/nixpkgs/$chromium_dir"
-    mv "$work/nixpkgs/$chromium_dir" "$work/original-chromium"
-    cp -R ${recipe.source} "$work/nixpkgs/$chromium_dir"
-    chmod -R u+w "$work/nixpkgs"
+    chmod u+w "$work/nixpkgs" "$work/nixpkgs/$chromium_dir" "$work/nixpkgs/$chromium_dir/info.json"
     cd "$work/nixpkgs"
     git init --quiet
 
-    cp ${./chromium-info.json} "$chromium_dir/info.json"
+    cp ${seed} "$chromium_dir/info.json"
     export NIX_PATH="nixpkgs=$PWD"
     zx "$chromium_dir/update.mjs" --chromium
-    cp "$chromium_dir/info.json" "$output"
+    jq -S --arg upstream ${pkgs.lib.escapeShellArg pkgs.chromium.version} \
+      'if .chromium.version == $upstream then {} else {chromium} end' "$chromium_dir/info.json" > "$output"
   '';
 }

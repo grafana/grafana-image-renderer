@@ -2,10 +2,10 @@ OUT_DIR = dist
 BINARY ?= $(OUT_DIR)/grafana-image-renderer
 GO_BUILD_FLAGS = -buildvcs -ldflags '-s -w -extldflags "-static"'
 
-include nix/Makefile
-
 .PHONY: check
 check: lint test
+
+include nix/Makefile
 
 .PHONY: test
 test:

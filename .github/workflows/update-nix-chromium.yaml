@@ -26,72 +26,17 @@ jobs:
 
       - name: Update Chromium
         id: update
-        shell: bash
-        run: |
-          set -euo pipefail
-          # shellcheck source=nix/chromium-ci.sh
-          source nix/chromium-ci.sh
-
-          # Use the same rollout threshold as the Nixpkgs Chromium updater.
-          latest=$(curl --fail --silent --show-error --retry 3 --max-time 30 --get \
-            --data-urlencode 'order_by=version desc' \
-            --data-urlencode 'filter=endtime=none,fraction>=0.5' \
-            https://versionhistory.googleapis.com/v1/chrome/platforms/linux/channels/stable/versions/all/releases \
-            | jq -er '.releases[0].version | select(test("^[0-9]+(\\.[0-9]+){3}$"))')
-
-          expected=$(jq -cn --arg version "$latest" '[$version, $version]')
-          current=$(chromium_versions locked)
-          newest_pinned=$(jq -er '.[]' <<< "$current" | sort -V | tail -n 1)
-          custom=$(custom_chromium_version)
-          if [[ "$current" == "$expected" ]] || chromium_version_is_newer "$newest_pinned" "$latest" || \
-            chromium_version_is_newer "$custom" "$latest"; then
-            printf 'Linux stable is %s. Nixpkgs has %s (amd64, arm64) and custom is %s.\n' "$latest" "$current" "$custom"
-            exit 0
-          fi
-
-          available=$(chromium_versions original)
-          if [[ "$available" == "$expected" ]]; then
-            nix flake update nixpkgs
-            updated=$(chromium_versions locked)
-            if [[ "$updated" != "$expected" ]]; then
-              printf 'The updated pin has %s (amd64, arm64). Expected %s.\n' "$updated" "$expected" >&2
-              exit 1
-            fi
-
-            file=flake.lock
-            title="Update Nixpkgs for Chromium $latest"
-          else
-            oldest_available=$(jq -er '.[]' <<< "$available" | sort -V | head -n 1)
-            if ! chromium_version_is_newer "$latest" "$oldest_available" || \
-              ! chromium_version_is_newer "$latest" "$newest_pinned" || \
-              ! chromium_version_is_newer "$latest" "$custom"; then
-              printf 'No custom update needed. Linux stable is %s, channel has %s, custom is %s.\n' "$latest" "$available" "$custom"
-              exit 0
-            fi
-
-            file=nix/chromium-info.json
-            nix run --no-update-lock-file .#update-chromium -- "$file"
-            updated=$(custom_chromium_version)
-            if [[ "$updated" != "$latest" ]]; then
-              printf 'The updater returned Chromium %s. Expected %s.\n' "$updated" "$latest" >&2
-              exit 1
-            fi
-
-            for system in x86_64-linux aarch64-linux; do
-              nix eval --raw --no-update-lock-file ".#packages.$system.image-custom.drvPath"
-            done
-            title="Update custom Chromium to $latest"
-          fi
-
-          printf 'title=%s\nfile=%s\n' "$title" "$file" >> "$GITHUB_OUTPUT"
+        run: bash nix/chromium-ci.sh
 
       - name: Open or update the pull request
-        if: steps.update.outputs.file != ''
+        if: steps.update.outputs.title != ''
         uses: peter-evans/create-pull-request@3ffccacd46053766916f087ce41d627c0b8cf2d1 # v8.1.3
         with:
           branch: automation/nix-chromium
-          add-paths: ${{ steps.update.outputs.file }}
+          add-paths: |
+            flake.lock
+            nix/chromium-info.json
           commit-message: ${{ steps.update.outputs.title }}
           title: ${{ steps.update.outputs.title }}
           body: |
-            Updates `${{ steps.update.outputs.file }}` for Linux amd64 and arm64.
+            Updates the Chromium selection for the Linux amd64 and arm64 renderer images.

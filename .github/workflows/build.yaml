@@ -53,20 +53,33 @@ jobs:
           name: grafana-image-renderer-${{ matrix.GOOS }}-${{ matrix.GOARCH }}${{ matrix.SUFFIX || '' }}
           path: grafana-image-renderer-${{ matrix.GOOS }}-${{ matrix.GOARCH }}${{ matrix.SUFFIX || '' }}
 
-  tag:
-    if: ((github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork == false) || (github.event_name == 'push' && github.repository == 'grafana/grafana-image-renderer'))
-    name: Prepare image builds
-    runs-on: ubuntu-latest
+  acceptance:
+    uses: ./.github/workflows/docker-test.yaml
     permissions:
       contents: read
-    env:
-      CHECK_CHROMIUM: ${{ github.event_name == 'push' && github.ref_type == 'branch' && github.ref_name == github.event.repository.default_branch }}
+      id-token: write # read the Grafana test license
+
+  # Branch protection requires this exact check name, including on fork PRs.
+  required-acceptance-tests:
+    name: All acceptance tests complete
+    needs: acceptance
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require all acceptance jobs to pass
+        env:
+          RESULT: ${{ needs.acceptance.result }}
+        run: test "$RESULT" = success
+
+  tag:
+    if: ((github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork == false) || (github.event_name == 'push' && github.repository == 'grafana/grafana-image-renderer'))
+    name: Create image tag
+    runs-on: ubuntu-latest
     outputs:
       subject: ${{ steps.image_tag.outputs.subject }}
       tag: ${{ steps.image_tag.outputs.tag }}
       registry: ${{ steps.image_tag.outputs.registry }}
       ref_name: ${{ steps.image_tag.outputs.ref_name }}
-      chromium: ${{ steps.chromium.outputs.mode || 'upstream' }}
     steps:
       - name: Use ghcr.io
         if: github.event_name != 'push' || github.ref_type != 'tag'
@@ -101,38 +114,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          echo "registry=$REGISTRY" >> "$GITHUB_OUTPUT"
-          echo "subject=$REGISTRY/$REPOSITORY" >> "$GITHUB_OUTPUT"
-          echo "tag=$REGISTRY/$REPOSITORY:$REF_NAME" >> "$GITHUB_OUTPUT"
-          echo "ref_name=$REF_NAME" >> "$GITHUB_OUTPUT"
-
-      - uses: actions/checkout@v6
-        if: env.CHECK_CHROMIUM == 'true'
-        with:
-          persist-credentials: false
-
-      - uses: cachix/install-nix-action@75c75c31ebece974e48ebc36b4ad125bd97bd97b # v31.11.3
-        if: env.CHECK_CHROMIUM == 'true'
-
-      - name: Select Chromium for the Nix image
-        if: env.CHECK_CHROMIUM == 'true'
-        id: chromium
-        shell: bash
-        run: |
-          set -euo pipefail
-          # shellcheck source=nix/chromium-ci.sh
-          source nix/chromium-ci.sh
-
-          upstream=$(chromium_versions locked)
-          newest_upstream=$(jq -er '.[]' <<< "$upstream" | sort -V | tail -n 1)
-          custom=$(custom_chromium_version)
-          mode=upstream
-          if chromium_version_is_newer "$custom" "$newest_upstream"; then
-            mode=custom
-          fi
-
-          printf 'Using %s Chromium (Nixpkgs: %s, custom: %s).\n' "$mode" "$upstream" "$custom"
-          printf 'mode=%s\n' "$mode" >> "$GITHUB_OUTPUT"
+          {
+            echo "registry=$REGISTRY"
+            echo "subject=$REGISTRY/$REPOSITORY"
+            echo "tag=$REGISTRY/$REPOSITORY:$REF_NAME"
+            echo "ref_name=$REF_NAME"
+          } >> "$GITHUB_OUTPUT"
 
   build:
     strategy:
@@ -146,24 +133,22 @@ jobs:
           - runs-on: ubuntu-x64
             arch: amd64
             suffix: -nix
-            custom-runs-on: ubuntu-amd64-6xlarge
           - runs-on: ubuntu-arm64
             arch: arm64
             suffix: -nix
-            custom-runs-on: ubuntu-arm64-xlarge
 
-    needs: tag
-    name: Build image${{ matrix.suffix }} for ${{ matrix.arch }}
-    runs-on: ${{ needs.tag.outputs.chromium == 'custom' && matrix.custom-runs-on || matrix.runs-on }}
+    needs: [tag, acceptance]
+    name: Publish image${{ matrix.suffix }} for ${{ matrix.arch }}
+    runs-on: ${{ matrix.runs-on }}
     permissions:
       contents: read # required to read the repository contents
       packages: write # required to push the built image to the package registry
       attestations: write # required to create attestations for the built image
       artifact-metadata: write # required to create the artifact storage record
       id-token: write # required to create attestations for the built image, and to read secrets
-      pull-requests: write # required to comment on the pull request
     steps:
       - uses: actions/checkout@v6
+        if: matrix.suffix != '-nix'
         with:
           persist-credentials: false
 
@@ -201,12 +186,19 @@ jobs:
           BUILDKIT_STEP_LOG_MAX_SPEED: -1
           TAG: ${{ needs.tag.outputs.tag }}-${{ matrix.arch }}
         run: docker build . -t "$TAG"
-      - name: Build Nix image
+      - name: Download tested Nix image
+        if: matrix.suffix == '-nix'
+        uses: actions/download-artifact@v5
+        with:
+          name: nix-image-${{ matrix.arch }}
+          path: ${{ runner.temp }}/tested-image
+      - name: Load tested Nix image
         if: matrix.suffix == '-nix'
         env:
-          NIX_CHROMIUM: ${{ needs.tag.outputs.chromium }}
-          NIX_IMAGE: ${{ needs.tag.outputs.tag }}-nix-${{ matrix.arch }}
-        run: make image-nix
+          TAG: ${{ needs.tag.outputs.tag }}-nix-${{ matrix.arch }}
+        run: |
+          docker load --input "$RUNNER_TEMP/tested-image/image.tar.gz"
+          docker tag grafana-image-renderer:nix "$TAG"
       - name: docker push
         env:
           TAG: ${{ needs.tag.outputs.tag }}${{ matrix.suffix }}-${{ matrix.arch }}

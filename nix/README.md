@@ -1,71 +1,48 @@
 # Nix image
 
-These files build the Grafana Image Renderer container image for `amd64` and
-`arm64` Linux. [flake.nix](../flake.nix) defines the image and update targets.
-[flake.lock](../flake.lock) pins the Nixpkgs revision that supplies the build
-tools and packages.
+## Build and test
 
-## Files
-
-| File | Purpose |
-| --- | --- |
-| [Makefile](Makefile) | Defines the image build and Chromium update commands. The root Makefile includes this file. |
-| [Dockerfile.nix](Dockerfile.nix) | Runs the image build and the Chromium updater inside Docker. |
-| [Dockerfile.nix.dockerignore](Dockerfile.nix.dockerignore) | Lists files to exclude from the Docker build context. The context starts at the repository root. |
-| [renderer.nix](renderer.nix) | Builds the renderer with Go and runs the short test suite. The `vendorHash` field checks the contents of the vendored Go dependencies. |
-| [image.nix](image.nix) | Puts the renderer and Chromium in a Docker image. It includes fonts and CA certificates. It also sets the runtime user, Chromium sandbox, and health check. |
-| [chromium.nix](chromium.nix) | Selects Chromium for the custom image. It uses the Nixpkgs recipe with the release data from `chromium-info.json`. |
-| [chromium-info.json](chromium-info.json) | Pins the Chromium release for the custom image. It records the source revisions and hashes for Chromium and its dependencies. |
-| [chromium-ci.sh](chromium-ci.sh) | Reads and compares Chromium versions for the GitHub workflows. |
-| [chromium-recipe.nix](chromium-recipe.nix) | Selects the upstream Chromium recipe and applies any local recipe patches. The custom browser and the updater use the same recipe. |
-| [update-chromium.nix](update-chromium.nix) | Runs the Chromium updater in a temporary copy of Nixpkgs. The updater checks the Linux stable channel and writes the release data to `chromium-info.json`. |
-
-## Build an image
-
-Run these commands from the repository root. The [Makefile](../Makefile) loads
-the image into Docker with the tag `image-renderer-nix` by default.
+From the repository root, run:
 
 ```sh
 make image-nix
+IMAGE=image-renderer-nix go test ./tests/acceptance/... -count=1
 ```
 
-This command uses the Chromium package from the Nixpkgs revision in `flake.lock`.
-To use the release data in `chromium-info.json`, select the custom image.
+Docker with BuildKit runs Nix inside a Linux builder. On macOS, start Docker
+Desktop or OrbStack first. The build loads the image as `image-renderer-nix`
+and saves the archive to `dist/nix/<system>/image.tar.gz`. Use `NIX_IMAGE` to
+change the tag or `NIX_SYSTEM=x86_64-linux` or `aarch64-linux` to select the
+platform. Building for a different architecture requires Docker emulation.
+The Docker builder uses Docker's isolation with Nix's nested sandbox and
+syscall filtering disabled. On native Linux, use `nix build .#image` directly.
 
-```sh
-make image-nix NIX_CHROMIUM=custom
-```
+[flake.lock](../flake.lock) pins Nixpkgs, including Go and Chromium. The image
+uses the upstream browser when the override is empty, equal, or older. A newer
+[chromium-info.json](chromium-info.json) selects the Nixpkgs Chromium recipe
+with the recorded source revisions and hashes. Nix uses a cached browser when
+available. Compiling it on a cache miss can take several hours.
 
-Nix can use a cached Chromium build if it matches the recipe, release data, and
-target architecture. A source build can take several hours.
+For an override, CI caches the browser and sandbox runtime closure under the exact
+derivation and architecture. GitHub cache scope and eviction determine which
+runs can reuse it. Each architecture runs acceptance tests against the built
+archive. Publication loads that archive to produce the `<version>-nix` and
+`latest-nix` tags.
 
 ## Update Chromium
 
-The [daily workflow](../.github/workflows/update-nix-chromium.yaml) opens a pull
-request to update `flake.lock` when the Nixpkgs channel has the newer stable
-Linux release for both architectures. If the channel is behind, the workflow
-updates `chromium-info.json` instead. It can update the Nixpkgs pin when the
-channel catches up. The repository must allow GitHub Actions to create pull
-requests. GitHub can require approval to run CI on these pull requests.
+The [daily workflow](../.github/workflows/update-nix-chromium.yaml) checks the
+Linux stable release. It updates the Nixpkgs lock when the channel already
+packages the release. Otherwise it runs the pinned Nixpkgs updater to record
+the newer Chromium sources. Once the pin catches up, the workflow clears the
+override to `{}`. Pull requests and release tags use the same selection.
 
-On pushes to the default branch, the [build workflow](../.github/workflows/build.yaml)
-uses custom Chromium if it is newer than the pinned Chromium on both
-architectures. Custom builds use `ubuntu-amd64-6xlarge` for `amd64` and
-`ubuntu-arm64-xlarge` for `arm64`.
+To refresh source metadata locally, run `make update-nix-chromium`. This checks
+the live release even on an unchanged checkout and fetches the required sources
+without compiling the browser. Review changes to `chromium-info.json` before
+committing. Run `nix flake update nixpkgs` to refresh the whole package set.
 
-Renovate also checks `flake.lock` weekly and opens a pull request when it can
-update the Nixpkgs pin. To update the pin manually, run `nix flake update nixpkgs`.
-
-For the custom image, run `make update-nix-chromium`. This command checks for a
-newer Linux stable release and fetches the sources it needs to calculate hashes.
-It generates metadata without compiling the browser.
-
-Review the changes to `chromium-info.json`. Build the custom image and run the
-acceptance tests before you submit the update.
-
-## Change the Chromium recipe
-
-Add local recipe patches to the `patches` list in `chromium-recipe.nix`. Use
-paths relative to the upstream recipe directory in each patch. For example, use
-`a/common.nix` and `b/common.nix` to patch `common.nix`.
-[Nixpkgs Chromium recipe](https://github.com/NixOS/nixpkgs/tree/master/pkgs/applications/networking/browsers/chromium)
+Keep the Go builder in [renderer.nix](renderer.nix) aligned with `go.mod`.
+After Go dependency changes, use `pkgs.lib.fakeHash` for `vendorHash`, build
+once, and replace it with the hash reported by Nix. For private CAs, see the
+[container configuration](../docs/sources/troubleshooting.md#nix-container).

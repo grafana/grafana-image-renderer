@@ -5,24 +5,35 @@
 
   outputs =
     { nixpkgs, ... }:
+    let
+      forLinux = nixpkgs.lib.genAttrs [
+        "x86_64-linux"
+        "aarch64-linux"
+      ];
+    in
     {
-      packages =
-        nixpkgs.lib.genAttrs
-          [
-            "x86_64-linux"
-            "aarch64-linux"
-          ]
-          (
-            system:
-            let
-              pkgs = import nixpkgs { inherit system; };
-              image = chromium: import ./nix/image.nix { inherit pkgs chromium; };
-            in
-            {
-              image = image pkgs.chromium.browser;
-              image-custom = image (import ./nix/chromium.nix { inherit pkgs; });
-              update-chromium = import ./nix/update-chromium.nix { inherit pkgs; };
-            }
-          );
+      packages = forLinux (
+        system:
+        let
+          pkgs = nixpkgs.legacyPackages.${system};
+          chromium = import ./nix/chromium.nix { inherit pkgs; };
+        in
+        {
+          browser = chromium.browser // {
+            isCustom = chromium.version != pkgs.chromium.version;
+          };
+          image = import ./nix/image.nix {
+            inherit pkgs;
+            chromium = chromium.browser;
+          };
+          update-chromium = import ./nix/update-chromium.nix { inherit pkgs; };
+        }
+      );
+
+      checks = forLinux (system: {
+        chromium-selection = import ./nix/chromium-selection-test.nix {
+          pkgs = nixpkgs.legacyPackages.${system};
+        };
+      });
     };
 }

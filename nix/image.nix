@@ -1,6 +1,6 @@
 {
   pkgs,
-  chromium ? pkgs.chromium.browser,
+  chromium,
 }:
 
 let

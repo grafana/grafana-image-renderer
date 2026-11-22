@@ -1,8 +1,9 @@
-{ pkgs }:
+{
+  pkgs,
+  info ? (pkgs.lib.importJSON ./chromium-info.json).chromium or null,
+}:
 
-let
-  recipe = import ./chromium-recipe.nix { inherit pkgs; };
-in
-(recipe.chromium.override {
-  upstream-info = (pkgs.lib.importJSON ./chromium-info.json).chromium;
-}).browser
+if info != null && pkgs.lib.versionOlder pkgs.chromium.version info.version then
+  pkgs.chromium.override { upstream-info = info; }
+else
+  pkgs.chromium
