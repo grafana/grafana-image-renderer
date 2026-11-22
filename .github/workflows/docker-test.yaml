@@ -1,24 +1,28 @@
 name: Docker Tests
 
 on:
-  workflow_call:
+  push:
+    branches:
+      - master
+    tags:
+      - 'v*'
+  pull_request:
 
 permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   acceptance:
     strategy:
       fail-fast: false
       matrix:
-        arch: [amd64, arm64]
+        runs-on: [ubuntu-x64-xlarge, ubuntu-arm64-xlarge]
         variant: [default, nix]
-        include:
-          - arch: amd64
-            runs-on: ubuntu-x64-xlarge
-          - arch: arm64
-            runs-on: ubuntu-arm64-xlarge
 
-    name: acceptance tests (${{ matrix.arch }}, ${{ matrix.variant }})
+    name: acceptance tests (${{ matrix.runs-on }}, ${{ matrix.variant }})
     runs-on: ${{ matrix.runs-on }}
     permissions:
       contents: read # clone the repository
@@ -49,8 +53,6 @@ jobs:
           nix build .#image --no-update-lock-file --out-link "$RUNNER_TEMP/image.tar.gz"
           docker load --input "$RUNNER_TEMP/image.tar.gz"
           docker tag grafana-image-renderer:nix image-renderer
-          version=$(nix eval --raw .#browser.version)
-          echo "EXPECTED_CHROMIUM_VERSION=$version" >> "$GITHUB_ENV"
 
       - name: Read license
         if: ((github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork == false) || (github.event_name == 'push' && github.repository == 'grafana/grafana-image-renderer'))
@@ -84,16 +86,6 @@ jobs:
           REQUIRE_ACCEPTANCE: 'true' # fail if no image can be found
           REQUIRE_ENTERPRISE: ${{ ((github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork == false) || (github.event_name == 'push' && github.repository == 'grafana/grafana-image-renderer')) }}
 
-      - name: Upload tested Nix image
-        if: matrix.variant == 'nix' && ((github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork == false) || (github.event_name == 'push' && github.repository == 'grafana/grafana-image-renderer'))
-        uses: actions/upload-artifact@v5
-        with:
-          name: nix-image-${{ matrix.arch }}
-          path: ${{ runner.temp }}/image.tar.gz
-          if-no-files-found: error
-          compression-level: 0
-          retention-days: 3
-
       - name: Tar changed files
         if: failure()
         id: tar
@@ -112,3 +104,15 @@ jobs:
         with:
           name: changed-files-${{ matrix.runs-on }}-${{ matrix.variant }}
           path: changed-files.tar.xz
+
+  # Branch protection requires this exact check name, including on fork PRs.
+  required-acceptance-tests:
+    name: All acceptance tests complete
+    needs: acceptance
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require all acceptance jobs to pass
+        env:
+          RESULT: ${{ needs.acceptance.result }}
+        run: test "$RESULT" = success

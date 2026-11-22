@@ -24,9 +24,10 @@ uses the upstream browser when the override is empty, equal, or older. A newer
 with the recorded source revisions and hashes. Nix uses a cached browser when
 available. Compiling it on a cache miss can take several hours.
 
-CI tests the image on amd64 and arm64 and publishes those same archives under
-the `<version>-nix` and `latest-nix` tags. A manual override without a binary
-substitute compiles Chromium on each architecture on each fresh CI run.
+Docker Tests runs acceptance tests on amd64 and arm64. The Build workflow
+independently builds and publishes the release images as `<version>-nix` and
+`latest-nix`. With an uncached manual override, both workflows compile
+Chromium on each architecture.
 
 ## Update Chromium
 

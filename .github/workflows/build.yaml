@@ -53,24 +53,6 @@ jobs:
           name: grafana-image-renderer-${{ matrix.GOOS }}-${{ matrix.GOARCH }}${{ matrix.SUFFIX || '' }}
           path: grafana-image-renderer-${{ matrix.GOOS }}-${{ matrix.GOARCH }}${{ matrix.SUFFIX || '' }}
 
-  acceptance:
-    uses: ./.github/workflows/docker-test.yaml
-    permissions:
-      contents: read
-      id-token: write # read the Grafana test license
-
-  # Branch protection requires this exact check name, including on fork PRs.
-  required-acceptance-tests:
-    name: All acceptance tests complete
-    needs: acceptance
-    if: always()
-    runs-on: ubuntu-latest
-    steps:
-      - name: Require all acceptance jobs to pass
-        env:
-          RESULT: ${{ needs.acceptance.result }}
-        run: test "$RESULT" = success
-
   tag:
     if: ((github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork == false) || (github.event_name == 'push' && github.repository == 'grafana/grafana-image-renderer'))
     name: Create image tag
@@ -133,7 +115,7 @@ jobs:
           - arch: arm64
             runs-on: ubuntu-arm64
 
-    needs: [tag, acceptance]
+    needs: tag
     name: Publish image${{ matrix.suffix }} for ${{ matrix.arch }}
     runs-on: ${{ matrix.runs-on }}
     permissions:
@@ -144,7 +126,6 @@ jobs:
       id-token: write # required to create attestations for the built image, and to read secrets
     steps:
       - uses: actions/checkout@v6
-        if: matrix.suffix != '-nix'
         with:
           persist-credentials: false
 
@@ -182,19 +163,11 @@ jobs:
           BUILDKIT_STEP_LOG_MAX_SPEED: -1
           TAG: ${{ needs.tag.outputs.tag }}-${{ matrix.arch }}
         run: docker build . -t "$TAG"
-      - name: Download tested Nix image
-        if: matrix.suffix == '-nix'
-        uses: actions/download-artifact@v5
-        with:
-          name: nix-image-${{ matrix.arch }}
-          path: ${{ runner.temp }}/tested-image
-      - name: Load tested Nix image
+      - name: Build Nix image
         if: matrix.suffix == '-nix'
         env:
-          TAG: ${{ needs.tag.outputs.tag }}-nix-${{ matrix.arch }}
-        run: |
-          docker load --input "$RUNNER_TEMP/tested-image/image.tar.gz"
-          docker tag grafana-image-renderer:nix "$TAG"
+          NIX_IMAGE: ${{ needs.tag.outputs.tag }}-nix-${{ matrix.arch }}
+        run: make image-nix
       - name: docker push
         env:
           TAG: ${{ needs.tag.outputs.tag }}${{ matrix.suffix }}-${{ matrix.arch }}
