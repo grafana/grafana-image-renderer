@@ -35,7 +35,6 @@ pkgs.dockerTools.buildLayeredImage {
       name = "image-renderer-tools";
       paths = [
         renderer
-        pkgs.tini
         pkgs.coreutils
         pkgs.nssTools
         pkgs.fontconfig
@@ -64,7 +63,7 @@ pkgs.dockerTools.buildLayeredImage {
     User = "65532";
     WorkingDir = "/home/nonroot";
     Entrypoint = [
-      "tini"
+      "${pkgs.tini}/bin/tini"
       "--"
       "/bin/grafana-image-renderer"
     ];
@@ -95,9 +94,6 @@ pkgs.dockerTools.buildLayeredImage {
       StartInterval = 250000000;
       Retries = 3;
     };
-    Labels = {
-      "org.opencontainers.image.source" = "https://github.com/grafana/grafana-image-renderer";
-      "org.opencontainers.image.version" = renderer.version;
-    };
+    Labels."org.opencontainers.image.source" = "https://github.com/grafana/grafana-image-renderer";
   };
 }
