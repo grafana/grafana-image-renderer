@@ -9,6 +9,9 @@ tools and packages.
 
 | File | Purpose |
 | --- | --- |
+| [Makefile](Makefile) | Defines the image build and Chromium update commands. The root Makefile includes this file. |
+| [Dockerfile.nix](Dockerfile.nix) | Runs the image build and the Chromium updater inside Docker. |
+| [Dockerfile.nix.dockerignore](Dockerfile.nix.dockerignore) | Lists files to exclude from the Docker build context. The context starts at the repository root. |
 | [renderer.nix](renderer.nix) | Builds the renderer with Go and runs the short test suite. The `vendorHash` field checks the contents of the vendored Go dependencies. |
 | [image.nix](image.nix) | Puts the renderer and Chromium in a Docker image. It includes fonts and CA certificates. It also sets the runtime user, Chromium sandbox, and health check. |
 | [chromium.nix](chromium.nix) | Selects Chromium for the custom image. It uses the Nixpkgs recipe with the release data from `chromium-info.json`. |
@@ -18,9 +21,8 @@ tools and packages.
 
 ## Build an image
 
-Run these commands from the repository root. [Dockerfile.nix](../Dockerfile.nix)
-runs Nix inside Docker. The [Makefile](../Makefile) loads the image into Docker
-with the tag `image-renderer-nix` by default.
+Run these commands from the repository root. The [Makefile](../Makefile) loads
+the image into Docker with the tag `image-renderer-nix` by default.
 
 ```sh
 make image-nix

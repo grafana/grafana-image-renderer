@@ -109,7 +109,7 @@ CI builds both architectures natively and publishes the additional
 builder in `nix/renderer.nix` aligned with `go.mod`. When Go dependencies change,
 set `vendorHash` to `pkgs.lib.fakeHash`, build once, and replace it with the hash
 reported by Nix. Docker builds the working tree, filtered by
-`Dockerfile.nix.dockerignore`. When invoking Nix directly, build from the Git
+`nix/Dockerfile.nix.dockerignore`. When invoking Nix directly, build from the Git
 flake (`.#packages.aarch64-linux.image`); new source files must be added to Git
 to be included.
 
