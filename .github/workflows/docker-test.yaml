@@ -6,26 +6,7 @@ on:
 permissions: {}
 
 jobs:
-  chromium:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    outputs:
-      custom: ${{ steps.select.outputs.custom }}
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          persist-credentials: false
-      - uses: cachix/install-nix-action@75c75c31ebece974e48ebc36b4ad125bd97bd97b # v31.11.3
-      - name: Check browser selection and size the build runners
-        id: select
-        run: |
-          nix flake check --no-build --all-systems --no-update-lock-file
-          custom=$(nix eval --json .#browser.isCustom)
-          echo "custom=$custom" >> "$GITHUB_OUTPUT"
-
   acceptance:
-    needs: chromium
     strategy:
       fail-fast: false
       matrix:
@@ -34,13 +15,11 @@ jobs:
         include:
           - arch: amd64
             runs-on: ubuntu-x64-xlarge
-            custom-runs-on: ubuntu-amd64-6xlarge
           - arch: arm64
             runs-on: ubuntu-arm64-xlarge
-            custom-runs-on: ubuntu-arm64-xlarge
 
     name: acceptance tests (${{ matrix.arch }}, ${{ matrix.variant }})
-    runs-on: ${{ matrix.variant == 'nix' && needs.chromium.outputs.custom == 'true' && matrix.custom-runs-on || matrix.runs-on }}
+    runs-on: ${{ matrix.runs-on }}
     permissions:
       contents: read # clone the repository
       id-token: write # required to read secrets
@@ -63,34 +42,6 @@ jobs:
 
       - uses: cachix/install-nix-action@75c75c31ebece974e48ebc36b4ad125bd97bd97b # v31.11.3
         if: matrix.variant == 'nix'
-
-      - name: Identify the custom Chromium derivation
-        if: matrix.variant == 'nix' && needs.chromium.outputs.custom == 'true'
-        id: browser
-        run: |
-          drv=$(nix eval --raw .#browser.drvPath)
-          echo "key=${drv##*/}" >> "$GITHUB_OUTPUT"
-
-      - name: Restore custom Chromium
-        if: steps.browser.outputs.key != ''
-        id: cache
-        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
-        with:
-          key: nix-browser-${{ matrix.arch }}-${{ steps.browser.outputs.key }}
-          path: ${{ runner.temp }}/chromium-cache
-
-      - name: Import cached browser outputs
-        if: steps.cache.outputs.cache-hit == 'true'
-        run: |
-          browser=$(nix eval --raw .#browser.outPath)
-          sandbox=$(nix eval --raw .#browser.sandbox.outPath)
-          nix copy --from "file://$RUNNER_TEMP/chromium-cache" --no-check-sigs "$browser" "$sandbox"
-
-      - name: Build and cache custom Chromium
-        if: steps.browser.outputs.key != '' && steps.cache.outputs.cache-hit != 'true'
-        run: |
-          nix build --no-link '.#browser^out,sandbox'
-          nix copy --to "file://$RUNNER_TEMP/chromium-cache?compression=zstd" '.#browser^out,sandbox'
 
       - name: Load Nix image for acceptance
         if: matrix.variant == 'nix'

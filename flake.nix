@@ -16,23 +16,12 @@
         system:
         let
           pkgs = nixpkgs.legacyPackages.${system};
-          chromium = import ./nix/chromium.nix { inherit pkgs; };
+          chromium = (import ./nix/chromium.nix { inherit pkgs; }).browser;
         in
         {
-          browser = chromium.browser // {
-            isCustom = chromium.version != pkgs.chromium.version;
-          };
-          image = import ./nix/image.nix {
-            inherit pkgs;
-            chromium = chromium.browser;
-          };
+          browser = chromium;
+          image = import ./nix/image.nix { inherit pkgs chromium; };
         }
       );
-
-      checks = forLinux (system: {
-        chromium-selection = import ./nix/chromium-selection-test.nix {
-          pkgs = nixpkgs.legacyPackages.${system};
-        };
-      });
     };
 }

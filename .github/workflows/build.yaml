@@ -125,17 +125,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        arch: [amd64, arm64]
+        suffix: ['', '-nix']
         include:
-          - runs-on: ubuntu-x64
-            arch: amd64
-          - runs-on: ubuntu-arm64
-            arch: arm64
-          - runs-on: ubuntu-x64
-            arch: amd64
-            suffix: -nix
-          - runs-on: ubuntu-arm64
-            arch: arm64
-            suffix: -nix
+          - arch: amd64
+            runs-on: ubuntu-x64
+          - arch: arm64
+            runs-on: ubuntu-arm64
 
     needs: [tag, acceptance]
     name: Publish image${{ matrix.suffix }} for ${{ matrix.arch }}
