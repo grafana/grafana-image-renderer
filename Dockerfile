@@ -22,7 +22,7 @@ LABEL maintainer="Grafana team <hello@grafana.com>"
 LABEL org.opencontainers.image.source="https://github.com/grafana/grafana-image-renderer/tree/master/Dockerfile"
 
 # renovate: depName=chromium
-ARG CHROMIUM_VERSION=156.0.8078.79
+ARG CHROMIUM_VERSION=156.0.8078.108
 
 # Chromium updates bust the cache; change the date for a manual package refresh.
 RUN echo 'cachebuster 2026-11-10' && apt-get update && apt-get upgrade -y --no-install-recommends --no-install-suggests
