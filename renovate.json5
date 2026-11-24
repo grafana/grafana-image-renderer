@@ -28,6 +28,7 @@
       "matchDatasources": ["custom.debian-chromium"],
       "matchPackageNames": ["chromium"],
       "enabled": true,
+      "minimumReleaseAgeBehaviour": "timestamp-optional",
     },
   ],
 }
