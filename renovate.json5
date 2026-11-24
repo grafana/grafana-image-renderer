@@ -4,6 +4,12 @@
     "security:only-security-updates",
     "security:gomodIndirectSecurityUpdates",
   ],
+  "nix": {
+    "enabled": true,
+    "lockFileMaintenance": {
+      "enabled": true,
+    },
+  },
   "customManagers": [
     {
       "customType": "regex",
@@ -24,6 +30,11 @@
     },
   },
   "packageRules": [
+    {
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["nixos/nix"],
+      "enabled": true,
+    },
     {
       "matchDatasources": ["custom.debian-chromium"],
       "matchPackageNames": ["chromium"],

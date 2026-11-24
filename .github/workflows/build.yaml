@@ -53,6 +53,11 @@ jobs:
           name: grafana-image-renderer-${{ matrix.GOOS }}-${{ matrix.GOARCH }}${{ matrix.SUFFIX || '' }}
           path: grafana-image-renderer-${{ matrix.GOOS }}-${{ matrix.GOARCH }}${{ matrix.SUFFIX || '' }}
 
+  chromium-override:
+    uses: ./.github/workflows/chromium-override.yaml
+    permissions:
+      contents: read
+
   tag:
     if: ((github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork == false) || (github.event_name == 'push' && github.repository == 'grafana/grafana-image-renderer'))
     name: Create image tag
@@ -105,22 +110,27 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        arch: [amd64, arm64]
+        suffix: ['', '-nix']
         include:
-          - runs-on: ubuntu-x64
-            arch: amd64
-          - runs-on: ubuntu-arm64
-            arch: arm64
+          - arch: amd64
+            runs-on: ubuntu-x64
+            source-runner: ubuntu-x64-6xlarge-io
+          - arch: arm64
+            runs-on: ubuntu-arm64
+            source-runner: ubuntu-x64-6xlarge-io
 
-    needs: tag
-    name: Build image for ${{ matrix.arch }}
-    runs-on: ${{ matrix.runs-on }}
+    needs: [tag, chromium-override]
+    name: Publish image${{ matrix.suffix }} for ${{ matrix.arch }}
+    runs-on: ${{ matrix.suffix == '-nix' && needs.chromium-override.outputs.active == 'true' && matrix.source-runner || matrix.runs-on }}
+    env:
+      TAG: ${{ needs.tag.outputs.tag }}${{ matrix.suffix }}-${{ matrix.arch }}
     permissions:
       contents: read # required to read the repository contents
       packages: write # required to push the built image to the package registry
       attestations: write # required to create attestations for the built image
       artifact-metadata: write # required to create the artifact storage record
       id-token: write # required to create attestations for the built image, and to read secrets
-      pull-requests: write # required to comment on the pull request
     steps:
       - uses: actions/checkout@v6
         with:
@@ -153,20 +163,19 @@ jobs:
           registry: "us-docker.pkg.dev"
 
       - name: docker build
+        if: matrix.suffix != '-nix'
         env:
           DOCKER_BUILDKIT: 1
           BUILDKIT_STEP_LOG_MAX_SIZE: -1
           BUILDKIT_STEP_LOG_MAX_SPEED: -1
-          TAG: ${{ needs.tag.outputs.tag }}-${{ matrix.arch }}
         run: docker build . -t "$TAG"
+      - name: Build Nix image
+        if: matrix.suffix == '-nix'
+        run: make image-nix NIX_IMAGE="$TAG"
       - name: docker push
-        env:
-          TAG: ${{ needs.tag.outputs.tag }}-${{ matrix.arch }}
         run: docker push "$TAG"
       - name: Get digest
         id: digest
-        env:
-          TAG: ${{ needs.tag.outputs.tag }}-${{ matrix.arch }}
         run: |
           set -euo pipefail
           DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' "$TAG" | cut -d@ -f2)
@@ -179,8 +188,11 @@ jobs:
           push-to-registry: true
 
   manifest:
+    strategy:
+      matrix:
+        suffix: ['', '-nix']
     needs: [tag, build]
-    name: Create manifests
+    name: Create manifests${{ matrix.suffix }}
     runs-on: ubuntu-latest
     permissions:
       packages: write # required to create the manifest list in the package registry
@@ -201,7 +213,7 @@ jobs:
 
       - name: Create and push manifests
         env:
-          TAG: ${{ needs.tag.outputs.tag }}
+          TAG: ${{ needs.tag.outputs.tag }}${{ matrix.suffix }}
         run: |
           set -euo pipefail
           docker manifest create "$TAG" "$TAG"-amd64 "$TAG"-arm64
@@ -209,15 +221,16 @@ jobs:
       - name: Create and push :latest manifest
         if: github.event_name == 'push' && github.ref_type == 'tag'
         env:
-          TAG: ${{ needs.tag.outputs.tag }}
+          TAG: ${{ needs.tag.outputs.tag }}${{ matrix.suffix }}
           SUBJECT: ${{ needs.tag.outputs.subject }}
+          SUFFIX: ${{ matrix.suffix }}
         run: |
           set -euo pipefail
-          docker manifest create "$SUBJECT":latest "$TAG"-amd64 "$TAG"-arm64
-          docker manifest push "$SUBJECT":latest
+          docker manifest create "$SUBJECT:latest$SUFFIX" "$TAG"-amd64 "$TAG"-arm64
+          docker manifest push "$SUBJECT:latest$SUFFIX"
 
       - name: Comment on PR
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' && matrix.suffix == ''
         uses: mshick/add-pr-comment@b8f338c590a895d50bcbfa6c5859251edc8952fc # v2
         continue-on-error: true # just check the actions log if ratelimits or whatever
         with:
@@ -228,6 +241,7 @@ jobs:
 
             ```bash
             docker pull ${{ needs.tag.outputs.tag }}
+            docker pull ${{ needs.tag.outputs.tag }}-nix
             ```
 
             > [!WARNING]

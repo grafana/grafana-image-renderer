@@ -334,6 +334,36 @@ RUN mkdir -p /home/nonroot/.pki/nssdb
 RUN certutil -d sql:/home/nonroot/.pki/nssdb -A -n internal-root-ca -t C -i /usr/local/share/ca-certificates/rootCA.crt
 ```
 
+### Nix container
+
+You can extend the `-nix` image with Docker alone. Save your PEM-encoded root CA certificate as `rootCA.pem` next to this Dockerfile. Replace `latest-nix` with a specific `-nix` tag to pin the base image version.
+
+```dockerfile
+FROM grafana/grafana-image-renderer:latest-nix
+
+COPY --chmod=644 rootCA.pem /home/nonroot/rootCA.pem
+
+# Preserve the public roots and add the private CA for the Go service.
+RUN cat "$SSL_CERT_FILE" "$HOME/rootCA.pem" > "$HOME/ca-bundle.pem"
+ENV SSL_CERT_FILE=/home/nonroot/ca-bundle.pem
+
+# Trust the same CA in Chromium's NSS database as the renderer user.
+RUN nssdb="$HOME/.local/share/pki/nssdb" \
+    && mkdir -p "$nssdb" \
+    && certutil -N -d "sql:$nssdb" --empty-password \
+    && certutil -A -d "sql:$nssdb" -n internal-root-ca -t "C,," -i "$HOME/rootCA.pem"
+```
+
+Build the image and use `grafana-image-renderer:custom-ca` in your deployment.
+
+```shell
+docker build -t grafana-image-renderer:custom-ca .
+```
+
+The example uses the default NSS database path for Chromium 146 and later. If your deployment already provides an NSS database under `$HOME/.pki/nssdb`, add the CA to that database. [Chromium certificate management](https://chromium.googlesource.com/chromium/src/+/main/docs/linux/cert_management.md)
+
+If only the Go service needs the CA, you can mount a complete PEM bundle and set `SSL_CERT_FILE` to its path. When building with Nix, you can instead extend `cacert` with `extraCertificateFiles` or `extraCertificateStrings`. [NixOS CA configuration](https://github.com/NixOS/nixpkgs/blob/master/nixos/modules/security/ca.nix)
+
 ## Distorted panels in the PDF export
 
 This is most commonly caused by using the old PDF rendering engine in Grafana.

@@ -6,7 +6,11 @@ dist
 docs
 img
 node_modules
-scripts
+result
+result-*
+.idea
+.vscode
+.DS_Store
 .prettierignore
 .prettierrc.json
 dev.json
@@ -14,4 +18,8 @@ Dockerfile
 Makefile
 plugin_start*
 tslint.json
-tests/acceptance/
+**/*.jwt
+**/.env
+**/.env.*
+**/docker-compose*.yaml
+**/docker-compose*.yml

@@ -24,6 +24,16 @@ To compile the Docker image, run:
 $ docker build .
 ```
 
+To build and test the Nix image with Docker:
+
+```shell
+$ make image-nix
+$ IMAGE=image-renderer-nix go test ./tests/acceptance/... -count=1
+```
+
+The Nix image supports Linux amd64 and arm64. Local builds, pull requests, and releases use the pinned Nixpkgs Chromium unless the repository pins a newer Chromium release. See the [Nix build and update instructions](nix/README.md).
+
+
 The following tools are also useful for engineers:
 
 ```shell
@@ -44,7 +54,9 @@ One of the quick ways you can check the latest version available is by going to 
 Make sure that the build for amd64 and arm64 are both available first (scroll down to the bottom of the page and check that there are no red backgrounds), and ignore anything after the `-` in the version, this is what we'll use.
   
 In the `Dockerfile`, update `CHROMIUM_VERSION=` to the version found on the website. Changing this argument also reruns the package update and upgrade step. Use the cachebuster date for manual package refreshes.
-  
+
+Renovate updates Chromium in the Nix image through `flake.lock`. If a fix is needed before Nixpkgs packages it, follow the [manual override instructions](nix/README.md#update-chromium).
+
 Open a PR, merge it, and create a new GitHub release. You're done!
 
 ## Updating Go
