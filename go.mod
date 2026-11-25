@@ -1,6 +1,6 @@
 module github.com/grafana/grafana-image-renderer
 
-go 1.26.11
+go 1.27.4
 
 require (
 	github.com/Masterminds/semver/v3 v3.4.0
