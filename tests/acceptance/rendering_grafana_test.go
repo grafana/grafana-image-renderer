@@ -216,7 +216,8 @@ func TestRenderingGrafana(t *testing.T) {
 			WithNetwork(net, "grafana"),
 			WithEnv("GF_RENDERING_SERVER_URL", "http://gir:8081/render"),
 			WithEnv("GF_RENDERING_CALLBACK_URL", "http://grafana:3000/"),
-			WithEnv("GF_RENDERING_RENDERER_TOKEN", rendererAuthToken))
+			WithEnv("GF_RENDERING_RENDERER_TOKEN", rendererAuthToken),
+			WithEnterpriseLicense())
 
 		t.Run("with defaults", func(t *testing.T) {
 			t.Parallel()
