@@ -1072,12 +1072,18 @@ func waitForReady(browserCtx context.Context, cfg config.BrowserConfig, url stri
 		})
 	}
 
-	renderDone := make(chan struct{})
+	// Receives the outcome of the first message on the channel: nil means the page is ready to capture.
+	renderDone := make(chan error, 1)
 	var renderDoneOnce sync.Once
 	chromedp.ListenTarget(browserCtx, func(ev any) {
 		if e, ok := ev.(*runtime.EventBindingCalled); ok && e.Name == "__grafanaImageRendererMessageChannel" {
-			// Closing emits a signal to the main thread that the render is complete.
-			renderDoneOnce.Do(func() { close(renderDone) })
+			renderDoneOnce.Do(func() {
+				if failure := parseRenderMessage(e.Payload); failure != nil {
+					renderDone <- failure
+					return
+				}
+				renderDone <- nil
+			})
 		}
 	})
 
@@ -1114,7 +1120,12 @@ func waitForReady(browserCtx context.Context, cfg config.BrowserConfig, url stri
 			case <-readinessTimeout:
 				span.SetStatus(codes.Error, ErrBrowserReadinessTimeout.Error())
 				return ErrBrowserReadinessTimeout
-			case <-renderDone:
+			case err := <-renderDone:
+				if err != nil {
+					span.SetStatus(codes.Error, err.Error())
+					span.RecordError(err)
+					return err
+				}
 				span.AddEvent("render complete via binding", trace.WithAttributes(
 					attribute.Float64("elapsed_seconds", time.Since(start).Seconds()),
 				))
