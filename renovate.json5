@@ -25,9 +25,46 @@
   },
   "packageRules": [
     {
+      "matchManagers": ["dockerfile"],
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["debian"],
+      "enabled": true,
+      "versioning": "regex:^(?<compatibility>[a-z]+)-(?<patch>\\d{8})(?:\\.(?<build>\\d+))?$",
+      "minimumReleaseAgeBehaviour": "timestamp-optional",
+    },
+    {
+      // Use the builder image's published tags to keep the Go versions in sync.
+      "matchManagers": ["gomod"],
+      "matchDepTypes": ["golang"],
+      "overrideDatasource": "docker",
+      "overridePackageName": "golang",
+      "extractVersion": "^(?<version>\\d+\\.\\d+\\.\\d+)-alpine$",
+      "versioning": "semver",
+      "pinDigests": false,
+      "postUpdateOptions": ["gomodTidy"],
+    },
+    {
+      "matchManagers": ["dockerfile", "gomod"],
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["golang"],
+      "enabled": true,
+      "allowedVersions": "/^1\\./",
+      "minimumReleaseAgeBehaviour": "timestamp-optional",
+    },
+    {
+      "matchManagers": ["dockerfile", "gomod"],
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["golang"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "Go",
+      "groupSlug": "go-{{newMajor}}.{{newMinor}}.{{newPatch}}",
+      "minimumGroupSize": 2,
+    },
+    {
       "matchDatasources": ["custom.debian-chromium"],
       "matchPackageNames": ["chromium"],
       "enabled": true,
+      "minimumReleaseAgeBehaviour": "timestamp-optional",
     },
   ],
 }
